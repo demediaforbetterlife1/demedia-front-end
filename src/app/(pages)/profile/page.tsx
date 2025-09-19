@@ -1,0 +1,434 @@
+// src/components/ProfilePage.tsx
+"use client";
+import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Camera,
+    Edit,
+    MoreVertical,
+    Users,
+    User as UserIcon,
+    Heart,
+    MessageCircle,
+} from "lucide-react";
+import { getUserProfile } from "../../../lib/api";
+
+interface Story {
+    id: number;
+    content: string;
+    createdAt: string;
+    likes?: number;
+    comments?: number;
+}
+
+interface Profile {
+    id: number;
+    name: string;
+    username: string;
+    bio: string;
+    profilePicture: string | null;
+    coverPicture?: string | null;
+    coverPhoto?: string | null;
+    stories: Story[];
+    followersCount: number;
+    followingCount: number;
+    likesCount: number;
+    isFollowing?: boolean;
+}
+
+interface ProfilePageProps {
+    userId: string | number;
+}
+
+export default function ProfilePage({ userId }: ProfilePageProps) {
+    const [activeTab, setActiveTab] = useState<string>("posts");
+    const [isFollowing, setIsFollowing] = useState<boolean>(false);
+    const [profile, setProfile] = useState<Profile | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const [busyFollow, setBusyFollow] = useState<boolean>(false);
+
+    useEffect(() => {
+        let mounted = true;
+
+        async function loadProfile() {
+            if (!userId) {
+                setError("Missing userId");
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                setError(null);
+                const data = await getUserProfile(userId);
+
+                if (!mounted) return;
+
+                if (!data) {
+                    setError("Profile not found");
+                    return;
+                }
+
+                // Normalize data
+                const normalized: Profile = {
+                    id: data.id,
+                    name: data.name,
+                    username: data.username,
+                    bio: data.bio ?? "",
+                    profilePicture: data.profilePicture,
+                    coverPicture: data.coverPhoto,
+                    stories: data.stories.map(story => ({
+                        id: story.id,
+                        content: story.content,
+                        createdAt: story.createdAt,
+                        likes: 0,
+                        comments: 0
+                    })),
+                    followersCount: data.followersCount,
+                    followingCount: data.followingCount,
+                    likesCount: data.likesCount,
+                    isFollowing: false, // This will be determined by follow status
+                };
+
+                setProfile(normalized);
+                setIsFollowing(Boolean(normalized.isFollowing));
+            } catch (err) {
+                if (!mounted) return;
+                console.error("Profile fetch error:", err);
+                setError("Failed to load profile");
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        }
+
+        loadProfile();
+        return () => {
+            mounted = false;
+        };
+    }, [userId]);
+
+    async function handleFollowToggle() {
+        if (!profile || busyFollow) return;
+        setBusyFollow(true);
+
+        const prevIsFollowing = isFollowing;
+        const prevFollowers = profile.followersCount;
+
+        // Optimistic update
+        setIsFollowing(!prevIsFollowing);
+        setProfile((p) => p ? ({
+            ...p,
+            followersCount: prevIsFollowing
+                ? prevFollowers - 1
+                : prevFollowers + 1,
+        }) : null);
+
+        try {
+            const endpoint = prevIsFollowing
+                ? `/api/user/${profile.id}/unfollow`
+                : `/api/user/${profile.id}/follow`;
+
+            const res = await fetch(endpoint, { 
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    followerId: 1 // This should come from authentication context
+                })
+            });
+            if (!res.ok) throw new Error("Follow request failed");
+
+            const payload = await res.json().catch(() => null);
+            if (payload) {
+                setProfile((p) => p ? ({
+                    ...p,
+                    followersCount:
+                        payload.followersCount ??
+                        p.followersCount,
+                }) : null);
+                if (typeof payload.isFollowing !== "undefined") {
+                    setIsFollowing(Boolean(payload.isFollowing));
+                }
+            }
+        } catch (err) {
+            console.error("Follow toggle error:", err);
+            setIsFollowing(prevIsFollowing);
+            setProfile((p) => p ? ({
+                ...p,
+                followersCount: prevFollowers,
+            }) : null);
+        } finally {
+            setBusyFollow(false);
+        }
+    }
+
+    if (loading)
+        return (
+            <div className="max-w-4xl mx-auto mt-6 rounded-2xl shadow-2xl bg-gradient-to-b from-gray-900 to-black overflow-hidden border border-gray-800 p-6">
+                <div className="animate-pulse">
+                    <div className="h-56 bg-gray-700 rounded mb-6"></div>
+                    <div className="flex items-center space-x-4 mb-6">
+                        <div className="w-36 h-36 bg-gray-700 rounded-full"></div>
+                        <div className="flex-1">
+                            <div className="h-8 bg-gray-700 rounded w-1/3 mb-2"></div>
+                            <div className="h-4 bg-gray-700 rounded w-1/4 mb-2"></div>
+                            <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    
+    if (error)
+        return (
+            <div className="max-w-4xl mx-auto mt-6 rounded-2xl shadow-2xl bg-gradient-to-b from-gray-900 to-black overflow-hidden border border-gray-800 p-6">
+                <div className="text-center">
+                    <div className="text-red-500 text-xl mb-2">⚠️ Error</div>
+                    <p className="text-gray-300">{error}</p>
+                    <button 
+                        onClick={() => window.location.reload()} 
+                        className="mt-4 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    
+    if (!profile)
+        return (
+            <div className="max-w-4xl mx-auto mt-6 rounded-2xl shadow-2xl bg-gradient-to-b from-gray-900 to-black overflow-hidden border border-gray-800 p-6">
+                <div className="text-center">
+                    <div className="text-gray-400 text-xl mb-2">👤</div>
+                    <p className="text-gray-300">Profile not found</p>
+                </div>
+            </div>
+        );
+
+    const { coverPicture, profilePicture, name, username, bio, followersCount, followingCount, likesCount, stories } =
+        profile;
+
+    return (
+        <div className="max-w-4xl mx-auto mt-6 rounded-2xl shadow-2xl bg-gradient-to-b from-gray-900 to-black overflow-hidden border border-gray-800">
+            {/* Cover photo */}
+            {coverPicture && (
+                <div className="relative h-56">
+                    <img
+                        src={coverPicture}
+                        alt="Cover"
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={(e) => (e.currentTarget.style.display = "none")}
+                    />
+                    <button
+                        type="button"
+                        className="absolute bottom-3 right-3 p-2 bg-black/60 rounded-full text-white hover:scale-110 transition"
+                    >
+                        <Camera size={18} />
+                    </button>
+                </div>
+            )}
+
+            <div className="relative px-6 pb-6">
+                {/* Profile pic */}
+                <div className="absolute -top-20 left-6">
+                    {profilePicture ? (
+                        <motion.img
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 120 }}
+                            src={profilePicture}
+                            alt={name}
+                            className="w-36 h-36 rounded-full border-4 border-gray-900 shadow-lg object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                                e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                            }}
+                        />
+                    ) : null}
+                    <div className={`w-36 h-36 rounded-full border-4 border-gray-900 shadow-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold ${profilePicture ? "hidden" : ""}`}>
+                        {name.charAt(0).toUpperCase()}
+                    </div>
+                    <button
+                        type="button"
+                        className="absolute bottom-2 right-2 p-2 bg-black/60 rounded-full text-white hover:scale-110 transition"
+                    >
+                        <Camera size={16} />
+                    </button>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-2">
+                    <button
+                        type="button"
+                        className="p-2 rounded-full hover:bg-gray-800 text-white"
+                    >
+                        <Edit size={18} />
+                    </button>
+                    <button
+                        type="button"
+                        className="p-2 rounded-full hover:bg-gray-800 text-white"
+                    >
+                        <MoreVertical size={18} />
+                    </button>
+                </div>
+
+                <div className="mt-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 className="text-3xl font-extrabold text-white tracking-tight">
+                            {name}
+                        </h2>
+                        {username && (
+                            <p className="text-gray-400">@{username}</p>
+                        )}
+                        {bio && (
+                            <p className="mt-2 text-gray-300 max-w-xl">{bio}</p>
+                        )}
+                    </div>
+
+                    <motion.button
+                        type="button"
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleFollowToggle}
+                        disabled={busyFollow}
+                        className={`px-6 py-2 rounded-full font-semibold shadow-md transition text-sm ${
+                            isFollowing
+                                ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                                : "bg-indigo-500 text-white hover:bg-indigo-600"
+                        } ${busyFollow ? "opacity-70 cursor-wait" : ""}`}
+                    >
+                        {isFollowing ? "Unfollow" : "Follow"}
+                    </motion.button>
+                </div>
+
+                <div className="flex gap-6 mt-6 text-sm text-gray-300">
+          <span className="flex items-center gap-1">
+            <Users size={16} /> {followersCount}
+          </span>
+                    <span className="flex items-center gap-1">
+            <UserIcon size={16} /> {followingCount}
+          </span>
+                    <span className="flex items-center gap-1">
+            <Heart size={16} /> {likesCount}
+          </span>
+                </div>
+            </div>
+
+            <div className="flex border-t border-gray-800">
+                {["posts", "media", "about"].map((tab) => (
+                    <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setActiveTab(tab)}
+                        className={`flex-1 py-3 text-sm font-medium ${
+                            activeTab === tab
+                                ? "text-indigo-400 border-b-2 border-indigo-400"
+                                : "text-gray-400 hover:text-white"
+                        }`}
+                    >
+                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
+                ))}
+            </div>
+
+            <div className="p-6">
+                <AnimatePresence mode="wait">
+                    {activeTab === "posts" && (
+                        <motion.div
+                            key="posts"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            {stories?.length > 0 ? (
+                                stories.map((story, i) => (
+                                    <div
+                                        key={story.id}
+                                        className="p-4 rounded-xl border border-gray-700 shadow-md bg-gradient-to-br from-gray-800 to-gray-900 mb-4"
+                                    >
+                                        <p className="text-gray-400">
+                                            {story.content ?? ""}
+                                        </p>
+                                        <div className="flex gap-4 mt-3 text-sm text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <Heart size={14} />
+                          {story.likes ?? 0}
+                      </span>
+                                            <span className="flex items-center gap-1">
+                        <MessageCircle size={14} />
+                                                {story.comments ?? 0}
+                      </span>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-gray-400">No posts.</p>
+                            )}
+                        </motion.div>
+                    )}
+
+                    {activeTab === "media" && (
+                        <motion.div
+                            key="media"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3 }}
+                            className="grid grid-cols-3 gap-2"
+                        >
+                            {stories?.filter(
+                                (s) =>
+                                    typeof s.content === "string" &&
+                                    (s.content.startsWith("http://") ||
+                                        s.content.startsWith("https://"))
+                            ).length > 0 ? (
+                                stories
+                                    .filter(
+                                        (s) =>
+                                            typeof s.content === "string" &&
+                                            (s.content.startsWith("http://") ||
+                                                s.content.startsWith("https://"))
+                                    )
+                                    .map((s, i) => (
+                                        <img
+                                            key={s.id}
+                                            src={s.content}
+                                            alt={`media-${i}`}
+                                            className="rounded-lg object-cover w-full h-32"
+                                            loading="lazy"
+                                            onError={(e) =>
+                                                (e.currentTarget.style.display = "none")
+                                            }
+                                        />
+                                    ))
+                            ) : (
+                                <p className="text-gray-400 col-span-3">
+                                    No media found.
+                                </p>
+                            )}
+                        </motion.div>
+                    )}
+
+                    {activeTab === "about" && (
+                        <motion.div
+                            key="about"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3 }}
+                            className="text-gray-300"
+                        >
+                            <h3 className="font-semibold text-lg text-white">
+                                About {name}
+                            </h3>
+                            <p className="mt-2 leading-relaxed">{bio}</p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </div>
+    );
+}

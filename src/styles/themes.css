@@ -1,0 +1,314 @@
+/* Theme CSS Variables */
+:root {
+  /* Dark Theme (Default) */
+  --bg-primary: #0d1b2a;
+  --bg-secondary: #1b263b;
+  --bg-tertiary: #415a77;
+  --text-primary: #ffffff;
+  --text-secondary: #e0e1dd;
+  --text-muted: #a0a0a0;
+  --accent-primary: #00bcd4;
+  --accent-secondary: #bb86fc;
+  --border-color: #415a77;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --gradient-primary: linear-gradient(135deg, #0d1b2a, #1b263b);
+  --gradient-accent: linear-gradient(135deg, #00bcd4, #bb86fc);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #e9ecef;
+  --bg-tertiary: #dee2e6;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-muted: #6c757d;
+  --accent-primary: #007bff;
+  --accent-secondary: #6f42c1;
+  --border-color: #dee2e6;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --gradient-primary: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  --gradient-accent: linear-gradient(135deg, #007bff, #6f42c1);
+}
+
+[data-theme="super-dark"] {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #1a1a1a;
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
+  --text-muted: #888888;
+  --accent-primary: #00ffff;
+  --accent-secondary: #ff00ff;
+  --border-color: #333333;
+  --shadow-color: rgba(0, 255, 255, 0.2);
+  --gradient-primary: linear-gradient(135deg, #000000, #0a0a0a);
+  --gradient-accent: linear-gradient(135deg, #00ffff, #ff00ff);
+  --planet-color: #4a90e2;
+  --planet-glow: rgba(74, 144, 226, 0.3);
+}
+
+[data-theme="super-light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --accent-primary: #3b82f6;
+  --accent-secondary: #8b5cf6;
+  --border-color: #e2e8f0;
+  --shadow-color: rgba(0, 0, 0, 0.05);
+  --gradient-primary: linear-gradient(135deg, #ffffff, #f8fafc);
+  --gradient-accent: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  --planet-color: #f59e0b;
+  --planet-glow: rgba(245, 158, 11, 0.2);
+}
+
+/* Global Theme Styles */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Super Dark Theme Specific Styles */
+[data-theme="super-dark"] body {
+  background: var(--bg-primary);
+  position: relative;
+  overflow-x: hidden;
+}
+
+[data-theme="super-dark"] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(ellipse at 20% 20%, var(--planet-glow) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(255, 0, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+[data-theme="super-dark"] body::after {
+  content: '';
+  position: fixed;
+  top: 10%;
+  right: 15%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, var(--planet-color) 0%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: planet-glow 8s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Animated Stars for Super Dark Theme */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes shooting-star {
+  0% { 
+    transform: translateX(-100px) translateY(-100px) rotate(45deg);
+    opacity: 0;
+  }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { 
+    transform: translateX(100vw) translateY(100vh) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+@keyframes shooting-star-fast {
+  0% { 
+    transform: translateX(-150px) translateY(-150px) rotate(30deg);
+    opacity: 0;
+  }
+  5% { opacity: 1; }
+  95% { opacity: 1; }
+  100% { 
+    transform: translateX(120vw) translateY(120vh) rotate(30deg);
+    opacity: 0;
+  }
+}
+
+@keyframes planet-glow {
+  0% { 
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  100% { 
+    opacity: 0.4;
+    transform: scale(1.1);
+  }
+}
+
+.star {
+  position: fixed;
+  background: white;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  animation: twinkle 2s infinite;
+}
+
+.star:nth-child(odd) {
+  animation-delay: 0.5s;
+  animation-duration: 3s;
+}
+
+.star:nth-child(3n) {
+  animation-delay: 1s;
+  animation-duration: 4s;
+}
+
+.shooting-star {
+  position: fixed;
+  width: 3px;
+  height: 3px;
+  background: linear-gradient(45deg, #00ffff, #ff00ff, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  animation: shooting-star 4s linear infinite;
+  box-shadow: 0 0 6px #00ffff;
+}
+
+.shooting-star::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, #00ffff, #ff00ff, transparent);
+  transform: translateX(-120px) translateY(0.5px);
+  border-radius: 1px;
+}
+
+.shooting-star-fast {
+  position: fixed;
+  width: 2px;
+  height: 2px;
+  background: linear-gradient(30deg, #00ffff, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  animation: shooting-star-fast 2s linear infinite;
+  box-shadow: 0 0 4px #00ffff;
+}
+
+.shooting-star-fast::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(90deg, #00ffff, transparent);
+  transform: translateX(-80px) translateY(0.5px);
+  border-radius: 1px;
+}
+
+/* Super Light Theme Specific Styles */
+[data-theme="super-light"] {
+  background: var(--gradient-primary);
+}
+
+[data-theme="super-light"] body {
+  background: var(--gradient-primary);
+  position: relative;
+  overflow-x: hidden;
+}
+
+[data-theme="super-light"] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(ellipse at 30% 30%, var(--planet-glow) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 70%, rgba(139, 92, 246, 0.1) 0%, transparent 60%),
+    radial-gradient(ellipse at center, transparent 0%, rgba(255, 255, 255, 0.1) 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+[data-theme="super-light"] body::after {
+  content: '';
+  position: fixed;
+  top: 15%;
+  left: 10%;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, var(--planet-color) 0%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0.2;
+  animation: planet-glow 10s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Theme Transition Animations */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Component Theme Classes */
+.theme-bg-primary {
+  background-color: var(--bg-primary);
+}
+
+.theme-bg-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.theme-bg-tertiary {
+  background-color: var(--bg-tertiary);
+}
+
+.theme-text-primary {
+  color: var(--text-primary);
+}
+
+.theme-text-secondary {
+  color: var(--text-secondary);
+}
+
+.theme-text-muted {
+  color: var(--text-muted);
+}
+
+.theme-accent-primary {
+  color: var(--accent-primary);
+}
+
+.theme-accent-secondary {
+  color: var(--accent-secondary);
+}
+
+.theme-border {
+  border-color: var(--border-color);
+}
+
+.theme-shadow {
+  box-shadow: 0 4px 6px var(--shadow-color);
+}
+
+.theme-gradient-primary {
+  background: var(--gradient-primary);
+}
+
+.theme-gradient-accent {
+  background: var(--gradient-accent);
+}
