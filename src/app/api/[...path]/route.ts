@@ -7,7 +7,7 @@ const getBackendBase = (): string => {
   if (isProd) {
     return envUrl || "";
   }
-  return envUrl || "http://localhost:5000";
+  return envUrl || "https://demedia-back-end.vercel.app";
 };
 
 export const dynamic = "force-dynamic";
