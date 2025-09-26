@@ -26,6 +26,7 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>('dark');
+  const [isChanging, setIsChanging] = useState(false);
 
   // Load theme from localStorage on mount
   useEffect(() => {
@@ -37,14 +38,25 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   // Save theme to localStorage and apply to document
   const setTheme = (newTheme: Theme) => {
+    if (isChanging || newTheme === theme) return;
+    
+    setIsChanging(true);
     setThemeState(newTheme);
     localStorage.setItem('theme', newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
+    
+    // Use requestAnimationFrame to prevent blocking the UI
+    requestAnimationFrame(() => {
+      document.documentElement.setAttribute('data-theme', newTheme);
+      setTimeout(() => setIsChanging(false), 100);
+    });
   };
 
   // Apply theme to document on theme change
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    // Use requestAnimationFrame to prevent blocking the UI
+    requestAnimationFrame(() => {
+      document.documentElement.setAttribute('data-theme', theme);
+    });
   }, [theme]);
 
   const toggleTheme = () => {

@@ -12,6 +12,8 @@ import {
     MessageCircle,
 } from "lucide-react";
 import { getUserProfile } from "../../../lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSearchParams } from "next/navigation";
 
 interface Story {
     id: number;
@@ -36,11 +38,11 @@ interface Profile {
     isFollowing?: boolean;
 }
 
-interface ProfilePageProps {
-    userId: string | number;
-}
-
-export default function ProfilePage({ userId }: ProfilePageProps) {
+export default function ProfilePage() {
+    const { user } = useAuth();
+    const searchParams = useSearchParams();
+    const userIdFromUrl = searchParams.get('userId');
+    const userId = userIdFromUrl || user?.id;
     const [activeTab, setActiveTab] = useState<string>("posts");
     const [isFollowing, setIsFollowing] = useState<boolean>(false);
     const [profile, setProfile] = useState<Profile | null>(null);
@@ -133,9 +135,11 @@ export default function ProfilePage({ userId }: ProfilePageProps) {
                 method: "POST",
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'user-id': user?.id || '',
                 },
                 body: JSON.stringify({
-                    followerId: 1 // This should come from authentication context
+                    followerId: user?.id
                 })
             });
             if (!res.ok) throw new Error("Follow request failed");
