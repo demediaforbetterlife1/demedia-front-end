@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const token = localStorage.getItem('token');
         const userId = localStorage.getItem('userId');
         
-        if (token && userId) {
+        if (token && userId && token !== 'temp-token') {
           const res = await apiFetch(`/api/auth/me`);
 
           if (res.ok) {
@@ -72,6 +72,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               if (storedLang) setLanguage(storedLang);
             }
           } else {
+            console.log('Auth check failed, clearing tokens');
             localStorage.removeItem('token');
             localStorage.removeItem('userId');
             setUser(null);
@@ -105,7 +106,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userData = data.user;
         
         // Store auth data
-        localStorage.setItem('token', data.token || 'temp-token');
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
         localStorage.setItem('userId', userData.id);
         
         setUser(userData);
@@ -155,7 +158,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const newUser = data.user;
         
         // Store auth data
-        localStorage.setItem('token', 'temp-token');
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
         localStorage.setItem('userId', newUser.id);
         
         setUser(newUser);
@@ -189,9 +194,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(prev => prev ? { ...prev, ...userData } : null);
   };
 
-  const completeSetup = () => {
-    setUser(prev => prev ? { ...prev, isSetupComplete: true } : null);
-    router.push('/home');
+  const completeSetup = async () => {
+    try {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        console.error('No user ID found');
+        return;
+      }
+
+      const res = await apiFetch(`/api/user/${userId}/complete-setup`, {
+        method: 'POST',
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+        router.push('/home');
+      } else {
+        console.error('Failed to complete setup');
+        // Fallback: just update locally
+        setUser(prev => prev ? { ...prev, isSetupComplete: true } : null);
+        router.push('/home');
+      }
+    } catch (error) {
+      console.error('Error completing setup:', error);
+      // Fallback: just update locally
+      setUser(prev => prev ? { ...prev, isSetupComplete: true } : null);
+      router.push('/home');
+    }
   };
 
   return (
