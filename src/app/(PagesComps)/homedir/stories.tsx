@@ -43,11 +43,19 @@ export default function Stories() {
             setLoading(true);
             setError("");
             
-            const userInterests = user?.interests || [];
-            const data = userInterests.length > 0 
-                ? await contentService.getPersonalizedStories(userInterests)
-                : await dataService.getStories();
+            // Use the new story feed API that respects visibility settings
+            const response = await fetch(`/api/stories/feed?userId=${user?.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'user-id': user?.id?.toString() || '',
+                }
+            });
             
+            if (!response.ok) {
+                throw new Error("Failed to fetch stories");
+            }
+            
+            const data = await response.json();
             setStories(data);
         } catch (err: any) {
             console.error("Failed to fetch stories:", err);
@@ -155,6 +163,10 @@ export default function Stories() {
             <CreateStoryModal
                 isOpen={showCreateStoryModal}
                 onClose={() => setShowCreateStoryModal(false)}
+                onStoryCreated={(newStory) => {
+                    setStories(prev => [newStory, ...prev]);
+                    setShowCreateStoryModal(false);
+                }}
             />
         </div>
     );

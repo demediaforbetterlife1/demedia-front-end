@@ -43,6 +43,7 @@ export default function ProfilePage() {
     const searchParams = useSearchParams();
     const userIdFromUrl = searchParams.get('userId');
     const userId = userIdFromUrl || user?.id;
+    const isOwnProfile = !userIdFromUrl || userIdFromUrl === user?.id?.toString();
     const [activeTab, setActiveTab] = useState<string>("posts");
     const [isFollowing, setIsFollowing] = useState<boolean>(false);
     const [profile, setProfile] = useState<Profile | null>(null);
@@ -69,6 +70,19 @@ export default function ProfilePage() {
                 setLoading(true);
                 setError(null);
                 const data = await getUserProfile(userId);
+                
+                // Fetch stories for this user
+                const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'user-id': user?.id?.toString() || '',
+                    }
+                });
+                
+                let userStories = [];
+                if (storiesResponse.ok) {
+                    userStories = await storiesResponse.json();
+                }
 
                 if (!mounted) return;
 
@@ -85,7 +99,7 @@ export default function ProfilePage() {
                     bio: data.bio ?? "",
                     profilePicture: data.profilePicture,
                     coverPicture: data.coverPhoto,
-                    stories: data.stories.map(story => ({
+                    stories: userStories.map(story => ({
                         id: story.id,
                         content: story.content,
                         createdAt: story.createdAt,
@@ -270,18 +284,32 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex justify-end gap-2 mt-2">
-                    <button
-                        type="button"
-                        className="p-2 rounded-full hover:bg-gray-800 text-white"
-                    >
-                        <Edit size={18} />
-                    </button>
-                    <button
-                        type="button"
-                        className="p-2 rounded-full hover:bg-gray-800 text-white"
-                    >
-                        <MoreVertical size={18} />
-                    </button>
+                    {isOwnProfile ? (
+                        <>
+                            <button
+                                type="button"
+                                className="p-2 rounded-full hover:bg-gray-800 text-white"
+                                title="Edit Profile"
+                            >
+                                <Edit size={18} />
+                            </button>
+                            <button
+                                type="button"
+                                className="p-2 rounded-full hover:bg-gray-800 text-white"
+                                title="Settings"
+                            >
+                                <MoreVertical size={18} />
+                            </button>
+                        </>
+                    ) : (
+                        <button
+                            type="button"
+                            className="p-2 rounded-full hover:bg-gray-800 text-white"
+                            title="More Options"
+                        >
+                            <MoreVertical size={18} />
+                        </button>
+                    )}
                 </div>
 
                 <div className="mt-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -297,19 +325,29 @@ export default function ProfilePage() {
                         )}
                     </div>
 
-                    <motion.button
-                        type="button"
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleFollowToggle}
-                        disabled={busyFollow}
-                        className={`px-6 py-2 rounded-full font-semibold shadow-md transition text-sm ${
-                            isFollowing
-                                ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                                : "bg-indigo-500 text-white hover:bg-indigo-600"
-                        } ${busyFollow ? "opacity-70 cursor-wait" : ""}`}
-                    >
-                        {isFollowing ? "Unfollow" : "Follow"}
-                    </motion.button>
+                    {isOwnProfile ? (
+                        <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.95 }}
+                            className="px-6 py-2 rounded-full font-semibold shadow-md transition text-sm bg-indigo-500 text-white hover:bg-indigo-600"
+                        >
+                            Edit Profile
+                        </motion.button>
+                    ) : (
+                        <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleFollowToggle}
+                            disabled={busyFollow}
+                            className={`px-6 py-2 rounded-full font-semibold shadow-md transition text-sm ${
+                                isFollowing
+                                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                                    : "bg-indigo-500 text-white hover:bg-indigo-600"
+                            } ${busyFollow ? "opacity-70 cursor-wait" : ""}`}
+                        >
+                            {isFollowing ? "Unfollow" : "Follow"}
+                        </motion.button>
+                    )}
                 </div>
 
                 <div className="flex gap-6 mt-6 text-sm text-gray-300">
@@ -326,7 +364,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex border-t border-gray-800">
-                {["posts", "media", "about"].map((tab) => (
+                {["posts", "stories", "media", "about"].map((tab) => (
                     <button
                         key={tab}
                         type="button"
@@ -352,29 +390,43 @@ export default function ProfilePage() {
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.3 }}
                         >
+                            <p className="text-gray-400">No posts yet.</p>
+                        </motion.div>
+                    )}
+
+                    {activeTab === "stories" && (
+                        <motion.div
+                            key="stories"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3 }}
+                        >
                             {stories?.length > 0 ? (
-                                stories.map((story, i) => (
-                                    <div
-                                        key={story.id}
-                                        className="p-4 rounded-xl border border-gray-700 shadow-md bg-gradient-to-br from-gray-800 to-gray-900 mb-4"
-                                    >
-                                        <p className="text-gray-400">
-                                            {story.content ?? ""}
-                                        </p>
-                                        <div className="flex gap-4 mt-3 text-sm text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Heart size={14} />
-                          {story.likes ?? 0}
-                      </span>
-                                            <span className="flex items-center gap-1">
-                        <MessageCircle size={14} />
-                                                {story.comments ?? 0}
-                      </span>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {stories.map((story, i) => (
+                                        <div
+                                            key={story.id}
+                                            className="aspect-square rounded-xl border border-gray-700 shadow-md bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+                                        >
+                                            {story.content?.startsWith('http') ? (
+                                                <img 
+                                                    src={story.content} 
+                                                    alt="Story" 
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center p-4">
+                                                    <p className="text-gray-400 text-sm text-center">
+                                                        {story.content}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                ))
+                                    ))}
+                                </div>
                             ) : (
-                                <p className="text-gray-400">No posts.</p>
+                                <p className="text-gray-400">No stories yet.</p>
                             )}
                         </motion.div>
                     )}
