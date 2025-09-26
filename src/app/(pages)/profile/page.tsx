@@ -39,7 +39,7 @@ interface Profile {
 }
 
 export default function ProfilePage() {
-    const { user } = useAuth();
+    const { user, isLoading: authLoading } = useAuth();
     const searchParams = useSearchParams();
     const userIdFromUrl = searchParams.get('userId');
     const userId = userIdFromUrl || user?.id;
@@ -54,8 +54,13 @@ export default function ProfilePage() {
         let mounted = true;
 
         async function loadProfile() {
+            // Wait for auth to load
+            if (authLoading) {
+                return;
+            }
+
             if (!userId) {
-                setError("Missing userId");
+                setError("Missing userId - Please make sure you're logged in");
                 setLoading(false);
                 return;
             }
@@ -108,7 +113,7 @@ export default function ProfilePage() {
         return () => {
             mounted = false;
         };
-    }, [userId]);
+    }, [userId, authLoading]);
 
     async function handleFollowToggle() {
         if (!profile || busyFollow) return;
@@ -168,7 +173,7 @@ export default function ProfilePage() {
         }
     }
 
-    if (loading)
+    if (authLoading || loading)
         return (
             <div className="max-w-4xl mx-auto mt-6 rounded-2xl shadow-2xl bg-gradient-to-b from-gray-900 to-black overflow-hidden border border-gray-800 p-6">
                 <div className="animate-pulse">
