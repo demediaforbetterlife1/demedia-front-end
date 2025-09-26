@@ -12,15 +12,8 @@ const nextConfig = {
     compress: true,
     poweredByHeader: false,
     async rewrites() {
-        const isProd = process.env.NODE_ENV === "production";
-        const backendUrl = process.env.BACKEND_URL;
-
-        // Single-domain model: in production, if BACKEND_URL is not set,
-        // we return no rewrites so the platform ingress must route /api and /socket.io.
-        if (isProd && !backendUrl) return [];
-
-        // Otherwise, proxy via rewrites (dev or prod with BACKEND_URL set)
-        const target = backendUrl || "http://localhost:5000";
+        // Always use the Fly.io backend URL
+        const target = "https://demedia-back-end-b8ouzq.fly.dev";
         return [
             { source: "/api/:path*", destination: `${target}/api/:path*` },
             { source: "/socket.io/:path*", destination: `${target}/socket.io/:path*` },

@@ -2,12 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Pick backend base URL depending on env
 const getBackendBase = (): string => {
-  const isProd = process.env.NODE_ENV === "production";
-  const envUrl = process.env.BACKEND_URL?.trim();
-  if (isProd) {
-    return envUrl || "https://demedia-back-end-b8ouzq.fly.dev";
-  }
-  return envUrl || "https://demedia-back-end-b8ouzq.fly.dev";
+  // Always use the Fly.io backend URL
+  const backendUrl = "https://demedia-back-end-b8ouzq.fly.dev";
+  console.log("Backend URL:", backendUrl);
+  return backendUrl;
 };
 
 export const dynamic = "force-dynamic";
