@@ -58,6 +58,50 @@ export default function Posts() {
         };
     }, [user?.interests]);
 
+    const handleLike = async (postId: number) => {
+        try {
+            // Optimistic update
+            setPosts(prev => prev.map(post => 
+                post.id === postId 
+                    ? { ...post, likes: post.likes + 1 }
+                    : post
+            ));
+
+            // Call API to like the post
+            await contentService.likePost(postId);
+        } catch (error) {
+            console.error('Error liking post:', error);
+            // Revert optimistic update on error
+            setPosts(prev => prev.map(post => 
+                post.id === postId 
+                    ? { ...post, likes: post.likes - 1 }
+                    : post
+            ));
+        }
+    };
+
+    const handleComment = (postId: number) => {
+        // TODO: Implement comment modal or redirect to comment section
+        console.log('Comment on post:', postId);
+    };
+
+    const handleShare = async (postId: number) => {
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: 'Check out this post on DeMedia',
+                    url: window.location.href,
+                });
+            } else {
+                // Fallback: copy to clipboard
+                await navigator.clipboard.writeText(window.location.href);
+                alert('Link copied to clipboard!');
+            }
+        } catch (error) {
+            console.error('Error sharing post:', error);
+        }
+    };
+
     if (loading) return <p className="text-center theme-text-muted mt-10">{t('posts.loading','Loading posts...')}</p>;
     if (error) return <p className="text-center text-red-400 mt-10">{t('posts.error','Error')}: {error}</p>;
     if (!posts.length) return <p className="text-center theme-text-muted mt-10">{t('posts.none','No posts yet.')}</p>;
@@ -92,15 +136,26 @@ export default function Posts() {
 
                         {/* Actions */}
                         <div className="flex items-center justify-end gap-6 mt-3 theme-text-muted">
-                            <div className="flex items-center gap-1 hover:text-pink-500 cursor-pointer">
-                                <Heart size={18} /> <span className="text-sm">{post.likes}</span>
-                            </div>
-                            <div className="flex items-center gap-1 hover:text-blue-400 cursor-pointer">
-                                <MessageCircle size={18} /> <span className="text-sm">{post.comments}</span>
-                            </div>
-                            <div className="flex items-center gap-1 hover:text-green-400 cursor-pointer">
+                            <button 
+                                className="flex items-center gap-1 hover:text-pink-500 cursor-pointer transition-colors"
+                                onClick={() => handleLike(post.id)}
+                            >
+                                <Heart size={18} /> 
+                                <span className="text-sm">{post.likes}</span>
+                            </button>
+                            <button 
+                                className="flex items-center gap-1 hover:text-blue-400 cursor-pointer transition-colors"
+                                onClick={() => handleComment(post.id)}
+                            >
+                                <MessageCircle size={18} /> 
+                                <span className="text-sm">{post.comments}</span>
+                            </button>
+                            <button 
+                                className="flex items-center gap-1 hover:text-green-400 cursor-pointer transition-colors"
+                                onClick={() => handleShare(post.id)}
+                            >
                                 <Share2 size={18} />
-                            </div>
+                            </button>
                         </div>
                     </motion.div>
                 ))}

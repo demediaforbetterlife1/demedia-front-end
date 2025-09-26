@@ -134,6 +134,33 @@ class ContentService {
             body: JSON.stringify(preferences),
         });
     }
+
+    // Like a post
+    async likePost(postId: number): Promise<any> {
+        return this.makeRequest<any>(`/api/posts/${postId}/like`, {
+            method: 'POST',
+        });
+    }
+
+    // Unlike a post
+    async unlikePost(postId: number): Promise<any> {
+        return this.makeRequest<any>(`/api/posts/${postId}/unlike`, {
+            method: 'DELETE',
+        });
+    }
+
+    // Comment on a post
+    async commentOnPost(postId: number, content: string): Promise<any> {
+        return this.makeRequest<any>(`/api/posts/${postId}/comments`, {
+            method: 'POST',
+            body: JSON.stringify({ content }),
+        });
+    }
+
+    // Get post comments
+    async getPostComments(postId: number): Promise<any[]> {
+        return this.makeRequest<any[]>(`/api/posts/${postId}/comments`);
+    }
 }
 
 export const contentService = new ContentService();

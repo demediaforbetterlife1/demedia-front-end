@@ -385,46 +385,228 @@ export default function Navbar() {
                             className="absolute left-1/2 -translate-x-1/2 mt-3 w-[90vw] max-w-sm theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-6"
                         >
                             <div className="flex flex-col space-y-4 theme-text-secondary">
-                <span className="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-                  DeMedia
-                </span>
-                                <input
-                                    type="text"
-                                    placeholder="Search users, posts..."
-                                    value={searchQuery}
-                                    onChange={handleSearchInputChange}
-                                    className="w-full px-4 py-2 rounded-full theme-bg-tertiary/60 border theme-border text-sm outline-none theme-text-primary"
-                                />
-                                <button className="flex items-center space-x-2 theme-text-muted hover:text-cyan-400 transition">
-                                    <IoNotificationsOutline size={20} /> <span>Notifications</span>
-                                </button>
-                                <button 
-                                    onClick={() => {
-                                        setMobileOpen(false);
-                                        router.push('/messeging');
-                                    }}
-                                    className="flex items-center space-x-2 theme-text-muted hover:text-purple-400 transition"
-                                >
-                                    <IoChatbubbleEllipsesOutline size={20} /> <span>Chat</span>
-                                </button>
-                                <button 
-                                    onClick={() => {
-                                        setMobileOpen(false);
-                                        setShowAddPost(true);
-                                    }}
-                                    className="flex items-center space-x-2 theme-text-muted hover:text-green-400 transition"
-                                >
-                                    <span className="text-lg font-bold">+</span> <span>Add Post</span>
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setMobileOpen(false);
-                                        logout();
-                                    }}
-                                    className="flex items-center space-x-2 text-red-500 hover:text-red-400 transition"
-                                >
-                                    <IoLogOutOutline size={20} /> <span>Logout</span>
-                                </button>
+                                {/* Logo */}
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <Image
+                                        src="/assets/images/logo1.png"
+                                        alt="Logo"
+                                        width={32}
+                                        height={32}
+                                        className="rounded-full shadow-lg"
+                                    />
+                                    <span className="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
+                                        DeMedia
+                                    </span>
+                                </div>
+
+                                {/* Search */}
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Search users, posts..."
+                                        value={searchQuery}
+                                        onChange={handleSearchInputChange}
+                                        onBlur={() => setTimeout(() => hideSearchResults(), 200)}
+                                        className="w-full px-4 py-2 rounded-full theme-bg-tertiary/60 border theme-border text-sm outline-none theme-text-primary"
+                                    />
+                                    <div className="absolute inset-y-0 right-3 flex items-center text-cyan-400">
+                                        {isSearching ? (
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-400"></div>
+                                        ) : (
+                                            <IoChatbubbleEllipsesOutline size={16} />
+                                        )}
+                                    </div>
+                                    
+                                    {/* Search Results */}
+                                    <AnimatePresence>
+                                        {showSearchResults && (searchResults.length > 0 || searchError) && (
+                                            <motion.div
+                                                variants={dropdownVariants}
+                                                initial="hidden"
+                                                animate="visible"
+                                                exit="exit"
+                                                transition={{ duration: 0.2 }}
+                                                className="absolute top-full left-0 right-0 mt-2 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-3 max-h-60 overflow-y-auto z-50"
+                                            >
+                                                <h4 className="font-bold text-cyan-400 mb-2 text-xs">Search Results</h4>
+                                                {searchError ? (
+                                                    <div className="text-red-400 text-xs text-center py-2">
+                                                        {searchError}
+                                                    </div>
+                                                ) : searchResults.length === 0 ? (
+                                                    <div className="text-gray-400 text-xs text-center py-2">
+                                                        No results found
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-1">
+                                                        {searchResults.map((result, index) => (
+                                                            <div
+                                                                key={`${result.type}-${result.id || index}`}
+                                                                className="flex items-center space-x-2 p-2 rounded-lg hover:theme-bg-primary cursor-pointer transition"
+                                                            >
+                                                                {result.type === 'user' ? (
+                                                                    <>
+                                                                        <div className="w-6 h-6 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs">
+                                                                            {result.name?.charAt(0)?.toUpperCase() || 'U'}
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-xs font-medium theme-text-primary">{result.name}</p>
+                                                                            <p className="text-xs theme-text-muted">@{result.username}</p>
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <div className="w-6 h-6 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs">
+                                                                            📝
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-xs font-medium theme-text-primary truncate">{result.title || result.content}</p>
+                                                                            <p className="text-xs theme-text-muted">by {result.author?.name}</p>
+                                                                        </div>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
+                                {/* Language Switcher */}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm theme-text-muted">Language</span>
+                                    <LanguageSwitcher />
+                                </div>
+
+                                {/* Navigation Items */}
+                                <div className="space-y-2">
+                                    <button 
+                                        onClick={() => {
+                                            setMobileOpen(false);
+                                            router.push('/messeging');
+                                        }}
+                                        className="flex items-center space-x-3 w-full p-2 rounded-lg theme-text-muted hover:text-purple-400 hover:theme-bg-primary transition"
+                                    >
+                                        <IoChatbubbleEllipsesOutline size={20} />
+                                        <span>Messages</span>
+                                    </button>
+
+                                    <button 
+                                        onClick={() => {
+                                            setMobileOpen(false);
+                                            setShowAddPost(true);
+                                        }}
+                                        className="flex items-center space-x-3 w-full p-2 rounded-lg theme-text-muted hover:text-green-400 hover:theme-bg-primary transition"
+                                    >
+                                        <span className="text-lg font-bold">+</span>
+                                        <span>Add Post</span>
+                                    </button>
+
+                                    <button 
+                                        onClick={() => {
+                                            setShowNotifications(!showNotifications);
+                                            setShowMessages(false);
+                                            setShowProfileMenu(false);
+                                        }}
+                                        className="flex items-center space-x-3 w-full p-2 rounded-lg theme-text-muted hover:text-cyan-400 hover:theme-bg-primary transition relative"
+                                    >
+                                        <IoNotificationsOutline size={20} />
+                                        <span>Notifications</span>
+                                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            setMobileOpen(false);
+                                            router.push('/profile');
+                                        }}
+                                        className="flex items-center space-x-3 w-full p-2 rounded-lg theme-text-muted hover:text-cyan-400 hover:theme-bg-primary transition"
+                                    >
+                                        <IoPersonOutline size={20} />
+                                        <span>Profile</span>
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            setMobileOpen(false);
+                                            setShowSettings(true);
+                                        }}
+                                        className="flex items-center space-x-3 w-full p-2 rounded-lg theme-text-muted hover:text-cyan-400 hover:theme-bg-primary transition"
+                                    >
+                                        <span>Settings</span>
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            setMobileOpen(false);
+                                            logout();
+                                        }}
+                                        className="flex items-center space-x-3 w-full p-2 rounded-lg text-red-500 hover:text-red-400 hover:theme-bg-primary transition"
+                                    >
+                                        <IoLogOutOutline size={20} />
+                                        <span>Logout</span>
+                                    </button>
+                                </div>
+
+                                {/* Notifications Dropdown */}
+                                <AnimatePresence>
+                                    {showNotifications && (
+                                        <motion.div
+                                            variants={dropdownVariants}
+                                            initial="hidden"
+                                            animate="visible"
+                                            exit="exit"
+                                            transition={{ duration: 0.2 }}
+                                            className="theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-4"
+                                        >
+                                            <h4 className="font-bold text-cyan-400 mb-3 text-sm">Notifications</h4>
+                                            <ul className="space-y-2">
+                                                {notifications.map((note, i) => (
+                                                    <li
+                                                        key={i}
+                                                        className="theme-text-muted hover:text-cyan-400 cursor-pointer text-sm transition"
+                                                    >
+                                                        {note}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                {/* User Profile Section */}
+                                <div className="border-t theme-border pt-4 mt-4">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-10 h-10 rounded-full overflow-hidden">
+                                            {user?.profilePicture ? (
+                                                <img
+                                                    src={user.profilePicture}
+                                                    alt={user.name || 'Profile'}
+                                                    width={40}
+                                                    height={40}
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).src = "/assets/images/default-avatar.svg";
+                                                    }}
+                                                />
+                                            ) : (
+                                                <Image
+                                                    src="/assets/images/default-avatar.svg"
+                                                    alt="Default avatar"
+                                                    width={40}
+                                                    height={40}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium theme-text-primary">{user?.name || 'User'}</p>
+                                            <p className="text-xs theme-text-muted">@{user?.username || 'username'}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     )}

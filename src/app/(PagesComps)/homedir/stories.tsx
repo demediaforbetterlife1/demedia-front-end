@@ -6,6 +6,7 @@ import { dataService } from "@/services/dataService";
 import { contentService } from "@/services/contentService";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useAuth } from "@/contexts/AuthContext";
+import { useI18n } from "@/contexts/I18nContext";
 import CreateStoryModal from "@/app/layoutElementsComps/navdir/CreateStoryModal";
 
 interface Story {
@@ -31,6 +32,7 @@ export default function Stories() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { showNewPostNotification } = useNotifications();
     const { user } = useAuth();
+    const { t } = useI18n();
 
     useEffect(() => {
         fetchStories();
@@ -93,8 +95,8 @@ export default function Stories() {
         }
     };
 
-    if (loading) return <p className="theme-text-muted text-center mt-4">Loading stories...</p>;
-    if (error) return <p className="theme-text-muted text-center mt-4 text-red-400">{error}</p>;
+    if (loading) return <p className="theme-text-muted text-center mt-4">{t('stories.loading', 'Loading stories...')}</p>;
+    if (error) return <p className="theme-text-muted text-center mt-4 text-red-400">{t('stories.error', 'Error loading stories')}: {error}</p>;
 
     return (
         <div className="flex overflow-x-auto gap-4 p-4">
@@ -108,7 +110,7 @@ export default function Stories() {
                     <IoAdd size={24} className="text-cyan-400" />
                     <div className="absolute inset-0 rounded-full bg-cyan-400/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <span className="mt-1 text-sm theme-text-secondary">Add Story</span>
+                <span className="mt-1 text-sm theme-text-secondary">{t('stories.add', 'Add Story')}</span>
             </motion.div>
 
             {stories.map((story) => (
