@@ -5,9 +5,9 @@ const getBackendBase = (): string => {
   const isProd = process.env.NODE_ENV === "production";
   const envUrl = process.env.BACKEND_URL?.trim();
   if (isProd) {
-    return envUrl || "";
+    return envUrl || "https://demedia-back-end-b8ouzq.fly.dev";
   }
-  return envUrl || "https://demedia-back-end.vercel.app";
+  return envUrl || "https://demedia-back-end-b8ouzq.fly.dev";
 };
 
 export const dynamic = "force-dynamic";
