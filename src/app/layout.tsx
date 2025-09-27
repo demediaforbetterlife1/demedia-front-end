@@ -10,6 +10,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { AnimatedStars } from "@/components/AnimatedStars";
 import { I18nProvider } from "@/contexts/I18nContext";
 import NotificationProvider from "@/components/NotificationProvider";
+import GlowingPlanets from "@/components/GlowingPlanets";
 
 
 const geistSans = Geist({
@@ -67,6 +68,7 @@ export default function RootLayout({
               <NotificationProvider>
                 <AuthGuard>
                   <AnimatedStars />
+                  <GlowingPlanets />
                   <NavbarClient />
                   {children}
                 </AuthGuard>

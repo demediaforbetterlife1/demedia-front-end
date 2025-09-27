@@ -364,27 +364,49 @@ export default function Navbar() {
                 </div>
             )}
 
-            <motion.div
-                className="md:hidden fixed top-3 left-1/2 -translate-x-1/2 z-50"
-                animate={{ scale: mobileOpen ? 1.05 : 1 }}
-                transition={{ duration: 0.2 }}
+            <motion.nav
+                initial={{ y: -60, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className={`md:hidden flex justify-between items-center px-4 py-3 sticky top-0 z-50 
+          theme-bg-secondary/80 backdrop-blur-xl border-b theme-border theme-shadow transition-all duration-300`}
             >
+                <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className="flex items-center space-x-2 cursor-pointer"
+                >
+                    <Image
+                        src="/assets/images/logo1.png"
+                        alt="Logo"
+                        width={32}
+                        height={32}
+                        className="rounded-full shadow-lg"
+                    />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 font-extrabold text-lg">
+                        DeMedia
+                    </span>
+                </motion.div>
+
                 <button
                     onClick={() => setMobileOpen(!mobileOpen)}
-                    className="w-12 h-12 rounded-2xl bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center shadow-lg"
+                    className="w-10 h-10 rounded-full theme-bg-tertiary/60 flex items-center justify-center
+                       theme-text-muted hover:text-cyan-400 hover:shadow-[0_0_12px_rgba(34,211,238,0.5)]
+                       transition"
                 >
-                    {mobileOpen ? <IoClose size={26} color="white" /> : <IoMenu size={26} color="white" />}
+                    {mobileOpen ? <IoClose size={20} /> : <IoMenu size={20} />}
                 </button>
 
-                <AnimatePresence>
-                    {mobileOpen && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -20, scale: 0.9 }}
-                            animate={{ opacity: 1, y: 10, scale: 1 }}
-                            exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                            transition={{ duration: 0.25 }}
-                            className="absolute left-1/2 -translate-x-1/2 mt-3 w-[90vw] max-w-sm theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-6"
-                        >
+            </motion.nav>
+
+            <AnimatePresence>
+                {mobileOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 10, scale: 1 }}
+                        exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                        transition={{ duration: 0.25 }}
+                        className="fixed top-16 left-1/2 -translate-x-1/2 w-[90vw] max-w-sm theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-6 z-40"
+                    >
                             <div className="flex flex-col space-y-4 theme-text-secondary">
                                 {/* Logo */}
                                 <div className="flex items-center space-x-3 mb-4">

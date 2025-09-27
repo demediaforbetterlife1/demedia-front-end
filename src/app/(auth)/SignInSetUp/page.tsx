@@ -132,8 +132,6 @@ export default function SignInSetUp() {
     const [day, setDay] = useState<string>("");
     const [month, setMonth] = useState<string>("");
     const [year, setYear] = useState<string>("");
-    const [language, setLanguage] = useState<string>("");
-    const [phone, setPhone] = useState<string>("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const cardWrapRef = useRef<HTMLDivElement | null>(null);
@@ -169,7 +167,7 @@ export default function SignInSetUp() {
     const router = useRouter();
 
     const handleSave = async () => {
-        if (!day || !month || !year || !language || !phone) {
+        if (!day || !month || !year) {
             gsap.timeline()
                 .to(cardWrapRef.current, { x: -8, duration: 0.08 })
                 .to(cardWrapRef.current, { x: 8, duration: 0.08 })
@@ -196,7 +194,7 @@ export default function SignInSetUp() {
                     "Content-Type": "application/json",
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
                 },
-                body: JSON.stringify({ dob: dobIso, language, phone }),
+                body: JSON.stringify({ dob: dobIso }),
             });
 
             const rawBody = await res.text();
@@ -212,12 +210,8 @@ export default function SignInSetUp() {
                 throw new Error(message);
             }
 
-            // Update user context and app language
-            updateUser({ dob: dobIso, language, phone });
-            if (language) {
-                localStorage.setItem('language', language);
-                setAppLanguage(language);
-            }
+            // Update user context
+            updateUser({ dob: dobIso });
             
             console.log("Saved profile:", data);
             router.push("/interests");
@@ -280,32 +274,6 @@ export default function SignInSetUp() {
                                     </div>
                                 </div>
 
-                                {/* Language */}
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-white/90">{t('setup.preferredLanguage','Preferred Language')}</label>
-                                    <Select onValueChange={setLanguage} value={language}>
-                                        <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                                            <SelectValue placeholder="Select a language" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-slate-900 text-white max-h-72 overflow-auto">
-                                            {supportedLocales.map((l) => (
-                                                <SelectItem key={l.code} value={l.code}>{l.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                {/* Phone Number */}
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-white/90">{t('setup.phoneNumber','Phone Number')}</label>
-                                    <input
-                                        type="tel"
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
-                                        placeholder="+1 (555) 123-4567"
-                                        className="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                                    />
-                                </div>
 
                                 {error && (
                                     <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">

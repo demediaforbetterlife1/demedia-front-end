@@ -123,7 +123,6 @@ const allInterests = [
 
 export default function InterestsPage() {
     const [selected, setSelected] = useState<string[]>([]);
-    const [age, setAge] = useState<string>("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const router = useRouter();
@@ -136,8 +135,8 @@ export default function InterestsPage() {
     };
 
     const handleContinue = async () => {
-        if (selected.length === 0 || !age) {
-            setError("Please select at least one interest and enter your age!");
+        if (selected.length === 0) {
+            setError("Please select at least one interest!");
             return;
         }
 
@@ -153,7 +152,7 @@ export default function InterestsPage() {
             const res = await fetch(`/api/users/${userId}/interests`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ interests: selected, age: parseInt(age) }),
+                body: JSON.stringify({ interests: selected }),
             });
 
             const rawText = await res.text();
@@ -170,7 +169,7 @@ export default function InterestsPage() {
             console.log("Saved Interests:", respData || {});
 
             // Update user context
-            updateUser({ interests: selected, age: parseInt(age) });
+            updateUser({ interests: selected });
 
             // بعد ما يحفظ الاهتمامات تقدر توديه على FinishSetup
             router.push("/FinishSetup");
@@ -196,24 +195,6 @@ export default function InterestsPage() {
                 Choose Your Interests 🚀
             </motion.h1>
 
-            {/* Age Input */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.8 }}
-                className="relative z-10 mt-6"
-            >
-                <label className="block text-sm font-medium text-white/90 mb-2 text-center">Your Age</label>
-                <input
-                    type="number"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                    placeholder="Enter your age"
-                    min="13"
-                    max="120"
-                    className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-center"
-                />
-            </motion.div>
 
             <motion.div
                 initial={{ opacity: 0 }}
