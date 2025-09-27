@@ -10,7 +10,7 @@ import { Stars, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
 import { useI18n } from "@/contexts/I18nContext";
-import { Eye, EyeOff, Phone, Lock, User, UserCheck } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, UserCheck } from "lucide-react";
 
 /* ---------------- BACKGROUND 3D ---------------- */
 function RotatingPlanet({
@@ -126,7 +126,7 @@ export default function SignUpPage() {
     const [form, setForm] = useState({
         name: "",
         username: "",
-        phone: "",
+        email: "",
         password: "",
     });
 
@@ -161,10 +161,10 @@ export default function SignUpPage() {
             newErrors.username = "Username can only contain lowercase letters, numbers, and underscores";
         }
 
-        if (!form.phone.trim()) {
-            newErrors.phone = "Phone number is required";
-        } else if (!/^[\+]?[1-9][\d]{0,15}$/.test(form.phone.replace(/\s/g, ''))) {
-            newErrors.phone = "Please enter a valid phone number";
+        if (!form.email.trim()) {
+            newErrors.email = "Email address is required";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+            newErrors.email = "Please enter a valid email address";
         }
 
         if (!form.password) {
@@ -193,15 +193,15 @@ export default function SignUpPage() {
         try {
             await register(form);
             // Clear form on success
-            setForm({ name: "", username: "", phone: "", password: "" });
+            setForm({ name: "", username: "", email: "", password: "" });
         } catch (err: any) {
             console.error("❌ Registration error:", err);
             
             // Handle specific error cases
             if (err.message === "Username already in use") {
                 setErrors({ username: "This username is already taken" });
-            } else if (err.message && err.message.includes("phone")) {
-                setErrors({ phone: "This phone number is already registered" });
+            } else if (err.message && err.message.includes("email")) {
+                setErrors({ email: "This email address is already registered" });
             } else {
                 setErrors({ general: err.message || "Registration failed. Please try again." });
             }
@@ -278,21 +278,21 @@ export default function SignUpPage() {
                                 {errors.username && <p className="text-red-400 text-sm mt-1">{errors.username}</p>}
                             </div>
                             
-                            {/* PHONE NUMBER INPUT - NOT EMAIL */}
+                            {/* EMAIL INPUT */}
                             <div>
                                 <div className="relative">
-                                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                                     <input 
-                                        type="tel" 
-                                        name="phone" 
-                                        placeholder="📱 Mobile Phone Number"
-                                        value={form.phone} 
+                                        type="email" 
+                                        name="email" 
+                                        placeholder="📧 Email Address"
+                                        value={form.email} 
                                         onChange={handleChange} 
-                                        className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.phone ? 'border border-red-500' : ''}`} 
+                                        className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.email ? 'border border-red-500' : ''}`} 
                                         required
                                     />
                                 </div>
-                                {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
+                                {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
                             </div>
                             
                             {/* Password Input */}

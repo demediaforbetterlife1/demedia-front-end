@@ -15,7 +15,7 @@ interface ProfileData {
     name: string;
     username: string;
     bio: string;
-    phone?: string;
+    email?: string;
     dateOfBirth?: string;
     location?: string;
     website?: string;
@@ -37,7 +37,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
         name: user?.name || "",
         username: user?.username || "",
         bio: user?.bio || "",
-        phone: user?.phone || "",
+        email: user?.email || "",
         dateOfBirth: user?.dateOfBirth || "",
         location: "",
         website: "",
@@ -310,14 +310,14 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium theme-text-primary mb-2">
-                                            Phone Number
+                                            Email Address
                                         </label>
                                         <input
-                                            type="tel"
-                                            value={profileData.phone}
-                                            onChange={(e) => handleInputChange('phone', e.target.value)}
+                                            type="email"
+                                            value={profileData.email}
+                                            onChange={(e) => handleInputChange('email', e.target.value)}
                                             className="w-full px-4 py-3 rounded-xl theme-bg-primary border theme-border text-sm outline-none theme-text-primary"
-                                            placeholder="Enter your phone number"
+                                            placeholder="Enter your email address"
                                         />
                                     </div>
                                     <div>
