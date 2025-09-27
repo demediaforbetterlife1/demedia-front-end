@@ -395,7 +395,6 @@ export default function Navbar() {
                 >
                     {mobileOpen ? <IoClose size={20} /> : <IoMenu size={20} />}
                 </button>
-
             </motion.nav>
 
             <AnimatePresence>
@@ -639,9 +638,6 @@ export default function Navbar() {
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </motion.div>
-
-
         </>
     );
 }
