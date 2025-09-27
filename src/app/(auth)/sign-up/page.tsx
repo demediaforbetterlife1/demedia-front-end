@@ -10,6 +10,7 @@ import { Stars, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
 import { useI18n } from "@/contexts/I18nContext";
+import { Eye, EyeOff, Phone, Lock, User, UserCheck } from "lucide-react";
 
 /* ---------------- BACKGROUND 3D ---------------- */
 function RotatingPlanet({
@@ -125,11 +126,12 @@ export default function SignUpPage() {
     const [form, setForm] = useState({
         name: "",
         username: "",
-        email: "",
+        phone: "",
         password: "",
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const { t } = useI18n();
     const [errors, setErrors] = useState<{[key: string]: string}>({});
 
@@ -155,12 +157,14 @@ export default function SignUpPage() {
             newErrors.username = "Username is required";
         } else if (form.username.length < 3) {
             newErrors.username = "Username must be at least 3 characters";
+        } else if (!/^[a-z0-9_]+$/.test(form.username)) {
+            newErrors.username = "Username can only contain lowercase letters, numbers, and underscores";
         }
 
-        if (!form.email.trim()) {
-            newErrors.email = "Email is required";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-            newErrors.email = "Please enter a valid email address";
+        if (!form.phone.trim()) {
+            newErrors.phone = "Phone number is required";
+        } else if (!/^[\+]?[1-9][\d]{0,15}$/.test(form.phone.replace(/\s/g, ''))) {
+            newErrors.phone = "Please enter a valid phone number";
         }
 
         if (!form.password) {
@@ -189,15 +193,15 @@ export default function SignUpPage() {
         try {
             await register(form);
             // Clear form on success
-            setForm({ name: "", username: "", email: "", password: "" });
+            setForm({ name: "", username: "", phone: "", password: "" });
         } catch (err: any) {
             console.error("❌ Registration error:", err);
             
             // Handle specific error cases
             if (err.message === "Username already in use") {
                 setErrors({ username: "This username is already taken" });
-            } else if (err.message && err.message.includes("email")) {
-                setErrors({ email: "This email is already registered" });
+            } else if (err.message && err.message.includes("phone")) {
+                setErrors({ phone: "This phone number is already registered" });
             } else {
                 setErrors({ general: err.message || "Registration failed. Please try again." });
             }
@@ -240,50 +244,72 @@ export default function SignUpPage() {
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <input 
-                                    type="text" 
-                                    name="name" 
-                                    placeholder={"Full Name"} 
-                                    value={form.name} 
-                                    onChange={handleChange} 
-                                    className={`w-full px-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.name ? 'border border-red-500' : ''}`} 
-                                />
+                                <div className="relative">
+                                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                    <input 
+                                        type="text" 
+                                        name="name" 
+                                        placeholder={"Full Name"} 
+                                        value={form.name} 
+                                        onChange={handleChange} 
+                                        className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.name ? 'border border-red-500' : ''}`} 
+                                    />
+                                </div>
                                 {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
                             </div>
                             
                             <div>
-                                <input 
-                                    type="text" 
-                                    name="username" 
-                                    placeholder={"Username"} 
-                                    value={form.username} 
-                                    onChange={handleChange} 
-                                    className={`w-full px-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.username ? 'border border-red-500' : ''}`} 
-                                />
+                                <div className="relative">
+                                    <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                    <input 
+                                        type="text" 
+                                        name="username" 
+                                        placeholder={"Username (lowercase only)"} 
+                                        value={form.username} 
+                                        onChange={(e) => {
+                                            const value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                                            setForm({ ...form, username: value });
+                                        }}
+                                        className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.username ? 'border border-red-500' : ''}`} 
+                                    />
+                                </div>
                                 {errors.username && <p className="text-red-400 text-sm mt-1">{errors.username}</p>}
                             </div>
                             
                             <div>
-                                <input 
-                                    type="email" 
-                                    name="email" 
-                                    placeholder={t('auth.email','Email Address')} 
-                                    value={form.email} 
-                                    onChange={handleChange} 
-                                    className={`w-full px-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.email ? 'border border-red-500' : ''}`} 
-                                />
-                                {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
+                                <div className="relative">
+                                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                    <input 
+                                        type="tel" 
+                                        name="phone" 
+                                        placeholder={t('auth.phone','Phone Number')} 
+                                        value={form.phone} 
+                                        onChange={handleChange} 
+                                        className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.phone ? 'border border-red-500' : ''}`} 
+                                    />
+                                </div>
+                                {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
                             </div>
                             
                             <div>
-                                <input 
-                                    type="password" 
-                                    name="password" 
-                                    placeholder={t('auth.password','Password')} 
-                                    value={form.password} 
-                                    onChange={handleChange} 
-                                    className={`w-full px-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.password ? 'border border-red-500' : ''}`} 
-                                />
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                    <input 
+                                        type={showPassword ? "text" : "password"} 
+                                        name="password" 
+                                        placeholder={t('auth.password','Password')} 
+                                        value={form.password} 
+                                        onChange={handleChange} 
+                                        className={`w-full pl-12 pr-12 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.password ? 'border border-red-500' : ''}`} 
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-cyan-400 hover:text-cyan-300 transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
                                 {errors.password && <p className="text-red-400 text-sm mt-1">{errors.password}</p>}
                             </div>
 

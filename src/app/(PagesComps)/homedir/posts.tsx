@@ -8,6 +8,7 @@ import Suggestions from "@/app/(PagesComps)/homedir/suggestions";
 import { contentService } from "@/services/contentService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
+import { useNotifications } from "@/components/NotificationProvider";
 
 type PostType = {
     id: number;
@@ -25,6 +26,7 @@ export default function Posts() {
     const [error, setError] = useState<string | null>(null);
     const { user } = useAuth();
     const { t } = useI18n();
+    const { showSuccess, showError } = useNotifications();
 
     useEffect(() => {
         const abort = new AbortController();
@@ -80,27 +82,34 @@ export default function Posts() {
         }
     };
 
-    const handleComment = (postId: number) => {
-        // TODO: Implement comment modal or redirect to comment section
+    const handleComment = async (postId: number) => {
+        // TODO: Implement comment modal
         console.log('Comment on post:', postId);
     };
 
     const handleShare = async (postId: number) => {
         try {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            const shareData = {
+                title: 'Check out this post on DeMedia',
+                text: post.content,
+                url: `${window.location.origin}/post/${postId}`
+            };
+
             if (navigator.share) {
-                await navigator.share({
-                    title: 'Check out this post on DeMedia',
-                    url: window.location.href,
-                });
+                await navigator.share(shareData);
             } else {
-                // Fallback: copy to clipboard
-                await navigator.clipboard.writeText(window.location.href);
-                alert('Link copied to clipboard!');
+                await navigator.clipboard.writeText(shareData.url);
+                showSuccess('Link Copied!', 'Post link copied to clipboard');
             }
         } catch (error) {
             console.error('Error sharing post:', error);
         }
     };
+
+
 
     if (loading) return <p className="text-center theme-text-muted mt-10">{t('posts.loading','Loading posts...')}</p>;
     if (error) return <p className="text-center text-red-400 mt-10">{t('posts.error','Error')}: {error}</p>;

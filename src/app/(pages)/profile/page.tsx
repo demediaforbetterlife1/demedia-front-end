@@ -14,6 +14,7 @@ import {
 import { getUserProfile } from "../../../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams } from "next/navigation";
+import EditProfileModal from "@/app/layoutElementsComps/navdir/EditProfileModal";
 
 interface Story {
     id: number;
@@ -50,6 +51,7 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [busyFollow, setBusyFollow] = useState<boolean>(false);
+    const [showEditModal, setShowEditModal] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -288,6 +290,7 @@ export default function ProfilePage() {
                         <>
                             <button
                                 type="button"
+                                onClick={() => setShowEditModal(true)}
                                 className="p-2 rounded-full hover:bg-gray-800 text-white"
                                 title="Edit Profile"
                             >
@@ -328,6 +331,7 @@ export default function ProfilePage() {
                     {isOwnProfile ? (
                         <motion.button
                             type="button"
+                            onClick={() => setShowEditModal(true)}
                             whileTap={{ scale: 0.95 }}
                             className="px-6 py-2 rounded-full font-semibold shadow-md transition text-sm bg-indigo-500 text-white hover:bg-indigo-600"
                         >
@@ -490,6 +494,15 @@ export default function ProfilePage() {
                     )}
                 </AnimatePresence>
             </div>
+
+            <EditProfileModal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                onProfileUpdated={(updatedProfile) => {
+                    setProfile(prev => prev ? { ...prev, ...updatedProfile } : null);
+                    setShowEditModal(false);
+                }}
+            />
         </div>
     );
 }

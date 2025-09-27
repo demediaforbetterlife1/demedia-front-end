@@ -10,6 +10,7 @@ import { Stars, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
 import { useI18n } from "@/contexts/I18nContext";
+import { Eye, EyeOff, Phone, Lock } from "lucide-react";
 
 /* ---------------- BACKGROUND 3D ---------------- */
 function RotatingPlanet({
@@ -134,11 +135,12 @@ function SpaceBackground() {
 
 export default function SignIn() {
     const [form, setForm] = useState({
-        email: "",
+        phone: "",
         password: "",
     });
     const [remember, setRemember] = useState<boolean>(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const { t } = useI18n();
     const [error, setError] = useState("");
 
@@ -154,9 +156,9 @@ export default function SignIn() {
 
     useEffect(() => {
         try {
-            const saved = localStorage.getItem('rememberEmail');
+            const saved = localStorage.getItem('rememberPhone');
             if (saved) {
-                setForm((f) => ({ ...f, email: saved }));
+                setForm((f) => ({ ...f, phone: saved }));
                 setRemember(true);
             }
         } catch {}
@@ -168,11 +170,11 @@ export default function SignIn() {
         setError("");
 
         try {
-            await login(form.email, form.password);
+            await login(form.phone, form.password);
             if (remember) {
-                localStorage.setItem('rememberEmail', form.email);
+                localStorage.setItem('rememberPhone', form.phone);
             } else {
-                localStorage.removeItem('rememberEmail');
+                localStorage.removeItem('rememberPhone');
             }
         } catch (err: any) {
             setError(err.message || "Login failed");
@@ -225,24 +227,37 @@ export default function SignIn() {
                         </h2>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <input
-                                type="email"
-                                name="email"
-                                placeholder={t('auth.email', 'Email Address')}
-                                value={form.email}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                                required
-                            />
-                            <input
-                                type="password"
-                                name="password"
-                                placeholder={t('auth.password', 'Password')}
-                                value={form.password}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                                required
-                            />
+                            <div className="relative">
+                                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                <input
+                                    type="tel"
+                                    name="phone"
+                                    placeholder={t('auth.phone', 'Phone Number')}
+                                    value={form.phone}
+                                    onChange={handleChange}
+                                    className="w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                                    required
+                                />
+                            </div>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    name="password"
+                                    placeholder={t('auth.password', 'Password')}
+                                    value={form.password}
+                                    onChange={handleChange}
+                                    className="w-full pl-12 pr-12 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-cyan-400 hover:text-cyan-300 transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
                             <label className="flex items-center space-x-2 text-cyan-100 text-sm">
                                 <input
                                     type="checkbox"

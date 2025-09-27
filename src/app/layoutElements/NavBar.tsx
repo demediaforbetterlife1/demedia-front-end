@@ -43,6 +43,7 @@ export default function Navbar() {
         isSearching, 
         error: searchError,
         handleSearchInputChange, 
+        handleSearchSubmit,
         hideSearchResults 
     } = useSearch();
 
@@ -406,6 +407,11 @@ export default function Navbar() {
                                         placeholder="Search users, posts..."
                                         value={searchQuery}
                                         onChange={handleSearchInputChange}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                handleSearchSubmit(searchQuery);
+                                            }
+                                        }}
                                         onBlur={() => setTimeout(() => hideSearchResults(), 200)}
                                         className="w-full px-4 py-2 rounded-full theme-bg-tertiary/60 border theme-border text-sm outline-none theme-text-primary"
                                     />

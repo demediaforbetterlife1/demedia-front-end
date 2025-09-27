@@ -87,6 +87,13 @@ export const useSearch = () => {
     debouncedSearch(query);
   }, [debouncedSearch]);
 
+  const handleSearchSubmit = useCallback((query: string) => {
+    if (query.trim()) {
+      // Navigate to search results page
+      window.location.href = `/search?q=${encodeURIComponent(query.trim())}`;
+    }
+  }, []);
+
   const clearSearch = useCallback(() => {
     setSearchQuery('');
     setSearchResults([]);
@@ -108,6 +115,7 @@ export const useSearch = () => {
     isSearching,
     error,
     handleSearchInputChange,
+    handleSearchSubmit,
     clearSearch,
     hideSearchResults,
     search,

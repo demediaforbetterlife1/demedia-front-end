@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AuthGuard } from "@/components/AuthGuard";
 import { AnimatedStars } from "@/components/AnimatedStars";
 import { I18nProvider } from "@/contexts/I18nContext";
+import NotificationProvider from "@/components/NotificationProvider";
 
 
 const geistSans = Geist({
@@ -63,11 +64,13 @@ export default function RootLayout({
         <ThemeProvider>
           <I18nProvider>
             <AuthProvider>
-              <AuthGuard>
-                <AnimatedStars />
-                <NavbarClient />
-                {children}
-              </AuthGuard>
+              <NotificationProvider>
+                <AuthGuard>
+                  <AnimatedStars />
+                  <NavbarClient />
+                  {children}
+                </AuthGuard>
+              </NotificationProvider>
             </AuthProvider>
           </I18nProvider>
         </ThemeProvider>

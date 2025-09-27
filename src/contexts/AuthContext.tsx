@@ -24,8 +24,8 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (userData: { name: string; username: string; email: string; password: string }) => Promise<boolean>;
+  login: (phone: string, password: string) => Promise<boolean>;
+  register: (userData: { name: string; username: string; phone: string; password: string }) => Promise<boolean>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   completeSetup: () => void;
@@ -93,12 +93,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (phone: string, password: string): Promise<boolean> => {
     try {
       const res = await apiFetch(`/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ phone, password }),
       });
 
       if (res.ok) {
@@ -145,7 +145,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (userData: { name: string; username: string; email: string; password: string }): Promise<boolean> => {
+  const register = async (userData: { name: string; username: string; phone: string; password: string }): Promise<boolean> => {
     try {
       const res = await apiFetch(`/api/auth/sign-up`, {
         method: 'POST',

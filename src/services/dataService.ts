@@ -265,8 +265,13 @@ class DataService {
 
   async viewStory(storyId: string): Promise<void> {
     try {
+      const userId = localStorage.getItem('userId');
       await this.makeRequest(`/api/stories/${storyId}/view`, {
         method: 'POST',
+        body: JSON.stringify({ userId }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     } catch (err) {
       // Backend may not implement this endpoint yet; fail silently
