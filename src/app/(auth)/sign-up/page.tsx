@@ -282,7 +282,7 @@ export default function SignUpPage() {
                                     <input 
                                         type="tel" 
                                         name="phone" 
-                                        placeholder={t('auth.phone','Phone Number')} 
+                                        placeholder="Phone Number" 
                                         value={form.phone} 
                                         onChange={handleChange} 
                                         className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.phone ? 'border border-red-500' : ''}`} 
