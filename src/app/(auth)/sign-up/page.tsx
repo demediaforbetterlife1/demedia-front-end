@@ -243,13 +243,14 @@ export default function SignUpPage() {
                         <h2 className="text-3xl font-bold text-center text-cyan-200 mb-6">Create Your Account And Join DeMedia 🚀</h2>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
+                            {/* Full Name Input */}
                             <div>
                                 <div className="relative">
                                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                                     <input 
                                         type="text" 
                                         name="name" 
-                                        placeholder={"Full Name"} 
+                                        placeholder="Full Name" 
                                         value={form.name} 
                                         onChange={handleChange} 
                                         className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.name ? 'border border-red-500' : ''}`} 
@@ -258,13 +259,14 @@ export default function SignUpPage() {
                                 {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
                             </div>
                             
+                            {/* Username Input */}
                             <div>
                                 <div className="relative">
                                     <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                                     <input 
                                         type="text" 
                                         name="username" 
-                                        placeholder={"Username (lowercase only)"} 
+                                        placeholder="Username (lowercase only)" 
                                         value={form.username} 
                                         onChange={(e) => {
                                             const value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -276,28 +278,31 @@ export default function SignUpPage() {
                                 {errors.username && <p className="text-red-400 text-sm mt-1">{errors.username}</p>}
                             </div>
                             
+                            {/* PHONE NUMBER INPUT - NOT EMAIL */}
                             <div>
                                 <div className="relative">
                                     <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                                     <input 
                                         type="tel" 
                                         name="phone" 
-                                        placeholder="Phone Number" 
+                                        placeholder="📱 Mobile Phone Number"
                                         value={form.phone} 
                                         onChange={handleChange} 
                                         className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.phone ? 'border border-red-500' : ''}`} 
+                                        required
                                     />
                                 </div>
                                 {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
                             </div>
                             
+                            {/* Password Input */}
                             <div>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                                     <input 
                                         type={showPassword ? "text" : "password"} 
                                         name="password" 
-                                        placeholder={t('auth.password','Password')} 
+                                        placeholder="Password" 
                                         value={form.password} 
                                         onChange={handleChange} 
                                         className={`w-full pl-12 pr-12 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.password ? 'border border-red-500' : ''}`} 
@@ -326,12 +331,12 @@ export default function SignUpPage() {
                                 disabled={isSubmitting}
                                 className="w-full py-3 rounded-xl bg-cyan-500 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? t('auth.creatingAccount','Creating Account...') : t('auth.signUp','Sign Up')}
+                                {isSubmitting ? 'Creating Account...' : 'Sign Up'}
                             </motion.button>
                         </form>
 
                         <p className="text-center text-cyan-100 mt-6 text-sm sm:text-base">
-                            {t('auth.haveAccount','Already have an account?')} <a href="/sign-in" className="text-cyan-300 hover:underline">{t('auth.login','Login')}</a>
+                            Already have an account? <a href="/sign-in" className="text-cyan-300 hover:underline">Login</a>
                         </p>
                     </div>
                 </motion.div>
