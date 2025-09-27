@@ -15,7 +15,6 @@ interface ProfileData {
     name: string;
     username: string;
     bio: string;
-    email: string;
     phone?: string;
     dateOfBirth?: string;
     location?: string;
@@ -38,7 +37,6 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
         name: user?.name || "",
         username: user?.username || "",
         bio: user?.bio || "",
-        email: user?.email || "",
         phone: user?.phone || "",
         dateOfBirth: user?.dateOfBirth || "",
         location: "",
@@ -310,18 +308,6 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                             {/* Contact Tab */}
                             {activeTab === "contact" && (
                                 <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium theme-text-primary mb-2">
-                                            Email Address
-                                        </label>
-                                        <input
-                                            type="email"
-                                            value={profileData.email}
-                                            onChange={(e) => handleInputChange('email', e.target.value)}
-                                            className="w-full px-4 py-3 rounded-xl theme-bg-primary border theme-border text-sm outline-none theme-text-primary"
-                                            placeholder="Enter your email"
-                                        />
-                                    </div>
                                     <div>
                                         <label className="block text-sm font-medium theme-text-primary mb-2">
                                             Phone Number

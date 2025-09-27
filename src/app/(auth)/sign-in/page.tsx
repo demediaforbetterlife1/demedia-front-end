@@ -229,27 +229,27 @@ export default function SignIn() {
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="relative">
                                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
-                                <input
+                            <input
                                     type="tel"
                                     name="phone"
                                     placeholder={t('auth.phone', 'Phone Number')}
                                     value={form.phone}
-                                    onChange={handleChange}
+                                onChange={handleChange}
                                     className="w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                                    required
-                                />
+                                required
+                            />
                             </div>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
-                                <input
+                            <input
                                     type={showPassword ? "text" : "password"}
-                                    name="password"
-                                    placeholder={t('auth.password', 'Password')}
-                                    value={form.password}
-                                    onChange={handleChange}
+                                name="password"
+                                placeholder={t('auth.password', 'Password')}
+                                value={form.password}
+                                onChange={handleChange}
                                     className="w-full pl-12 pr-12 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                                    required
-                                />
+                                required
+                            />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
