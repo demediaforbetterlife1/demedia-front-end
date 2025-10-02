@@ -218,6 +218,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Re-throw the error with proper message
       if (error instanceof Error) {
+        // Fix the "Something went wrong" error specifically
+        if (error.message === 'Something went wrong') {
+          throw new Error('Registration failed. Please try a different username or email.');
+        }
         throw error;
       } else {
         throw new Error(error?.message || 'Registration failed. Please try again.');

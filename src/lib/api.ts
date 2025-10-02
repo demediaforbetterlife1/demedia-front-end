@@ -24,7 +24,8 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
 
   // Add cache-busting for development
   const cacheBuster = Date.now();
-  const url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}cb=${cacheBuster}`;
+  const version = 'v2.0.0'; // Force cache invalidation
+  const url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}cb=${cacheBuster}&v=${version}`;
 
   try {
     console.log('Making API request to:', url);

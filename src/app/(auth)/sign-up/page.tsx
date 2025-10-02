@@ -224,6 +224,10 @@ export default function SignUpPage() {
             } else if (errorMessage.includes("Something went wrong")) {
                 // This is the generic error - show a more helpful message
                 setErrors({ general: "Registration failed. Please try a different username or email." });
+            } else if (errorMessage.includes("Username already in use")) {
+                setErrors({ username: "This username is already taken" });
+            } else if (errorMessage.includes("Email already registered")) {
+                setErrors({ email: "This email address is already registered" });
             } else {
                 // Show the actual error message
                 setErrors({ general: errorMessage || "Registration failed. Please try again." });
