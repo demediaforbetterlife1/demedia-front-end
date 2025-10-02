@@ -22,8 +22,15 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
     headers["Content-Type"] = "application/json";
   }
 
+  // Add cache-busting for development
+  const cacheBuster = Date.now();
+  const url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}cb=${cacheBuster}`;
+
   try {
-    const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    console.log('Making API request to:', url);
+    const res = await fetch(url, { ...options, headers });
+    console.log('API response status:', res.status);
+    
     if (res.status === 401) {
       // Auto logout on unauthorized
       if (typeof window !== "undefined") {
@@ -37,6 +44,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
     }
     return res;
   } catch (err) {
+    console.error('API fetch error:', err);
     if (retryCount > 0) {
       await delay(300 * (3 - retryCount));
       return apiFetch(path, options, retryCount - 1);

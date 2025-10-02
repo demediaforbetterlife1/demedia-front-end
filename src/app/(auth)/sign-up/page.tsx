@@ -209,19 +209,24 @@ export default function SignUpPage() {
             console.error("Error message:", err.message);
             console.error("Error type:", typeof err);
             console.error("Error string:", err.toString());
+            console.error("Full error object:", err);
             
-            // Handle specific error cases
-            if (err.message === "Username already in use") {
+            // Clear any previous errors
+            setErrors({});
+            
+            // Handle specific error cases with better matching
+            const errorMessage = err.message || err.toString() || "";
+            
+            if (errorMessage.includes("Username already in use") || errorMessage.includes("username")) {
                 setErrors({ username: "This username is already taken" });
-            } else if (err.message === "Email already registered") {
+            } else if (errorMessage.includes("Email already registered") || errorMessage.includes("email")) {
                 setErrors({ email: "This email address is already registered" });
-            } else if (err.message && err.message.includes("email")) {
-                setErrors({ email: "This email address is already registered" });
-            } else if (err.message && err.message.includes("username")) {
-                setErrors({ username: "This username is already taken" });
+            } else if (errorMessage.includes("Something went wrong")) {
+                // This is the generic error - show a more helpful message
+                setErrors({ general: "Registration failed. Please try a different username or email." });
             } else {
-                // Show the actual error message instead of generic message
-                setErrors({ general: err.message || err.toString() || "Registration failed. Please try again." });
+                // Show the actual error message
+                setErrors({ general: errorMessage || "Registration failed. Please try again." });
             }
         } finally {
             setIsSubmitting(false);

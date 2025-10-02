@@ -148,14 +148,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (userData: { name: string; username: string; email: string; password: string }): Promise<any> => {
     try {
+      console.log('Starting registration for:', userData.username);
       const res = await apiFetch(`/api/auth/sign-up`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
       });
 
+      console.log('Registration response status:', res.status);
+      console.log('Registration response ok:', res.ok);
+
       if (res.ok) {
         const data = await res.json();
+        console.log('Registration success data:', data);
         const newUser = data.user;
         
         // Store auth data
@@ -180,25 +185,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         return true;
       } else {
-        let message = 'Registration failed';
+        console.log('Registration failed with status:', res.status);
+        let errorText = '';
+        let errorData = null;
+        
         try {
-          const txt = await res.text();
-          console.log('Registration error response:', txt);
-          const parsed = JSON.parse(txt);
-          console.log('Parsed error:', parsed);
-          message = parsed.error || message;
+          errorText = await res.text();
+          console.log('Raw error response:', errorText);
+          errorData = JSON.parse(errorText);
+          console.log('Parsed error data:', errorData);
         } catch (parseError) {
           console.log('Error parsing response:', parseError);
-          message = 'Registration failed. Please try again.';
+          console.log('Using raw error text:', errorText);
         }
+        
+        // Extract the actual error message
+        let message = 'Registration failed';
+        if (errorData && errorData.error) {
+          message = errorData.error;
+        } else if (errorText) {
+          message = errorText;
+        }
+        
+        console.log('Final error message:', message);
         throw new Error(message);
       }
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('Registration error caught:', error);
       console.error('Error type:', typeof error);
       console.error('Error message:', error?.message);
       console.error('Error toString:', error?.toString());
-      throw error;
+      
+      // Re-throw the error with proper message
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error(error?.message || 'Registration failed. Please try again.');
+      }
     }
   };
 
