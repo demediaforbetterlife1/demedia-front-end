@@ -87,7 +87,7 @@ export default function ChatRoom({ chat, currentUserId }: ChatRoomProps) {
             createdAt: new Date().toISOString(),
             status: "sent",
         };
-        await axios.post(`/api/messages/send`, messageData);
+        await axios.post(`/api/messages`, messageData);
         socket.emit("sendMessage", messageData);
         setMessages((prev) => [...prev, messageData]);
         setNewMessage("");

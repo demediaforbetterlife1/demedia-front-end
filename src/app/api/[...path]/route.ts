@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 // Pick backend base URL depending on env
 const getBackendBase = (): string => {
   // Always use the Fly.io backend URL
-  const backendUrl = "https://demedia-back-end-b8ouzq.fly.dev";
+  const backendUrl = "https://demedia-backend.fly.dev";
   console.log("Backend URL:", backendUrl);
   return backendUrl;
 };

@@ -13,7 +13,7 @@ const nextConfig = {
     poweredByHeader: false,
     async rewrites() {
         // Always use the Fly.io backend URL
-        const target = "https://demedia-back-end-b8ouzq.fly.dev";
+        const target = "https://demedia-backend.fly.dev";
         return [
             { source: "/api/:path*", destination: `${target}/api/:path*` },
             { source: "/socket.io/:path*", destination: `${target}/socket.io/:path*` },
