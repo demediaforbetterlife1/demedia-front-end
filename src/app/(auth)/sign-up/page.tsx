@@ -207,6 +207,8 @@ export default function SignUpPage() {
         } catch (err: any) {
             console.error("❌ Registration error:", err);
             console.error("Error message:", err.message);
+            console.error("Error type:", typeof err);
+            console.error("Error string:", err.toString());
             
             // Handle specific error cases
             if (err.message === "Username already in use") {
@@ -218,7 +220,8 @@ export default function SignUpPage() {
             } else if (err.message && err.message.includes("username")) {
                 setErrors({ username: "This username is already taken" });
             } else {
-                setErrors({ general: err.message || "Registration failed. Please try again." });
+                // Show the actual error message instead of generic message
+                setErrors({ general: err.message || err.toString() || "Registration failed. Please try again." });
             }
         } finally {
             setIsSubmitting(false);
