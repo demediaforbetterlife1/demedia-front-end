@@ -135,7 +135,7 @@ function SpaceBackground() {
 
 export default function SignIn() {
     const [form, setForm] = useState({
-        phone: "",
+        email: "",
         password: "",
     });
     const [remember, setRemember] = useState<boolean>(false);
@@ -156,9 +156,9 @@ export default function SignIn() {
 
     useEffect(() => {
         try {
-            const saved = localStorage.getItem('rememberPhone');
+            const saved = localStorage.getItem('rememberEmail');
             if (saved) {
-                setForm((f) => ({ ...f, phone: saved }));
+                setForm((f) => ({ ...f, email: saved }));
                 setRemember(true);
             }
         } catch {}
@@ -170,14 +170,19 @@ export default function SignIn() {
         setError("");
 
         try {
-            await login(form.phone, form.password);
+            await login(form.email, form.password);
             if (remember) {
-                localStorage.setItem('rememberPhone', form.phone);
+                localStorage.setItem('rememberEmail', form.email);
             } else {
-                localStorage.removeItem('rememberPhone');
+                localStorage.removeItem('rememberEmail');
             }
         } catch (err: any) {
-            setError(err.message || "Login failed");
+            // Check if it's an email verification error
+            if (err.message && err.message.includes("verify your email")) {
+                setError("Please verify your email address before logging in. Check your inbox for a verification link.");
+            } else {
+                setError(err.message || "Login failed");
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -230,10 +235,10 @@ export default function SignIn() {
                             <div className="relative">
                                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                             <input
-                                    type="tel"
-                                    name="phone"
-                                    placeholder={t('auth.phone', 'Phone Number')}
-                                    value={form.phone}
+                                    type="email"
+                                    name="email"
+                                    placeholder={t('auth.email', 'Email Address')}
+                                    value={form.email}
                                 onChange={handleChange}
                                     className="w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                                 required
@@ -270,6 +275,16 @@ export default function SignIn() {
                             {error && (
                                 <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
                                     <p className="text-red-400 text-sm">{error}</p>
+                                    {error.includes("verify your email") && (
+                                        <div className="mt-2">
+                                            <a 
+                                                href="/verify-email" 
+                                                className="text-cyan-300 hover:underline text-sm"
+                                            >
+                                                Resend verification email
+                                            </a>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

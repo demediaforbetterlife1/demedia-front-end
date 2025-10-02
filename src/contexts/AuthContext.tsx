@@ -28,6 +28,8 @@ interface AuthContextType {
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   completeSetup: () => void;
+  verifyEmail: (token: string) => Promise<boolean>;
+  resendVerification: (email: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -144,7 +146,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (userData: { name: string; username: string; email: string; password: string }): Promise<boolean> => {
+  const register = async (userData: { name: string; username: string; email: string; password: string }): Promise<any> => {
     try {
       const res = await apiFetch(`/api/auth/sign-up`, {
         method: 'POST',
@@ -164,7 +166,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         setUser(newUser);
         
-        // Redirect to setup
+        // If email verification is required, return the verification data
+        if (data.requiresEmailVerification) {
+          return {
+            requiresEmailVerification: true,
+            verificationToken: data.verificationToken,
+            message: data.message
+          };
+        }
+        
+        // Redirect to setup if no verification needed
         router.push('/SignInSetUp');
         
         return true;
@@ -223,6 +234,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const verifyEmail = async (token: string): Promise<boolean> => {
+    try {
+      const res = await apiFetch(`/api/auth/verify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+
+      if (res.ok) {
+        return true;
+      } else {
+        const data = await res.json();
+        throw new Error(data.error || 'Email verification failed');
+      }
+    } catch (error) {
+      console.error('Email verification error:', error);
+      throw error;
+    }
+  };
+
+  const resendVerification = async (email: string): Promise<boolean> => {
+    try {
+      const res = await apiFetch(`/api/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.ok) {
+        return true;
+      } else {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to resend verification email');
+      }
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -233,6 +284,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       logout,
       updateUser,
       completeSetup,
+      verifyEmail,
+      resendVerification,
     }}>
       {children}
     </AuthContext.Provider>

@@ -132,6 +132,8 @@ export default function SignUpPage() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+    const [verificationToken, setVerificationToken] = useState("");
     const { t } = useI18n();
     const [errors, setErrors] = useState<{[key: string]: string}>({});
 
@@ -191,9 +193,17 @@ export default function SignUpPage() {
         setIsSubmitting(true);
 
         try {
-            await register(form);
-            // Clear form on success
-            setForm({ name: "", username: "", email: "", password: "" });
+            const result = await register(form);
+            // Check if email verification is required
+            if (result && typeof result === 'object' && result.requiresEmailVerification) {
+                setShowVerificationMessage(true);
+                setVerificationToken(result.verificationToken || "");
+                // Clear form on success
+                setForm({ name: "", username: "", email: "", password: "" });
+            } else {
+                // Clear form on success
+                setForm({ name: "", username: "", email: "", password: "" });
+            }
         } catch (err: any) {
             console.error("❌ Registration error:", err);
             
@@ -321,6 +331,46 @@ export default function SignUpPage() {
                             {errors.general && (
                                 <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
                                     <p className="text-red-400 text-sm">{errors.general}</p>
+                                </div>
+                            )}
+
+                            {showVerificationMessage && (
+                                <div className="bg-green-500/20 border border-green-500 rounded-lg p-4">
+                                    <h3 className="text-green-400 font-semibold mb-2">📧 Email Verification Required</h3>
+                                    <p className="text-green-300 text-sm mb-3">
+                                        We've sent a verification link to your email address. Please check your inbox and click the link to verify your account.
+                                    </p>
+                                    {verificationToken && (
+                                        <div className="bg-gray-800/50 rounded p-2 mb-3">
+                                            <p className="text-gray-300 text-xs mb-1">Development Token (for testing):</p>
+                                            <code className="text-cyan-300 text-xs break-all">{verificationToken}</code>
+                                            <div className="mt-2">
+                                                <a 
+                                                    href={`/verify-email?token=${verificationToken}`}
+                                                    className="text-cyan-300 hover:underline text-xs"
+                                                >
+                                                    Click here to verify email (Development)
+                                                </a>
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => {
+                                                setShowVerificationMessage(false);
+                                                router.push('/sign-in');
+                                            }}
+                                            className="px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm hover:bg-cyan-600 transition-colors"
+                                        >
+                                            Go to Login
+                                        </button>
+                                        <button
+                                            onClick={() => setShowVerificationMessage(false)}
+                                            className="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700 transition-colors"
+                                        >
+                                            Try Again
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
