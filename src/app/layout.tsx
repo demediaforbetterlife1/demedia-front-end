@@ -11,6 +11,7 @@ import { AnimatedStars } from "@/components/AnimatedStars";
 import { I18nProvider } from "@/contexts/I18nContext";
 import NotificationProvider from "@/components/NotificationProvider";
 import GlowingPlanets from "@/components/GlowingPlanets";
+import "@/utils/errorHandler";
 
 
 const geistSans = Geist({

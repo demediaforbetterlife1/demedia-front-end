@@ -148,6 +148,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (userData: { name: string; username: string; email: string; password: string }): Promise<any> => {
     try {
+      // Add a wrapper to catch any "Something went wrong" errors
+      return await registerInternal(userData);
+    } catch (error) {
+      // Final catch for any remaining "Something went wrong" errors
+      if (error instanceof Error && error.message.includes('Something went wrong')) {
+        console.log('Final catch: Converting "Something went wrong" to proper error');
+        throw new Error('Registration failed. Please try a different username or email.');
+      }
+      throw error;
+    }
+  };
+
+  const registerInternal = async (userData: { name: string; username: string; email: string; password: string }): Promise<any> => {
+    try {
       console.log('Starting registration for:', userData.username);
       const res = await apiFetch(`/api/auth/sign-up`, {
         method: 'POST',
@@ -219,11 +233,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Re-throw the error with proper message
       if (error instanceof Error) {
         // Fix the "Something went wrong" error specifically
-        if (error.message === 'Something went wrong') {
+        if (error.message === 'Something went wrong' || error.message.includes('Something went wrong')) {
+          console.log('Converting "Something went wrong" to proper error message');
           throw new Error('Registration failed. Please try a different username or email.');
         }
         throw error;
       } else {
+        // Handle non-Error objects that might contain "Something went wrong"
+        const errorStr = error?.toString() || '';
+        if (errorStr.includes('Something went wrong')) {
+          console.log('Converting non-Error "Something went wrong" to proper error message');
+          throw new Error('Registration failed. Please try a different username or email.');
+        }
         throw new Error(error?.message || 'Registration failed. Please try again.');
       }
     }
