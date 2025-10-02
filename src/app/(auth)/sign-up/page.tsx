@@ -206,12 +206,17 @@ export default function SignUpPage() {
             }
         } catch (err: any) {
             console.error("❌ Registration error:", err);
+            console.error("Error message:", err.message);
             
             // Handle specific error cases
             if (err.message === "Username already in use") {
                 setErrors({ username: "This username is already taken" });
+            } else if (err.message === "Email already registered") {
+                setErrors({ email: "This email address is already registered" });
             } else if (err.message && err.message.includes("email")) {
                 setErrors({ email: "This email address is already registered" });
+            } else if (err.message && err.message.includes("username")) {
+                setErrors({ username: "This username is already taken" });
             } else {
                 setErrors({ general: err.message || "Registration failed. Please try again." });
             }

@@ -183,8 +183,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         let message = 'Registration failed';
         try {
           const txt = await res.text();
-          message = (() => { try { return JSON.parse(txt).error || message; } catch { return txt || message; } })();
-        } catch {}
+          console.log('Registration error response:', txt);
+          const parsed = JSON.parse(txt);
+          console.log('Parsed error:', parsed);
+          message = parsed.error || message;
+        } catch (parseError) {
+          console.log('Error parsing response:', parseError);
+          message = 'Registration failed. Please try again.';
+        }
         throw new Error(message);
       }
     } catch (error) {
