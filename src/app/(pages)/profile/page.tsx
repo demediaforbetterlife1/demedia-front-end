@@ -101,7 +101,7 @@ export default function ProfilePage() {
                     bio: data.bio ?? "",
                     profilePicture: data.profilePicture,
                     coverPicture: data.coverPhoto,
-                    stories: userStories.map((story: any) => ({
+                    stories: userStories.map((story: Story) => ({
                         id: story.id,
                         content: story.content,
                         createdAt: story.createdAt,
