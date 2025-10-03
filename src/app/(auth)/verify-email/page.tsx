@@ -7,14 +7,14 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { CheckCircle, XCircle, Mail, RefreshCw } from "lucide-react";
 
-export default function VerifyPhonePage() {
+export default function VerifyEmailPage() {
     const [isVerifying, setIsVerifying] = useState(false);
     const [verificationStatus, setVerificationStatus] = useState<'pending' | 'success' | 'error'>('pending');
     const [error, setError] = useState("");
-    const [phone, setPhone] = useState("");
+    const [email, setEmail] = useState("");
     const [isResending, setIsResending] = useState(false);
     
-    const { verifyPhone, resendVerification } = useAuth();
+    const { verifyEmail, resendVerification } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
@@ -30,7 +30,7 @@ export default function VerifyPhonePage() {
         setError("");
         
         try {
-            await verifyPhone(verificationToken);
+            await verifyEmail(verificationToken);
             setVerificationStatus('success');
         } catch (err: any) {
             setVerificationStatus('error');
@@ -41,8 +41,8 @@ export default function VerifyPhonePage() {
     };
 
     const handleResendVerification = async () => {
-        if (!phone) {
-            setError("Please enter your phone number");
+        if (!email) {
+            setError("Please enter your email address");
             return;
         }
         
@@ -50,11 +50,11 @@ export default function VerifyPhonePage() {
         setError("");
         
         try {
-            await resendVerification(phone);
+            await resendVerification(email);
             setError(""); // Clear any previous errors
-            alert("Verification code sent successfully!");
+            alert("Verification email sent successfully!");
         } catch (err: any) {
-            setError(err.message || "Failed to resend verification code");
+            setError(err.message || "Failed to resend verification email");
         } finally {
             setIsResending(false);
         }
@@ -93,16 +93,16 @@ export default function VerifyPhonePage() {
                                 <div className="text-center">
                                     <Mail className="mx-auto text-cyan-400 mb-4" size={48} />
                                     <p className="text-cyan-100 mb-4">
-                                        Enter your phone number to resend the verification code
+                                        Enter your email address to resend the verification email
                                     </p>
                                 </div>
                                 
                                 <div>
                                     <input
-                                        type="tel"
-                                        placeholder="Enter your phone number"
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
+                                        type="email"
+                                        placeholder="Enter your email address"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
                                         className="w-full px-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                                     />
                                 </div>
