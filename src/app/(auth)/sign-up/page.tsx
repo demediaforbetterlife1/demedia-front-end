@@ -126,7 +126,7 @@ export default function SignUpPage() {
     const [form, setForm] = useState({
         name: "",
         username: "",
-        phone: "",
+        email: "",
         password: "",
     });
 
@@ -163,10 +163,10 @@ export default function SignUpPage() {
             newErrors.username = "Username can only contain lowercase letters, numbers, and underscores";
         }
 
-        if (!form.phone.trim()) {
-            newErrors.phone = "Phone number is required";
-        } else if (!/^\+?[1-9]\d{1,14}$/.test(form.phone)) {
-            newErrors.phone = "Please enter a valid phone number (e.g., +1234567890)";
+        if (!form.email.trim()) {
+            newErrors.email = "Email address is required";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+            newErrors.email = "Please enter a valid email address";
         }
 
         if (!form.password) {
@@ -223,7 +223,7 @@ export default function SignUpPage() {
                 setErrors({ email: "This email address is already registered" });
             } else if (errorMessage.includes("Something went wrong")) {
                 // This is the generic error - show a more helpful message
-                setErrors({ general: "Registration failed. Please try a different username or email." });
+                setErrors({ general: "Registration failed. Please try a different username or email address." });
             } else if (errorMessage.includes("Username already in use")) {
                 setErrors({ username: "This username is already taken" });
             } else if (errorMessage.includes("Email already registered")) {
@@ -305,21 +305,21 @@ export default function SignUpPage() {
                                 {errors.username && <p className="text-red-400 text-sm mt-1">{errors.username}</p>}
                             </div>
                             
-                            {/* PHONE INPUT */}
+                            {/* EMAIL INPUT */}
                             <div>
                                 <div className="relative">
-                                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                                     <input 
-                                        type="tel" 
-                                        name="phone" 
-                                        placeholder="📱 Phone Number (e.g., +1234567890)"
-                                        value={form.phone} 
+                                        type="email" 
+                                        name="email" 
+                                        placeholder="📧 Email Address"
+                                        value={form.email} 
                                         onChange={handleChange} 
-                                        className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.phone ? 'border border-red-500' : ''}`} 
+                                        className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.email ? 'border border-red-500' : ''}`} 
                                         required
                                     />
                                 </div>
-                                {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
+                                {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
                             </div>
                             
                             {/* Password Input */}
@@ -355,7 +355,7 @@ export default function SignUpPage() {
                                 <div className="bg-green-500/20 border border-green-500 rounded-lg p-4">
                                     <h3 className="text-green-400 font-semibold mb-2">📧 Email Verification Required</h3>
                                     <p className="text-green-300 text-sm mb-3">
-                                        We've sent a verification link to your email address. Please check your inbox and click the link to verify your account.
+                                        Please verify your email address to complete your account setup. Use the verification token below for development testing.
                                     </p>
                                     {verificationToken && (
                                         <div className="bg-gray-800/50 rounded p-2 mb-3">

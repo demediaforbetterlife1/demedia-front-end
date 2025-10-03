@@ -10,7 +10,7 @@ import { Stars, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
 import { useI18n } from "@/contexts/I18nContext";
-import { Eye, EyeOff, Phone, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 
 /* ---------------- BACKGROUND 3D ---------------- */
 function RotatingPlanet({
@@ -135,7 +135,7 @@ function SpaceBackground() {
 
 export default function SignIn() {
     const [form, setForm] = useState({
-        phone: "",
+        email: "",
         password: "",
     });
     const [remember, setRemember] = useState<boolean>(false);
@@ -156,9 +156,9 @@ export default function SignIn() {
 
     useEffect(() => {
         try {
-            const saved = localStorage.getItem('rememberPhone');
+            const saved = localStorage.getItem('rememberEmail');
             if (saved) {
-                setForm((f) => ({ ...f, phone: saved }));
+                setForm((f) => ({ ...f, email: saved }));
                 setRemember(true);
             }
         } catch {}
@@ -170,16 +170,16 @@ export default function SignIn() {
         setError("");
 
         try {
-            await login(form.phone, form.password);
+            await login(form.email, form.password);
             if (remember) {
-                localStorage.setItem('rememberPhone', form.phone);
+                localStorage.setItem('rememberEmail', form.email);
             } else {
-                localStorage.removeItem('rememberPhone');
+                localStorage.removeItem('rememberEmail');
             }
         } catch (err: any) {
-            // Check if it's a phone verification error
-            if (err.message && err.message.includes("verify your phone")) {
-                setError("Please verify your phone number before logging in. Check your messages for a verification code.");
+            // Check if it's an email verification error
+            if (err.message && err.message.includes("verify your email")) {
+                setError("Please verify your email address before logging in. Check your inbox for a verification link.");
             } else {
             setError(err.message || "Login failed");
             }
@@ -233,12 +233,12 @@ export default function SignIn() {
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                             <input
-                                    type="tel"
-                                    name="phone"
-                                    placeholder={t('auth.phone', 'Phone Number')}
-                                    value={form.phone}
+                                    type="email"
+                                    name="email"
+                                    placeholder={t('auth.email', 'Email Address')}
+                                    value={form.email}
                                 onChange={handleChange}
                                     className="w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                                 required
