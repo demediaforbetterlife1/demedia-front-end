@@ -11,12 +11,12 @@ export default function AccountInfo({
     closeModal: () => void;
 }) {
     const [name, setName] = useState("John Doe");
-    const [email, setEmail] = useState("john@example.com");
+    const [phone, setPhone] = useState("+1234567890");
     const [password, setPassword] = useState("");
 
     const handleSave = () => {
         // هنا تقدر تبعت البيانات للـ backend أو API
-        console.log("Saving:", { name, email, password });
+        console.log("Saving:", { name, phone, password });
         closeModal(); // يقفل الـ modal بعد الحفظ
     };
 
@@ -83,13 +83,13 @@ export default function AccountInfo({
                             />
                         </div>
 
-                        {/* Email Field */}
+                        {/* Phone Field */}
                         <div className="flex flex-col space-y-1">
-                            <label className="text-gray-400 text-sm font-medium">Email</label>
+                            <label className="text-gray-400 text-sm font-medium">Phone Number</label>
                             <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                type="tel"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
                                 className="px-4 py-2 rounded-lg bg-gray-800 text-gray-200 border border-gray-700 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500 outline-none transition"
                             />
                         </div>

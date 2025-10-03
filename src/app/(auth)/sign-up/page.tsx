@@ -10,7 +10,7 @@ import { Stars, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
 import { useI18n } from "@/contexts/I18nContext";
-import { Eye, EyeOff, Mail, Lock, User, UserCheck } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, UserCheck, Phone } from "lucide-react";
 
 /* ---------------- BACKGROUND 3D ---------------- */
 function RotatingPlanet({
@@ -126,7 +126,7 @@ export default function SignUpPage() {
     const [form, setForm] = useState({
         name: "",
         username: "",
-        email: "",
+        phone: "",
         password: "",
     });
 
@@ -163,10 +163,10 @@ export default function SignUpPage() {
             newErrors.username = "Username can only contain lowercase letters, numbers, and underscores";
         }
 
-        if (!form.email.trim()) {
-            newErrors.email = "Email address is required";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-            newErrors.email = "Please enter a valid email address";
+        if (!form.phone.trim()) {
+            newErrors.phone = "Phone number is required";
+        } else if (!/^\+?[1-9]\d{1,14}$/.test(form.phone)) {
+            newErrors.phone = "Please enter a valid phone number (e.g., +1234567890)";
         }
 
         if (!form.password) {
@@ -201,8 +201,8 @@ export default function SignUpPage() {
                 // Clear form on success
                 setForm({ name: "", username: "", email: "", password: "" });
             } else {
-                // Clear form on success
-                setForm({ name: "", username: "", email: "", password: "" });
+            // Clear form on success
+            setForm({ name: "", username: "", email: "", password: "" });
             }
         } catch (err: any) {
             console.error("❌ Registration error:", err);
@@ -305,21 +305,21 @@ export default function SignUpPage() {
                                 {errors.username && <p className="text-red-400 text-sm mt-1">{errors.username}</p>}
                             </div>
                             
-                            {/* EMAIL INPUT */}
+                            {/* PHONE INPUT */}
                             <div>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                                     <input 
-                                        type="email" 
-                                        name="email" 
-                                        placeholder="📧 Email Address"
-                                        value={form.email} 
+                                        type="tel" 
+                                        name="phone" 
+                                        placeholder="📱 Phone Number (e.g., +1234567890)"
+                                        value={form.phone} 
                                         onChange={handleChange} 
-                                        className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.email ? 'border border-red-500' : ''}`} 
+                                        className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.phone ? 'border border-red-500' : ''}`} 
                                         required
                                     />
                                 </div>
-                                {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
+                                {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
                             </div>
                             
                             {/* Password Input */}

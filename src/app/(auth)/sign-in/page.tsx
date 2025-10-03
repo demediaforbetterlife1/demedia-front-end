@@ -135,7 +135,7 @@ function SpaceBackground() {
 
 export default function SignIn() {
     const [form, setForm] = useState({
-        email: "",
+        phone: "",
         password: "",
     });
     const [remember, setRemember] = useState<boolean>(false);
@@ -156,9 +156,9 @@ export default function SignIn() {
 
     useEffect(() => {
         try {
-            const saved = localStorage.getItem('rememberEmail');
+            const saved = localStorage.getItem('rememberPhone');
             if (saved) {
-                setForm((f) => ({ ...f, email: saved }));
+                setForm((f) => ({ ...f, phone: saved }));
                 setRemember(true);
             }
         } catch {}
@@ -170,18 +170,18 @@ export default function SignIn() {
         setError("");
 
         try {
-            await login(form.email, form.password);
+            await login(form.phone, form.password);
             if (remember) {
-                localStorage.setItem('rememberEmail', form.email);
+                localStorage.setItem('rememberPhone', form.phone);
             } else {
-                localStorage.removeItem('rememberEmail');
+                localStorage.removeItem('rememberPhone');
             }
         } catch (err: any) {
-            // Check if it's an email verification error
-            if (err.message && err.message.includes("verify your email")) {
-                setError("Please verify your email address before logging in. Check your inbox for a verification link.");
+            // Check if it's a phone verification error
+            if (err.message && err.message.includes("verify your phone")) {
+                setError("Please verify your phone number before logging in. Check your messages for a verification code.");
             } else {
-                setError(err.message || "Login failed");
+            setError(err.message || "Login failed");
             }
         } finally {
             setIsSubmitting(false);
@@ -235,10 +235,10 @@ export default function SignIn() {
                             <div className="relative">
                                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                             <input
-                                    type="email"
-                                    name="email"
-                                    placeholder={t('auth.email', 'Email Address')}
-                                    value={form.email}
+                                    type="tel"
+                                    name="phone"
+                                    placeholder={t('auth.phone', 'Phone Number')}
+                                    value={form.phone}
                                 onChange={handleChange}
                                     className="w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                                 required
