@@ -24,7 +24,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (userData: { name: string; username: string; email: string; password: string }) => Promise<boolean>;
+  register: (userData: { name: string; username: string; email: string; password: string }) => Promise<boolean | { requiresEmailVerification: boolean; verificationToken?: string; message?: string }>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   completeSetup: () => void;
@@ -146,7 +146,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (userData: { name: string; username: string; email: string; password: string }): Promise<any> => {
+  const register = async (userData: { name: string; username: string; email: string; password: string }): Promise<boolean | { requiresEmailVerification: boolean; verificationToken?: string; message?: string }> => {
     try {
       // Add a wrapper to catch any "Something went wrong" errors
       return await registerInternal(userData);
@@ -160,7 +160,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const registerInternal = async (userData: { name: string; username: string; email: string; password: string }): Promise<any> => {
+  const registerInternal = async (userData: { name: string; username: string; email: string; password: string }): Promise<boolean | { requiresEmailVerification: boolean; verificationToken?: string; message?: string }> => {
     try {
       console.log('Starting registration for:', userData.username);
       const res = await apiFetch(`/api/auth/sign-up`, {
