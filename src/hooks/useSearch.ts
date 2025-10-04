@@ -62,7 +62,7 @@ export const useSearch = () => {
       
       setSearchResults(results);
       setShowSearchResults(true);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Search error:', error);
       setError('Search failed. Please try again.');
       setSearchResults([]);

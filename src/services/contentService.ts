@@ -37,7 +37,7 @@ class ContentService {
                 body: JSON.stringify({ interests: userInterests }),
             });
             return response;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Failed to fetch personalized posts:', error);
             // Fallback to regular posts if personalized fails
             return this.getPosts();
@@ -57,7 +57,7 @@ class ContentService {
                 body: JSON.stringify({ interests: userInterests }),
             });
             return response;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Failed to fetch personalized stories:', error);
             // Fallback to regular stories if personalized fails
             return this.getStories();
@@ -77,7 +77,7 @@ class ContentService {
                 body: JSON.stringify({ interests: userInterests }),
             });
             return response;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Failed to fetch personalized trending:', error);
             return this.getTrending();
         }
@@ -96,7 +96,7 @@ class ContentService {
                 body: JSON.stringify({ interests: userInterests }),
             });
             return response;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Failed to fetch personalized suggestions:', error);
             return this.getSuggestions();
         }

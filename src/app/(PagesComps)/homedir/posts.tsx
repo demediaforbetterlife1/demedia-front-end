@@ -71,7 +71,7 @@ export default function Posts() {
 
             // Call API to like the post
             await contentService.likePost(postId);
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Error liking post:', error);
             // Revert optimistic update on error
             setPosts(prev => prev.map(post => 
@@ -104,7 +104,7 @@ export default function Posts() {
                 await navigator.clipboard.writeText(shareData.url);
                 showSuccess('Link Copied!', 'Post link copied to clipboard');
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Error sharing post:', error);
         }
     };

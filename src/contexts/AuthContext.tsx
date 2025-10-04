@@ -84,7 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } else {
           setUser(null);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Auth check failed:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('userId');
@@ -143,7 +143,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } catch {}
         throw new Error(message);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
       throw error;
     }
@@ -153,7 +153,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // Add a wrapper to catch any "Something went wrong" errors
       return await registerInternal(userData);
-    } catch (error) {
+    } catch (error: unknown) {
       // Final catch for any remaining "Something went wrong" errors
       if (error instanceof Error && error.message.includes('Something went wrong')) {
         console.log('Final catch: Converting "Something went wrong" to proper error');
@@ -248,7 +248,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('Converting non-Error "Something went wrong" to proper error message');
           throw new Error('Registration failed. Please try a different username or email.');
         }
-        throw new Error(error?.message || 'Registration failed. Please try again.');
+        throw new Error(error instanceof Error ? error.message : 'Registration failed. Please try again.');
       }
     }
   };
@@ -286,7 +286,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(prev => prev ? { ...prev, isSetupComplete: true } : null);
         router.push('/home');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error completing setup:', error);
       // Fallback: just update locally
       setUser(prev => prev ? { ...prev, isSetupComplete: true } : null);
@@ -308,7 +308,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const data = await res.json();
         throw new Error(data.error || 'Email verification failed');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Email verification error:', error);
       throw error;
     }
@@ -328,7 +328,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const data = await res.json();
         throw new Error(data.error || 'Failed to resend verification code');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Resend verification error:', error);
       throw error;
     }
