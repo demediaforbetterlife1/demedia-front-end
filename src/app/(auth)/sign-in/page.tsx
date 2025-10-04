@@ -307,10 +307,7 @@ export default function SignIn() {
                         </form>
 
                         <p className="text-center text-cyan-100 mt-6 text-sm sm:text-base">
-                            {t('auth.dontHaveAccount','Don't have an account?')}{' '}
-                            <a href="/sign-up" className="text-cyan-300 hover:underline">
-                                {t('auth.signUp','Sign Up')}
-                            </a>
+                            {t('auth.dontHaveAccount','Don't have an account?')} <a href="/sign-up" className="text-cyan-300 hover:underline">{t('auth.signUp','Sign Up')}</a>
                         </p>
                     </div>
                 </motion.div>
