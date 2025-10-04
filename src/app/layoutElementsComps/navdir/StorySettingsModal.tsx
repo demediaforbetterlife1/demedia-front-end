@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
     X, Settings, Clock, Eye, Heart, MessageCircle, Shield, 
-    Zap, Palette, Music, Location, Hash, AtSign, Star,
+    Zap, Palette, Music, MapPin, Hash, AtSign, Star,
     Timer, Users, Globe, Lock, Bell, Trash2, Save
 } from "lucide-react";
 
