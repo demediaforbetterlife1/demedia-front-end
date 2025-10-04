@@ -63,11 +63,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const token = localStorage.getItem('token');
         const userId = localStorage.getItem('userId');
         
+        console.log('AuthContext checkAuth:', { token: token ? 'exists' : 'null', userId });
+        
         if (token && userId && token !== 'temp-token') {
+          console.log('Making auth check request to /api/auth/me');
           const res = await apiFetch(`/api/auth/me`);
+          console.log('Auth check response status:', res.status, 'ok:', res.ok);
 
           if (res.ok) {
             const userData = await res.json();
+            console.log('Auth check success, user data:', userData);
             setUser(userData.user);
             if (userData.user?.language) {
               setLanguage(userData.user.language);
@@ -82,6 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(null);
           }
         } else {
+          console.log('No valid token/userId, setting user to null');
           setUser(null);
         }
       } catch (error: unknown) {

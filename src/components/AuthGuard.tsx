@@ -16,6 +16,13 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   useEffect(() => {
     if (isLoading) return;
 
+    console.log('AuthGuard Debug:', {
+      isAuthenticated,
+      isLoading,
+      user: user ? { id: user.id, isSetupComplete: user.isSetupComplete } : null,
+      pathname
+    });
+
     const authPages = ['/sign-in', '/sign-up'];
     const setupPages = ['/SignInSetUp', '/interests', '/FinishSetup'];
     const protectedPrefixes = ['/home', '/profile', '/messaging', '/messeging'];
@@ -25,23 +32,29 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     const isProtectedPage = protectedPrefixes.some(p => pathname.startsWith(p));
 
     if (!isAuthenticated) {
+      console.log('Not authenticated, redirecting to sign-up');
       // Not authenticated - redirect to sign-up unless on auth pages
       if (!isAuthPage) {
         router.push('/sign-up');
       }
     } else if (isAuthenticated && user) {
+      console.log('Authenticated, checking setup status:', user.isSetupComplete);
       // Authenticated - check setup status
       if (isAuthPage) {
         // Already authenticated, redirect to appropriate page
         if (user.isSetupComplete) {
+          console.log('Setup complete, redirecting to home');
           router.push('/home');
         } else {
+          console.log('Setup not complete, redirecting to SignInSetUp');
           router.push('/SignInSetUp');
         }
       } else if (isProtectedPage && !user.isSetupComplete) {
+        console.log('Trying to access protected page without setup, redirecting to SignInSetUp');
         // Trying to access protected pages without completing setup
         router.push('/SignInSetUp');
       } else if (isSetupPage && user.isSetupComplete) {
+        console.log('Setup complete but on setup page, redirecting to home');
         // Setup already complete, redirect to home
         router.push('/home');
       }
