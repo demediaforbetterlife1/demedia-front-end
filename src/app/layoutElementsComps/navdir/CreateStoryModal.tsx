@@ -1,7 +1,12 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Camera, Globe, Users, Lock, Clock } from "lucide-react";
+import { 
+    X, Camera, Globe, Users, Lock, Clock, Settings, 
+    Palette, Sparkles, Timer, Eye, Heart, MessageCircle,
+    Zap, Shield, Star, Music, Video, Image as ImageIcon,
+    Mic, Type, Smile, Hash, AtSign, Link, Brush
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
 
@@ -11,39 +16,130 @@ interface CreateStoryModalProps {
     onStoryCreated?: (story: any) => void;
 }
 
+interface StorySettings {
+    visibility: string;
+    duration: number;
+    allowReactions: boolean;
+    allowComments: boolean;
+    showViewCount: boolean;
+    autoDelete: boolean;
+    scheduledPost: boolean;
+    scheduledTime?: string;
+    mood: string;
+    location?: string;
+    tags: string[];
+    music?: string;
+    effects: string[];
+}
+
 const visibilityOptions = [
     {
         id: "public",
         name: "Public",
         description: "Anyone can see your story",
         icon: Globe,
-        color: "text-green-500"
+        color: "text-green-500",
+        bgColor: "bg-green-500/10"
     },
     {
         id: "followers",
         name: "Followers",
         description: "Only your followers can see",
         icon: Users,
-        color: "text-blue-500"
+        color: "text-blue-500",
+        bgColor: "bg-blue-500/10"
     },
     {
         id: "close_friends",
         name: "Close Friends",
         description: "Only close friends can see",
         icon: Lock,
-        color: "text-purple-500"
+        color: "text-purple-500",
+        bgColor: "bg-purple-500/10"
+    },
+    {
+        id: "exclusive",
+        name: "Exclusive",
+        description: "Premium followers only",
+        icon: Star,
+        color: "text-yellow-500",
+        bgColor: "bg-yellow-500/10"
     }
+];
+
+const durationOptions = [
+    { value: 1, label: "1 hour", icon: Timer },
+    { value: 3, label: "3 hours", icon: Timer },
+    { value: 6, label: "6 hours", icon: Timer },
+    { value: 12, label: "12 hours", icon: Timer },
+    { value: 24, label: "24 hours", icon: Timer },
+    { value: 48, label: "48 hours", icon: Timer },
+    { value: 72, label: "72 hours", icon: Timer }
+];
+
+const moodOptions = [
+    { value: "happy", label: "Happy", emoji: "😊", color: "text-yellow-500" },
+    { value: "excited", label: "Excited", emoji: "🤩", color: "text-orange-500" },
+    { value: "chill", label: "Chill", emoji: "😌", color: "text-blue-500" },
+    { value: "mysterious", label: "Mysterious", emoji: "😏", color: "text-purple-500" },
+    { value: "adventurous", label: "Adventurous", emoji: "🏔️", color: "text-green-500" },
+    { value: "creative", label: "Creative", emoji: "🎨", color: "text-pink-500" }
+];
+
+const effectOptions = [
+    { id: "glow", name: "Glow", icon: Sparkles },
+    { id: "blur", name: "Blur", icon: Eye },
+    { id: "vintage", name: "Vintage", icon: Palette },
+    { id: "neon", name: "Neon", icon: Zap },
+    { id: "rainbow", name: "Rainbow", icon: Brush }
 ];
 
 export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: CreateStoryModalProps) {
     const { user } = useAuth();
     const { t } = useI18n();
     const [content, setContent] = useState("");
-    const [visibility, setVisibility] = useState("followers");
-    const [duration, setDuration] = useState(24);
+    const [showSettings, setShowSettings] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
+    const [activeTab, setActiveTab] = useState<"content" | "settings" | "effects">("content");
+    
+    const [settings, setSettings] = useState<StorySettings>({
+        visibility: "followers",
+        duration: 24,
+        allowReactions: true,
+        allowComments: true,
+        showViewCount: true,
+        autoDelete: false,
+        scheduledPost: false,
+        mood: "happy",
+        tags: [],
+        effects: []
+    });
+
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
+    const videoInputRef = useRef<HTMLInputElement>(null);
+
+    // Reset form when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setContent("");
+            setSettings({
+                visibility: "followers",
+                duration: 24,
+                allowReactions: true,
+                allowComments: true,
+                showViewCount: true,
+                autoDelete: false,
+                scheduledPost: false,
+                mood: "happy",
+                tags: [],
+                effects: []
+            });
+            setError("");
+            setActiveTab("content");
+        }
+    }, [isOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -66,8 +162,16 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
                 body: JSON.stringify({
                     userId: user?.id,
                     content: content.trim(),
-                    visibility,
-                    durationHours: duration
+                    visibility: settings.visibility,
+                    durationHours: settings.duration,
+                    settings: {
+                        allowReactions: settings.allowReactions,
+                        allowComments: settings.allowComments,
+                        showViewCount: settings.showViewCount,
+                        mood: settings.mood,
+                        tags: settings.tags,
+                        effects: settings.effects
+                    }
                 })
             });
 
@@ -81,13 +185,9 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
                 onStoryCreated(newStory);
             }
 
-            // Reset form
-            setContent("");
-            setVisibility("followers");
-            setDuration(24);
             onClose();
-        } catch (err: any) {
-            setError(err.message || "Failed to create story");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Failed to create story");
         } finally {
             setIsSubmitting(false);
         }
@@ -102,6 +202,31 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
         setContent(file.name);
     };
 
+    const addTag = (tag: string) => {
+        if (tag && !settings.tags.includes(tag)) {
+            setSettings(prev => ({
+                ...prev,
+                tags: [...prev.tags, tag]
+            }));
+        }
+    };
+
+    const removeTag = (tagToRemove: string) => {
+        setSettings(prev => ({
+            ...prev,
+            tags: prev.tags.filter(tag => tag !== tagToRemove)
+        }));
+    };
+
+    const toggleEffect = (effectId: string) => {
+        setSettings(prev => ({
+            ...prev,
+            effects: prev.effects.includes(effectId)
+                ? prev.effects.filter(e => e !== effectId)
+                : [...prev.effects, effectId]
+        }));
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -110,153 +235,373 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4"
                 onClick={onClose}
             >
                 <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
-                    className="theme-bg-secondary theme-text-primary rounded-2xl p-6 max-w-md w-full theme-shadow border theme-border"
+                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                    className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-3xl p-0 max-w-2xl w-full max-h-[90vh] overflow-hidden border border-gray-700 shadow-2xl"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold theme-text-primary">Create Story</h2>
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full flex items-center justify-center">
+                                <Sparkles className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-white">Create Story</h2>
+                                <p className="text-sm text-gray-400">Share your moment with the world</p>
+                            </div>
+                        </div>
                         <button
                             onClick={onClose}
-                            className="text-2xl hover:opacity-70 transition-opacity theme-text-muted hover:theme-text-primary"
+                            className="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors"
                         >
-                            ×
+                            <X className="w-4 h-4 text-white" />
                         </button>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Content Input */}
-                        <div>
-                            <label className="block text-sm font-medium theme-text-primary mb-2">
-                                Story Content
-                            </label>
-                            <textarea
-                                value={content}
-                                onChange={(e) => setContent(e.target.value)}
-                                placeholder="What's happening?"
-                                className="w-full px-4 py-3 rounded-xl theme-bg-primary border theme-border text-sm outline-none theme-text-primary resize-none"
-                                rows={4}
-                                maxLength={500}
-                            />
-                            <div className="flex justify-between items-center mt-2">
-                                <span className="text-xs theme-text-muted">
-                                    {content.length}/500 characters
-                                </span>
+                    {/* Tab Navigation */}
+                    <div className="flex border-b border-gray-700">
+                        {[
+                            { id: "content", label: "Content", icon: Type },
+                            { id: "settings", label: "Settings", icon: Settings },
+                            { id: "effects", label: "Effects", icon: Sparkles }
+                        ].map((tab) => {
+                            const Icon = tab.icon;
+                            return (
                                 <button
-                                    type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="flex items-center gap-2 text-xs theme-text-muted hover:theme-text-primary transition"
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id as any)}
+                                    className={`flex-1 flex items-center justify-center space-x-2 py-4 px-6 transition-colors ${
+                                        activeTab === tab.id
+                                            ? "text-cyan-400 border-b-2 border-cyan-400 bg-cyan-400/5"
+                                            : "text-gray-400 hover:text-white hover:bg-gray-800/50"
+                                    }`}
                                 >
-                                    <Camera size={14} />
-                                    Add Photo/Video
+                                    <Icon className="w-4 h-4" />
+                                    <span className="text-sm font-medium">{tab.label}</span>
                                 </button>
-                            </div>
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*,video/*"
-                                className="hidden"
-                                onChange={handleFileUpload}
-                            />
-                        </div>
+                            );
+                        })}
+                    </div>
 
-                        {/* Visibility Settings */}
-                        <div>
-                            <label className="block text-sm font-medium theme-text-primary mb-3">
-                                Who can see this story?
-                            </label>
-                            <div className="space-y-2">
-                                {visibilityOptions.map((option) => {
-                                    const Icon = option.icon;
-                                    return (
-                                        <label
-                                            key={option.id}
-                                            className={`flex items-center space-x-3 p-3 rounded-xl cursor-pointer transition ${
-                                                visibility === option.id
-                                                    ? 'theme-bg-tertiary ring-2 ring-cyan-400'
-                                                    : 'theme-bg-primary hover:theme-bg-tertiary'
-                                            }`}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="visibility"
-                                                value={option.id}
-                                                checked={visibility === option.id}
-                                                onChange={(e) => setVisibility(e.target.value)}
-                                                className="sr-only"
-                                            />
-                                            <Icon size={20} className={option.color} />
-                                            <div className="flex-1">
-                                                <p className="font-medium theme-text-primary">
-                                                    {option.name}
-                                                </p>
-                                                <p className="text-sm theme-text-muted">
-                                                    {option.description}
-                                                </p>
-                                            </div>
-                                            {visibility === option.id && (
-                                                <div className="w-5 h-5 bg-cyan-400 rounded-full flex items-center justify-center">
-                                                    <span className="text-white text-xs">✓</span>
-                                                </div>
-                                            )}
-                                        </label>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* Duration Settings */}
-                        <div>
-                            <label className="block text-sm font-medium theme-text-primary mb-2">
-                                Story Duration
-                            </label>
-                            <div className="flex items-center space-x-3">
-                                <Clock size={16} className="theme-text-muted" />
-                                <select
-                                    value={duration}
-                                    onChange={(e) => setDuration(Number(e.target.value))}
-                                    className="flex-1 px-3 py-2 rounded-lg theme-bg-primary border theme-border text-sm outline-none theme-text-primary"
+                    <div className="p-6 max-h-[60vh] overflow-y-auto">
+                        <AnimatePresence mode="wait">
+                            {/* Content Tab */}
+                            {activeTab === "content" && (
+                                <motion.div
+                                    key="content"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-6"
                                 >
-                                    <option value={1}>1 hour</option>
-                                    <option value={6}>6 hours</option>
-                                    <option value={12}>12 hours</option>
-                                    <option value={24}>24 hours</option>
-                                    <option value={48}>48 hours</option>
-                                </select>
-                            </div>
+                                    {/* Content Input */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-white mb-3">
+                                            What's on your mind?
+                                        </label>
+                                        <div className="relative">
+                                            <textarea
+                                                value={content}
+                                                onChange={(e) => setContent(e.target.value)}
+                                                placeholder="Share your story..."
+                                                className="w-full px-4 py-4 rounded-2xl bg-gray-800/50 border border-gray-600 text-white placeholder-gray-400 resize-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 outline-none transition-all"
+                                                rows={6}
+                                                maxLength={1000}
+                                            />
+                                            <div className="absolute bottom-3 right-3 text-xs text-gray-400">
+                                                {content.length}/1000
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Media Upload Options */}
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <button
+                                            onClick={() => imageInputRef.current?.click()}
+                                            className="flex flex-col items-center space-y-2 p-4 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600 hover:border-cyan-400 transition-all group"
+                                        >
+                                            <ImageIcon className="w-6 h-6 text-cyan-400 group-hover:scale-110 transition-transform" />
+                                            <span className="text-sm text-gray-300">Photo</span>
+                                        </button>
+                                        <button
+                                            onClick={() => videoInputRef.current?.click()}
+                                            className="flex flex-col items-center space-y-2 p-4 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600 hover:border-cyan-400 transition-all group"
+                                        >
+                                            <Video className="w-6 h-6 text-purple-400 group-hover:scale-110 transition-transform" />
+                                            <span className="text-sm text-gray-300">Video</span>
+                                        </button>
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="flex flex-col items-center space-y-2 p-4 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600 hover:border-cyan-400 transition-all group"
+                                        >
+                                            <Mic className="w-6 h-6 text-green-400 group-hover:scale-110 transition-transform" />
+                                            <span className="text-sm text-gray-300">Audio</span>
+                                        </button>
+                                    </div>
+
+                                    {/* Hidden file inputs */}
+                                    <input
+                                        ref={imageInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handleFileUpload}
+                                    />
+                                    <input
+                                        ref={videoInputRef}
+                                        type="file"
+                                        accept="video/*"
+                                        className="hidden"
+                                        onChange={handleFileUpload}
+                                    />
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="audio/*"
+                                        className="hidden"
+                                        onChange={handleFileUpload}
+                                    />
+
+                                    {/* Mood Selection */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-white mb-3">
+                                            How are you feeling?
+                                        </label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {moodOptions.map((mood) => (
+                                                <button
+                                                    key={mood.value}
+                                                    onClick={() => setSettings(prev => ({ ...prev, mood: mood.value }))}
+                                                    className={`flex items-center space-x-2 p-3 rounded-xl border transition-all ${
+                                                        settings.mood === mood.value
+                                                            ? "border-cyan-400 bg-cyan-400/10"
+                                                            : "border-gray-600 hover:border-gray-500 bg-gray-800/50"
+                                                    }`}
+                                                >
+                                                    <span className="text-lg">{mood.emoji}</span>
+                                                    <span className="text-sm text-white">{mood.label}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* Settings Tab */}
+                            {activeTab === "settings" && (
+                                <motion.div
+                                    key="settings"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-6"
+                                >
+                                    {/* Visibility Settings */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-white mb-3">
+                                            Who can see this story?
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {visibilityOptions.map((option) => {
+                                                const Icon = option.icon;
+                                                return (
+                                                    <button
+                                                        key={option.id}
+                                                        onClick={() => setSettings(prev => ({ ...prev, visibility: option.id }))}
+                                                        className={`flex items-center space-x-3 p-4 rounded-xl border transition-all ${
+                                                            settings.visibility === option.id
+                                                                ? "border-cyan-400 bg-cyan-400/10"
+                                                                : "border-gray-600 hover:border-gray-500 bg-gray-800/50"
+                                                        }`}
+                                                    >
+                                                        <Icon className={`w-5 h-5 ${option.color}`} />
+                                                        <div className="text-left">
+                                                            <p className="font-medium text-white text-sm">{option.name}</p>
+                                                            <p className="text-xs text-gray-400">{option.description}</p>
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Duration Settings */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-white mb-3">
+                                            How long should your story last?
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {durationOptions.map((option) => {
+                                                const Icon = option.icon;
+                                                return (
+                                                    <button
+                                                        key={option.value}
+                                                        onClick={() => setSettings(prev => ({ ...prev, duration: option.value }))}
+                                                        className={`flex items-center space-x-3 p-3 rounded-xl border transition-all ${
+                                                            settings.duration === option.value
+                                                                ? "border-cyan-400 bg-cyan-400/10"
+                                                                : "border-gray-600 hover:border-gray-500 bg-gray-800/50"
+                                                        }`}
+                                                    >
+                                                        <Icon className="w-4 h-4 text-cyan-400" />
+                                                        <span className="text-sm text-white">{option.label}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Advanced Settings */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-white mb-3">
+                                            Advanced Settings
+                                        </label>
+                                        <div className="space-y-3">
+                                            {[
+                                                { key: "allowReactions", label: "Allow reactions", icon: Heart },
+                                                { key: "allowComments", label: "Allow comments", icon: MessageCircle },
+                                                { key: "showViewCount", label: "Show view count", icon: Eye },
+                                                { key: "autoDelete", label: "Auto-delete after expiry", icon: Shield }
+                                            ].map((setting) => {
+                                                const Icon = setting.icon;
+                                                return (
+                                                    <label key={setting.key} className="flex items-center space-x-3 p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 cursor-pointer transition-colors">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={settings[setting.key as keyof StorySettings] as boolean}
+                                                            onChange={(e) => setSettings(prev => ({ ...prev, [setting.key]: e.target.checked }))}
+                                                            className="w-4 h-4 text-cyan-400 bg-gray-700 border-gray-600 rounded focus:ring-cyan-400 focus:ring-2"
+                                                        />
+                                                        <Icon className="w-4 h-4 text-gray-400" />
+                                                        <span className="text-sm text-white">{setting.label}</span>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* Effects Tab */}
+                            {activeTab === "effects" && (
+                                <motion.div
+                                    key="effects"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-6"
+                                >
+                                    {/* Visual Effects */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-white mb-3">
+                                            Add some magic to your story
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {effectOptions.map((effect) => {
+                                                const Icon = effect.icon;
+                                                const isSelected = settings.effects.includes(effect.id);
+                                                return (
+                                                    <button
+                                                        key={effect.id}
+                                                        onClick={() => toggleEffect(effect.id)}
+                                                        className={`flex items-center space-x-3 p-4 rounded-xl border transition-all ${
+                                                            isSelected
+                                                                ? "border-cyan-400 bg-cyan-400/10"
+                                                                : "border-gray-600 hover:border-gray-500 bg-gray-800/50"
+                                                        }`}
+                                                    >
+                                                        <Icon className={`w-5 h-5 ${isSelected ? "text-cyan-400" : "text-gray-400"}`} />
+                                                        <span className="text-sm text-white">{effect.name}</span>
+                                                        {isSelected && (
+                                                            <div className="w-5 h-5 bg-cyan-400 rounded-full flex items-center justify-center ml-auto">
+                                                                <span className="text-white text-xs">✓</span>
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Tags */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-white mb-3">
+                                            Add tags to make your story discoverable
+                                        </label>
+                                        <div className="flex flex-wrap gap-2 mb-3">
+                                            {settings.tags.map((tag, index) => (
+                                                <span
+                                                    key={index}
+                                                    className="flex items-center space-x-1 px-3 py-1 bg-cyan-400/20 text-cyan-400 rounded-full text-sm"
+                                                >
+                                                    <Hash className="w-3 h-3" />
+                                                    <span>{tag}</span>
+                                                    <button
+                                                        onClick={() => removeTag(tag)}
+                                                        className="ml-1 hover:text-red-400 transition-colors"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <input
+                                            type="text"
+                                            placeholder="Type a tag and press Enter..."
+                                            className="w-full px-4 py-3 rounded-xl bg-gray-800/50 border border-gray-600 text-white placeholder-gray-400 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 outline-none transition-all"
+                                            onKeyPress={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    const input = e.target as HTMLInputElement;
+                                                    addTag(input.value.trim());
+                                                    input.value = '';
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Error Message */}
+                    {error && (
+                        <div className="px-6 py-3 bg-red-500/10 border-t border-red-500/20">
+                            <div className="text-red-400 text-sm text-center">{error}</div>
                         </div>
+                    )}
 
-                        {/* Error Message */}
-                        {error && (
-                            <div className="text-red-400 text-sm text-center py-2">
-                                {error}
-                            </div>
-                        )}
-
-                        {/* Action Buttons */}
+                    {/* Footer Actions */}
+                    <div className="flex items-center justify-between p-6 border-t border-gray-700 bg-gray-900/50">
+                        <div className="flex items-center space-x-2 text-sm text-gray-400">
+                            <Clock className="w-4 h-4" />
+                            <span>{durationOptions.find(d => d.value === settings.duration)?.label}</span>
+                            <span>•</span>
+                            <span>{visibilityOptions.find(v => v.id === settings.visibility)?.name}</span>
+                        </div>
                         <div className="flex space-x-3">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="flex-1 py-2 px-4 theme-bg-primary theme-text-primary rounded-lg hover:theme-bg-tertiary transition-colors"
+                                className="px-6 py-2 text-gray-400 hover:text-white transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
-                                type="submit"
+                                onClick={handleSubmit}
                                 disabled={isSubmitting || !content.trim()}
-                                className="flex-1 py-2 px-4 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-8 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white rounded-xl hover:from-cyan-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                             >
-                                {isSubmitting ? "Creating..." : "Create Story"}
+                                {isSubmitting ? "Creating..." : "Share Story"}
                             </button>
                         </div>
-                    </form>
+                    </div>
                 </motion.div>
             </motion.div>
         </AnimatePresence>
