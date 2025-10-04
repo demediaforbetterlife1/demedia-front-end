@@ -336,6 +336,7 @@ export default function StorySettingsModal({
                                                 </div>
                                             </div>
                                         )}
+                                        </div>
                                     </div>
 
                                     {/* Story Analytics */}
