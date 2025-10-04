@@ -50,7 +50,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onCl
       if (granted) {
         handleSettingChange('pushNotifications', true);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to request permission:', error);
     } finally {
       setIsLoading(false);
@@ -76,7 +76,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onCl
       localStorage.setItem('notificationSettings', JSON.stringify(settings));
       
       onClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save settings:', error);
     } finally {
       setIsLoading(false);

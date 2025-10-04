@@ -79,7 +79,7 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
                     const users = await response.json();
                     setSuggestedUsers(users);
                 }
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error('Failed to fetch suggested users:', error);
             }
         };

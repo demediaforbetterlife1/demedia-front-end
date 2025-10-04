@@ -35,7 +35,7 @@ class NotificationService {
       const permission = await Notification.requestPermission();
       this.permission = permission;
       return permission === 'granted';
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error requesting notification permission:', error);
       return false;
     }
@@ -74,7 +74,7 @@ class NotificationService {
         }
       };
 
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error showing notification:', error);
     }
   }
@@ -112,7 +112,7 @@ class NotificationService {
       const registration = await navigator.serviceWorker.register('/sw.js');
       console.log('Service Worker registered:', registration);
       return registration;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Service Worker registration failed:', error);
       return null;
     }
@@ -134,7 +134,7 @@ class NotificationService {
 
       console.log('Push subscription:', subscription);
       return subscription;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Push subscription failed:', error);
       return null;
     }
@@ -163,7 +163,7 @@ class NotificationService {
       });
 
       return response.ok;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error sending subscription to server:', error);
       return false;
     }

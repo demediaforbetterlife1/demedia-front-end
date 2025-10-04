@@ -67,7 +67,7 @@ class NotificationSettingsService {
   async getNotificationSettings(): Promise<NotificationSettings> {
     try {
       return await this.makeRequest<NotificationSettings>('/api/notifications/settings');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to fetch notification settings:', error);
       // Return default settings if API fails
       return {

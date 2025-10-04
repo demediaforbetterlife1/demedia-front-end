@@ -22,7 +22,7 @@ export const useNotifications = () => {
       try {
         await notificationService.initialize();
         setIsInitialized(true);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Failed to initialize notifications:', error);
       }
     };

@@ -80,7 +80,7 @@ export const PageCustomizer: React.FC<PageCustomizerProps> = ({ isOpen, onClose 
       }
       
       onClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save settings:', error);
     } finally {
       setIsLoading(false);
