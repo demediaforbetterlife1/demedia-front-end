@@ -12,6 +12,7 @@ interface User {
   username: string;
   email: string;
   profilePicture?: string;
+  bio?: string;
   dob?: string;
   age?: number;
   language?: string;
