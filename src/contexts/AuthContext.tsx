@@ -113,6 +113,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (res.ok) {
         const data = await res.json();
+        
+        // Check if email verification is required
+        if (data.requiresEmailVerification) {
+          throw new Error(data.message || "Please verify your email address before logging in");
+        }
+        
         const userData = data.user;
         
         // Store auth data

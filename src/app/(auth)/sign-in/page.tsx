@@ -178,10 +178,10 @@ export default function SignIn() {
             }
         } catch (err: any) {
             // Check if it's an email verification error
-            if (err.message && err.message.includes("verify your email")) {
-                setError("Please verify your email address before logging in. Check your inbox for a verification link.");
+            if (err.message && (err.message.includes("verify your email") || err.message.includes("Verification email sent"))) {
+                setError(t('auth.verificationSent', 'Verification email sent to your Gmail! Please check your inbox and click the verification link to complete login.'));
             } else {
-            setError(err.message || "Login failed");
+            setError(err.message || t('auth.loginFailed', 'Login failed'));
             }
         } finally {
             setIsSubmitting(false);
@@ -269,19 +269,26 @@ export default function SignIn() {
                                     checked={remember}
                                     onChange={(e) => setRemember(e.target.checked)}
                                 />
-                                <span>Remember me</span>
+                                <span>{t('auth.rememberMe', 'Remember me')}</span>
                             </label>
 
                             {error && (
                                 <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
                                     <p className="text-red-400 text-sm">{error}</p>
-                                    {error.includes("verify your email") && (
+                                    {error.includes("Verification email sent") && (
+                                        <div className="mt-2">
+                                            <p className="text-green-300 text-sm">
+                                                {t('auth.checkGmail', '📧 Check your Gmail inbox for the verification link')}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {error.includes("verify your email") && !error.includes("Verification email sent") && (
                                         <div className="mt-2">
                                             <a 
-                                                href="/verify-email" 
+                                                href="/resend-verification" 
                                                 className="text-cyan-300 hover:underline text-sm"
                                             >
-                                                Resend verification email
+                                                {t('auth.resendVerification', 'Resend verification email')}
                                             </a>
                                         </div>
                                     )}
@@ -300,7 +307,7 @@ export default function SignIn() {
                         </form>
 
                         <p className="text-center text-cyan-100 mt-6 text-sm sm:text-base">
-                            {t('auth.noAccount','Don’t have an account?')} {" "}
+                            {t('auth.dontHaveAccount','Don't have an account?')} {" "}
                             <a href="/sign-up" className="text-cyan-300 hover:underline">
                                 {t('auth.signUp','Sign Up')}
                             </a>

@@ -132,8 +132,6 @@ export default function SignUpPage() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [showVerificationMessage, setShowVerificationMessage] = useState(false);
-    const [verificationToken, setVerificationToken] = useState("");
     const { t } = useI18n();
     const [errors, setErrors] = useState<{[key: string]: string}>({});
 
@@ -152,27 +150,27 @@ export default function SignUpPage() {
         const newErrors: {[key: string]: string} = {};
 
         if (!form.name.trim()) {
-            newErrors.name = "Full name is required";
+            newErrors.name = t('auth.nameRequired', 'Full name is required');
         }
 
         if (!form.username.trim()) {
-            newErrors.username = "Username is required";
+            newErrors.username = t('auth.usernameRequired', 'Username is required');
         } else if (form.username.length < 3) {
-            newErrors.username = "Username must be at least 3 characters";
+            newErrors.username = t('auth.usernameMinLength', 'Username must be at least 3 characters');
         } else if (!/^[a-z0-9_]+$/.test(form.username)) {
-            newErrors.username = "Username can only contain lowercase letters, numbers, and underscores";
+            newErrors.username = t('auth.usernameInvalid', 'Username can only contain lowercase letters, numbers, and underscores');
         }
 
         if (!form.email.trim()) {
-            newErrors.email = "Email address is required";
+            newErrors.email = t('auth.emailRequired', 'Email address is required');
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-            newErrors.email = "Please enter a valid email address";
+            newErrors.email = t('auth.emailInvalid', 'Please enter a valid email address');
         }
 
         if (!form.password) {
-            newErrors.password = "Password is required";
+            newErrors.password = t('auth.passwordRequired', 'Password is required');
         } else if (form.password.length < 6) {
-            newErrors.password = "Password must be at least 6 characters";
+            newErrors.password = t('auth.passwordMinLength', 'Password must be at least 6 characters');
         }
 
         setErrors(newErrors);
@@ -193,17 +191,11 @@ export default function SignUpPage() {
         setIsSubmitting(true);
 
         try {
-            const result = await register(form);
-            // Check if email verification is required
-            if (result && typeof result === 'object' && result.requiresEmailVerification) {
-                setShowVerificationMessage(true);
-                setVerificationToken(result.verificationToken || "");
-                // Clear form on success
-                setForm({ name: "", username: "", email: "", password: "" });
-            } else {
+            await register(form);
             // Clear form on success
             setForm({ name: "", username: "", email: "", password: "" });
-            }
+            // Redirect to sign-in page
+            router.push('/sign-in');
         } catch (err: any) {
             console.error("❌ Registration error:", err);
             console.error("Error message:", err.message);
@@ -218,19 +210,19 @@ export default function SignUpPage() {
             const errorMessage = err.message || err.toString() || "";
             
             if (errorMessage.includes("Username already in use") || errorMessage.includes("username")) {
-                setErrors({ username: "This username is already taken" });
+                setErrors({ username: t('auth.usernameTaken', 'This username is already taken') });
             } else if (errorMessage.includes("Email already registered") || errorMessage.includes("email")) {
-                setErrors({ email: "This email address is already registered" });
+                setErrors({ email: t('auth.emailRegistered', 'This email address is already registered') });
             } else if (errorMessage.includes("Something went wrong")) {
                 // This is the generic error - show a more helpful message
-                setErrors({ general: "Registration failed. Please try a different username or email address." });
+                setErrors({ general: t('auth.registrationFailed', 'Registration failed. Please try a different username or email address.') });
             } else if (errorMessage.includes("Username already in use")) {
-                setErrors({ username: "This username is already taken" });
+                setErrors({ username: t('auth.usernameTaken', 'This username is already taken') });
             } else if (errorMessage.includes("Email already registered")) {
-                setErrors({ email: "This email address is already registered" });
+                setErrors({ email: t('auth.emailRegistered', 'This email address is already registered') });
             } else {
                 // Show the actual error message
-                setErrors({ general: errorMessage || "Registration failed. Please try again." });
+                setErrors({ general: errorMessage || t('auth.registrationFailedGeneric', 'Registration failed. Please try again.') });
             }
         } finally {
             setIsSubmitting(false);
@@ -267,7 +259,7 @@ export default function SignUpPage() {
                 >
                     <motion.div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-purple-500 via-cyan-400 to-blue-600 blur-md animate-spin-slow" style={{ zIndex: 0 }} />
                     <div className="relative bg-gradient-to-br from-[#0d1b2a]/80 via-[#1b263b]/70 to-[#0d1b2a]/80 backdrop-blur-2xl rounded-2xl p-8 shadow-2xl z-10">
-                        <h2 className="text-3xl font-bold text-center text-cyan-200 mb-6">Create Your Account And Join DeMedia 🚀</h2>
+                        <h2 className="text-3xl font-bold text-center text-cyan-200 mb-6">{t('auth.welcomeTitle', 'Create Your Account And Join DeMedia')} 🚀</h2>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {/* Full Name Input */}
@@ -277,7 +269,7 @@ export default function SignUpPage() {
                                     <input 
                                         type="text" 
                                         name="name" 
-                                        placeholder="Full Name" 
+                                        placeholder={t('auth.name', 'Full Name')} 
                                         value={form.name} 
                                         onChange={handleChange} 
                                         className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.name ? 'border border-red-500' : ''}`} 
@@ -293,7 +285,7 @@ export default function SignUpPage() {
                                     <input 
                                         type="text" 
                                         name="username" 
-                                        placeholder="Username (lowercase only)" 
+                                        placeholder={t('auth.username', 'Username (lowercase only)')} 
                                         value={form.username} 
                                         onChange={(e) => {
                                             const value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -312,7 +304,7 @@ export default function SignUpPage() {
                                     <input 
                                         type="email" 
                                         name="email" 
-                                        placeholder="📧 Email Address"
+                                        placeholder={t('auth.email', '📧 Email Address')}
                                         value={form.email} 
                                         onChange={handleChange} 
                                         className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.email ? 'border border-red-500' : ''}`} 
@@ -329,7 +321,7 @@ export default function SignUpPage() {
                                     <input 
                                         type={showPassword ? "text" : "password"} 
                                         name="password" 
-                                        placeholder="Password" 
+                                        placeholder={t('auth.password', 'Password')} 
                                         value={form.password} 
                                         onChange={handleChange} 
                                         className={`w-full pl-12 pr-12 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.password ? 'border border-red-500' : ''}`} 
@@ -351,45 +343,6 @@ export default function SignUpPage() {
                                 </div>
                             )}
 
-                            {showVerificationMessage && (
-                                <div className="bg-green-500/20 border border-green-500 rounded-lg p-4">
-                                    <h3 className="text-green-400 font-semibold mb-2">📧 Email Verification Required</h3>
-                                    <p className="text-green-300 text-sm mb-3">
-                                        Please verify your email address to complete your account setup. Use the verification token below for development testing.
-                                    </p>
-                                    {verificationToken && (
-                                        <div className="bg-gray-800/50 rounded p-2 mb-3">
-                                            <p className="text-gray-300 text-xs mb-1">Development Token (for testing):</p>
-                                            <code className="text-cyan-300 text-xs break-all">{verificationToken}</code>
-                                            <div className="mt-2">
-                                                <a 
-                                                    href={`/verify-email?token=${verificationToken}`}
-                                                    className="text-cyan-300 hover:underline text-xs"
-                                                >
-                                                    Click here to verify email (Development)
-                                                </a>
-                                            </div>
-                                        </div>
-                                    )}
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => {
-                                                setShowVerificationMessage(false);
-                                                router.push('/sign-in');
-                                            }}
-                                            className="px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm hover:bg-cyan-600 transition-colors"
-                                        >
-                                            Go to Login
-                                        </button>
-                                        <button
-                                            onClick={() => setShowVerificationMessage(false)}
-                                            className="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700 transition-colors"
-                                        >
-                                            Try Again
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
 
                             <motion.button 
                                 whileHover={{ scale: 1.05 }} 
@@ -398,12 +351,12 @@ export default function SignUpPage() {
                                 disabled={isSubmitting}
                                 className="w-full py-3 rounded-xl bg-cyan-500 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? 'Creating Account...' : 'Sign Up'}
+                                {isSubmitting ? t('auth.creatingAccount', 'Creating Account...') : t('auth.signUp', 'Sign Up')}
                             </motion.button>
                         </form>
 
                         <p className="text-center text-cyan-100 mt-6 text-sm sm:text-base">
-                            Already have an account? <a href="/sign-in" className="text-cyan-300 hover:underline">Login</a>
+                            {t('auth.alreadyHaveAccount', 'Already have an account?')} <a href="/sign-in" className="text-cyan-300 hover:underline">{t('auth.login', 'Login')}</a>
                         </p>
                     </div>
                 </motion.div>
