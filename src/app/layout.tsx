@@ -11,6 +11,8 @@ import { AnimatedStars } from "@/components/AnimatedStars";
 import { I18nProvider } from "@/contexts/I18nContext";
 import NotificationProvider from "@/components/NotificationProvider";
 import GlowingPlanets from "@/components/GlowingPlanets";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import WebGLErrorHandler from "@/components/WebGLErrorHandler";
 import "@/utils/errorHandler";
 
 
@@ -63,20 +65,23 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen min-w-screen antialiased`}
       >
-        <ThemeProvider>
-          <I18nProvider>
-            <AuthProvider>
-              <NotificationProvider>
-                <AuthGuard>
-                  <AnimatedStars />
-                  <GlowingPlanets />
-                  <NavbarClient />
-                  {children}
-                </AuthGuard>
-              </NotificationProvider>
-            </AuthProvider>
-          </I18nProvider>
-        </ThemeProvider>
+        <ErrorBoundary>
+          <ThemeProvider>
+            <I18nProvider>
+              <AuthProvider>
+                <NotificationProvider>
+                  <AuthGuard>
+                    <WebGLErrorHandler />
+                    <AnimatedStars />
+                    <GlowingPlanets />
+                    <NavbarClient />
+                    {children}
+                  </AuthGuard>
+                </NotificationProvider>
+              </AuthProvider>
+            </I18nProvider>
+          </ThemeProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

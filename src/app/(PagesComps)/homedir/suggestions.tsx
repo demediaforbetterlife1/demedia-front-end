@@ -49,17 +49,22 @@ export default function Suggestions() {
                         className="flex items-center space-x-2 hover:bg-gray-700 p-2 rounded-lg cursor-pointer"
                     >
                         <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-gray-500 font-bold overflow-hidden">
-                            {suggestion.user.profilePicture ? (
+                            {suggestion.user?.profilePicture ? (
                                 <img
                                     src={suggestion.user.profilePicture}
-                                    alt={suggestion.user.name}
+                                    alt={suggestion.user.name || 'User'}
                                     className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                        (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                                    }}
                                 />
-                            ) : (
-                                suggestion.user.name.charAt(0)
-                            )}
+                            ) : null}
+                            <span className={suggestion.user?.profilePicture ? 'hidden' : ''}>
+                                {suggestion.user?.name?.charAt(0) || 'U'}
+                            </span>
                         </div>
-                        <span>{suggestion.user.name}</span>
+                        <span>{suggestion.user?.name || 'User'}</span>
                     </li>
                 ))}
             </ul>
