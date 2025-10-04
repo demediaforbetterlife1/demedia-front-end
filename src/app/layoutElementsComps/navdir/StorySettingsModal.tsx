@@ -73,7 +73,7 @@ export default function StorySettingsModal({
     const [activeTab, setActiveTab] = useState<"general" | "privacy" | "advanced">("general");
 
     const handleSettingChange = (key: string, value: any) => {
-        setSettings(prev => ({ ...prev, [key]: value }));
+        setSettings((prev: any) => ({ ...prev, [key]: value }));
     };
 
     const handleSave = () => {
@@ -309,17 +309,17 @@ export default function StorySettingsModal({
                                         </label>
                                         <div className="space-y-4">
                                             <label className="flex items-center space-x-3 p-4 bg-gray-800/50 rounded-xl cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={settings.customDuration}
-                                                onChange={(e) => handleSettingChange("customDuration", e.target.checked)}
-                                                className="w-4 h-4 text-purple-400 bg-gray-700 border-gray-600 rounded focus:ring-purple-400 focus:ring-2"
-                                            />
-                                            <div className="flex-1">
-                                                <p className="text-sm text-white">Enable custom duration</p>
-                                                <p className="text-xs text-gray-400">Set any duration between 1-72 hours</p>
-                                            </div>
-                                        </label>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={settings.customDuration}
+                                                    onChange={(e) => handleSettingChange("customDuration", e.target.checked)}
+                                                    className="w-4 h-4 text-purple-400 bg-gray-700 border-gray-600 rounded focus:ring-purple-400 focus:ring-2"
+                                                />
+                                                <div className="flex-1">
+                                                    <p className="text-sm text-white">Enable custom duration</p>
+                                                    <p className="text-xs text-gray-400">Set any duration between 1-72 hours</p>
+                                                </div>
+                                            </label>
                                         
                                         {settings.customDuration && (
                                             <div className="p-4 bg-gray-800/50 rounded-xl">
