@@ -13,9 +13,11 @@ interface User {
   email: string;
   profilePicture?: string;
   bio?: string;
+  dateOfBirth?: string;
   dob?: string;
   age?: number;
   language?: string;
+  preferredLang?: string;
   interests?: string[];
   isSetupComplete?: boolean;
 }
