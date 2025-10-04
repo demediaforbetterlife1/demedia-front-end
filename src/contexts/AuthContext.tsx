@@ -227,10 +227,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('Final error message:', message);
         throw new Error(message);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Registration error caught:', error);
       console.error('Error type:', typeof error);
-      console.error('Error message:', error?.message);
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
       console.error('Error toString:', error?.toString());
       
       // Re-throw the error with proper message
