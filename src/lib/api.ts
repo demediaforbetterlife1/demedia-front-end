@@ -22,10 +22,13 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
     headers["Content-Type"] = "application/json";
   }
 
-  // Add cache-busting for development
-  const cacheBuster = Date.now();
-  const version = 'v2.0.0'; // Force cache invalidation
-  const url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}cb=${cacheBuster}&v=${version}`;
+  // Add cache-busting for GET requests only
+  let url = `${API_BASE}${path}`;
+  if (options.method === 'GET' || !options.method) {
+    const cacheBuster = Date.now();
+    const version = 'v2.0.0'; // Force cache invalidation
+    url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}cb=${cacheBuster}&v=${version}`;
+  }
 
   try {
     console.log('Making API request to:', url);
