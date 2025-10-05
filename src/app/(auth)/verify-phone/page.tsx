@@ -5,16 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { CheckCircle, XCircle, Mail, RefreshCw } from "lucide-react";
+import { CheckCircle, XCircle, Phone, RefreshCw } from "lucide-react";
 
-export default function VerifyEmailPage() {
+export default function VerifyPhonePage() {
     const [isVerifying, setIsVerifying] = useState(false);
     const [verificationStatus, setVerificationStatus] = useState<'pending' | 'success' | 'error'>('pending');
     const [error, setError] = useState("");
-    const [email, setEmail] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("");
     const [isResending, setIsResending] = useState(false);
     
-    const { verifyEmail, resendVerification } = useAuth();
+    const { verifyPhone, resendPhoneVerification } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
@@ -30,7 +30,7 @@ export default function VerifyEmailPage() {
         setError("");
         
         try {
-            await verifyEmail(verificationToken);
+            await verifyPhone(verificationToken);
             setVerificationStatus('success');
         } catch (err: any) {
             setVerificationStatus('error');
@@ -41,8 +41,8 @@ export default function VerifyEmailPage() {
     };
 
     const handleResendVerification = async () => {
-        if (!email) {
-            setError("Please enter your email address");
+        if (!phoneNumber) {
+            setError("Please enter your phone number");
             return;
         }
         
@@ -50,11 +50,11 @@ export default function VerifyEmailPage() {
         setError("");
         
         try {
-            await resendVerification(email);
+            await resendPhoneVerification(phoneNumber);
             setError(""); // Clear any previous errors
-            alert("Verification email sent successfully!");
+            alert("Verification SMS sent successfully!");
         } catch (err: any) {
-            setError(err.message || "Failed to resend verification email");
+            setError(err.message || "Failed to resend verification SMS");
         } finally {
             setIsResending(false);
         }
@@ -85,24 +85,24 @@ export default function VerifyEmailPage() {
                     <motion.div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-purple-500 via-cyan-400 to-blue-600 blur-md animate-spin-slow" style={{ zIndex: 0 }} />
                     <div className="relative bg-gradient-to-br from-[#0d1b2a]/80 via-[#1b263b]/70 to-[#0d1b2a]/80 backdrop-blur-2xl rounded-2xl p-8 shadow-2xl z-10">
                         <h2 className="text-3xl font-bold text-center text-cyan-200 mb-6">
-                            Email Verification 📧
+                            Phone Verification 📱
                         </h2>
 
                         {verificationStatus === 'pending' && !token && (
                             <div className="space-y-4">
                                 <div className="text-center">
-                                    <Mail className="mx-auto text-cyan-400 mb-4" size={48} />
+                                    <Phone className="mx-auto text-cyan-400 mb-4" size={48} />
                                     <p className="text-cyan-100 mb-4">
-                                        Enter your email address to resend the verification email
+                                        Enter your phone number to resend the verification SMS
                                     </p>
                                 </div>
                                 
                                 <div>
                                     <input
-                                        type="email"
-                                        placeholder="Enter your email address"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
+                                        type="tel"
+                                        placeholder="Enter your phone number"
+                                        value={phoneNumber}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
                                         className="w-full px-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                                     />
                                 </div>
@@ -124,7 +124,7 @@ export default function VerifyEmailPage() {
                                             Sending...
                                         </>
                                     ) : (
-                                        'Resend Verification Email'
+                                        'Resend Verification SMS'
                                     )}
                                 </button>
                             </div>
@@ -133,16 +133,16 @@ export default function VerifyEmailPage() {
                         {verificationStatus === 'pending' && token && (
                             <div className="text-center">
                                 <RefreshCw className="mx-auto text-cyan-400 mb-4 animate-spin" size={48} />
-                                <p className="text-cyan-100">Verifying your email...</p>
+                                <p className="text-cyan-100">Verifying your phone number...</p>
                             </div>
                         )}
 
                         {verificationStatus === 'success' && (
                             <div className="text-center space-y-4">
                                 <CheckCircle className="mx-auto text-green-400 mb-4" size={48} />
-                                <h3 className="text-green-400 font-semibold text-xl">Email Verified Successfully!</h3>
+                                <h3 className="text-green-400 font-semibold text-xl">Phone Number Verified Successfully!</h3>
                                 <p className="text-cyan-100">
-                                    Your email has been verified. You can now log in to your account.
+                                    Your phone number has been verified. You can now log in to your account.
                                 </p>
                                 <button
                                     onClick={() => router.push('/sign-in')}
@@ -158,16 +158,16 @@ export default function VerifyEmailPage() {
                                 <XCircle className="mx-auto text-red-400 mb-4" size={48} />
                                 <h3 className="text-red-400 font-semibold text-xl">Verification Failed</h3>
                                 <p className="text-cyan-100 mb-4">
-                                    {error || "The verification link is invalid or has expired."}
+                                    {error || "The verification code is invalid or has expired."}
                                 </p>
                                 
                                 <div className="space-y-3">
                                     <div>
                                         <input
-                                            type="email"
-                                            placeholder="Enter your email address"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
+                                            type="tel"
+                                            placeholder="Enter your phone number"
+                                            value={phoneNumber}
+                                            onChange={(e) => setPhoneNumber(e.target.value)}
                                             className="w-full px-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                                         />
                                     </div>
@@ -183,7 +183,7 @@ export default function VerifyEmailPage() {
                                                 Sending...
                                             </>
                                         ) : (
-                                            'Resend Verification Email'
+                                            'Resend Verification SMS'
                                         )}
                                     </button>
                                 </div>

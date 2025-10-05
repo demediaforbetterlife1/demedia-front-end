@@ -42,6 +42,7 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
     const [images, setImages] = useState<File[]>([]);
     const [videos, setVideos] = useState<File[]>([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [showPrivacySettings, setShowPrivacySettings] = useState(false);
     const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
         visibility: 'public',
@@ -153,15 +154,33 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
     };
 
     const handleSubmit = async () => {
-        if (!title && !content && images.length === 0 && videos.length === 0) return;
+        if (!title && !content && images.length === 0 && videos.length === 0) {
+            setError("Please add some content to your post");
+            return;
+        }
 
         setLoading(true);
+        setError(null);
+        
         try {
             // Get userId from localStorage
             const userId = localStorage.getItem("userId");
             if (!userId) {
-                alert("Please log in to create a post");
-                setLoading(false);
+                setError("Please log in to create a post");
+                return;
+            }
+
+            // Validate content length
+            if (content.length > 5000) {
+                setError("Content is too long. Please keep it under 5000 characters.");
+                return;
+            }
+
+            // Validate file sizes
+            const maxFileSize = 10 * 1024 * 1024; // 10MB
+            const oversizedFiles = [...images, ...videos].filter(file => file.size > maxFileSize);
+            if (oversizedFiles.length > 0) {
+                setError("Some files are too large. Please keep files under 10MB.");
                 return;
             }
 
@@ -169,6 +188,11 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
                 title: title || content.substring(0, 50) + (content.length > 50 ? "..." : "") || "New Post",
                 content,
                 authorId: parseInt(userId),
+                privacySettings,
+                hashtags,
+                mentions,
+                location: location || null,
+                scheduledDate: isScheduled && scheduleDate ? new Date(scheduleDate).toISOString() : null
             };
 
             const res = await fetch(`/api/posts`, {
@@ -185,7 +209,7 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
                 throw new Error(errorData.error || "Failed to create post");
             }
 
-            // Reset
+            // Reset form
             setTitle("");
             setContent("");
             setImages([]);
@@ -196,11 +220,14 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
             setScheduleDate("");
             setIsScheduled(false);
             setSelectedAudience([]);
+            setError(null);
             onClose();
+            
+            // Show success message
             alert("Post created successfully!");
         } catch (err: any) {
-            console.error(err);
-            alert(err.message || "Failed to create post");
+            console.error('Post creation error:', err);
+            setError(err.message || "Failed to create post. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -514,11 +541,18 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
                         </div>
                     </div>
 
+                    {/* Error Display */}
+                    {error && (
+                        <div className="px-6 py-3 bg-red-500/10 border-l-4 border-red-500">
+                            <p className="text-red-400 text-sm">{error}</p>
+                        </div>
+                    )}
+
                     {/* Footer */}
                     <div className="p-6 border-t theme-border">
                         <div className="flex justify-between items-center">
                             <div className="text-sm theme-text-muted">
-                                {content.length}/2000 characters
+                                {content.length}/5000 characters
                             </div>
                             <div className="flex space-x-3">
                                 <button

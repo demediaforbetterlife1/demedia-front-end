@@ -3,17 +3,17 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
+import { Phone, ArrowLeft, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
-export default function ResendVerificationPage() {
-    const [email, setEmail] = useState("");
+export default function ResendPhoneVerificationPage() {
+    const [phoneNumber, setPhoneNumber] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
     const [isSuccess, setIsSuccess] = useState(false);
     
-    const { resendVerification } = useAuth();
+    const { resendPhoneVerification } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,11 +22,11 @@ export default function ResendVerificationPage() {
         setMessage("");
 
         try {
-            await resendVerification(email);
-            setMessage("Verification email sent successfully! Please check your inbox.");
+            await resendPhoneVerification(phoneNumber);
+            setMessage("Verification SMS sent successfully! Please check your messages.");
             setIsSuccess(true);
         } catch (err: any) {
-            setError(err.message || "Failed to resend verification email");
+            setError(err.message || "Failed to resend verification SMS");
         } finally {
             setIsSubmitting(false);
         }
@@ -42,10 +42,10 @@ export default function ResendVerificationPage() {
             >
                 <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
                     <div className="text-center mb-6">
-                        <Mail className="mx-auto text-cyan-400 mb-4" size={48} />
-                        <h1 className="text-2xl font-bold text-white mb-2">Resend Verification Email</h1>
+                        <Phone className="mx-auto text-cyan-400 mb-4" size={48} />
+                        <h1 className="text-2xl font-bold text-white mb-2">Resend Verification SMS</h1>
                         <p className="text-cyan-100 text-sm">
-                            Enter your email address to receive a new verification link
+                            Enter your phone number to receive a new verification code
                         </p>
                     </div>
 
@@ -56,7 +56,7 @@ export default function ResendVerificationPage() {
                             className="text-center space-y-4"
                         >
                             <CheckCircle className="mx-auto text-green-400 mb-4" size={48} />
-                            <h3 className="text-green-400 font-semibold text-xl">Email Sent!</h3>
+                            <h3 className="text-green-400 font-semibold text-xl">SMS Sent!</h3>
                             <p className="text-cyan-100">
                                 {message}
                             </p>
@@ -71,7 +71,7 @@ export default function ResendVerificationPage() {
                                     onClick={() => {
                                         setIsSuccess(false);
                                         setMessage("");
-                                        setEmail("");
+                                        setPhoneNumber("");
                                     }}
                                     className="flex-1 py-3 rounded-xl bg-gray-600 text-white font-bold hover:bg-gray-700 transition-colors"
                                 >
@@ -82,17 +82,17 @@ export default function ResendVerificationPage() {
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div>
-                                <label htmlFor="email" className="block text-cyan-100 text-sm font-medium mb-2">
-                                    Email Address
+                                <label htmlFor="phoneNumber" className="block text-cyan-100 text-sm font-medium mb-2">
+                                    Phone Number
                                 </label>
                                 <input
-                                    type="email"
-                                    id="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    type="tel"
+                                    id="phoneNumber"
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(e.target.value)}
                                     required
                                     className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                                    placeholder="Enter your email address"
+                                    placeholder="Enter your phone number"
                                 />
                             </div>
 
@@ -115,7 +115,7 @@ export default function ResendVerificationPage() {
                                 disabled={isSubmitting}
                                 className="w-full py-3 rounded-xl bg-cyan-500 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? "Sending..." : "Send Verification Email"}
+                                {isSubmitting ? "Sending..." : "Send Verification SMS"}
                             </motion.button>
                         </form>
                     )}

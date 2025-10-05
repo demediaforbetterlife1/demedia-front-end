@@ -10,7 +10,7 @@ interface User {
   id: string;
   name: string;
   username: string;
-  email: string;
+  phoneNumber: string;
   profilePicture?: string;
   bio?: string;
   dateOfBirth?: string;
@@ -26,13 +26,14 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (userData: { name: string; username: string; email: string; password: string }) => Promise<boolean | { requiresEmailVerification: boolean; verificationToken?: string; message?: string }>;
+  login: (phoneNumber: string, password: string) => Promise<boolean>;
+  register: (userData: { name: string; username: string; phoneNumber: string; password: string }) => Promise<boolean | { requiresPhoneVerification: boolean; verificationToken?: string; message?: string }>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   completeSetup: () => void;
-  verifyEmail: (token: string) => Promise<boolean>;
-  resendVerification: (email: string) => Promise<boolean>;
+  verifyPhone: (token: string) => Promise<boolean>;
+  resendPhoneVerification: (phoneNumber: string) => Promise<boolean>;
+  sendVerificationCode: (phoneNumber: string, method: 'whatsapp' | 'sms') => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -103,20 +104,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (phoneNumber: string, password: string): Promise<boolean> => {
     try {
       const res = await apiFetch(`/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ phoneNumber, password }),
       });
 
       if (res.ok) {
         const data = await res.json();
         
-        // Check if email verification is required
-        if (data.requiresEmailVerification) {
-          throw new Error(data.message || "Please verify your email address before logging in");
+        // Check if phone verification is required
+        if (data.requiresPhoneVerification) {
+          throw new Error(data.message || "Please verify your phone number before logging in");
         }
         
         const userData = data.user;
@@ -161,7 +162,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (userData: { name: string; username: string; email: string; password: string }): Promise<boolean | { requiresEmailVerification: boolean; verificationToken?: string; message?: string }> => {
+  const register = async (userData: { name: string; username: string; phoneNumber: string; password: string }): Promise<boolean | { requiresPhoneVerification: boolean; verificationToken?: string; message?: string }> => {
     try {
       // Add a wrapper to catch any "Something went wrong" errors
       return await registerInternal(userData);
@@ -175,7 +176,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const registerInternal = async (userData: { name: string; username: string; email: string; password: string }): Promise<boolean | { requiresEmailVerification: boolean; verificationToken?: string; message?: string }> => {
+  const registerInternal = async (userData: { name: string; username: string; phoneNumber: string; password: string }): Promise<boolean | { requiresPhoneVerification: boolean; verificationToken?: string; message?: string }> => {
     try {
       console.log('Starting registration for:', userData.username);
       const res = await apiFetch(`/api/auth/sign-up`, {
@@ -200,12 +201,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         setUser(newUser);
         
-        // If email verification is required, return the verification data
-        if (data.requiresEmailVerification) {
+        // If phone verification is required, return the verification data
+        if (data.requiresPhoneVerification) {
           return {
-            requiresEmailVerification: true,
+            requiresPhoneVerification: true,
             verificationToken: data.verificationToken,
-            message: data.message
+            message: data.message || "Please verify your phone number to complete registration"
           };
         }
         
@@ -306,9 +307,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const verifyEmail = async (token: string): Promise<boolean> => {
+  const verifyPhone = async (token: string): Promise<boolean> => {
     try {
-      const res = await apiFetch(`/api/auth/verify-email`, {
+      const res = await apiFetch(`/api/auth/verify-phone`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
@@ -318,20 +319,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return true;
       } else {
         const data = await res.json();
-        throw new Error(data.error || 'Email verification failed');
+        throw new Error(data.error || 'Phone verification failed');
       }
     } catch (error: unknown) {
-      console.error('Email verification error:', error);
+      console.error('Phone verification error:', error);
       throw error;
     }
   };
 
-  const resendVerification = async (email: string): Promise<boolean> => {
+  const resendPhoneVerification = async (phoneNumber: string): Promise<boolean> => {
     try {
       const res = await apiFetch(`/api/auth/resend-verification`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ phoneNumber }),
       });
 
       if (res.ok) {
@@ -341,7 +342,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error(data.error || 'Failed to resend verification code');
       }
     } catch (error: unknown) {
-      console.error('Resend verification error:', error);
+      console.error('Resend phone verification error:', error);
+      throw error;
+    }
+  };
+
+  const sendVerificationCode = async (phoneNumber: string, method: 'whatsapp' | 'sms'): Promise<boolean> => {
+    try {
+      const res = await apiFetch(`/api/auth/send-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber, method }),
+      });
+
+      if (res.ok) {
+        return true;
+      } else {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to send verification code');
+      }
+    } catch (error: unknown) {
+      console.error('Send verification code error:', error);
       throw error;
     }
   };
@@ -356,8 +377,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       logout,
       updateUser,
       completeSetup,
-      verifyEmail,
-      resendVerification,
+      verifyPhone,
+      resendPhoneVerification,
+      sendVerificationCode,
     }}>
       {children}
     </AuthContext.Provider>

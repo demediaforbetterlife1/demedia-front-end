@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useSearch } from "@/hooks/useSearch";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import EnhancedSearchModal from "@/components/EnhancedSearchModal";
 
 
 export default function Navbar() {
@@ -31,6 +32,7 @@ export default function Navbar() {
     const router = useRouter();
     const [showAddPost, setShowAddPost] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [showEnhancedSearch, setShowEnhancedSearch] = useState(false);
     const { showWelcomeNotification } = useNotifications();
 
 
@@ -146,21 +148,27 @@ export default function Navbar() {
                 </motion.div>
 
                 <div className="relative flex-1 max-w-lg mx-8">
-                    <input
-                        type="text"
-                        placeholder="Search users, posts..."
-                        value={searchQuery}
-                        onChange={handleSearchInputChange}
-                        onBlur={() => setTimeout(() => hideSearchResults(), 200)}
-                        className="w-full px-5 py-2 rounded-full theme-bg-tertiary/60 theme-text-primary placeholder-gray-400
+                    <div className="relative flex items-center">
+                        <input
+                            type="text"
+                            placeholder="Search users, posts..."
+                            value={searchQuery}
+                            onChange={handleSearchInputChange}
+                            onBlur={() => setTimeout(() => hideSearchResults(), 200)}
+                            className="w-full px-5 py-2 rounded-full theme-bg-tertiary/60 theme-text-primary placeholder-gray-400
                      border theme-border focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500
                      outline-none transition"
                     />
-                    <div className="absolute inset-y-0 right-4 flex items-center text-cyan-400">
-                        {isSearching ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-400"></div>
-                        ) : (
+                    <div className="absolute inset-y-0 right-4 flex items-center gap-2 text-cyan-400">
+                        <button
+                            onClick={() => setShowEnhancedSearch(true)}
+                            className="p-1 hover:bg-cyan-500/20 rounded-full transition-colors"
+                            title="Enhanced Search"
+                        >
                             <IoChatbubbleEllipsesOutline size={18} />
+                        </button>
+                        {isSearching && (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-400"></div>
                         )}
                     </div>
                     
@@ -638,6 +646,12 @@ export default function Navbar() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                {/* Enhanced Search Modal */}
+                <EnhancedSearchModal
+                    isOpen={showEnhancedSearch}
+                    onClose={() => setShowEnhancedSearch(false)}
+                />
         </>
     );
 }

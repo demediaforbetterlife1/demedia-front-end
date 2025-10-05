@@ -11,6 +11,7 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { useI18n } from "@/contexts/I18nContext";
 import { Eye, EyeOff, Mail, Lock, User, UserCheck, Phone } from "lucide-react";
+import VerificationMethodModal from "@/components/VerificationMethodModal";
 
 /* ---------------- BACKGROUND 3D ---------------- */
 function RotatingPlanet({
@@ -126,16 +127,18 @@ export default function SignUpPage() {
     const [form, setForm] = useState({
         name: "",
         username: "",
-        email: "",
+        phoneNumber: "",
         password: "",
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [showVerificationModal, setShowVerificationModal] = useState(false);
+    const [pendingUserData, setPendingUserData] = useState<{name: string; username: string; phoneNumber: string; password: string} | null>(null);
     const { t } = useI18n();
     const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-    const { register, isAuthenticated, isLoading, user } = useAuth();
+    const { register, isAuthenticated, isLoading, user, sendVerificationCode } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
@@ -161,10 +164,10 @@ export default function SignUpPage() {
             newErrors.username = t('auth.usernameInvalid', 'Username can only contain lowercase letters, numbers, and underscores');
         }
 
-        if (!form.email.trim()) {
-            newErrors.email = t('auth.emailRequired', 'Email address is required');
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-            newErrors.email = t('auth.emailInvalid', 'Please enter a valid email address');
+        if (!form.phoneNumber.trim()) {
+            newErrors.phoneNumber = t('auth.phoneRequired', 'Phone number is required');
+        } else if (!/^\+?[1-9]\d{1,14}$/.test(form.phoneNumber)) {
+            newErrors.phoneNumber = t('auth.phoneInvalid', 'Please enter a valid phone number');
         }
 
         if (!form.password) {
@@ -191,11 +194,18 @@ export default function SignUpPage() {
         setIsSubmitting(true);
 
         try {
-            await register(form);
-            // Clear form on success
-            setForm({ name: "", username: "", email: "", password: "" });
-            // Redirect to sign-in page
-            router.push('/sign-in');
+            const result = await register(form);
+            
+            // Check if phone verification is required
+            if (result && typeof result === 'object' && result.requiresPhoneVerification) {
+                // Store user data and show verification method modal
+                setPendingUserData(form);
+                setShowVerificationModal(true);
+            } else {
+                // Clear form on success and redirect to sign-in
+                setForm({ name: "", username: "", phoneNumber: "", password: "" });
+                router.push('/sign-in');
+            }
         } catch (err: any) {
             console.error("❌ Registration error:", err);
             console.error("Error message:", err.message);
@@ -211,15 +221,15 @@ export default function SignUpPage() {
             
             if (errorMessage.includes("Username already in use") || errorMessage.includes("username")) {
                 setErrors({ username: t('auth.usernameTaken', 'This username is already taken') });
-            } else if (errorMessage.includes("Email already registered") || errorMessage.includes("email")) {
-                setErrors({ email: t('auth.emailRegistered', 'This email address is already registered') });
+            } else if (errorMessage.includes("Phone number already registered") || errorMessage.includes("phone")) {
+                setErrors({ phoneNumber: t('auth.phoneRegistered', 'This phone number is already registered') });
             } else if (errorMessage.includes("Something went wrong")) {
                 // This is the generic error - show a more helpful message
-                setErrors({ general: t('auth.registrationFailed', 'Registration failed. Please try a different username or email address.') });
+                setErrors({ general: t('auth.registrationFailed', 'Registration failed. Please try a different username or phone number.') });
             } else if (errorMessage.includes("Username already in use")) {
                 setErrors({ username: t('auth.usernameTaken', 'This username is already taken') });
-            } else if (errorMessage.includes("Email already registered")) {
-                setErrors({ email: t('auth.emailRegistered', 'This email address is already registered') });
+            } else if (errorMessage.includes("Phone number already registered")) {
+                setErrors({ phoneNumber: t('auth.phoneRegistered', 'This phone number is already registered') });
             } else {
                 // Show the actual error message
                 setErrors({ general: errorMessage || t('auth.registrationFailedGeneric', 'Registration failed. Please try again.') });
@@ -231,6 +241,26 @@ export default function SignUpPage() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
+    };
+
+    const handleVerificationMethodSelect = async (method: 'whatsapp' | 'sms') => {
+        if (!pendingUserData) return;
+        
+        try {
+            // Send verification code via the selected method
+            await sendVerificationCode(pendingUserData.phoneNumber, method);
+            
+            // Redirect to verification page with parameters
+            const params = new URLSearchParams({
+                phone: pendingUserData.phoneNumber,
+                method: method
+            });
+            
+            router.push(`/verify-code?${params.toString()}`);
+        } catch (error) {
+            console.error('Error sending verification code:', error);
+            setErrors({ general: 'Failed to send verification code. Please try again.' });
+        }
     };
 
     return (
@@ -297,21 +327,21 @@ export default function SignUpPage() {
                                 {errors.username && <p className="text-red-400 text-sm mt-1">{errors.username}</p>}
                             </div>
                             
-                            {/* EMAIL INPUT */}
+                            {/* PHONE NUMBER INPUT */}
                             <div>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                                     <input 
-                                        type="email" 
-                                        name="email" 
-                                        placeholder={t('auth.email', '📧 Email Address')}
-                                        value={form.email} 
+                                        type="tel" 
+                                        name="phoneNumber" 
+                                        placeholder={t('auth.phone', '📱 Phone Number')}
+                                        value={form.phoneNumber} 
                                         onChange={handleChange} 
-                                        className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.email ? 'border border-red-500' : ''}`} 
+                                        className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.phoneNumber ? 'border border-red-500' : ''}`} 
                                         required
                                     />
                                 </div>
-                                {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
+                                {errors.phoneNumber && <p className="text-red-400 text-sm mt-1">{errors.phoneNumber}</p>}
                             </div>
                             
                             {/* Password Input */}
@@ -369,6 +399,14 @@ export default function SignUpPage() {
         }
         .animate-spin-slow { animation: spin-slow 8s linear infinite; }
       `}</style>
+
+            {/* Verification Method Modal */}
+            <VerificationMethodModal
+                isOpen={showVerificationModal}
+                onClose={() => setShowVerificationModal(false)}
+                onSelectMethod={handleVerificationMethodSelect}
+                phoneNumber={pendingUserData?.phoneNumber || ''}
+            />
         </div>
     );
 }

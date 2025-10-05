@@ -35,6 +35,8 @@ export default function ChatRoom({ chat, currentUserId }: ChatRoomProps) {
     const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
     const [showStickers, setShowStickers] = useState(false);
     const [typingUsers, setTypingUsers] = useState<string[]>([]);
+    const [error, setError] = useState<string | null>(null);
+    const [isSending, setIsSending] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const socket = connectSocket();
 
@@ -78,20 +80,32 @@ export default function ChatRoom({ chat, currentUserId }: ChatRoomProps) {
 
     const sendTextMessage = async () => {
         if (!newMessage.trim()) return;
-        const messageData: Message = {
-            id: crypto.randomUUID(),
-            content: newMessage,
-            senderId: currentUserId,
-            chatId: chat.id,
-            type: "text",
-            createdAt: new Date().toISOString(),
-            status: "sent",
-        };
-        await axios.post(`/api/messages`, messageData);
-        socket.emit("sendMessage", messageData);
-        setMessages((prev) => [...prev, messageData]);
-        setNewMessage("");
-        scrollToBottom();
+        
+        setIsSending(true);
+        setError(null);
+        
+        try {
+            const messageData: Message = {
+                id: crypto.randomUUID(),
+                content: newMessage,
+                senderId: currentUserId,
+                chatId: chat.id,
+                type: "text",
+                createdAt: new Date().toISOString(),
+                status: "sent",
+            };
+            
+            await axios.post(`/api/messages`, messageData);
+            socket.emit("sendMessage", messageData);
+            setMessages((prev) => [...prev, messageData]);
+            setNewMessage("");
+            scrollToBottom();
+        } catch (err: any) {
+            console.error('Message send error:', err);
+            setError(err.response?.data?.error || "Failed to send message. Please try again.");
+        } finally {
+            setIsSending(false);
+        }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -157,6 +171,19 @@ export default function ChatRoom({ chat, currentUserId }: ChatRoomProps) {
                     </label>
                 </div>
             </div>
+
+            {/* Error Display */}
+            {error && (
+                <div className="bg-red-500/10 border-l-4 border-red-500 px-4 py-2">
+                    <p className="text-red-400 text-sm">{error}</p>
+                    <button 
+                        onClick={() => setError(null)}
+                        className="text-red-300 hover:text-red-200 text-xs underline mt-1"
+                    >
+                        Dismiss
+                    </button>
+                </div>
+            )}
 
             {/* Stickers */}
             {showStickers && (

@@ -10,7 +10,7 @@ import { Stars, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
 import { useI18n } from "@/contexts/I18nContext";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Phone, Lock } from "lucide-react";
 
 /* ---------------- BACKGROUND 3D ---------------- */
 function RotatingPlanet({
@@ -135,7 +135,7 @@ function SpaceBackground() {
 
 export default function SignIn() {
     const [form, setForm] = useState({
-        email: "",
+        phoneNumber: "",
         password: "",
     });
     const [remember, setRemember] = useState<boolean>(false);
@@ -156,9 +156,9 @@ export default function SignIn() {
 
     useEffect(() => {
         try {
-            const saved = localStorage.getItem('rememberEmail');
+            const saved = localStorage.getItem('rememberPhone');
             if (saved) {
-                setForm((f) => ({ ...f, email: saved }));
+                setForm((f) => ({ ...f, phoneNumber: saved }));
                 setRemember(true);
             }
         } catch {}
@@ -170,16 +170,16 @@ export default function SignIn() {
         setError("");
 
         try {
-            await login(form.email, form.password);
+            await login(form.phoneNumber, form.password);
             if (remember) {
-                localStorage.setItem('rememberEmail', form.email);
+                localStorage.setItem('rememberPhone', form.phoneNumber);
             } else {
-                localStorage.removeItem('rememberEmail');
+                localStorage.removeItem('rememberPhone');
             }
         } catch (err: any) {
-            // Check if it's an email verification error
-            if (err.message && (err.message.includes("verify your email") || err.message.includes("Verification email sent"))) {
-                setError(t('auth.verificationSent', 'Verification email sent to your Gmail! Please check your inbox and click the verification link to complete login.'));
+            // Check if it's a phone verification error
+            if (err.message && (err.message.includes("verify your phone") || err.message.includes("Verification SMS sent"))) {
+                setError(t('auth.verificationSent', 'Verification SMS sent to your phone! Please check your messages and enter the verification code to complete login.'));
             } else {
             setError(err.message || t('auth.loginFailed', 'Login failed'));
             }
@@ -233,12 +233,12 @@ export default function SignIn() {
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                             <input
-                                    type="email"
-                                    name="email"
-                                    placeholder={t('auth.email', 'Email Address')}
-                                    value={form.email}
+                                    type="tel"
+                                    name="phoneNumber"
+                                    placeholder={t('auth.phone', 'Phone Number')}
+                                    value={form.phoneNumber}
                                 onChange={handleChange}
                                     className="w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                                 required
@@ -275,20 +275,20 @@ export default function SignIn() {
                             {error && (
                                 <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
                                     <p className="text-red-400 text-sm">{error}</p>
-                                    {error.includes("Verification email sent") && (
+                                    {error.includes("Verification SMS sent") && (
                                         <div className="mt-2">
                                             <p className="text-green-300 text-sm">
-                                                {t('auth.checkGmail', '📧 Check your Gmail inbox for the verification link')}
+                                                {t('auth.checkPhone', '📱 Check your phone messages for the verification code')}
                                             </p>
                                         </div>
                                     )}
-                                    {error.includes("verify your email") && !error.includes("Verification email sent") && (
+                                    {error.includes("verify your phone") && !error.includes("Verification SMS sent") && (
                                         <div className="mt-2">
                                             <a 
-                                                href="/resend-verification" 
+                                                href="/resend-phone-verification" 
                                                 className="text-cyan-300 hover:underline text-sm"
                                             >
-                                                {t('auth.resendVerification', 'Resend verification email')}
+                                                {t('auth.resendVerification', 'Resend verification SMS')}
                                             </a>
                                         </div>
                                     )}
