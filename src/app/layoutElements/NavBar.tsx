@@ -290,8 +290,6 @@ export default function Navbar() {
                         </AnimatePresence>
                     </div>
 
-
-
                     <div className="relative">
                         <button
                             onClick={() => {
