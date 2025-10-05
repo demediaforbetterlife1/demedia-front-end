@@ -362,16 +362,7 @@ export default function Navbar() {
                 </div>
             </motion.nav>
 
-            {showAddPost && (
-                <AddPostModal isOpen={showAddPost} onClose={() => setShowAddPost(false)} authorId={Number(user?.id) || 0} />
-            )}
-            {showSettings && (
-                <div className="fixed inset-0 z-[60]">
-                    <SettingsItems />
-                    <button onClick={() => setShowSettings(false)} className="hidden" />
-                </div>
-            )}
-
+            {/* Mobile Navigation */}
             <motion.nav
                 initial={{ y: -60, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -647,11 +638,22 @@ export default function Navbar() {
                     )}
                 </AnimatePresence>
 
-                {/* Enhanced Search Modal */}
-                <EnhancedSearchModal
-                    isOpen={showEnhancedSearch}
-                    onClose={() => setShowEnhancedSearch(false)}
-                />
+            {/* Modals */}
+            {showAddPost && (
+                <AddPostModal isOpen={showAddPost} onClose={() => setShowAddPost(false)} authorId={Number(user?.id) || 0} />
+            )}
+            {showSettings && (
+                <div className="fixed inset-0 z-[60]">
+                    <SettingsItems />
+                    <button onClick={() => setShowSettings(false)} className="hidden" />
+                </div>
+            )}
+
+            {/* Enhanced Search Modal */}
+            <EnhancedSearchModal
+                isOpen={showEnhancedSearch}
+                onClose={() => setShowEnhancedSearch(false)}
+            />
         </>
     );
 }
