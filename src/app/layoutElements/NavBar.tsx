@@ -158,7 +158,7 @@ export default function Navbar() {
                             className="w-full px-5 py-2 rounded-full theme-bg-tertiary/60 theme-text-primary placeholder-gray-400
                      border theme-border focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500
                      outline-none transition"
-                    />
+                        />
                     <div className="absolute inset-y-0 right-4 flex items-center gap-2 text-cyan-400">
                         <button
                             onClick={() => setShowEnhancedSearch(true)}
@@ -226,6 +226,7 @@ export default function Navbar() {
                             </motion.div>
                         )}
                     </AnimatePresence>
+                </div>
                 </div>
 
                 <div className="flex items-center space-x-4">
