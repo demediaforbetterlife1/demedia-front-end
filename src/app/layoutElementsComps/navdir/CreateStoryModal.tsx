@@ -235,14 +235,14 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4"
+                className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-start justify-center z-50 p-4 pt-20"
                 onClick={onClose}
             >
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-3xl p-0 max-w-2xl w-full max-h-[90vh] overflow-hidden border border-gray-700 shadow-2xl"
+                    className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-3xl p-0 max-w-xl w-full max-h-[85vh] overflow-hidden border border-gray-700 shadow-2xl"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
