@@ -15,6 +15,7 @@ type PostType = {
     content: string;
     likes: number;
     comments: number;
+    liked?: boolean;
     user?: {
         name?: string;
     };
@@ -62,22 +63,46 @@ export default function Posts() {
 
     const handleLike = async (postId: number) => {
         try {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            const isCurrentlyLiked = post.liked;
+            
             // Optimistic update
-            setPosts(prev => prev.map(post => 
-                post.id === postId 
-                    ? { ...post, likes: post.likes + 1 }
-                    : post
+            setPosts(prev => prev.map(p => 
+                p.id === postId 
+                    ? { 
+                        ...p, 
+                        likes: isCurrentlyLiked ? p.likes - 1 : p.likes + 1,
+                        liked: !isCurrentlyLiked
+                    }
+                    : p
             ));
 
-            // Call API to like the post
-            await contentService.likePost(postId);
+            // Call API to toggle like
+            const response = await contentService.likePost(postId);
+            
+            // Update with actual response
+            setPosts(prev => prev.map(p => 
+                p.id === postId 
+                    ? { 
+                        ...p, 
+                        likes: response.likes,
+                        liked: response.liked
+                    }
+                    : p
+            ));
         } catch (error: unknown) {
             console.error('Error liking post:', error);
             // Revert optimistic update on error
-            setPosts(prev => prev.map(post => 
-                post.id === postId 
-                    ? { ...post, likes: post.likes - 1 }
-                    : post
+            setPosts(prev => prev.map(p => 
+                p.id === postId 
+                    ? { 
+                        ...p, 
+                        likes: p.liked ? p.likes + 1 : p.likes - 1,
+                        liked: !p.liked
+                    }
+                    : p
             ));
         }
     };
@@ -146,10 +171,17 @@ export default function Posts() {
                         {/* Actions */}
                         <div className="flex items-center justify-end gap-6 mt-3 theme-text-muted">
                             <button 
-                                className="flex items-center gap-1 hover:text-pink-500 cursor-pointer transition-colors"
+                                className={`flex items-center gap-1 cursor-pointer transition-colors ${
+                                    post.liked 
+                                        ? 'text-pink-500 hover:text-pink-400' 
+                                        : 'hover:text-pink-500'
+                                }`}
                                 onClick={() => handleLike(post.id)}
                             >
-                                <Heart size={18} /> 
+                                <Heart 
+                                    size={18} 
+                                    fill={post.liked ? 'currentColor' : 'none'}
+                                /> 
                                 <span className="text-sm">{post.likes}</span>
                             </button>
                             <button 
