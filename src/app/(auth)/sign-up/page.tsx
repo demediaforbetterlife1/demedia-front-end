@@ -144,7 +144,7 @@ export default function SignUpPage() {
     useEffect(() => {
         if (isLoading) return;
         if (isAuthenticated && user) {
-            router.replace(user.isSetupComplete ? "/home" : "/SignInSetUp");
+            router.replace(user.isSetupComplete ? "/(pages)/home" : "/SignInSetUp");
         }
     }, [isAuthenticated, isLoading, user, router]);
 
@@ -218,18 +218,15 @@ export default function SignUpPage() {
             
             // Handle specific error cases with better matching
             const errorMessage = err.message || err.toString() || "";
+            console.log("Error message for handling:", errorMessage);
             
-            if (errorMessage.includes("Username already in use") || errorMessage.includes("username")) {
+            if (errorMessage.includes("Username already in use")) {
                 setErrors({ username: t('auth.usernameTaken', 'This username is already taken') });
-            } else if (errorMessage.includes("Phone number already registered") || errorMessage.includes("phone")) {
+            } else if (errorMessage.includes("Phone number already registered")) {
                 setErrors({ phoneNumber: t('auth.phoneRegistered', 'This phone number is already registered') });
             } else if (errorMessage.includes("Something went wrong")) {
                 // This is the generic error - show a more helpful message
                 setErrors({ general: t('auth.registrationFailed', 'Registration failed. Please try a different username or phone number.') });
-            } else if (errorMessage.includes("Username already in use")) {
-                setErrors({ username: t('auth.usernameTaken', 'This username is already taken') });
-            } else if (errorMessage.includes("Phone number already registered")) {
-                setErrors({ phoneNumber: t('auth.phoneRegistered', 'This phone number is already registered') });
             } else {
                 // Show the actual error message
                 setErrors({ general: errorMessage || t('auth.registrationFailedGeneric', 'Registration failed. Please try again.') });

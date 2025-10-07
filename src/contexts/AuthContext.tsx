@@ -239,6 +239,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         
         console.log('Final error message:', message);
+        console.log('Error data:', errorData);
         throw new Error(message);
       }
     } catch (error: unknown) {
