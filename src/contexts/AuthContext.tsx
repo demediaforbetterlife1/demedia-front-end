@@ -171,7 +171,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Final catch for any remaining "Something went wrong" errors
       if (error instanceof Error && error.message.includes('Something went wrong')) {
         console.log('Final catch: Converting "Something went wrong" to proper error');
-        throw new Error('Registration failed. Please try a different username or email.');
+        throw new Error('Registration failed. Please try a different username or phone number.');
       }
       throw error;
     }
