@@ -137,9 +137,9 @@ export default function Posts() {
             await contentService.bookmarkPost(postId);
             
             if (wasBookmarked) {
-                showSuccess('Post removed from bookmarks');
+                showSuccess('Bookmark Removed', 'Post removed from bookmarks');
             } else {
-                showSuccess('Post bookmarked');
+                showSuccess('Post Bookmarked', 'Post saved to your bookmarks');
             }
         } catch (error: unknown) {
             console.error('Error bookmarking post:', error);
@@ -149,7 +149,7 @@ export default function Posts() {
                     ? { ...p, bookmarked: !p.bookmarked }
                     : p
             ));
-            showError('Failed to bookmark post');
+            showError('Bookmark Failed', 'Failed to bookmark post');
         }
     };
 
@@ -157,10 +157,10 @@ export default function Posts() {
         try {
             // Call API to report the post
             await contentService.reportPost(postId);
-            showSuccess('Post reported successfully');
+            showSuccess('Post Reported', 'Post reported successfully');
         } catch (error: unknown) {
             console.error('Error reporting post:', error);
-            showError('Failed to report post');
+            showError('Report Failed', 'Failed to report post');
         }
     };
 
