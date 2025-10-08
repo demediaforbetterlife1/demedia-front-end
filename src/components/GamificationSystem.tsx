@@ -15,7 +15,10 @@ import {
     Award,
     Sparkles,
     Rocket,
-    Diamond
+    Diamond,
+    Heart,
+    Eye,
+    Share
 } from "lucide-react";
 
 interface UserStats {
@@ -394,7 +397,7 @@ export default function GamificationSystem() {
                                                 <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
                                                     <div 
                                                         className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-1000"
-                                                        style={{ width: `${(badge.progress / badge.maxProgress) * 100}%` }}
+                                                        style={{ width: `${badge.maxProgress ? (badge.progress / badge.maxProgress) * 100 : 0}%` }}
                                                     />
                                                 </div>
                                             </div>

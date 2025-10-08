@@ -324,7 +324,7 @@ export default function AdvancedVisibilityControls({ onVisibilityChange }: Advan
                                                                     onChange={(e) => {
                                                                         const actions = e.target.checked
                                                                             ? [...rule.settings.requiredActions, action]
-                                                                            : rule.settings.requiredActions.filter(a => a !== action);
+                                                                            : rule.settings.requiredActions.filter((a: string) => a !== action);
                                                                         updateRuleSettings(rule.id, { requiredActions: actions });
                                                                     }}
                                                                     className="rounded"
