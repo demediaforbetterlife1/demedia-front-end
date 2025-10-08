@@ -94,6 +94,7 @@ export default function ProfilePage() {
     const [showCreateDeSnapModal, setShowCreateDeSnapModal] = useState(false);
     const [showDeSnapsViewer, setShowDeSnapsViewer] = useState(false);
     const [selectedDeSnap, setSelectedDeSnap] = useState<DeSnap | null>(null);
+    const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
@@ -446,7 +447,7 @@ export default function ProfilePage() {
             <div className="relative px-6 pb-6">
                 {/* Profile pic */}
                 <div className="absolute -top-20 left-6">
-                    <div className="relative w-36 h-36">
+                    <div className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-gray-900 shadow-lg">
                     {profilePicture ? (
                         <motion.img
                                 key={profilePicture} // Force re-render when profile picture changes
@@ -455,11 +456,11 @@ export default function ProfilePage() {
                             transition={{ type: "spring", stiffness: 120 }}
                             src={profilePicture}
                             alt={name}
-                                className="w-full h-full rounded-full border-4 border-gray-900 shadow-lg"
+                                className="w-full h-full object-cover object-center"
                             loading="lazy"
                                 style={{ 
-                                    width: '144px', 
-                                    height: '144px',
+                                    width: '100%', 
+                                    height: '100%',
                                     objectFit: 'cover',
                                     objectPosition: 'center',
                                     display: 'block'
@@ -477,7 +478,7 @@ export default function ProfilePage() {
                             }}
                         />
                     ) : null}
-                        <div className={`absolute inset-0 w-full h-full rounded-full border-4 border-gray-900 shadow-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold ${profilePicture ? "hidden" : ""}`}>
+                        <div className={`absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold ${profilePicture ? "hidden" : ""}`}>
                         {name.charAt(0).toUpperCase()}
                         </div>
                     </div>
@@ -645,43 +646,105 @@ export default function ProfilePage() {
                                 )}
                             </div>
                             {stories?.length > 0 ? (
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {stories.map((story, i) => (
-                                        <div
-                                            key={story.id}
-                                            className="aspect-square rounded-xl border border-gray-700 shadow-md bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden cursor-pointer hover:scale-105 transition-transform relative group"
-                                        >
-                                            {story.content?.startsWith('http') ? (
-                                                <img 
-                                                    src={story.content} 
-                                                    alt="Story" 
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center p-4">
-                                                    <p className="text-gray-400 text-sm text-center">
-                                                        {story.content}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            
-                                            {/* Visibility indicator */}
-                                            <div className="absolute top-2 right-2">
-                                                {story.visibility === 'public' && <Globe size={12} className="text-green-400" />}
-                                                {story.visibility === 'followers' && <Users size={12} className="text-blue-400" />}
-                                                {story.visibility === 'close_friends' && <UserCheck size={12} className="text-purple-400" />}
-                                                {story.visibility === 'premium' && <Sparkles size={12} className="text-yellow-400" />}
-                                            </div>
-                                            
-                                            {/* Story info overlay */}
-                                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <div className="flex items-center justify-between text-xs text-white">
-                                                    <span>{story.views || 0} views</span>
-                                                    <span>{story.duration || 24}h</span>
-                                                </div>
-                                            </div>
+                                <div className="space-y-4">
+                                    {/* Story Navigation */}
+                                    {stories.length > 1 && (
+                                        <div className="flex items-center justify-center gap-2 mb-4">
+                                            <button
+                                                onClick={() => setSelectedStoryIndex(Math.max(0, selectedStoryIndex - 1))}
+                                                disabled={selectedStoryIndex === 0}
+                                                className="p-2 rounded-full bg-gray-700 text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                ←
+                                            </button>
+                                            <span className="text-sm text-gray-400">
+                                                {selectedStoryIndex + 1} of {stories.length}
+                                            </span>
+                                            <button
+                                                onClick={() => setSelectedStoryIndex(Math.min(stories.length - 1, selectedStoryIndex + 1))}
+                                                disabled={selectedStoryIndex === stories.length - 1}
+                                                className="p-2 rounded-full bg-gray-700 text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                →
+                                            </button>
                                         </div>
-                                    ))}
+                                    )}
+                                    
+                                    {/* Current Story Display */}
+                                    <div className="relative">
+                                        {stories.map((story, i) => (
+                                            <div
+                                                key={story.id}
+                                                className={`aspect-video rounded-xl border border-gray-700 shadow-md bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden relative group ${
+                                                    i === selectedStoryIndex ? 'block' : 'hidden'
+                                                }`}
+                                            >
+                                                {story.content?.startsWith('http') ? (
+                                                    <img 
+                                                        src={story.content} 
+                                                        alt="Story" 
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center p-8">
+                                                        <p className="text-gray-300 text-lg text-center">
+                                                            {story.content}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                
+                                                {/* Visibility indicator */}
+                                                <div className="absolute top-4 right-4">
+                                                    {story.visibility === 'public' && <Globe size={16} className="text-green-400" />}
+                                                    {story.visibility === 'followers' && <Users size={16} className="text-blue-400" />}
+                                                    {story.visibility === 'close_friends' && <UserCheck size={16} className="text-purple-400" />}
+                                                    {story.visibility === 'premium' && <Sparkles size={16} className="text-yellow-400" />}
+                                                </div>
+                                                
+                                                {/* Story info overlay */}
+                                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                                                    <div className="flex items-center justify-between text-sm text-white">
+                                                        <div className="flex items-center gap-4">
+                                                            <span>{story.views || 0} views</span>
+                                                            <span>{story.duration || 24}h</span>
+                                                        </div>
+                                                        <div className="text-xs text-gray-300">
+                                                            {new Date(story.createdAt).toLocaleDateString()}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    {/* Story Thumbnails */}
+                                    {stories.length > 1 && (
+                                        <div className="flex gap-2 justify-center overflow-x-auto pb-2">
+                                            {stories.map((story, i) => (
+                                                <button
+                                                    key={story.id}
+                                                    onClick={() => setSelectedStoryIndex(i)}
+                                                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                                                        i === selectedStoryIndex 
+                                                            ? 'border-indigo-500 scale-110' 
+                                                            : 'border-gray-600 hover:border-gray-500'
+                                                    }`}
+                                                >
+                                                    {story.content?.startsWith('http') ? (
+                                                        <img 
+                                                            src={story.content} 
+                                                            alt="Story thumbnail" 
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-gray-700 flex items-center justify-center">
+                                                            <span className="text-xs text-gray-300">📝</span>
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="text-center py-8">

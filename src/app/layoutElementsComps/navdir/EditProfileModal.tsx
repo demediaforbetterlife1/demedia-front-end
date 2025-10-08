@@ -125,6 +125,8 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
         setError("");
 
         try {
+            console.log('EditProfileModal: Submitting profile update:', profileData);
+            
             const response = await fetch(`/api/user/${user?.id}`, {
                 method: "PUT",
                 headers: {
@@ -139,10 +141,13 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
             });
 
             if (!response.ok) {
-                throw new Error("Failed to update profile");
+                const errorText = await response.text();
+                console.error('EditProfileModal: Profile update failed:', response.status, errorText);
+                throw new Error(`Failed to update profile: ${errorText}`);
             }
 
             const updatedProfile = await response.json();
+            console.log('EditProfileModal: Profile updated successfully:', updatedProfile);
             
             if (onProfileUpdated) {
                 onProfileUpdated(updatedProfile);
