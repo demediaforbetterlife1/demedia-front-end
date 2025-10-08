@@ -149,6 +149,27 @@ class ContentService {
         });
     }
 
+    // Bookmark a post
+    async bookmarkPost(postId: number): Promise<any> {
+        return this.makeRequest<any>(`/api/posts/${postId}/bookmark`, {
+            method: 'POST',
+        });
+    }
+
+    // Unbookmark a post
+    async unbookmarkPost(postId: number): Promise<any> {
+        return this.makeRequest<any>(`/api/posts/${postId}/unbookmark`, {
+            method: 'DELETE',
+        });
+    }
+
+    // Report a post
+    async reportPost(postId: number): Promise<any> {
+        return this.makeRequest<any>(`/api/posts/${postId}/report`, {
+            method: 'POST',
+        });
+    }
+
     // Comment on a post
     async commentOnPost(postId: number, content: string): Promise<any> {
         return this.makeRequest<any>(`/api/posts/${postId}/comments`, {
