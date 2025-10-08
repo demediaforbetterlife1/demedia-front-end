@@ -343,6 +343,39 @@ export default function ProfilePage() {
         }
     }
 
+    async function handleStartChat() {
+        if (!profile || !user?.id) return;
+        
+        try {
+            // Create or find existing chat with this user
+            const res = await fetch('/api/chat/create-or-find', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'user-id': user.id.toString(),
+                },
+                body: JSON.stringify({
+                    participantId: profile.id
+                })
+            });
+
+            if (res.ok) {
+                const chatData = await res.json();
+                // Navigate to the chat
+                window.location.href = `/messeging/chat/${chatData.id}`;
+            } else {
+                console.error('Failed to create/find chat');
+                // Fallback: try to navigate to messaging page
+                window.location.href = '/messeging';
+            }
+        } catch (err) {
+            console.error('Error starting chat:', err);
+            // Fallback: try to navigate to messaging page
+            window.location.href = '/messeging';
+        }
+    }
+
     if (authLoading || loading)
         return (
             <div className="max-w-4xl mx-auto mt-6 rounded-2xl shadow-2xl bg-gradient-to-b from-gray-900 to-black overflow-hidden border border-gray-800 p-6">
@@ -509,19 +542,34 @@ export default function ProfilePage() {
                             Edit Profile
                         </motion.button>
                     ) : (
-                        <motion.button
-                            type="button"
-                            whileTap={{ scale: 0.95 }}
-                            onClick={handleFollowToggle}
-                            disabled={busyFollow}
-                            className={`px-6 py-2 rounded-full font-semibold shadow-md transition text-sm ${
-                                isFollowing
-                                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                                    : "bg-indigo-500 text-white hover:bg-indigo-600"
-                            } ${busyFollow ? "opacity-70 cursor-wait" : ""}`}
-                        >
-                            {isFollowing ? "Unfollow" : "Follow"}
-                        </motion.button>
+                        <div className="flex gap-3">
+                            <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.95 }}
+                                onClick={handleFollowToggle}
+                                disabled={busyFollow}
+                                className={`px-6 py-2 rounded-full font-semibold shadow-md transition text-sm ${
+                                    isFollowing
+                                        ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                                        : "bg-indigo-500 text-white hover:bg-indigo-600"
+                                } ${busyFollow ? "opacity-70 cursor-wait" : ""}`}
+                            >
+                                {isFollowing ? "Unfollow" : "Follow"}
+                            </motion.button>
+                            
+                            <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => {
+                                    // Create or find existing chat with this user
+                                    handleStartChat();
+                                }}
+                                className="px-6 py-2 rounded-full font-semibold shadow-md transition text-sm bg-green-500 text-white hover:bg-green-600 flex items-center gap-2"
+                            >
+                                <MessageCircle size={16} />
+                                Message
+                            </motion.button>
+                        </div>
                     )}
                 </div>
 

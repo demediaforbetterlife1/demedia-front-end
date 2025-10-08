@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import axios from "axios";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiFetch } from "@/lib/api";
 import { connectSocket } from "@/lib/socketClient";
 
 interface Chat {
@@ -12,27 +14,29 @@ interface Chat {
     unread?: boolean;
 }
 
-const API_BASE = "";
-
 export default function ChatsBox() {
     const [chats, setChats] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedChat, setSelectedChat] = useState<string | null>(null);
+    const router = useRouter();
+    const { user } = useAuth();
 
     useEffect(() => {
         let mounted = true;
 
         const fetchChats = async () => {
             try {
-                // نحاول نجيب userId من localStorage أو fall back لعرض كل الشاتس
-                const userId = localStorage.getItem("userId");
-
-                // لو عندك راوت بالمستخدم استخدمه: /api/chat/:userId
-                // وإلا لو عندك endpoint مختلف عدله هنا
-                const url = userId ? `${API_BASE}/api/chat/${userId}` : `${API_BASE}/api/chat`;
-
-                const res = await axios.get(url);
+                console.log("Fetching chats for user:", user?.id);
+                const res = await apiFetch("/api/chat");
                 if (!mounted) return;
-                setChats(res.data || []);
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    console.log("Chats fetched:", data);
+                    setChats(data || []);
+                } else {
+                    console.error("Failed to fetch chats:", res.status);
+                }
             } catch (err) {
                 console.error("Failed to fetch chats:", err);
             } finally {
@@ -40,14 +44,16 @@ export default function ChatsBox() {
             }
         };
 
-        fetchChats();
+        if (user?.id) {
+            fetchChats();
+        }
 
         const socket = connectSocket();
 
         const onNewMessage = (message: any) => {
+            console.log("New message received:", message);
             setChats((prevChats) =>
                 prevChats.map((chat) =>
-                    // تأكد إن الـ message.chatId هو نفس نوع الـ chat.id (string/number)
                     String(chat.id) === String(message.chatId)
                         ? {
                             ...chat,
@@ -65,13 +71,8 @@ export default function ChatsBox() {
         return () => {
             mounted = false;
             socket.off("newMessage", onNewMessage);
-            // إذا connectSocket بيفتح اتصال جديد كل مرة تقدر تعمل disconnect
-            // لكن لو connectSocket يعيد نفس الـ instance المشترك فـ disconnect هنا ممكن يؤثر على أجزاء تانية.
-            if (typeof socket.disconnect === "function") {
-                socket.disconnect();
-            }
         };
-    }, []);
+    }, [user?.id]);
 
     if (loading) return <p className="text-white text-center mt-10">Loading chats...</p>;
 
@@ -93,7 +94,10 @@ export default function ChatsBox() {
                                 whileHover={{ scale: 1.01 }}
                                 whileTap={{ scale: 0.97 }}
                                 className="flex items-center gap-4 p-4 hover:bg-gray-700/40 transition text-left"
-                                onClick={() => alert(`Open chat with ${chat.chatName}`)}
+                                onClick={() => {
+                                    setSelectedChat(chat.id);
+                                    router.push(`/messeging/chat/${chat.id}`);
+                                }}
                             >
                                 <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-md border border-white/20">
                                     {chat.chatName?.[0] ?? "U"}
