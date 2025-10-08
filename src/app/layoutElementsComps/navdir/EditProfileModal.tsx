@@ -100,9 +100,9 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
             console.log('EditProfileModal: Upload successful:', result);
             
             // Update profile data with the uploaded file URL
-            if (type === 'profile') {
+                if (type === 'profile') {
                 setProfileData(prev => ({ ...prev, profilePicture: result.url }));
-            } else {
+                } else {
                 setProfileData(prev => ({ ...prev, coverPhoto: result.url }));
             }
             

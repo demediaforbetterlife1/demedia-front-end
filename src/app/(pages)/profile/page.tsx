@@ -414,16 +414,16 @@ export default function ProfilePage() {
                 {/* Profile pic */}
                 <div className="absolute -top-20 left-6">
                     <div className="relative w-36 h-36">
-                        {profilePicture ? (
-                            <motion.img
+                    {profilePicture ? (
+                        <motion.img
                                 key={profilePicture} // Force re-render when profile picture changes
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ type: "spring", stiffness: 120 }}
-                                src={profilePicture}
-                                alt={name}
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 120 }}
+                            src={profilePicture}
+                            alt={name}
                                 className="w-full h-full rounded-full border-4 border-gray-900 shadow-lg"
-                                loading="lazy"
+                            loading="lazy"
                                 style={{ 
                                     width: '144px', 
                                     height: '144px',
@@ -431,9 +431,9 @@ export default function ProfilePage() {
                                     objectPosition: 'center',
                                     display: 'block'
                                 }}
-                                onError={(e) => {
+                            onError={(e) => {
                                     console.log("Profile picture failed to load:", profilePicture);
-                                    e.currentTarget.style.display = "none";
+                                e.currentTarget.style.display = "none";
                                     const fallback = e.currentTarget.nextElementSibling as HTMLElement;
                                     if (fallback) {
                                         fallback.classList.remove("hidden");
@@ -441,11 +441,11 @@ export default function ProfilePage() {
                                 }}
                                 onLoad={() => {
                                     console.log("Profile picture loaded successfully:", profilePicture);
-                                }}
-                            />
-                        ) : null}
+                            }}
+                        />
+                    ) : null}
                         <div className={`absolute inset-0 w-full h-full rounded-full border-4 border-gray-900 shadow-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold ${profilePicture ? "hidden" : ""}`}>
-                            {name.charAt(0).toUpperCase()}
+                        {name.charAt(0).toUpperCase()}
                         </div>
                     </div>
                     <button
@@ -638,7 +638,7 @@ export default function ProfilePage() {
                             ) : (
                                 <div className="text-center py-8">
                                     <Camera size={48} className="text-gray-400 mx-auto mb-4" />
-                                    <p className="text-gray-400">No stories yet.</p>
+                                <p className="text-gray-400">No stories yet.</p>
                                     {isOwnProfile && (
                                         <button
                                             onClick={() => setShowCreateStoryModal(true)}

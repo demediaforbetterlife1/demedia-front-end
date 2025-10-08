@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiFetch } from "@/lib/api";
 
 /* -------- Shooting Stars -------- */
 function ShootingStar() {
@@ -149,24 +150,29 @@ export default function InterestsPage() {
                 throw new Error("User not authenticated");
             }
 
-            const res = await fetch(`/api/users/${userId}/interests`, {
+            console.log("Saving interests for user:", userId, "interests:", selected);
+
+            const res = await apiFetch(`/api/users/${userId}/interests`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ interests: selected }),
             });
 
-            const rawText = await res.text();
-            let respData: any = null;
-            try {
-                respData = rawText ? JSON.parse(rawText) : null;
-            } catch (_e) {}
+            console.log("Interests API response status:", res.status);
 
             if (!res.ok) {
-                const message = (respData && (respData.error || respData.message)) || rawText || "Failed to save interests";
-                throw new Error(message);
+                const errorText = await res.text();
+                console.error("Interests API error:", errorText);
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch {
+                    errorData = { error: errorText };
+                }
+                throw new Error(errorData.error || errorText || "Failed to save interests");
             }
 
-            console.log("Saved Interests:", respData || {});
+            const respData = await res.json();
+            console.log("Saved Interests:", respData);
 
             // Update user context
             updateUser({ interests: selected });
@@ -174,7 +180,7 @@ export default function InterestsPage() {
             // بعد ما يحفظ الاهتمامات تقدر توديه على FinishSetup
             router.push("/FinishSetup");
         } catch (err: any) {
-            console.error(err);
+            console.error("Error saving interests:", err);
             setError(err.message || "Error saving interests");
         } finally {
             setIsLoading(false);
