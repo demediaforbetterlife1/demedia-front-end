@@ -23,7 +23,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       pathname
     });
 
-    const authPages = ['/sign-in', '/sign-up'];
+    const authPages = ['/sign-in', '/sign-up', '/verify-phone', '/verify-code'];
     const setupPages = ['/SignInSetUp', '/interests', '/FinishSetup'];
     const protectedPrefixes = ['/home', '/profile', '/messaging', '/messeging'];
 
@@ -38,8 +38,21 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         router.push('/sign-up');
       }
     } else if (isAuthenticated && user) {
-      console.log('Authenticated, checking setup status:', user.isSetupComplete);
-      // Authenticated - check setup status
+      console.log('Authenticated, checking phone verification and setup status:', { 
+        isPhoneVerified: user.isPhoneVerified, 
+        isSetupComplete: user.isSetupComplete 
+      });
+      
+      // Check phone verification first
+      if (!user.isPhoneVerified) {
+        console.log('Phone not verified, redirecting to verify-phone');
+        if (pathname !== '/verify-phone') {
+          router.push('/verify-phone');
+        }
+        return;
+      }
+      
+      // Phone is verified, check setup status
       if (isAuthPage) {
         // Already authenticated, redirect to appropriate page
         if (user.isSetupComplete) {

@@ -75,6 +75,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (res.ok) {
             const userData = await res.json();
             console.log('Auth check success, user data:', userData);
+            
+            // Check if user's phone is verified
+            if (userData.user && !userData.user.isPhoneVerified) {
+              console.log('User phone not verified, redirecting to verification');
+              // Clear tokens and redirect to verification
+              localStorage.removeItem('token');
+              localStorage.removeItem('userId');
+              setUser(null);
+              router.push('/verify-phone');
+              return;
+            }
+            
             setUser(userData.user);
             if (userData.user?.language) {
               setLanguage(userData.user.language);
@@ -194,15 +206,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('Registration success data:', data);
         const newUser = data.user;
         
-        // Store auth data
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-        }
-        localStorage.setItem('userId', newUser.id);
-        
-        setUser(newUser);
-        
-        // If phone verification is required, return the verification data
+        // If phone verification is required, return the verification data without setting user
         if (data.requiresPhoneVerification) {
           return {
             requiresPhoneVerification: true,
@@ -210,6 +214,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             message: data.message || "Please verify your phone number to complete registration"
           };
         }
+        
+        // Store auth data only if no verification needed
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
+        localStorage.setItem('userId', newUser.id);
+        
+        setUser(newUser);
         
         // Redirect to setup if no verification needed
         router.push('/SignInSetUp');

@@ -392,21 +392,30 @@ export default function SignUpPage() {
                             
                             {/* PHONE NUMBER INPUT */}
                             <div>
-                                <div className="flex">
+                                <div className="flex rounded-xl overflow-hidden bg-[#1b263b]/70 border border-gray-600 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-400/20">
                                     {/* Country Code Dropdown */}
                                     <div className="relative">
                                         <select
                                             value={selectedCountryCode}
                                             onChange={(e) => setSelectedCountryCode(e.target.value)}
-                                            className="px-3 py-3 rounded-l-xl bg-[#1b263b]/70 text-white border-r border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                                            className="px-4 py-3 bg-transparent text-white border-none focus:outline-none cursor-pointer appearance-none"
                                         >
                                             {countryCodes.map((country) => (
-                                                <option key={country.code} value={country.code} className="bg-gray-800">
+                                                <option key={country.code} value={country.code} className="bg-gray-800 text-white">
                                                     {country.flag} {country.code}
                                                 </option>
                                             ))}
                                         </select>
+                                        {/* Custom dropdown arrow */}
+                                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                                            <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </div>
                                     </div>
+                                    
+                                    {/* Divider */}
+                                    <div className="w-px bg-gray-600"></div>
                                     
                                     {/* Phone Number Input */}
                                     <div className="relative flex-1">
@@ -417,7 +426,7 @@ export default function SignUpPage() {
                                             placeholder={t('auth.phone', 'Phone Number')}
                                             value={form.phoneNumber} 
                                             onChange={handleChange} 
-                                            className={`w-full pl-12 pr-4 py-3 rounded-r-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.phoneNumber ? 'border border-red-500' : ''}`} 
+                                            className={`w-full pl-12 pr-4 py-3 bg-transparent text-white placeholder-white/60 border-none focus:outline-none ${errors.phoneNumber ? 'text-red-400' : ''}`} 
                                             required
                                         />
                                     </div>
