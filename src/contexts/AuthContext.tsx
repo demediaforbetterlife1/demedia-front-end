@@ -111,14 +111,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (phoneNumber: string, password: string): Promise<boolean> => {
     try {
+      console.log('AuthContext: Starting login process');
       const res = await apiFetch(`/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phoneNumber, password }),
       });
 
+      console.log('AuthContext: Login response status:', res.status);
+
       if (res.ok) {
         const data = await res.json();
+        console.log('AuthContext: Login response data:', data);
         
         // Check if phone verification is required
         if (data.requiresPhoneVerification) {
@@ -126,20 +130,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         
         const userData = data.user;
+        console.log('AuthContext: User data received:', userData);
         
         // Store auth data
         if (data.token) {
           localStorage.setItem('token', data.token);
+          console.log('AuthContext: Token stored');
         }
         localStorage.setItem('userId', userData.id);
+        console.log('AuthContext: User ID stored:', userData.id);
         
         setUser(userData);
         if (userData.language) setLanguage(userData.language);
         
+        console.log('AuthContext: User state updated, redirecting...');
+        
         // Redirect based on setup status
         if (userData.isSetupComplete) {
+          console.log('AuthContext: Setup complete, redirecting to home');
           router.push('/home');
         } else {
+          console.log('AuthContext: Setup not complete, redirecting to SignInSetUp');
           router.push('/SignInSetUp');
         }
 
@@ -157,12 +168,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         let message = 'Login failed';
         try {
           const txt = await res.text();
+          console.log('AuthContext: Error response text:', txt);
           message = (() => { try { return JSON.parse(txt).error || message; } catch { return txt || message; } })();
-        } catch {}
+        } catch (e) {
+          console.log('AuthContext: Error parsing response:', e);
+        }
+        console.log('AuthContext: Throwing error:', message);
         throw new Error(message);
       }
     } catch (error: unknown) {
-      console.error('Login error:', error);
+      console.error('AuthContext: Login error:', error);
       throw error;
     }
   };
@@ -183,46 +198,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const registerInternal = async (userData: { name: string; username: string; phoneNumber: string; password: string }): Promise<boolean | { requiresPhoneVerification: boolean; verificationToken?: string; message?: string }> => {
     try {
-      console.log('Starting registration for:', userData.username);
+      console.log('AuthContext: Starting registration for:', userData.username);
+      console.log('AuthContext: Registration data:', { 
+        name: userData.name, 
+        username: userData.username, 
+        phoneNumber: userData.phoneNumber 
+      });
+      
       const res = await apiFetch(`/api/auth/sign-up`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
       });
 
-      console.log('Registration response status:', res.status);
-      console.log('Registration response ok:', res.ok);
+      console.log('AuthContext: Registration response status:', res.status);
+      console.log('AuthContext: Registration response ok:', res.ok);
 
       if (res.ok) {
         const data = await res.json();
-        console.log('Registration success data:', data);
+        console.log('AuthContext: Registration success data:', data);
         const newUser = data.user;
         
         // Store auth data and proceed to setup
         if (data.token) {
           localStorage.setItem('token', data.token);
+          console.log('AuthContext: Token stored');
         }
         localStorage.setItem('userId', newUser.id);
+        console.log('AuthContext: User ID stored:', newUser.id);
         
         setUser(newUser);
+        console.log('AuthContext: User state updated');
         
         // Redirect to setup
+        console.log('AuthContext: Redirecting to SignInSetUp');
         router.push('/SignInSetUp');
         
         return true;
       } else {
-        console.log('Registration failed with status:', res.status);
+        console.log('AuthContext: Registration failed with status:', res.status);
         let errorText = '';
         let errorData = null;
         
         try {
           errorText = await res.text();
-          console.log('Raw error response:', errorText);
+          console.log('AuthContext: Raw error response:', errorText);
           errorData = JSON.parse(errorText);
-          console.log('Parsed error data:', errorData);
+          console.log('AuthContext: Parsed error data:', errorData);
         } catch (parseError) {
-          console.log('Error parsing response:', parseError);
-          console.log('Using raw error text:', errorText);
+          console.log('AuthContext: Error parsing response:', parseError);
+          console.log('AuthContext: Using raw error text:', errorText);
         }
         
         // Extract the actual error message
@@ -233,30 +258,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           message = errorText;
         }
         
-        console.log('Final error message:', message);
-        console.log('Error data:', errorData);
+        console.log('AuthContext: Final error message:', message);
+        console.log('AuthContext: Error data:', errorData);
         throw new Error(message);
       }
     } catch (error: unknown) {
-      console.error('Registration error caught:', error);
-      console.error('Error type:', typeof error);
-      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-      console.error('Error toString:', error?.toString());
+      console.error('AuthContext: Registration error caught:', error);
+      console.error('AuthContext: Error type:', typeof error);
+      console.error('AuthContext: Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('AuthContext: Error toString:', error?.toString());
       
       // Re-throw the error with proper message
       if (error instanceof Error) {
         // Fix the "Something went wrong" error specifically
         if (error.message === 'Something went wrong' || error.message.includes('Something went wrong')) {
-          console.log('Converting "Something went wrong" to proper error message');
-          throw new Error('Registration failed. Please try a different username or email.');
+          console.log('AuthContext: Converting "Something went wrong" to proper error message');
+          throw new Error('Registration failed. Please try a different username or phone number.');
         }
-      throw error;
+        throw error;
       } else {
         // Handle non-Error objects that might contain "Something went wrong"
         const errorStr = error?.toString() || '';
         if (errorStr.includes('Something went wrong')) {
-          console.log('Converting non-Error "Something went wrong" to proper error message');
-          throw new Error('Registration failed. Please try a different username or email.');
+          console.log('AuthContext: Converting non-Error "Something went wrong" to proper error message');
+          throw new Error('Registration failed. Please try a different username or phone number.');
         }
         throw new Error(error instanceof Error ? error.message : 'Registration failed. Please try again.');
       }

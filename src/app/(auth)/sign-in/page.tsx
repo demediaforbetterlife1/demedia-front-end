@@ -170,18 +170,26 @@ export default function SignIn() {
         setError("");
 
         try {
-            await login(form.phoneNumber, form.password);
-            if (remember) {
-                localStorage.setItem('rememberPhone', form.phoneNumber);
-            } else {
-                localStorage.removeItem('rememberPhone');
+            console.log('Attempting login with:', { phoneNumber: form.phoneNumber });
+            const success = await login(form.phoneNumber, form.password);
+            console.log('Login result:', success);
+            
+            if (success) {
+                if (remember) {
+                    localStorage.setItem('rememberPhone', form.phoneNumber);
+                } else {
+                    localStorage.removeItem('rememberPhone');
+                }
+                // Login successful - redirect will be handled by AuthGuard
+                console.log('Login successful, redirecting...');
             }
         } catch (err: any) {
+            console.error('Login error:', err);
             // Check if it's a phone verification error
             if (err.message && (err.message.includes("verify your phone") || err.message.includes("Verification SMS sent"))) {
                 setError(t('auth.verificationSent', 'Verification SMS sent to your phone! Please check your messages and enter the verification code to complete login.'));
             } else {
-            setError(err.message || t('auth.loginFailed', 'Login failed'));
+                setError(err.message || t('auth.loginFailed', 'Login failed. Please check your credentials and try again.'));
             }
         } finally {
             setIsSubmitting(false);

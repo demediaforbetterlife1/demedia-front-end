@@ -257,29 +257,37 @@ export default function SignUpPage() {
             const fullPhoneNumber = selectedCountryCode + form.phoneNumber;
             const formData = { ...form, phoneNumber: fullPhoneNumber };
             
-            await register(formData);
+            console.log('Sign-up: Attempting registration with:', { 
+                name: formData.name, 
+                username: formData.username, 
+                phoneNumber: formData.phoneNumber 
+            });
+            
+            const result = await register(formData);
+            console.log('Sign-up: Registration result:', result);
             
             // Clear form on success - user will be redirected to setup by AuthContext
             setForm({ name: "", username: "", phoneNumber: "", password: "" });
+            console.log('Sign-up: Registration successful, form cleared');
         } catch (err: any) {
-            console.error("❌ Registration error:", err);
-            console.error("Error message:", err.message);
-            console.error("Error type:", typeof err);
-            console.error("Error string:", err.toString());
-            console.error("Full error object:", err);
+            console.error("Sign-up: Registration error:", err);
+            console.error("Sign-up: Error message:", err.message);
+            console.error("Sign-up: Error type:", typeof err);
+            console.error("Sign-up: Error string:", err.toString());
+            console.error("Sign-up: Full error object:", err);
             
             // Clear any previous errors
             setErrors({});
             
             // Handle specific error cases with better matching
             const errorMessage = err.message || err.toString() || "";
-            console.log("Error message for handling:", errorMessage);
+            console.log("Sign-up: Error message for handling:", errorMessage);
             
-            if (errorMessage.includes("Username already in use")) {
+            if (errorMessage.includes("Username already in use") || errorMessage.includes("username")) {
                 setErrors({ username: t('auth.usernameTaken', 'This username is already taken') });
-            } else if (errorMessage.includes("Phone number already registered")) {
+            } else if (errorMessage.includes("Phone number already registered") || errorMessage.includes("phone")) {
                 setErrors({ phoneNumber: t('auth.phoneRegistered', 'This phone number is already registered') });
-            } else if (errorMessage.includes("Something went wrong")) {
+            } else if (errorMessage.includes("Something went wrong") || errorMessage.includes("Registration failed")) {
                 // This is the generic error - show a more helpful message
                 setErrors({ general: t('auth.registrationFailed', 'Registration failed. Please try a different username or phone number.') });
             } else {

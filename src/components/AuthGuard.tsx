@@ -33,26 +33,31 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
     // If not authenticated, redirect to sign-up unless on auth pages
     if (!isAuthenticated) {
-      console.log('Not authenticated, redirecting to sign-up');
+      console.log('AuthGuard: Not authenticated, checking if should redirect');
       if (!isAuthPage) {
+        console.log('AuthGuard: Redirecting to sign-up');
         router.push('/sign-up');
+      } else {
+        console.log('AuthGuard: On auth page, allowing access');
       }
       return;
     }
 
     // If authenticated, handle routing based on setup status
     if (isAuthenticated && user) {
-      console.log('Authenticated, checking setup status:', { 
-        isSetupComplete: user.isSetupComplete 
+      console.log('AuthGuard: Authenticated, checking setup status:', { 
+        isSetupComplete: user.isSetupComplete,
+        pathname
       });
       
       // If on auth pages but already authenticated, redirect appropriately
       if (isAuthPage) {
+        console.log('AuthGuard: On auth page but authenticated, redirecting based on setup status');
         if (user.isSetupComplete) {
-          console.log('Setup complete, redirecting to home');
+          console.log('AuthGuard: Setup complete, redirecting to home');
           router.push('/home');
         } else {
-          console.log('Setup not complete, redirecting to SignInSetUp');
+          console.log('AuthGuard: Setup not complete, redirecting to SignInSetUp');
           router.push('/SignInSetUp');
         }
         return;
@@ -60,17 +65,19 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
       // If trying to access protected pages without completing setup
       if (isProtectedPage && !user.isSetupComplete) {
-        console.log('Trying to access protected page without setup, redirecting to SignInSetUp');
+        console.log('AuthGuard: Trying to access protected page without setup, redirecting to SignInSetUp');
         router.push('/SignInSetUp');
         return;
       }
 
       // If setup is complete but on setup pages, redirect to home
       if (isSetupPage && user.isSetupComplete) {
-        console.log('Setup complete but on setup page, redirecting to home');
+        console.log('AuthGuard: Setup complete but on setup page, redirecting to home');
         router.push('/home');
         return;
       }
+
+      console.log('AuthGuard: All checks passed, allowing access to:', pathname);
     }
   }, [isAuthenticated, isLoading, user, pathname, router]);
 
