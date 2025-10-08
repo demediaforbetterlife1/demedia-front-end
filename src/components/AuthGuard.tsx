@@ -31,20 +31,23 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     const isSetupPage = setupPages.includes(pathname);
     const isProtectedPage = protectedPrefixes.some(p => pathname.startsWith(p));
 
+    // If not authenticated, redirect to sign-up unless on auth pages
     if (!isAuthenticated) {
       console.log('Not authenticated, redirecting to sign-up');
-      // Not authenticated - redirect to sign-up unless on auth pages
       if (!isAuthPage) {
         router.push('/sign-up');
       }
-    } else if (isAuthenticated && user) {
+      return;
+    }
+
+    // If authenticated, handle routing based on setup status
+    if (isAuthenticated && user) {
       console.log('Authenticated, checking setup status:', { 
         isSetupComplete: user.isSetupComplete 
       });
       
-      // Check setup status
+      // If on auth pages but already authenticated, redirect appropriately
       if (isAuthPage) {
-        // Already authenticated, redirect to appropriate page
         if (user.isSetupComplete) {
           console.log('Setup complete, redirecting to home');
           router.push('/home');
@@ -52,14 +55,21 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
           console.log('Setup not complete, redirecting to SignInSetUp');
           router.push('/SignInSetUp');
         }
-      } else if (isProtectedPage && !user.isSetupComplete) {
+        return;
+      }
+
+      // If trying to access protected pages without completing setup
+      if (isProtectedPage && !user.isSetupComplete) {
         console.log('Trying to access protected page without setup, redirecting to SignInSetUp');
-        // Trying to access protected pages without completing setup
         router.push('/SignInSetUp');
-      } else if (isSetupPage && user.isSetupComplete) {
+        return;
+      }
+
+      // If setup is complete but on setup pages, redirect to home
+      if (isSetupPage && user.isSetupComplete) {
         console.log('Setup complete but on setup page, redirecting to home');
-        // Setup already complete, redirect to home
         router.push('/home');
+        return;
       }
     }
   }, [isAuthenticated, isLoading, user, pathname, router]);

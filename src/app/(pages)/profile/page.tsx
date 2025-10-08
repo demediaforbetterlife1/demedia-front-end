@@ -413,23 +413,39 @@ export default function ProfilePage() {
             <div className="relative px-6 pb-6">
                 {/* Profile pic */}
                 <div className="absolute -top-20 left-6">
-                    {profilePicture ? (
-                        <motion.img
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ type: "spring", stiffness: 120 }}
-                            src={profilePicture}
-                            alt={name}
-                            className="w-36 h-36 rounded-full border-4 border-gray-900 shadow-lg object-cover"
-                            loading="lazy"
-                            onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                                e.currentTarget.nextElementSibling?.classList.remove("hidden");
-                            }}
-                        />
-                    ) : null}
-                    <div className={`w-36 h-36 rounded-full border-4 border-gray-900 shadow-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold ${profilePicture ? "hidden" : ""}`}>
-                        {name.charAt(0).toUpperCase()}
+                    <div className="relative w-36 h-36">
+                        {profilePicture ? (
+                            <motion.img
+                                key={profilePicture} // Force re-render when profile picture changes
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ type: "spring", stiffness: 120 }}
+                                src={profilePicture}
+                                alt={name}
+                                className="w-full h-full rounded-full border-4 border-gray-900 shadow-lg object-cover"
+                                loading="lazy"
+                                style={{ 
+                                    width: '144px', 
+                                    height: '144px',
+                                    objectFit: 'cover',
+                                    objectPosition: 'center'
+                                }}
+                                onError={(e) => {
+                                    console.log("Profile picture failed to load:", profilePicture);
+                                    e.currentTarget.style.display = "none";
+                                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                    if (fallback) {
+                                        fallback.classList.remove("hidden");
+                                    }
+                                }}
+                                onLoad={() => {
+                                    console.log("Profile picture loaded successfully:", profilePicture);
+                                }}
+                            />
+                        ) : null}
+                        <div className={`absolute inset-0 w-full h-full rounded-full border-4 border-gray-900 shadow-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold ${profilePicture ? "hidden" : ""}`}>
+                            {name.charAt(0).toUpperCase()}
+                        </div>
                     </div>
                     <button
                         type="button"
@@ -795,7 +811,13 @@ export default function ProfilePage() {
                 isOpen={showEditModal}
                 onClose={() => setShowEditModal(false)}
                 onProfileUpdated={(updatedProfile) => {
-                    setProfile(prev => prev ? { ...prev, ...updatedProfile } : null);
+                    console.log("Profile updated:", updatedProfile);
+                    setProfile(prev => {
+                        if (!prev) return null;
+                        const newProfile = { ...prev, ...updatedProfile };
+                        console.log("New profile state:", newProfile);
+                        return newProfile;
+                    });
                     setShowEditModal(false);
                 }}
             />
