@@ -19,6 +19,10 @@ import {
     Zap
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import AIFeatures from "./AIFeatures";
+import CollaborativeFeatures from "./CollaborativeFeatures";
+import GamificationSystem from "./GamificationSystem";
+import AdvancedVisibilityControls from "./AdvancedVisibilityControls";
 
 interface CreateDeSnapModalProps {
     isOpen: boolean;
@@ -79,7 +83,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
     const [isMuted, setIsMuted] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
-    const [activeTab, setActiveTab] = useState<"upload" | "settings">("upload");
+    const [activeTab, setActiveTab] = useState<"upload" | "settings" | "ai" | "collaborate" | "gamify" | "visibility">("upload");
     
     const [settings, setSettings] = useState<DeSnapSettings>({
         visibility: "public",
@@ -252,9 +256,13 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                     </div>
 
                     {/* Tab Navigation */}
-                    <div className="flex border-b border-gray-700">
+                    <div className="flex border-b border-gray-700 overflow-x-auto">
                         {[
                             { id: "upload", label: "Upload", icon: Upload },
+                            { id: "ai", label: "AI Features", icon: Zap },
+                            { id: "collaborate", label: "Collaborate", icon: Users },
+                            { id: "gamify", label: "Gamify", icon: Sparkles },
+                            { id: "visibility", label: "Visibility", icon: Eye },
                             { id: "settings", label: "Settings", icon: Settings }
                         ].map((tab) => {
                             const Icon = tab.icon;
@@ -262,7 +270,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id as any)}
-                                    className={`flex-1 flex items-center justify-center space-x-2 py-4 px-6 transition-colors ${
+                                    className={`flex-shrink-0 flex items-center justify-center space-x-2 py-4 px-4 transition-colors ${
                                         activeTab === tab.id
                                             ? "text-yellow-400 border-b-2 border-yellow-400 bg-yellow-400/5"
                                             : "text-gray-400 hover:text-white hover:bg-gray-800/50"
@@ -371,6 +379,74 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                             )}
                                         </div>
                                     )}
+                                </motion.div>
+                            )}
+
+                            {/* AI Features Tab */}
+                            {activeTab === "ai" && (
+                                <motion.div
+                                    key="ai"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-6"
+                                >
+                                    <AIFeatures
+                                        videoUrl={videoUrl}
+                                        onAnalysisComplete={(analysis) => {
+                                            console.log("AI Analysis:", analysis);
+                                        }}
+                                        isAnalyzing={false}
+                                        onAnalyzingChange={() => {}}
+                                    />
+                                </motion.div>
+                            )}
+
+                            {/* Collaborative Features Tab */}
+                            {activeTab === "collaborate" && (
+                                <motion.div
+                                    key="collaborate"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-6"
+                                >
+                                    <CollaborativeFeatures
+                                        deSnapId="new"
+                                        onCollaborationUpdate={(collaborators) => {
+                                            console.log("Collaborators:", collaborators);
+                                        }}
+                                    />
+                                </motion.div>
+                            )}
+
+                            {/* Gamification Tab */}
+                            {activeTab === "gamify" && (
+                                <motion.div
+                                    key="gamify"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-6"
+                                >
+                                    <GamificationSystem />
+                                </motion.div>
+                            )}
+
+                            {/* Advanced Visibility Tab */}
+                            {activeTab === "visibility" && (
+                                <motion.div
+                                    key="visibility"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-6"
+                                >
+                                    <AdvancedVisibilityControls
+                                        onVisibilityChange={(rules) => {
+                                            console.log("Visibility Rules:", rules);
+                                        }}
+                                    />
                                 </motion.div>
                             )}
 

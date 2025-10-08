@@ -186,7 +186,7 @@ export default function ProfilePage() {
                     followingCount: data.followingCount,
                     likesCount: data.likesCount,
                     isFollowing: false, // This will be determined by follow status
-                    privacy: data.privacy || 'public'
+                    privacy: (data.privacy as 'public' | 'followers' | 'private') || 'public'
                 };
 
                 setProfile(normalized);

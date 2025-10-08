@@ -82,6 +82,7 @@ interface UserProfileResponse {
     followersCount: number;
     followingCount: number;
     likesCount: number;
+    privacy?: string;
     stories: Array<{
         id: number;
         content: string;
