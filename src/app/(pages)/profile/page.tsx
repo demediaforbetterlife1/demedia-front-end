@@ -1,6 +1,6 @@
 ﻿// src/components/ProfilePage.tsx
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Camera,
@@ -10,18 +10,54 @@ import {
     User as UserIcon,
     Heart,
     MessageCircle,
+    Video,
+    Play,
+    Pause,
+    Volume2,
+    VolumeX,
+    Share,
+    Bookmark,
+    Eye,
+    Clock,
+    Globe,
+    Lock,
+    UserCheck,
+    Sparkles,
+    Zap
 } from "lucide-react";
 import { getUserProfile } from "../../../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams } from "next/navigation";
 import EditProfileModal from "@/app/layoutElementsComps/navdir/EditProfileModal";
+import CreateStoryModal from "@/app/layoutElementsComps/navdir/CreateStoryModal";
+import DeSnapsViewer from "@/components/DeSnapsViewer";
+import CreateDeSnapModal from "@/components/CreateDeSnapModal";
 
 interface Story {
     id: number;
     content: string;
     createdAt: string;
+    expiresAt?: string;
     likes?: number;
     comments?: number;
+    views?: number;
+    visibility?: 'public' | 'followers' | 'close_friends' | 'premium';
+    type?: 'image' | 'video' | 'text';
+    duration?: number; // in hours
+}
+
+interface DeSnap {
+    id: number;
+    content: string;
+    thumbnail?: string;
+    createdAt: string;
+    likes: number;
+    comments: number;
+    views: number;
+    duration: number; // in seconds
+    visibility: 'public' | 'followers' | 'close_friends' | 'premium';
+    isLiked?: boolean;
+    isBookmarked?: boolean;
 }
 
 interface Profile {
@@ -33,10 +69,12 @@ interface Profile {
     coverPicture?: string | null;
     coverPhoto?: string | null;
     stories: Story[];
+    deSnaps: DeSnap[];
     followersCount: number;
     followingCount: number;
     likesCount: number;
     isFollowing?: boolean;
+    privacy?: 'public' | 'followers' | 'private';
 }
 
 export default function ProfilePage() {
@@ -52,6 +90,11 @@ export default function ProfilePage() {
     const [error, setError] = useState<string | null>(null);
     const [busyFollow, setBusyFollow] = useState<boolean>(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showCreateStoryModal, setShowCreateStoryModal] = useState(false);
+    const [showCreateDeSnapModal, setShowCreateDeSnapModal] = useState(false);
+    const [showDeSnapsViewer, setShowDeSnapsViewer] = useState(false);
+    const [selectedDeSnap, setSelectedDeSnap] = useState<DeSnap | null>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -86,6 +129,19 @@ export default function ProfilePage() {
                     userStories = await storiesResponse.json();
                 }
 
+                // Fetch DeSnaps for this user
+                const deSnapsResponse = await fetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'user-id': user?.id?.toString() || '',
+                    }
+                });
+                
+                let userDeSnaps = [];
+                if (deSnapsResponse.ok) {
+                    userDeSnaps = await deSnapsResponse.json();
+                }
+
                 if (!mounted) return;
 
                 if (!data) {
@@ -101,17 +157,36 @@ export default function ProfilePage() {
                     bio: data.bio ?? "",
                     profilePicture: data.profilePicture,
                     coverPicture: data.coverPhoto,
-                    stories: userStories.map((story: Story) => ({
+                    stories: userStories.map((story: any) => ({
                         id: story.id,
                         content: story.content,
                         createdAt: story.createdAt,
-                        likes: 0,
-                        comments: 0
+                        expiresAt: story.expiresAt,
+                        likes: story.likes || 0,
+                        comments: story.comments || 0,
+                        views: story.views || 0,
+                        visibility: story.visibility || 'public',
+                        type: story.type || 'text',
+                        duration: story.duration || 24
+                    })),
+                    deSnaps: userDeSnaps.map((deSnap: any) => ({
+                        id: deSnap.id,
+                        content: deSnap.content,
+                        thumbnail: deSnap.thumbnail,
+                        createdAt: deSnap.createdAt,
+                        likes: deSnap.likes || 0,
+                        comments: deSnap.comments || 0,
+                        views: deSnap.views || 0,
+                        duration: deSnap.duration || 0,
+                        visibility: deSnap.visibility || 'public',
+                        isLiked: deSnap.isLiked || false,
+                        isBookmarked: deSnap.isBookmarked || false
                     })),
                     followersCount: data.followersCount,
                     followingCount: data.followingCount,
                     likesCount: data.likesCount,
                     isFollowing: false, // This will be determined by follow status
+                    privacy: data.privacy || 'public'
                 };
 
                 setProfile(normalized);
@@ -130,6 +205,85 @@ export default function ProfilePage() {
             mounted = false;
         };
     }, [userId, authLoading]);
+
+    // Real-time refresh function
+    const refreshProfile = useCallback(async () => {
+        if (!userId) return;
+        
+        setIsRefreshing(true);
+        try {
+            // Refresh stories
+            const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'user-id': user?.id?.toString() || '',
+                }
+            });
+            
+            let userStories = [];
+            if (storiesResponse.ok) {
+                userStories = await storiesResponse.json();
+            }
+
+            // Refresh DeSnaps
+            const deSnapsResponse = await fetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'user-id': user?.id?.toString() || '',
+                }
+            });
+            
+            let userDeSnaps = [];
+            if (deSnapsResponse.ok) {
+                userDeSnaps = await deSnapsResponse.json();
+            }
+
+            // Update profile with new data
+            setProfile(prev => prev ? {
+                ...prev,
+                stories: userStories.map((story: any) => ({
+                    id: story.id,
+                    content: story.content,
+                    createdAt: story.createdAt,
+                    expiresAt: story.expiresAt,
+                    likes: story.likes || 0,
+                    comments: story.comments || 0,
+                    views: story.views || 0,
+                    visibility: story.visibility || 'public',
+                    type: story.type || 'text',
+                    duration: story.duration || 24
+                })),
+                deSnaps: userDeSnaps.map((deSnap: any) => ({
+                    id: deSnap.id,
+                    content: deSnap.content,
+                    thumbnail: deSnap.thumbnail,
+                    createdAt: deSnap.createdAt,
+                    likes: deSnap.likes || 0,
+                    comments: deSnap.comments || 0,
+                    views: deSnap.views || 0,
+                    duration: deSnap.duration || 0,
+                    visibility: deSnap.visibility || 'public',
+                    isLiked: deSnap.isLiked || false,
+                    isBookmarked: deSnap.isBookmarked || false
+                }))
+            } : null);
+        } catch (err) {
+            console.error('Error refreshing profile:', err);
+        } finally {
+            setIsRefreshing(false);
+        }
+    }, [userId, user?.id]);
+
+    // Auto-refresh every 30 seconds for stories
+    useEffect(() => {
+        if (!isOwnProfile) return;
+        
+        const interval = setInterval(() => {
+            refreshProfile();
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, [refreshProfile, isOwnProfile]);
 
     async function handleFollowToggle() {
         if (!profile || busyFollow) return;
@@ -368,18 +522,25 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex border-t border-gray-800">
-                {["posts", "stories", "media", "about"].map((tab) => (
+                {["posts", "stories", "desnaps", "media", "about"].map((tab) => (
                     <button
                         key={tab}
                         type="button"
                         onClick={() => setActiveTab(tab)}
-                        className={`flex-1 py-3 text-sm font-medium ${
+                        className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 ${
                             activeTab === tab
                                 ? "text-indigo-400 border-b-2 border-indigo-400"
                                 : "text-gray-400 hover:text-white"
                         }`}
                     >
-                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        {tab === "desnaps" ? (
+                            <>
+                                <Zap size={16} />
+                                DeSnaps
+                            </>
+                        ) : (
+                            tab.charAt(0).toUpperCase() + tab.slice(1)
+                        )}
                     </button>
                 ))}
             </div>
@@ -406,12 +567,24 @@ export default function ProfilePage() {
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.3 }}
                         >
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-white">Stories</h3>
+                                {isOwnProfile && (
+                                    <button
+                                        onClick={() => setShowCreateStoryModal(true)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
+                                    >
+                                        <Camera size={16} />
+                                        Add Story
+                                    </button>
+                                )}
+                            </div>
                             {stories?.length > 0 ? (
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                     {stories.map((story, i) => (
                                         <div
                                             key={story.id}
-                                            className="aspect-square rounded-xl border border-gray-700 shadow-md bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+                                            className="aspect-square rounded-xl border border-gray-700 shadow-md bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden cursor-pointer hover:scale-105 transition-transform relative group"
                                         >
                                             {story.content?.startsWith('http') ? (
                                                 <img 
@@ -426,11 +599,134 @@ export default function ProfilePage() {
                                                     </p>
                                                 </div>
                                             )}
+                                            
+                                            {/* Visibility indicator */}
+                                            <div className="absolute top-2 right-2">
+                                                {story.visibility === 'public' && <Globe size={12} className="text-green-400" />}
+                                                {story.visibility === 'followers' && <Users size={12} className="text-blue-400" />}
+                                                {story.visibility === 'close_friends' && <UserCheck size={12} className="text-purple-400" />}
+                                                {story.visibility === 'premium' && <Sparkles size={12} className="text-yellow-400" />}
+                                            </div>
+                                            
+                                            {/* Story info overlay */}
+                                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex items-center justify-between text-xs text-white">
+                                                    <span>{story.views || 0} views</span>
+                                                    <span>{story.duration || 24}h</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-gray-400">No stories yet.</p>
+                                <div className="text-center py-8">
+                                    <Camera size={48} className="text-gray-400 mx-auto mb-4" />
+                                    <p className="text-gray-400">No stories yet.</p>
+                                    {isOwnProfile && (
+                                        <button
+                                            onClick={() => setShowCreateStoryModal(true)}
+                                            className="mt-4 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
+                                        >
+                                            Create your first story
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+
+                    {activeTab === "desnaps" && (
+                        <motion.div
+                            key="desnaps"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                    <Zap size={20} className="text-yellow-400" />
+                                    DeSnaps
+                                </h3>
+                                {isOwnProfile && (
+                                    <button
+                                        onClick={() => setShowCreateDeSnapModal(true)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
+                                    >
+                                        <Video size={16} />
+                                        Create DeSnap
+                                    </button>
+                                )}
+                            </div>
+                            {profile?.deSnaps?.length > 0 ? (
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {profile.deSnaps.map((deSnap, i) => (
+                                        <div
+                                            key={deSnap.id}
+                                            onClick={() => {
+                                                setSelectedDeSnap(deSnap);
+                                                setShowDeSnapsViewer(true);
+                                            }}
+                                            className="aspect-[9/16] rounded-xl border border-gray-700 shadow-md bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden cursor-pointer hover:scale-105 transition-transform relative group"
+                                        >
+                                            {deSnap.thumbnail ? (
+                                                <img 
+                                                    src={deSnap.thumbnail} 
+                                                    alt="DeSnap" 
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center p-4">
+                                                    <Video size={32} className="text-gray-400" />
+                                                </div>
+                                            )}
+                                            
+                                            {/* Play button overlay */}
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Play size={32} className="text-white" />
+                                            </div>
+                                            
+                                            {/* Visibility indicator */}
+                                            <div className="absolute top-2 right-2">
+                                                {deSnap.visibility === 'public' && <Globe size={12} className="text-green-400" />}
+                                                {deSnap.visibility === 'followers' && <Users size={12} className="text-blue-400" />}
+                                                {deSnap.visibility === 'close_friends' && <UserCheck size={12} className="text-purple-400" />}
+                                                {deSnap.visibility === 'premium' && <Sparkles size={12} className="text-yellow-400" />}
+                                            </div>
+                                            
+                                            {/* DeSnap info overlay */}
+                                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                                <div className="flex items-center justify-between text-xs text-white">
+                                                    <span>{deSnap.views} views</span>
+                                                    <span>{Math.floor(deSnap.duration / 60)}:{(deSnap.duration % 60).toString().padStart(2, '0')}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="flex items-center gap-1">
+                                                        <Heart size={12} className={deSnap.isLiked ? "text-red-400 fill-current" : "text-gray-400"} />
+                                                        {deSnap.likes}
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <MessageCircle size={12} className="text-gray-400" />
+                                                        {deSnap.comments}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8">
+                                    <Video size={48} className="text-gray-400 mx-auto mb-4" />
+                                    <p className="text-gray-400">No DeSnaps yet.</p>
+                                    {isOwnProfile && (
+                                        <button
+                                            onClick={() => setShowCreateDeSnapModal(true)}
+                                            className="mt-4 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
+                                        >
+                                            Create your first DeSnap
+                                        </button>
+                                    )}
+                                </div>
                             )}
                         </motion.div>
                     )}
@@ -503,6 +799,49 @@ export default function ProfilePage() {
                     setShowEditModal(false);
                 }}
             />
+
+            <CreateStoryModal
+                isOpen={showCreateStoryModal}
+                onClose={() => setShowCreateStoryModal(false)}
+                onStoryCreated={(newStory) => {
+                    setProfile(prev => prev ? {
+                        ...prev,
+                        stories: [newStory, ...prev.stories]
+                    } : null);
+                    setShowCreateStoryModal(false);
+                }}
+            />
+
+            <CreateDeSnapModal
+                isOpen={showCreateDeSnapModal}
+                onClose={() => setShowCreateDeSnapModal(false)}
+                onDeSnapCreated={(newDeSnap) => {
+                    setProfile(prev => prev ? {
+                        ...prev,
+                        deSnaps: [newDeSnap, ...prev.deSnaps]
+                    } : null);
+                    setShowCreateDeSnapModal(false);
+                }}
+            />
+
+            {showDeSnapsViewer && selectedDeSnap && (
+                <DeSnapsViewer
+                    isOpen={showDeSnapsViewer}
+                    onClose={() => {
+                        setShowDeSnapsViewer(false);
+                        setSelectedDeSnap(null);
+                    }}
+                    deSnap={selectedDeSnap}
+                    onDeSnapUpdated={(updatedDeSnap) => {
+                        setProfile(prev => prev ? {
+                            ...prev,
+                            deSnaps: prev.deSnaps.map(ds => 
+                                ds.id === updatedDeSnap.id ? updatedDeSnap : ds
+                            )
+                        } : null);
+                    }}
+                />
+            )}
         </div>
     );
 }
