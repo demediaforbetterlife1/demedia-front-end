@@ -21,6 +21,7 @@ interface User {
   preferredLang?: string;
   interests?: string[];
   isSetupComplete?: boolean;
+  isPhoneVerified?: boolean;
 }
 
 interface AuthContextType {
