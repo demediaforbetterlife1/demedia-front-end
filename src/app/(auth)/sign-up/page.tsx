@@ -11,7 +11,6 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { useI18n } from "@/contexts/I18nContext";
 import { Eye, EyeOff, Mail, Lock, User, UserCheck, Phone } from "lucide-react";
-import VerificationMethodModal from "@/components/VerificationMethodModal";
 
 /* ---------------- BACKGROUND 3D ---------------- */
 function RotatingPlanet({
@@ -195,12 +194,10 @@ export default function SignUpPage() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [showVerificationModal, setShowVerificationModal] = useState(false);
-    const [pendingUserData, setPendingUserData] = useState<{name: string; username: string; phoneNumber: string; password: string} | null>(null);
     const { t } = useI18n();
     const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-    const { register, isAuthenticated, isLoading, user, sendVerificationCode } = useAuth();
+    const { register, isAuthenticated, isLoading, user } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
@@ -260,18 +257,10 @@ export default function SignUpPage() {
             const fullPhoneNumber = selectedCountryCode + form.phoneNumber;
             const formData = { ...form, phoneNumber: fullPhoneNumber };
             
-            const result = await register(formData);
+            await register(formData);
             
-            // Check if phone verification is required
-            if (result && typeof result === 'object' && result.requiresPhoneVerification) {
-                // Store user data and show verification method modal
-                setPendingUserData(formData);
-                setShowVerificationModal(true);
-            } else {
-                // Clear form on success and redirect to sign-in
-                setForm({ name: "", username: "", phoneNumber: "", password: "" });
-                router.push('/sign-in');
-            }
+            // Clear form on success - user will be redirected to setup by AuthContext
+            setForm({ name: "", username: "", phoneNumber: "", password: "" });
         } catch (err: any) {
             console.error("❌ Registration error:", err);
             console.error("Error message:", err.message);
@@ -306,25 +295,6 @@ export default function SignUpPage() {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    const handleVerificationMethodSelect = async (method: 'whatsapp' | 'sms') => {
-        if (!pendingUserData) return;
-        
-        try {
-            // Send verification code via the selected method
-            await sendVerificationCode(pendingUserData.phoneNumber, method);
-            
-            // Redirect to verification page with parameters
-            const params = new URLSearchParams({
-                phone: pendingUserData.phoneNumber,
-                method: method
-            });
-            
-            router.push(`/verify-code?${params.toString()}`);
-        } catch (error) {
-            console.error('Error sending verification code:', error);
-            setErrors({ general: 'Failed to send verification code. Please try again.' });
-        }
-    };
 
     return (
         <div className="relative min-h-screen w-screen flex items-center justify-center overflow-hidden">
@@ -490,13 +460,6 @@ export default function SignUpPage() {
         .animate-spin-slow { animation: spin-slow 8s linear infinite; }
       `}</style>
 
-            {/* Verification Method Modal */}
-            <VerificationMethodModal
-                isOpen={showVerificationModal}
-                onClose={() => setShowVerificationModal(false)}
-                onSelectMethod={handleVerificationMethodSelect}
-                phoneNumber={pendingUserData?.phoneNumber || ''}
-            />
         </div>
     );
 }
