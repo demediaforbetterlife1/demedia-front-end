@@ -422,13 +422,14 @@ export default function ProfilePage() {
                                 transition={{ type: "spring", stiffness: 120 }}
                                 src={profilePicture}
                                 alt={name}
-                                className="w-full h-full rounded-full border-4 border-gray-900 shadow-lg object-cover"
+                                className="w-full h-full rounded-full border-4 border-gray-900 shadow-lg"
                                 loading="lazy"
                                 style={{ 
                                     width: '144px', 
                                     height: '144px',
                                     objectFit: 'cover',
-                                    objectPosition: 'center'
+                                    objectPosition: 'center',
+                                    display: 'block'
                                 }}
                                 onError={(e) => {
                                     console.log("Profile picture failed to load:", profilePicture);

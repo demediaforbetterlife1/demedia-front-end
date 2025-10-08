@@ -58,19 +58,59 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
 
     const handleFileUpload = async (file: File, type: 'profile' | 'cover') => {
         try {
-            // In a real app, you'd upload to a storage service
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const result = e.target?.result as string;
-                if (type === 'profile') {
-                    setProfileData(prev => ({ ...prev, profilePicture: result }));
-                } else {
-                    setProfileData(prev => ({ ...prev, coverPhoto: result }));
-                }
-            };
-            reader.readAsDataURL(file);
-        } catch (err) {
-            console.error('Error uploading file:', err);
+            console.log('EditProfileModal: Starting file upload:', { type, fileName: file.name, fileSize: file.size });
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                setError('File size must be less than 5MB');
+                return;
+            }
+            
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                setError('Please select an image file');
+                return;
+            }
+            
+            // Create FormData for file upload
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('type', type);
+            formData.append('userId', user?.id?.toString() || '');
+            
+            console.log('EditProfileModal: Uploading file to server...');
+            
+            // Upload to server
+            const response = await fetch('/api/upload/profile', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'user-id': user?.id?.toString() || '',
+                },
+                body: formData
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('EditProfileModal: Upload failed:', response.status, errorText);
+                throw new Error(`Failed to upload ${type} photo: ${errorText}`);
+            }
+            
+            const result = await response.json();
+            console.log('EditProfileModal: Upload successful:', result);
+            
+            // Update profile data with the uploaded file URL
+            if (type === 'profile') {
+                setProfileData(prev => ({ ...prev, profilePicture: result.url }));
+            } else {
+                setProfileData(prev => ({ ...prev, coverPhoto: result.url }));
+            }
+            
+            console.log('EditProfileModal: Profile data updated with new photo URL');
+            
+        } catch (err: any) {
+            console.error('EditProfileModal: File upload error:', err);
+            setError(err.message || `Failed to upload ${type} photo`);
         }
     };
 
