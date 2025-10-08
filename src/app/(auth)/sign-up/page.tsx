@@ -130,6 +130,68 @@ export default function SignUpPage() {
         phoneNumber: "",
         password: "",
     });
+    const [selectedCountryCode, setSelectedCountryCode] = useState("+1");
+
+    // Country codes data
+    const countryCodes = [
+        { code: "+1", country: "US/Canada", flag: "🇺🇸" },
+        { code: "+20", country: "Egypt", flag: "🇪🇬" },
+        { code: "+44", country: "UK", flag: "🇬🇧" },
+        { code: "+33", country: "France", flag: "🇫🇷" },
+        { code: "+49", country: "Germany", flag: "🇩🇪" },
+        { code: "+39", country: "Italy", flag: "🇮🇹" },
+        { code: "+34", country: "Spain", flag: "🇪🇸" },
+        { code: "+7", country: "Russia", flag: "🇷🇺" },
+        { code: "+86", country: "China", flag: "🇨🇳" },
+        { code: "+81", country: "Japan", flag: "🇯🇵" },
+        { code: "+82", country: "South Korea", flag: "🇰🇷" },
+        { code: "+91", country: "India", flag: "🇮🇳" },
+        { code: "+61", country: "Australia", flag: "🇦🇺" },
+        { code: "+55", country: "Brazil", flag: "🇧🇷" },
+        { code: "+52", country: "Mexico", flag: "🇲🇽" },
+        { code: "+54", country: "Argentina", flag: "🇦🇷" },
+        { code: "+27", country: "South Africa", flag: "🇿🇦" },
+        { code: "+234", country: "Nigeria", flag: "🇳🇬" },
+        { code: "+254", country: "Kenya", flag: "🇰🇪" },
+        { code: "+966", country: "Saudi Arabia", flag: "🇸🇦" },
+        { code: "+971", country: "UAE", flag: "🇦🇪" },
+        { code: "+90", country: "Turkey", flag: "🇹🇷" },
+        { code: "+98", country: "Iran", flag: "🇮🇷" },
+        { code: "+92", country: "Pakistan", flag: "🇵🇰" },
+        { code: "+880", country: "Bangladesh", flag: "🇧🇩" },
+        { code: "+94", country: "Sri Lanka", flag: "🇱🇰" },
+        { code: "+977", country: "Nepal", flag: "🇳🇵" },
+        { code: "+880", country: "Bangladesh", flag: "🇧🇩" },
+        { code: "+93", country: "Afghanistan", flag: "🇦🇫" },
+        { code: "+374", country: "Armenia", flag: "🇦🇲" },
+        { code: "+994", country: "Azerbaijan", flag: "🇦🇿" },
+        { code: "+880", country: "Bangladesh", flag: "🇧🇩" },
+        { code: "+375", country: "Belarus", flag: "🇧🇾" },
+        { code: "+32", country: "Belgium", flag: "🇧🇪" },
+        { code: "+359", country: "Bulgaria", flag: "🇧🇬" },
+        { code: "+385", country: "Croatia", flag: "🇭🇷" },
+        { code: "+420", country: "Czech Republic", flag: "🇨🇿" },
+        { code: "+45", country: "Denmark", flag: "🇩🇰" },
+        { code: "+372", country: "Estonia", flag: "🇪🇪" },
+        { code: "+358", country: "Finland", flag: "🇫🇮" },
+        { code: "+30", country: "Greece", flag: "🇬🇷" },
+        { code: "+36", country: "Hungary", flag: "🇭🇺" },
+        { code: "+353", country: "Ireland", flag: "🇮🇪" },
+        { code: "+972", country: "Israel", flag: "🇮🇱" },
+        { code: "+370", country: "Lithuania", flag: "🇱🇹" },
+        { code: "+352", country: "Luxembourg", flag: "🇱🇺" },
+        { code: "+356", country: "Malta", flag: "🇲🇹" },
+        { code: "+31", country: "Netherlands", flag: "🇳🇱" },
+        { code: "+47", country: "Norway", flag: "🇳🇴" },
+        { code: "+48", country: "Poland", flag: "🇵🇱" },
+        { code: "+351", country: "Portugal", flag: "🇵🇹" },
+        { code: "+40", country: "Romania", flag: "🇷🇴" },
+        { code: "+421", country: "Slovakia", flag: "🇸🇰" },
+        { code: "+386", country: "Slovenia", flag: "🇸🇮" },
+        { code: "+46", country: "Sweden", flag: "🇸🇪" },
+        { code: "+41", country: "Switzerland", flag: "🇨🇭" },
+        { code: "+380", country: "Ukraine", flag: "🇺🇦" },
+    ];
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -194,12 +256,16 @@ export default function SignUpPage() {
         setIsSubmitting(true);
 
         try {
-            const result = await register(form);
+            // Combine country code with phone number
+            const fullPhoneNumber = selectedCountryCode + form.phoneNumber;
+            const formData = { ...form, phoneNumber: fullPhoneNumber };
+            
+            const result = await register(formData);
             
             // Check if phone verification is required
             if (result && typeof result === 'object' && result.requiresPhoneVerification) {
                 // Store user data and show verification method modal
-                setPendingUserData(form);
+                setPendingUserData(formData);
                 setShowVerificationModal(true);
             } else {
                 // Clear form on success and redirect to sign-in
@@ -326,17 +392,35 @@ export default function SignUpPage() {
                             
                             {/* PHONE NUMBER INPUT */}
                             <div>
-                                <div className="relative">
-                                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
-                                    <input 
-                                        type="tel" 
-                                        name="phoneNumber" 
-                                        placeholder={t('auth.phone', '📱 Phone Number')}
-                                        value={form.phoneNumber} 
-                                        onChange={handleChange} 
-                                        className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.phoneNumber ? 'border border-red-500' : ''}`} 
-                                        required
-                                    />
+                                <div className="flex">
+                                    {/* Country Code Dropdown */}
+                                    <div className="relative">
+                                        <select
+                                            value={selectedCountryCode}
+                                            onChange={(e) => setSelectedCountryCode(e.target.value)}
+                                            className="px-3 py-3 rounded-l-xl bg-[#1b263b]/70 text-white border-r border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                                        >
+                                            {countryCodes.map((country) => (
+                                                <option key={country.code} value={country.code} className="bg-gray-800">
+                                                    {country.flag} {country.code}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    
+                                    {/* Phone Number Input */}
+                                    <div className="relative flex-1">
+                                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                        <input 
+                                            type="tel" 
+                                            name="phoneNumber" 
+                                            placeholder={t('auth.phone', 'Phone Number')}
+                                            value={form.phoneNumber} 
+                                            onChange={handleChange} 
+                                            className={`w-full pl-12 pr-4 py-3 rounded-r-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.phoneNumber ? 'border border-red-500' : ''}`} 
+                                            required
+                                        />
+                                    </div>
                                 </div>
                                 {errors.phoneNumber && <p className="text-red-400 text-sm mt-1">{errors.phoneNumber}</p>}
                             </div>

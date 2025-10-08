@@ -197,9 +197,25 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // For now, we'll just use the file name as content
-        // In a real app, you'd upload the file to a storage service
-        setContent(file.name);
+        try {
+            // Create a preview URL for the file
+            const fileUrl = URL.createObjectURL(file);
+            
+            // For images and videos, we'll store the URL and display the media
+            if (file.type.startsWith('image/')) {
+                setContent(`[IMAGE:${fileUrl}]`);
+            } else if (file.type.startsWith('video/')) {
+                setContent(`[VIDEO:${fileUrl}]`);
+            } else if (file.type.startsWith('audio/')) {
+                setContent(`[AUDIO:${fileUrl}]`);
+            } else {
+                // For other file types, show the filename
+                setContent(file.name);
+            }
+        } catch (error) {
+            console.error('Error handling file upload:', error);
+            setContent(file.name);
+        }
     };
 
     const addTag = (tag: string) => {
@@ -319,6 +335,41 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Media Preview */}
+                                    {content && (content.includes('[IMAGE:') || content.includes('[VIDEO:') || content.includes('[AUDIO:')) && (
+                                        <div className="mt-4">
+                                            <label className="block text-sm font-medium text-white mb-3">
+                                                Media Preview
+                                            </label>
+                                            <div className="relative rounded-xl overflow-hidden bg-gray-800/50 border border-gray-600">
+                                                {content.includes('[IMAGE:') && (
+                                                    <img 
+                                                        src={content.match(/\[IMAGE:(.*?)\]/)?.[1]} 
+                                                        alt="Story preview" 
+                                                        className="w-full h-48 object-cover"
+                                                    />
+                                                )}
+                                                {content.includes('[VIDEO:') && (
+                                                    <video 
+                                                        src={content.match(/\[VIDEO:(.*?)\]/)?.[1]} 
+                                                        controls 
+                                                        className="w-full h-48 object-cover"
+                                                    />
+                                                )}
+                                                {content.includes('[AUDIO:') && (
+                                                    <div className="p-4 flex items-center space-x-3">
+                                                        <Music className="w-8 h-8 text-cyan-400" />
+                                                        <audio 
+                                                            src={content.match(/\[AUDIO:(.*?)\]/)?.[1]} 
+                                                            controls 
+                                                            className="flex-1"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* Media Upload Options */}
                                     <div className="grid grid-cols-3 gap-3">
