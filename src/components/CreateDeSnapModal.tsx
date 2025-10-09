@@ -197,11 +197,37 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
         setError("");
 
         try {
-            // For now, we'll create a DeSnap with a placeholder content
-            // In a real app, you'd upload the video file first and get a URL
+            // Upload video file first
+            const formData = new FormData();
+            formData.append('video', videoFile);
+            formData.append('thumbnail', thumbnail);
+            formData.append('duration', duration.toString());
+            formData.append('visibility', settings.visibility);
+            formData.append('userId', user?.id || '');
+
+            // Upload the video file
+            const uploadResponse = await apiFetch("/api/upload/video", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!uploadResponse.ok) {
+                let errorMessage = "Failed to upload video";
+                try {
+                    const errorData = await uploadResponse.json();
+                    errorMessage = errorData.error || errorData.message || errorMessage;
+                } catch (e) {
+                    errorMessage = `Upload error: ${uploadResponse.status}`;
+                }
+                throw new Error(errorMessage);
+            }
+
+            const uploadData = await uploadResponse.json();
+            
+            // Now create the DeSnap with the uploaded video URL
             const deSnapData = {
-                content: videoUrl, // Use the video URL as content for now
-                thumbnail: thumbnail,
+                content: uploadData.videoUrl,
+                thumbnail: uploadData.thumbnailUrl,
                 duration: duration,
                 visibility: settings.visibility,
                 userId: user?.id

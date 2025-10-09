@@ -47,17 +47,42 @@ export default function MoodFilter({ isOpen, onClose, onMoodChange, currentMood 
     const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
     const [intensity, setIntensity] = useState(5); // 1-10 scale
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [userMoodHistory, setUserMoodHistory] = useState<any[]>([]);
+    const [recommendedContent, setRecommendedContent] = useState<any[]>([]);
 
     useEffect(() => {
         if (isOpen) {
             setSelectedMood(currentMood || "");
             setSelectedFilters([]);
             setIntensity(5);
+            loadUserMoodData();
         }
     }, [isOpen, currentMood]);
 
+    const loadUserMoodData = async () => {
+        try {
+            // Load user's mood history from localStorage
+            const savedMoodHistory = localStorage.getItem('userMoodHistory');
+            if (savedMoodHistory) {
+                setUserMoodHistory(JSON.parse(savedMoodHistory));
+            }
+        } catch (error) {
+            console.error('Error loading mood data:', error);
+        }
+    };
+
     const handleMoodSelect = (moodId: string) => {
         setSelectedMood(moodId);
+        // Save mood selection to localStorage
+        const moodHistory = JSON.parse(localStorage.getItem('userMoodHistory') || '[]');
+        const newEntry = {
+            mood: moodId,
+            timestamp: new Date().toISOString(),
+            intensity: intensity
+        };
+        moodHistory.push(newEntry);
+        localStorage.setItem('userMoodHistory', JSON.stringify(moodHistory));
+        setUserMoodHistory(moodHistory);
     };
 
     const handleFilterToggle = (filterId: string) => {
@@ -68,13 +93,37 @@ export default function MoodFilter({ isOpen, onClose, onMoodChange, currentMood 
         );
     };
 
+    const generateMoodRecommendations = (mood: string) => {
+        // This would be replaced with real AI recommendations
+        const baseRecommendations = [
+            { id: 1, type: 'post', title: 'Inspirational Quote', author: 'DeMedia AI', mood: mood },
+            { id: 2, type: 'video', title: 'Motivational Video', author: 'DeMedia AI', mood: mood },
+            { id: 3, type: 'music', title: 'Mood Playlist', author: 'DeMedia AI', mood: mood }
+        ];
+        
+        return baseRecommendations.filter(rec => rec.mood === mood);
+    };
+
     const handleApplyFilter = async () => {
         if (!selectedMood) return;
 
         setIsAnalyzing(true);
         
+        // Save mood preferences to localStorage
+        const moodPreferences = {
+            mood: selectedMood,
+            filters: selectedFilters,
+            intensity: intensity,
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('currentMoodPreferences', JSON.stringify(moodPreferences));
+        
         // Simulate AI analysis
         await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Generate recommendations based on mood
+        const recommendations = generateMoodRecommendations(selectedMood);
+        setRecommendedContent(recommendations);
         
         onMoodChange(selectedMood, selectedFilters);
         setIsAnalyzing(false);

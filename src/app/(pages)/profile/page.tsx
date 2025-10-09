@@ -1007,105 +1007,55 @@ export default function ProfilePage() {
 
             {/* Unique Features Section - Only for own profile */}
             {isOwnProfile && (
-                <div className="mt-6 p-6 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-500/20">
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <Sparkles size={20} className="text-yellow-400" />
-                        Unique Features
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {/* Mood-Based Content Filter */}
+                <div className="mt-6 p-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-500/20">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                            <Sparkles size={20} className="text-yellow-400" />
+                            Unique Features
+                        </h3>
                         <button
                             onClick={() => setShowMoodFilter(true)}
-                            className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 p-4 rounded-lg border border-blue-500/30 hover:border-blue-500/50 transition-all text-left"
+                            className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm hover:bg-blue-500/30 transition-all"
                         >
-                            <div className="flex items-center gap-3 mb-2">
-                                <Target size={20} className="text-blue-400" />
-                                <h4 className="font-semibold text-white">Mood Filter</h4>
-                            </div>
-                            <p className="text-sm text-gray-300 mb-3">AI-powered content based on your current mood</p>
-                            <div className="flex gap-2">
-                                <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs">Happy</span>
-                                <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs">Creative</span>
-                                <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs">Focused</span>
-                            </div>
+                            All Features
                         </button>
-
-                        {/* Real-time Collaboration Spaces */}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={() => setShowMoodFilter(true)}
+                            className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm hover:bg-blue-500/30 transition-all"
+                        >
+                            Mood Filter
+                        </button>
                         <button
                             onClick={() => setShowLiveSpaces(true)}
-                            className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 p-4 rounded-lg border border-green-500/30 hover:border-green-500/50 transition-all text-left"
+                            className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm hover:bg-green-500/30 transition-all"
                         >
-                            <div className="flex items-center gap-3 mb-2">
-                                <Users size={20} className="text-green-400" />
-                                <h4 className="font-semibold text-white">Live Spaces</h4>
-                            </div>
-                            <p className="text-sm text-gray-300 mb-2">Real-time collaborative content creation</p>
-                            <div className="flex items-center gap-1">
-                                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                                <span className="text-xs text-green-300">3 people collaborating</span>
-                            </div>
+                            Live Spaces
                         </button>
-
-                        {/* Temporal Content (Time-based) */}
                         <button
                             onClick={() => setShowTimeCapsules(true)}
-                            className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-4 rounded-lg border border-purple-500/30 hover:border-purple-500/50 transition-all text-left"
+                            className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-sm hover:bg-purple-500/30 transition-all"
                         >
-                            <div className="flex items-center gap-3 mb-2">
-                                <Clock size={20} className="text-purple-400" />
-                                <h4 className="font-semibold text-white">Time Capsules</h4>
-                            </div>
-                            <p className="text-sm text-gray-300 mb-2">Content that appears/disappears at specific times</p>
-                            <div className="text-xs text-purple-300">Next reveal: 2 hours</div>
+                            Time Capsules
                         </button>
-
-                        {/* Emotional Impact Tracker */}
                         <button
                             onClick={() => setShowEmotionTracker(true)}
-                            className="bg-gradient-to-br from-red-500/20 to-orange-500/20 p-4 rounded-lg border border-red-500/30 hover:border-red-500/50 transition-all text-left"
+                            className="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-sm hover:bg-red-500/30 transition-all"
                         >
-                            <div className="flex items-center gap-3 mb-2">
-                                <Heart size={20} className="text-red-400" />
-                                <h4 className="font-semibold text-white">Emotion Tracker</h4>
-                            </div>
-                            <p className="text-sm text-gray-300 mb-2">Track emotional impact of your content</p>
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
-                                    <span className="text-xs text-red-400">😊</span>
-                                </div>
-                                <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
-                                    <span className="text-xs text-blue-400">😢</span>
-                                </div>
-                                <div className="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center">
-                                    <span className="text-xs text-yellow-400">🤔</span>
-                                </div>
-                            </div>
+                            Emotion Tracker
                         </button>
-
-                        {/* AI Content Suggestions */}
                         <button
                             onClick={() => setShowAISuggestions(true)}
-                            className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-4 rounded-lg border border-indigo-500/30 hover:border-indigo-500/50 transition-all text-left"
+                            className="px-3 py-1 bg-indigo-500/20 text-indigo-400 rounded-full text-sm hover:bg-indigo-500/30 transition-all"
                         >
-                            <div className="flex items-center gap-3 mb-2">
-                                <Wand2 size={20} className="text-indigo-400" />
-                                <h4 className="font-semibold text-white">AI Suggestions</h4>
-                            </div>
-                            <p className="text-sm text-gray-300 mb-2">AI-powered content ideas based on trends</p>
-                            <div className="text-xs text-indigo-300">5 new ideas ready</div>
+                            AI Suggestions
                         </button>
-
-                        {/* Anonymous Feedback System */}
                         <button
                             onClick={() => setShowAnonymousInsights(true)}
-                            className="bg-gradient-to-br from-gray-500/20 to-slate-500/20 p-4 rounded-lg border border-gray-500/30 hover:border-gray-500/50 transition-all text-left"
+                            className="px-3 py-1 bg-gray-500/20 text-gray-400 rounded-full text-sm hover:bg-gray-500/30 transition-all"
                         >
-                            <div className="flex items-center gap-3 mb-2">
-                                <Eye size={20} className="text-gray-400" />
-                                <h4 className="font-semibold text-white">Anonymous Insights</h4>
-                            </div>
-                            <p className="text-sm text-gray-300 mb-2">Get honest feedback without revealing identity</p>
-                            <div className="text-xs text-gray-300">12 anonymous insights</div>
+                            Anonymous Insights
                         </button>
                     </div>
                 </div>

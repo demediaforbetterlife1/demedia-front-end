@@ -135,7 +135,7 @@ export default function InterestsPage() {
         );
     };
 
-    const handleContinue = async () => {
+    const handleContinue = async (retryCount = 3) => {
         if (selected.length === 0) {
             setError("Please select at least one interest!");
             return;
@@ -168,6 +168,18 @@ export default function InterestsPage() {
                 } catch {
                     errorData = { error: errorText };
                 }
+                
+                // Retry on network or server errors
+                if (retryCount > 0 && (
+                    errorText.includes('Database connection error') ||
+                    errorText.includes('Request timeout') ||
+                    errorText.includes('Failed to save interests')
+                )) {
+                    console.log(`Retrying interests save, attempts left: ${retryCount}`);
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retryCount)));
+                    return handleContinue(retryCount - 1);
+                }
+                
                 throw new Error(errorData.error || errorText || "Failed to save interests");
             }
 
@@ -181,6 +193,18 @@ export default function InterestsPage() {
             router.push("/FinishSetup");
         } catch (err: any) {
             console.error("Error saving interests:", err);
+            
+            // Retry on network errors
+            if (retryCount > 0 && err.message && (
+                err.message.includes('Failed to fetch') ||
+                err.message.includes('NetworkError') ||
+                err.message.includes('timeout')
+            )) {
+                console.log(`Retrying interests save due to network error, attempts left: ${retryCount}`);
+                await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retryCount)));
+                return handleContinue(retryCount - 1);
+            }
+            
             setError(err.message || "Error saving interests");
         } finally {
             setIsLoading(false);
