@@ -47,7 +47,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         }
         return;
       }
-    }, 100); // Small delay to prevent rapid redirects
+    }, 50); // Small delay to prevent rapid redirects
 
     return () => clearTimeout(timeoutId);
   }, [isAuthenticated, isLoading, user, pathname, router, hasRedirected]);
@@ -115,7 +115,11 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center theme-bg-primary">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-400"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+          <p className="text-cyan-400 text-lg">Connecting to DeMedia...</p>
+          <p className="text-gray-400 text-sm mt-2">Please wait while we establish a secure connection</p>
+        </div>
       </div>
     );
   }

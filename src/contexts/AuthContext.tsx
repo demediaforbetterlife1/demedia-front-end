@@ -56,6 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
+  const [connectionRetries, setConnectionRetries] = useState(0);
   const router = useRouter();
   const { setLanguage } = useI18n();
 
@@ -77,6 +78,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userId = localStorage.getItem('userId');
         
         console.log('AuthContext checkAuth:', { token: token ? 'exists' : 'null', userId });
+        
+        // First check if backend is healthy (with retry limit)
+        if (connectionRetries < 3) {
+          try {
+            const healthResponse = await fetch('/api/health', { 
+              method: 'GET',
+              signal: AbortSignal.timeout(3000) // 3 second timeout for health check
+            });
+            if (!healthResponse.ok) {
+              console.log(`Backend health check failed (attempt ${connectionRetries + 1}/3), retrying in 2 seconds`);
+              setConnectionRetries(prev => prev + 1);
+              setTimeout(checkAuth, 2000);
+              return;
+            }
+          } catch (healthError) {
+            console.log(`Backend health check error (attempt ${connectionRetries + 1}/3), retrying in 2 seconds:`, healthError);
+            setConnectionRetries(prev => prev + 1);
+            setTimeout(checkAuth, 2000);
+            return;
+          }
+        } else {
+          console.log('Max connection retries reached, proceeding with auth check');
+        }
         
         if (token && userId && token !== 'temp-token') {
           // Check if token is expired (basic check)
@@ -103,6 +127,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.log('Auth check success, user data:', userData);
             
             setUser(userData.user);
+            setConnectionRetries(0); // Reset retry counter on success
             if (userData.user?.language) {
               setLanguage(userData.user.language);
             } else {
@@ -128,6 +153,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } else {
           console.log('No valid token/userId, setting user to null');
           setUser(null);
+          setConnectionRetries(0); // Reset retry counter when no token
         }
       } catch (error: unknown) {
         console.error('Auth check failed:', error);
@@ -146,11 +172,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } finally {
         setIsLoading(false);
         setAuthChecked(true);
+        // Reset connection retries after auth check completes
+        if (connectionRetries > 0) {
+          setConnectionRetries(0);
+        }
       }
     };
 
     // Add a small delay to prevent rapid auth checks
-    const timeoutId = setTimeout(checkAuth, 100);
+    const timeoutId = setTimeout(checkAuth, 50);
     
     return () => {
       clearTimeout(timeoutId);
@@ -246,7 +276,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error.message.includes('timeout')
       )) {
         console.log(`Retrying login, attempts left: ${retryCount}`);
-        await new Promise(resolve => setTimeout(resolve, 500 * (3 - retryCount)));
+        await new Promise(resolve => setTimeout(resolve, 300 * (3 - retryCount)));
         return login(phoneNumber, password, retryCount - 1);
       }
       

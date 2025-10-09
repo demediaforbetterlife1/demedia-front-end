@@ -36,7 +36,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
       ...options, 
       headers,
       // Add timeout for faster error handling
-      signal: AbortSignal.timeout(15000) // 15 second timeout
+      signal: AbortSignal.timeout(8000) // 8 second timeout
     });
     console.log('API response status:', res.status);
     
@@ -59,7 +59,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
       res.status === 0 // Network error
     )) {
       console.log(`Retrying request, attempts left: ${retryCount}`);
-      await delay(500 * (4 - retryCount)); // Progressive delay
+            await delay(300 * (4 - retryCount)); // Faster progressive delay
       return apiFetch(path, options, retryCount - 1);
     }
     return res;
@@ -72,7 +72,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
       (err instanceof Error && err.message?.includes('NetworkError'))
     )) {
       console.log(`Retrying request due to network error, attempts left: ${retryCount}`);
-      await delay(500 * (4 - retryCount)); // Progressive delay
+            await delay(300 * (4 - retryCount)); // Faster progressive delay
       return apiFetch(path, options, retryCount - 1);
     }
     throw err;
