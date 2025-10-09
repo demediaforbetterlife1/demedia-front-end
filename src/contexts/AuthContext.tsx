@@ -192,6 +192,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('AuthContext: Starting login process');
       
+      // Quick health check first
+      try {
+        const healthRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/health`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(1000) // 1 second timeout for health check
+        });
+        console.log('AuthContext: Health check status:', healthRes.status);
+      } catch (healthError) {
+        console.log('AuthContext: Health check failed:', healthError);
+        throw new Error('Server is not responding. Please check your connection.');
+      }
+      
       const res = await apiFetch(`/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -275,6 +287,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error: unknown) {
       console.error('AuthContext: Login error:', error);
+      
+      if (error instanceof Error) {
+        if (error.message.includes('signal timed out') || error.name === 'AbortError') {
+          throw new Error('Login request timed out. Please check your internet connection and try again.');
+        }
+        if (error.message.includes('Failed to fetch')) {
+          throw new Error('Cannot connect to server. Please check your internet connection.');
+        }
+      }
+      
       throw error;
     }
   };
