@@ -460,7 +460,7 @@ export default function ProfilePage() {
                             transition={{ type: "spring", stiffness: 120 }}
                             src={profilePicture}
                             alt={name}
-                                className="w-full h-full object-cover object-center"
+                                className="w-full h-full object-cover"
                             loading="lazy"
                                 style={{ 
                                     width: '100%', 
@@ -593,53 +593,6 @@ export default function ProfilePage() {
                     </span>
                 </div>
 
-                {/* Special Features Section */}
-                {isOwnProfile && (
-                    <div className="mt-6 p-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-500/20">
-                        <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                            <Sparkles size={20} className="text-yellow-400" />
-                            Special Features
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer">
-                                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-                                    <Zap size={20} className="text-white" />
-                                </div>
-                                <div>
-                                    <h4 className="font-medium text-white">DeSnaps Creator</h4>
-                                    <p className="text-sm text-gray-400">Create engaging short videos</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer">
-                                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                                    <Camera size={20} className="text-white" />
-                                </div>
-                                <div>
-                                    <h4 className="font-medium text-white">Story Creator</h4>
-                                    <p className="text-sm text-gray-400">Share moments with stories</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer">
-                                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-                                    <Globe size={20} className="text-white" />
-                                </div>
-                                <div>
-                                    <h4 className="font-medium text-white">Global Reach</h4>
-                                    <p className="text-sm text-gray-400">Connect with users worldwide</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer">
-                                <div className="w-10 h-10 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center">
-                                    <Sparkles size={20} className="text-white" />
-                                </div>
-                                <div>
-                                    <h4 className="font-medium text-white">Premium Features</h4>
-                                    <p className="text-sm text-gray-400">Access exclusive content</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
 
             <div className="flex border-t border-gray-800">

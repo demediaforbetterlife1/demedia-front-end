@@ -183,21 +183,24 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
         setError("");
 
         try {
-            // Create FormData for file upload
-            const formData = new FormData();
-            formData.append('video', videoFile);
-            formData.append('thumbnail', thumbnail);
-            formData.append('duration', duration.toString());
-            formData.append('visibility', settings.visibility);
-            formData.append('userId', user?.id?.toString() || '');
+            // For now, we'll create a DeSnap with a placeholder content
+            // In a real app, you'd upload the video file first and get a URL
+            const deSnapData = {
+                content: videoUrl, // Use the video URL as content for now
+                thumbnail: thumbnail,
+                duration: duration,
+                visibility: settings.visibility,
+                userId: user?.id
+            };
 
             const response = await fetch("/api/desnaps", {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${localStorage.getItem('token')}`,
                     "user-id": user?.id?.toString() || "",
+                    "Content-Type": "application/json",
                 },
-                body: formData
+                body: JSON.stringify(deSnapData)
             });
 
             if (!response.ok) {

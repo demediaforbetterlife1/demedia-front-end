@@ -9,6 +9,7 @@ import { contentService } from "@/services/contentService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { useNotifications } from "@/components/NotificationProvider";
+import CommentModal from "@/components/CommentModal";
 
 type PostType = {
     id: number;
@@ -32,6 +33,8 @@ export default function Posts() {
     const [posts, setPosts] = useState<PostType[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showCommentModal, setShowCommentModal] = useState(false);
+    const [selectedPost, setSelectedPost] = useState<PostType | null>(null);
     const { user } = useAuth();
     const { t } = useI18n();
     const { showSuccess, showError } = useNotifications();
@@ -115,8 +118,11 @@ export default function Posts() {
     };
 
     const handleComment = async (postId: number) => {
-        // TODO: Implement comment modal
-        console.log('Comment on post:', postId);
+        const post = posts.find(p => p.id === postId);
+        if (post) {
+            setSelectedPost(post);
+            setShowCommentModal(true);
+        }
     };
 
     const handleBookmark = async (postId: number) => {
@@ -318,6 +324,20 @@ export default function Posts() {
                     <Suggestions />
                 </div>
             </div>
+
+            {/* Comment Modal */}
+            {selectedPost && (
+                <CommentModal
+                    isOpen={showCommentModal}
+                    onClose={() => {
+                        setShowCommentModal(false);
+                        setSelectedPost(null);
+                    }}
+                    postId={selectedPost.id}
+                    postContent={selectedPost.content}
+                    postAuthor={selectedPost.user?.name || 'Unknown'}
+                />
+            )}
         </div>
     );
 }
