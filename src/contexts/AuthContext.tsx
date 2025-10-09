@@ -189,13 +189,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (phoneNumber: string, password: string, retryCount = 2): Promise<boolean> => {
+    let timeoutId: NodeJS.Timeout | undefined;
+    
     try {
       console.log('AuthContext: Starting login process');
+      
+      // Create a custom timeout for login requests
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout for login
+      
       const res = await apiFetch(`/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phoneNumber, password }),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       console.log('AuthContext: Login response status:', res.status);
 
@@ -275,14 +285,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: unknown) {
       console.error('AuthContext: Login error:', error);
       
-      // Retry on network errors with shorter delays
+      // Clean up timeout if it exists
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      // Retry on network errors and timeouts with shorter delays
       if (retryCount > 0 && error instanceof Error && (
         error.message.includes('Failed to fetch') || 
         error.message.includes('NetworkError') ||
-        error.message.includes('timeout')
+        error.message.includes('timeout') ||
+        error.message.includes('signal timed out') ||
+        error.name === 'AbortError'
       )) {
         console.log(`Retrying login, attempts left: ${retryCount}`);
-        await new Promise(resolve => setTimeout(resolve, 300 * (3 - retryCount)));
+        await new Promise(resolve => setTimeout(resolve, 500 * (3 - retryCount)));
         return login(phoneNumber, password, retryCount - 1);
       }
       

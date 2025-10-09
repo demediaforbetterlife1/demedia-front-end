@@ -35,8 +35,8 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
     const res = await fetch(url, { 
       ...options, 
       headers,
-      // Add timeout for faster error handling
-      signal: AbortSignal.timeout(8000) // 8 second timeout
+      // Add timeout for better error handling
+      signal: AbortSignal.timeout(15000) // 15 second timeout
     });
     console.log('API response status:', res.status);
     
@@ -69,10 +69,11 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
       err instanceof TypeError || // Network error
       (err instanceof Error && err.name === 'AbortError') || // Timeout
       (err instanceof Error && err.message?.includes('Failed to fetch')) ||
-      (err instanceof Error && err.message?.includes('NetworkError'))
+      (err instanceof Error && err.message?.includes('NetworkError')) ||
+      (err instanceof Error && err.message?.includes('signal timed out'))
     )) {
-      console.log(`Retrying request due to network error, attempts left: ${retryCount}`);
-            await delay(300 * (4 - retryCount)); // Faster progressive delay
+      console.log(`Retrying request due to network/timeout error, attempts left: ${retryCount}`);
+      await delay(500 * (4 - retryCount)); // Progressive delay
       return apiFetch(path, options, retryCount - 1);
     }
     throw err;
