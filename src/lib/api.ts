@@ -6,7 +6,7 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function apiFetch(path: string, options: RequestInit = {}, retryCount = 3): Promise<Response> {
+export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const userId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
   const headers: Record<string, string> = {
@@ -36,7 +36,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
       ...options, 
       headers,
       // Add timeout for better error handling
-      signal: AbortSignal.timeout(5000) // 5 second timeout
+      signal: AbortSignal.timeout(3000) // 3 second timeout
     });
     console.log('API response status:', res.status);
     
@@ -51,31 +51,9 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
       }
     }
     
-    // Retry on server errors, network errors, and rate limiting
-    if (!res.ok && retryCount > 0 && (
-      res.status >= 500 || 
-      res.status === 429 || 
-      res.status === 408 ||
-      res.status === 0 // Network error
-    )) {
-      console.log(`Retrying request, attempts left: ${retryCount}`);
-            await delay(100 * (4 - retryCount)); // Faster progressive delay
-      return apiFetch(path, options, retryCount - 1);
-    }
     return res;
   } catch (err: unknown) {
     console.error('API fetch error:', err);
-    if (retryCount > 0 && (
-      err instanceof TypeError || // Network error
-      (err instanceof Error && err.name === 'AbortError') || // Timeout
-      (err instanceof Error && err.message?.includes('Failed to fetch')) ||
-      (err instanceof Error && err.message?.includes('NetworkError')) ||
-      (err instanceof Error && err.message?.includes('signal timed out'))
-    )) {
-      console.log(`Retrying request due to network/timeout error, attempts left: ${retryCount}`);
-              await delay(150 * (4 - retryCount)); // Progressive delay
-      return apiFetch(path, options, retryCount - 1);
-    }
     throw err;
   }
 }

@@ -188,7 +188,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  const login = async (phoneNumber: string, password: string, retryCount = 2): Promise<boolean> => {
+  const login = async (phoneNumber: string, password: string): Promise<boolean> => {
     try {
       console.log('AuthContext: Starting login process');
       
@@ -275,20 +275,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error: unknown) {
       console.error('AuthContext: Login error:', error);
-      
-      // Retry on network errors and timeouts with shorter delays
-      if (retryCount > 0 && error instanceof Error && (
-        error.message.includes('Failed to fetch') || 
-        error.message.includes('NetworkError') ||
-        error.message.includes('timeout') ||
-        error.message.includes('signal timed out') ||
-        error.name === 'AbortError'
-      )) {
-        console.log(`Retrying login, attempts left: ${retryCount}`);
-        await new Promise(resolve => setTimeout(resolve, 200 * (3 - retryCount)));
-        return login(phoneNumber, password, retryCount - 1);
-      }
-      
       throw error;
     }
   };
