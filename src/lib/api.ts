@@ -36,7 +36,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
       ...options, 
       headers,
       // Add timeout for better error handling
-      signal: AbortSignal.timeout(15000) // 15 second timeout
+      signal: AbortSignal.timeout(10000) // 10 second timeout
     });
     console.log('API response status:', res.status);
     
