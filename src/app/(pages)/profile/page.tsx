@@ -35,7 +35,7 @@ import {
     Shield,
     Badge,
     Gift,
-    Magic,
+    Wand2,
     Wand
 } from "lucide-react";
 import { getUserProfile } from "../../../lib/api";
@@ -1062,7 +1062,7 @@ export default function ProfilePage() {
                         {/* Exclusive Content */}
                         <div className="bg-gradient-to-br from-pink-500/20 to-rose-500/20 p-4 rounded-lg border border-pink-500/30">
                             <div className="flex items-center gap-3 mb-2">
-                                <Magic size={20} className="text-pink-400" />
+                                <Wand2 size={20} className="text-pink-400" />
                                 <h4 className="font-semibold text-white">Exclusive Content</h4>
                             </div>
                             <p className="text-sm text-gray-300 mb-2">Premium features unlocked</p>
