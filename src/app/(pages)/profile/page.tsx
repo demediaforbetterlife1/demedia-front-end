@@ -122,6 +122,7 @@ export default function ProfilePage() {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'user-id': user?.id?.toString() || '',
+                        'Content-Type': 'application/json',
                     }
                 });
                 
@@ -135,6 +136,7 @@ export default function ProfilePage() {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'user-id': user?.id?.toString() || '',
+                        'Content-Type': 'application/json',
                     }
                 });
                 
@@ -218,6 +220,7 @@ export default function ProfilePage() {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'user-id': user?.id?.toString() || '',
+                    'Content-Type': 'application/json',
                 }
             });
             
@@ -231,6 +234,7 @@ export default function ProfilePage() {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'user-id': user?.id?.toString() || '',
+                    'Content-Type': 'application/json',
                 }
             });
             
@@ -312,7 +316,7 @@ export default function ProfilePage() {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'user-id': user?.id || '',
+                    'user-id': user?.id?.toString() || '',
                 },
                 body: JSON.stringify({
                     followerId: user?.id
@@ -575,16 +579,67 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex gap-6 mt-6 text-sm text-gray-300">
-          <span className="flex items-center gap-1">
-            <Users size={16} /> {followersCount}
-          </span>
-                    <span className="flex items-center gap-1">
-            <UserIcon size={16} /> {followingCount}
-          </span>
-                    <span className="flex items-center gap-1">
-            <Heart size={16} /> {likesCount}
-          </span>
+                    <span className="flex items-center gap-1 hover:text-cyan-400 transition-colors cursor-pointer">
+                        <Users size={16} /> {followersCount} followers
+                    </span>
+                    <span className="flex items-center gap-1 hover:text-cyan-400 transition-colors cursor-pointer">
+                        <UserIcon size={16} /> {followingCount} following
+                    </span>
+                    <span className="flex items-center gap-1 hover:text-cyan-400 transition-colors cursor-pointer">
+                        <Heart size={16} /> {likesCount} likes
+                    </span>
+                    <span className="flex items-center gap-1 hover:text-cyan-400 transition-colors cursor-pointer">
+                        <Eye size={16} /> {profile?.deSnaps?.reduce((total, deSnap) => total + deSnap.views, 0) || 0} views
+                    </span>
                 </div>
+
+                {/* Special Features Section */}
+                {isOwnProfile && (
+                    <div className="mt-6 p-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-500/20">
+                        <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                            <Sparkles size={20} className="text-yellow-400" />
+                            Special Features
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer">
+                                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
+                                    <Zap size={20} className="text-white" />
+                                </div>
+                                <div>
+                                    <h4 className="font-medium text-white">DeSnaps Creator</h4>
+                                    <p className="text-sm text-gray-400">Create engaging short videos</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer">
+                                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                                    <Camera size={20} className="text-white" />
+                                </div>
+                                <div>
+                                    <h4 className="font-medium text-white">Story Creator</h4>
+                                    <p className="text-sm text-gray-400">Share moments with stories</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer">
+                                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                                    <Globe size={20} className="text-white" />
+                                </div>
+                                <div>
+                                    <h4 className="font-medium text-white">Global Reach</h4>
+                                    <p className="text-sm text-gray-400">Connect with users worldwide</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer">
+                                <div className="w-10 h-10 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center">
+                                    <Sparkles size={20} className="text-white" />
+                                </div>
+                                <div>
+                                    <h4 className="font-medium text-white">Premium Features</h4>
+                                    <p className="text-sm text-gray-400">Access exclusive content</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="flex border-t border-gray-800">
@@ -908,12 +963,60 @@ export default function ProfilePage() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.3 }}
-                            className="text-gray-300"
+                            className="text-gray-300 space-y-6"
                         >
-                            <h3 className="font-semibold text-lg text-white">
-                                About {name}
-                            </h3>
-                            <p className="mt-2 leading-relaxed">{bio}</p>
+                            <div>
+                                <h3 className="font-semibold text-lg text-white mb-3">
+                                    About {name}
+                                </h3>
+                                <p className="leading-relaxed">{bio || "No bio available"}</p>
+                            </div>
+
+                            {/* Profile Stats */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+                                    <div className="text-2xl font-bold text-cyan-400">{followersCount}</div>
+                                    <div className="text-sm text-gray-400">Followers</div>
+                                </div>
+                                <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+                                    <div className="text-2xl font-bold text-purple-400">{followingCount}</div>
+                                    <div className="text-sm text-gray-400">Following</div>
+                                </div>
+                                <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+                                    <div className="text-2xl font-bold text-pink-400">{likesCount}</div>
+                                    <div className="text-sm text-gray-400">Likes</div>
+                                </div>
+                                <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+                                    <div className="text-2xl font-bold text-green-400">{profile?.deSnaps?.length || 0}</div>
+                                    <div className="text-sm text-gray-400">DeSnaps</div>
+                                </div>
+                            </div>
+
+                            {/* Activity Timeline */}
+                            <div>
+                                <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+                                    <Clock size={18} />
+                                    Recent Activity
+                                </h4>
+                                <div className="space-y-3">
+                                    {profile?.stories?.slice(0, 3).map((story, index) => (
+                                        <div key={story.id} className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg">
+                                            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                                                <Camera size={16} className="text-white" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-sm text-white">Created a story</p>
+                                                <p className="text-xs text-gray-400">
+                                                    {new Date(story.createdAt).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {(!profile?.stories || profile.stories.length === 0) && (
+                                        <p className="text-gray-400 text-sm">No recent activity</p>
+                                    )}
+                                </div>
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>

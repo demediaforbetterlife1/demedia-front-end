@@ -55,12 +55,13 @@ export default function Navbar() {
                 const res = await fetch(`/api/notifications`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'user-id': user?.id?.toString() || '',
                         'Content-Type': 'application/json',
                     },
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    setNotifications(data.map((notification: any) => notification.message || notification.title || 'New notification'));
+                    setNotifications(data.notifications?.map((notification: any) => notification.message || notification.title || 'New notification') || []);
                 } else {
                     console.warn('Failed to fetch notifications:', res.status);
                     setNotifications([]);
@@ -76,6 +77,7 @@ export default function Navbar() {
                 const res = await fetch(`/api/chat`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'user-id': user?.id?.toString() || '',
                         'Content-Type': 'application/json',
                     },
                 });
@@ -83,8 +85,8 @@ export default function Navbar() {
                     const data = await res.json();
                     setMessages(data.map((chat: any) => 
                         chat.lastMessage ? 
-                        `${chat.user.name}: ${chat.lastMessage.content}` : 
-                        `New conversation with ${chat.user.name}`
+                        `${chat.chatName}: ${chat.lastMessage}` : 
+                        `New conversation in ${chat.chatName}`
                     ));
                 } else {
                     console.warn('Failed to fetch messages:', res.status);
@@ -231,6 +233,18 @@ export default function Navbar() {
 
                 <div className="flex items-center space-x-4">
                     <LanguageSwitcher />
+                    <button
+                        onClick={() => router.push('/home')}
+                        className="w-10 h-10 rounded-full theme-bg-tertiary/60 flex items-center justify-center
+                       theme-text-muted hover:text-blue-400 hover:shadow-[0_0_12px_rgba(59,130,246,0.5)]
+                       transition"
+                        title="Home"
+                    >
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9,22 9,12 15,12 15,22"/>
+                        </svg>
+                    </button>
                     <button
                         onClick={() => router.push('/messeging')}
                         className="w-10 h-10 rounded-full theme-bg-tertiary/60 flex items-center justify-center
@@ -507,6 +521,20 @@ export default function Navbar() {
 
                                 {/* Navigation Items */}
                                 <div className="space-y-2">
+                                    <button 
+                                        onClick={() => {
+                                            setMobileOpen(false);
+                                            router.push('/home');
+                                        }}
+                                        className="flex items-center space-x-3 w-full p-2 rounded-lg theme-text-muted hover:text-blue-400 hover:theme-bg-primary transition"
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                            <polyline points="9,22 9,12 15,12 15,22"/>
+                                        </svg>
+                                        <span>Home</span>
+                                    </button>
+
                                     <button 
                                         onClick={() => {
                                             setMobileOpen(false);

@@ -77,6 +77,13 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         return;
       }
 
+      // If user is on root path and authenticated, redirect to home
+      if (pathname === '/') {
+        console.log('AuthGuard: On root path, redirecting to home');
+        router.push('/home');
+        return;
+      }
+
       console.log('AuthGuard: All checks passed, allowing access to:', pathname);
     }
   }, [isAuthenticated, isLoading, user, pathname, router]);
