@@ -133,6 +133,9 @@ export default function ProfilePage() {
                 return;
             }
 
+            // Add a small delay to prevent rapid loading states
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             if (!userId) {
                 setError("Missing userId - Please make sure you're logged in");
                 setLoading(false);
