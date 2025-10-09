@@ -144,12 +144,13 @@ export default function Posts() {
             });
             
             // Update with actual response
+            const responseData = await response.json();
             setPosts(prev => prev.map(p => 
                 p.id === postId 
                     ? { 
                         ...p, 
-                        likes: response.likes,
-                        liked: response.liked
+                        likes: responseData.likes,
+                        liked: responseData.liked
                     }
                     : p
             ));

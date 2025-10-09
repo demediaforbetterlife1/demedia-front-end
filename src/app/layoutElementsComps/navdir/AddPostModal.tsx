@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { contentModerationService } from "@/services/contentModeration";
 import { 
     X, 
     Image as ImageIcon, 
@@ -87,9 +88,25 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
         fetchSuggestedUsers();
     }, []);
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            setImages([...images, ...Array.from(e.target.files)]);
+            const newFiles = Array.from(e.target.files);
+            
+            // Check each image for content moderation
+            for (const file of newFiles) {
+                console.log('AddPostModal: Checking image moderation for:', file.name);
+                const moderationResult = await contentModerationService.moderateImage(file);
+                
+                if (!moderationResult.isApproved) {
+                    console.log('AddPostModal: Image moderation failed:', moderationResult.reason);
+                    setError(`Image not approved: ${moderationResult.reason}. ${moderationResult.suggestions?.join('. ')}`);
+                    return;
+                }
+                
+                console.log('AddPostModal: Image moderation passed for:', file.name);
+            }
+            
+            setImages([...images, ...newFiles]);
         }
     };
 
@@ -168,6 +185,21 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
             if (!userId) {
                 setError("Please log in to create a post");
                 return;
+            }
+
+            // Content moderation check
+            if (content.trim()) {
+                console.log('AddPostModal: Checking content moderation...');
+                const moderationResult = await contentModerationService.moderateText(content);
+                
+                if (!moderationResult.isApproved) {
+                    console.log('AddPostModal: Content moderation failed:', moderationResult.reason);
+                    setError(`Content not approved: ${moderationResult.reason}. ${moderationResult.suggestions?.join('. ')}`);
+                    setLoading(false);
+                    return;
+                }
+                
+                console.log('AddPostModal: Content moderation passed');
             }
 
             // Validate content length

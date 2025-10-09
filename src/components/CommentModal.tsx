@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Heart, Reply, MoreHorizontal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch } from "@/lib/api";
+import { contentModerationService } from "@/services/contentModeration";
 
 interface Comment {
     id: number;
@@ -70,6 +71,18 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
         setError("");
 
         try {
+            // Content moderation check
+            console.log('CommentModal: Checking comment moderation...');
+            const moderationResult = await contentModerationService.moderateText(newComment.trim());
+            
+            if (!moderationResult.isApproved) {
+                console.log('CommentModal: Comment moderation failed:', moderationResult.reason);
+                setError(`Comment not approved: ${moderationResult.reason}. ${moderationResult.suggestions?.join('. ')}`);
+                setIsSubmitting(false);
+                return;
+            }
+            
+            console.log('CommentModal: Comment moderation passed');
             const response = await apiFetch(`/api/posts/${postId}/comments`, {
                 method: 'POST',
                 headers: {

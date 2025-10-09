@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch } from "@/lib/api";
+import { contentModerationService } from "@/services/contentModeration";
 import AIFeatures from "./AIFeatures";
 import CollaborativeFeatures from "./CollaborativeFeatures";
 import GamificationSystem from "./GamificationSystem";
@@ -130,6 +131,18 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             setError("Video file too large. Maximum size is 100MB");
             return;
         }
+
+        // Content moderation check
+        console.log('CreateDeSnapModal: Checking video content moderation...');
+        const moderationResult = await contentModerationService.moderateVideo(file);
+        
+        if (!moderationResult.isApproved) {
+            console.log('CreateDeSnapModal: Video moderation failed:', moderationResult.reason);
+            setError(`Video not approved: ${moderationResult.reason}. ${moderationResult.suggestions?.join('. ')}`);
+            return;
+        }
+        
+        console.log('CreateDeSnapModal: Video moderation passed');
 
         setVideoFile(file);
         const url = URL.createObjectURL(file);

@@ -5,6 +5,7 @@ import { X, Camera, User, Mail, Calendar, MapPin, Link, Phone, Globe, Lock, User
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { apiFetch } from "@/lib/api";
+import { contentModerationService } from "@/services/contentModeration";
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -66,6 +67,18 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                 setError('File size must be less than 5MB');
                 return;
             }
+            
+            // Content moderation check
+            console.log('EditProfileModal: Checking content moderation...');
+            const moderationResult = await contentModerationService.moderateImage(file);
+            
+            if (!moderationResult.isApproved) {
+                console.log('EditProfileModal: Content moderation failed:', moderationResult.reason);
+                setError(`Content not approved: ${moderationResult.reason}. ${moderationResult.suggestions?.join('. ')}`);
+                return;
+            }
+            
+            console.log('EditProfileModal: Content moderation passed');
             
             // Validate file type
             if (!file.type.startsWith('image/')) {
