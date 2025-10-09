@@ -61,6 +61,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isAuthenticated = !!user;
 
   useEffect(() => {
+    // Listen for auto-logout events from API
+    const handleAutoLogout = () => {
+      console.log('Auto logout event received');
+      setUser(null);
+      setIsLoading(false);
+    };
+
+    window.addEventListener('auth:logout', handleAutoLogout);
+
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('token');
@@ -69,6 +78,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('AuthContext checkAuth:', { token: token ? 'exists' : 'null', userId });
         
         if (token && userId && token !== 'temp-token') {
+          // Check if token is expired (basic check)
+          try {
+            const tokenData = JSON.parse(atob(token.split('.')[1]));
+            const now = Date.now() / 1000;
+            if (tokenData.exp && tokenData.exp < now) {
+              console.log('Token expired, clearing tokens');
+              localStorage.removeItem('token');
+              localStorage.removeItem('userId');
+              setUser(null);
+              return;
+            }
+          } catch (e) {
+            console.log('Token format invalid, proceeding with auth check');
+          }
+          
           console.log('Making auth check request to /api/auth/me');
           const res = await apiFetch(`/api/auth/me`);
           console.log('Auth check response status:', res.status, 'ok:', res.ok);
@@ -86,11 +110,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               const storedLang = localStorage.getItem('language');
               if (storedLang) setLanguage(storedLang);
             }
-          } else {
-            console.log('Auth check failed, clearing tokens');
+          } else if (res.status === 401) {
+            console.log('Token expired or invalid, clearing tokens');
             localStorage.removeItem('token');
             localStorage.removeItem('userId');
             setUser(null);
+          } else {
+            console.log('Auth check failed with status:', res.status);
+            // Don't clear tokens for server errors, only for auth errors
+            if (res.status >= 500) {
+              console.log('Server error, keeping tokens for retry');
+            } else {
+              localStorage.removeItem('token');
+              localStorage.removeItem('userId');
+              setUser(null);
+            }
           }
         } else {
           console.log('No valid token/userId, setting user to null');
@@ -98,8 +132,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch (error: unknown) {
         console.error('Auth check failed:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('userId');
+        // Only clear tokens if it's a network error or server error, not auth errors
+        if (error instanceof Error && (
+          error.message.includes('Failed to fetch') || 
+          error.message.includes('NetworkError') ||
+          error.message.includes('timeout')
+        )) {
+          console.log('Network error during auth check, keeping tokens');
+        } else {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userId');
+        }
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -107,9 +150,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     checkAuth();
+
+    return () => {
+      window.removeEventListener('auth:logout', handleAutoLogout);
+    };
   }, []);
 
-  const login = async (phoneNumber: string, password: string): Promise<boolean> => {
+  const login = async (phoneNumber: string, password: string, retryCount = 2): Promise<boolean> => {
     try {
       console.log('AuthContext: Starting login process');
       const res = await apiFetch(`/api/auth/login`, {
@@ -169,15 +216,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           const txt = await res.text();
           console.log('AuthContext: Error response text:', txt);
-          message = (() => { try { return JSON.parse(txt).error || message; } catch { return txt || message; } })();
+          const errorData = (() => { 
+            try { 
+              return JSON.parse(txt); 
+            } catch { 
+              return { error: txt || res.statusText }; 
+            } 
+          })();
+          message = errorData.error || errorData.message || message;
         } catch (e) {
           console.log('AuthContext: Error parsing response:', e);
+          message = `Login failed (${res.status}): ${res.statusText}`;
         }
         console.log('AuthContext: Throwing error:', message);
         throw new Error(message);
       }
     } catch (error: unknown) {
       console.error('AuthContext: Login error:', error);
+      
+      // Retry on network errors
+      if (retryCount > 0 && error instanceof Error && (
+        error.message.includes('Failed to fetch') || 
+        error.message.includes('NetworkError') ||
+        error.message.includes('timeout')
+      )) {
+        console.log(`Retrying login, attempts left: ${retryCount}`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (3 - retryCount)));
+        return login(phoneNumber, password, retryCount - 1);
+      }
+      
       throw error;
     }
   };
@@ -289,9 +356,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    console.log('AuthContext: Logging out user');
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
     setUser(null);
+    // Clear any cached data
+    if (typeof window !== 'undefined') {
+      // Clear any other auth-related data
+      localStorage.removeItem('language');
+      // Dispatch logout event
+      window.dispatchEvent(new CustomEvent('auth:logout'));
+    }
     router.push('/sign-up');
   };
 

@@ -36,10 +36,13 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
     console.log('API response status:', res.status);
     
     if (res.status === 401) {
-      // Auto logout on unauthorized
-      if (typeof window !== "undefined") {
+      // Only auto logout if it's not an auth check request
+      if (typeof window !== "undefined" && !path.includes('/auth/me')) {
+        console.log('Auto logout due to 401 response');
         localStorage.removeItem("token");
         localStorage.removeItem("userId");
+        // Dispatch a custom event to notify AuthContext
+        window.dispatchEvent(new CustomEvent('auth:logout'));
       }
     }
     if (!res.ok && retryCount > 0 && (res.status >= 500 || res.status === 429)) {
