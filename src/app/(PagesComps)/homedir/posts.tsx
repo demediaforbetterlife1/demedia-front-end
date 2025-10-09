@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { useNotifications } from "@/components/NotificationProvider";
 import CommentModal from "@/components/CommentModal";
+import { apiFetch } from "@/lib/api";
 
 type PostType = {
     id: number;
@@ -41,6 +42,8 @@ export default function Posts() {
 
     useEffect(() => {
         const abort = new AbortController();
+        let retryCount = 0;
+        const maxRetries = 3;
 
         async function fetchPosts() {
             try {
@@ -49,15 +52,60 @@ export default function Posts() {
 
                 // Use personalized content if user has interests, otherwise fallback to regular posts
                 const userInterests = user?.interests || [];
-                const data = userInterests.length > 0 
-                    ? await contentService.getPersonalizedPosts(userInterests)
-                    : await contentService.getPosts();
+                let data;
+                
+                if (userInterests.length > 0) {
+                    try {
+                        const response = await apiFetch('/api/posts/personalized', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ interests: userInterests })
+                        });
+                        data = await response.json();
+                    } catch (error) {
+                        console.log('Personalized posts failed, falling back to regular posts');
+                        const response = await apiFetch('/api/posts');
+                        data = await response.json();
+                    }
+                } else {
+                    const response = await apiFetch('/api/posts');
+                    data = await response.json();
+                }
 
                 setPosts(data);
             } catch (err: unknown) {
                 if (err instanceof DOMException && err.name === "AbortError") return;
                 console.error("Failed to fetch posts:", err);
-                const message = err instanceof Error ? err.message : 'Failed to fetch posts';
+                console.error("Error details:", {
+                    message: err instanceof Error ? err.message : 'Unknown error',
+                    stack: err instanceof Error ? err.stack : undefined
+                });
+                
+                // Retry logic for network errors
+                if (retryCount < maxRetries && err instanceof Error && 
+                    (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
+                    retryCount++;
+                    console.log(`Retrying fetch posts, attempt ${retryCount}/${maxRetries}`);
+                    setTimeout(() => {
+                        if (!abort.signal.aborted) {
+                            fetchPosts();
+                        }
+                    }, 1000 * retryCount);
+                    return;
+                }
+                
+                let message = 'Failed to fetch posts';
+                if (err instanceof Error) {
+                    if (err.message.includes('Failed to fetch')) {
+                        message = 'Network error. Please check your connection and try again.';
+                    } else if (err.message.includes('401')) {
+                        message = 'Authentication error. Please log in again.';
+                    } else if (err.message.includes('500')) {
+                        message = 'Server error. Please try again later.';
+                    } else {
+                        message = err.message;
+                    }
+                }
                 setError(message);
             } finally {
                 setLoading(false);
@@ -90,7 +138,10 @@ export default function Posts() {
             ));
 
             // Call API to toggle like
-            const response = await contentService.likePost(postId);
+            const response = await apiFetch(`/api/posts/${postId}/like`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
             
             // Update with actual response
             setPosts(prev => prev.map(p => 
@@ -140,7 +191,10 @@ export default function Posts() {
             ));
 
             // Call API to bookmark/unbookmark the post
-            await contentService.bookmarkPost(postId);
+            await apiFetch(`/api/posts/${postId}/bookmark`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
             
             if (wasBookmarked) {
                 showSuccess('Bookmark Removed', 'Post removed from bookmarks');
@@ -162,7 +216,10 @@ export default function Posts() {
     const handleReport = async (postId: number) => {
         try {
             // Call API to report the post
-            await contentService.reportPost(postId);
+            await apiFetch(`/api/posts/${postId}/report`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
             showSuccess('Post Reported', 'Post reported successfully');
         } catch (error: unknown) {
             console.error('Error reporting post:', error);
