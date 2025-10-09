@@ -103,7 +103,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.log('Auth check success, user data:', userData);
             
             setUser(userData.user);
-            setConnectionRetries(0); // Reset retry counter on success
             if (userData.user?.language) {
               setLanguage(userData.user.language);
             } else {
@@ -129,7 +128,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } else {
           console.log('No valid token/userId, setting user to null');
           setUser(null);
-          setConnectionRetries(0); // Reset retry counter when no token
         }
       } catch (error: unknown) {
         console.error('Auth check failed:', error);
@@ -148,10 +146,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } finally {
         setIsLoading(false);
         setAuthChecked(true);
-        // Reset connection retries after auth check completes
-        if (connectionRetries > 0) {
-          setConnectionRetries(0);
-        }
       }
     };
 
