@@ -6,7 +6,7 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function apiFetch(path: string, options: RequestInit = {}, retryCount = 2): Promise<Response> {
+export async function apiFetch(path: string, options: RequestInit = {}, retryCount = 3): Promise<Response> {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const userId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
   const headers: Record<string, string> = {
@@ -26,7 +26,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
   let url = `${API_BASE}${path}`;
   if (options.method === 'GET' || !options.method) {
     const cacheBuster = Date.now();
-    const version = 'v2.1.0'; // Force cache invalidation
+    const version = 'v2.2.0'; // Force cache invalidation
     url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}cb=${cacheBuster}&v=${version}`;
   }
 
@@ -36,7 +36,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
       ...options, 
       headers,
       // Add timeout for faster error handling
-      signal: AbortSignal.timeout(10000) // 10 second timeout
+      signal: AbortSignal.timeout(15000) // 15 second timeout
     });
     console.log('API response status:', res.status);
     
@@ -50,15 +50,29 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
         window.dispatchEvent(new CustomEvent('auth:logout'));
       }
     }
-    if (!res.ok && retryCount > 0 && (res.status >= 500 || res.status === 429)) {
-      await delay(200 * (3 - retryCount)); // Reduced delay
+    
+    // Retry on server errors, network errors, and rate limiting
+    if (!res.ok && retryCount > 0 && (
+      res.status >= 500 || 
+      res.status === 429 || 
+      res.status === 408 ||
+      res.status === 0 // Network error
+    )) {
+      console.log(`Retrying request, attempts left: ${retryCount}`);
+      await delay(500 * (4 - retryCount)); // Progressive delay
       return apiFetch(path, options, retryCount - 1);
     }
     return res;
   } catch (err) {
     console.error('API fetch error:', err);
-    if (retryCount > 0) {
-      await delay(200 * (3 - retryCount)); // Reduced delay
+    if (retryCount > 0 && (
+      err instanceof TypeError || // Network error
+      err.name === 'AbortError' || // Timeout
+      err.message?.includes('Failed to fetch') ||
+      err.message?.includes('NetworkError')
+    )) {
+      console.log(`Retrying request due to network error, attempts left: ${retryCount}`);
+      await delay(500 * (4 - retryCount)); // Progressive delay
       return apiFetch(path, options, retryCount - 1);
     }
     throw err;

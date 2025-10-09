@@ -283,8 +283,8 @@ export default function Posts() {
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center space-x-3">
                                 <div className="relative">
-                                    <div className="w-10 h-10 rounded-full theme-bg-tertiary flex items-center justify-center theme-text-secondary font-bold">
-                                        {post.user?.name?.charAt(0) ?? "U"}
+                                <div className="w-10 h-10 rounded-full theme-bg-tertiary flex items-center justify-center theme-text-secondary font-bold">
+                                    {post.user?.name?.charAt(0) ?? "U"}
                                     </div>
                                     {/* Online Status Indicator */}
                                     <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
@@ -344,10 +344,25 @@ export default function Posts() {
                             </div>
                         </div>
 
-                        {/* Post Image Placeholder */}
-                        <div className="rounded-xl theme-bg-tertiary h-48 flex items-center justify-center theme-text-muted">
-                            {t('posts.image','Image')}
-                        </div>
+                        {/* Post Media - Only show if there's actual media */}
+                        {post.imageUrl && (
+                            <div className="mb-3">
+                                <img 
+                                    src={post.imageUrl} 
+                                    alt="Post content" 
+                                    className="w-full rounded-xl object-cover max-h-96"
+                                />
+                            </div>
+                        )}
+                        {post.videoUrl && (
+                            <div className="mb-3">
+                                <video 
+                                    src={post.videoUrl} 
+                                    controls 
+                                    className="w-full rounded-xl max-h-96"
+                                />
+                            </div>
+                        )}
 
                         {/* Enhanced Actions */}
                         <div className="flex items-center justify-between mt-3 theme-text-muted">

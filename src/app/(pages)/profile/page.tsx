@@ -611,16 +611,16 @@ export default function ProfilePage() {
                 <div className="flex gap-6 mt-6 text-sm text-gray-300">
                     <span className="flex items-center gap-1 hover:text-cyan-400 transition-colors cursor-pointer">
                         <Users size={16} /> {followersCount} followers
-                    </span>
+          </span>
                     <span className="flex items-center gap-1 hover:text-cyan-400 transition-colors cursor-pointer">
                         <UserIcon size={16} /> {followingCount} following
-                    </span>
+          </span>
                     <span className="flex items-center gap-1 hover:text-cyan-400 transition-colors cursor-pointer">
                         <Heart size={16} /> {likesCount} likes
                     </span>
                     <span className="flex items-center gap-1 hover:text-cyan-400 transition-colors cursor-pointer">
                         <Eye size={16} /> {profile?.deSnaps?.reduce((total, deSnap) => total + deSnap.views, 0) || 0} views
-                    </span>
+          </span>
                 </div>
 
             </div>
@@ -950,8 +950,8 @@ export default function ProfilePage() {
                         >
                             <div>
                                 <h3 className="font-semibold text-lg text-white mb-3">
-                                    About {name}
-                                </h3>
+                                About {name}
+                            </h3>
                                 <p className="leading-relaxed">{bio || "No bio available"}</p>
                             </div>
 
