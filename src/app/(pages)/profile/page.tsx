@@ -988,109 +988,110 @@ export default function ProfilePage() {
                 </AnimatePresence>
             </div>
 
-            {/* Special Features Section - Only for own profile */}
+            {/* Unique Features Section - Only for own profile */}
             {isOwnProfile && (
                 <div className="mt-6 p-6 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-500/20">
                     <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                         <Sparkles size={20} className="text-yellow-400" />
-                        Special Features
+                        Unique Features
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {/* Achievement System */}
-                        <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 p-4 rounded-lg border border-yellow-500/30">
-                            <div className="flex items-center gap-3 mb-2">
-                                <Trophy size={20} className="text-yellow-400" />
-                                <h4 className="font-semibold text-white">Achievements</h4>
-                            </div>
-                            <p className="text-sm text-gray-300 mb-3">Unlock badges and rewards</p>
-                            <div className="flex gap-2">
-                                <div className="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center">
-                                    <Star size={16} className="text-yellow-400" />
-                                </div>
-                                <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
-                                    <Award size={16} className="text-blue-400" />
-                                </div>
-                                <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
-                                    <Crown size={16} className="text-purple-400" />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Streak Counter */}
-                        <div className="bg-gradient-to-br from-red-500/20 to-pink-500/20 p-4 rounded-lg border border-red-500/30">
-                            <div className="flex items-center gap-3 mb-2">
-                                <Flame size={20} className="text-red-400" />
-                                <h4 className="font-semibold text-white">Daily Streak</h4>
-                            </div>
-                            <p className="text-2xl font-bold text-red-400 mb-1">7 days</p>
-                            <p className="text-sm text-gray-300">Keep it going!</p>
-                        </div>
-
-                        {/* Influence Score */}
-                        <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 p-4 rounded-lg border border-green-500/30">
-                            <div className="flex items-center gap-3 mb-2">
-                                <TrendingUp size={20} className="text-green-400" />
-                                <h4 className="font-semibold text-white">Influence Score</h4>
-                            </div>
-                            <p className="text-2xl font-bold text-green-400 mb-1">8.5/10</p>
-                            <p className="text-sm text-gray-300">Based on engagement</p>
-                        </div>
-
-                        {/* Content Creator Badge */}
-                        <div className="bg-gradient-to-br from-purple-500/20 to-indigo-500/20 p-4 rounded-lg border border-purple-500/30">
-                            <div className="flex items-center gap-3 mb-2">
-                                <Diamond size={20} className="text-purple-400" />
-                                <h4 className="font-semibold text-white">Creator Badge</h4>
-                            </div>
-                            <p className="text-sm text-gray-300 mb-2">Verified Content Creator</p>
-                            <div className="flex items-center gap-1">
-                                <Shield size={14} className="text-purple-400" />
-                                <span className="text-xs text-purple-300">Verified</span>
-                            </div>
-                        </div>
-
-                        {/* Social Impact */}
+                        {/* Mood-Based Content Filter */}
                         <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 p-4 rounded-lg border border-blue-500/30">
                             <div className="flex items-center gap-3 mb-2">
                                 <Target size={20} className="text-blue-400" />
-                                <h4 className="font-semibold text-white">Social Impact</h4>
+                                <h4 className="font-semibold text-white">Mood Filter</h4>
                             </div>
-                            <p className="text-2xl font-bold text-blue-400 mb-1">1.2K</p>
-                            <p className="text-sm text-gray-300">Lives touched</p>
+                            <p className="text-sm text-gray-300 mb-3">AI-powered content based on your current mood</p>
+                            <div className="flex gap-2">
+                                <button className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs">Happy</button>
+                                <button className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs">Creative</button>
+                                <button className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs">Focused</button>
+                            </div>
                         </div>
 
-                        {/* Exclusive Content */}
-                        <div className="bg-gradient-to-br from-pink-500/20 to-rose-500/20 p-4 rounded-lg border border-pink-500/30">
+                        {/* Real-time Collaboration Spaces */}
+                        <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 p-4 rounded-lg border border-green-500/30">
                             <div className="flex items-center gap-3 mb-2">
-                                <Wand2 size={20} className="text-pink-400" />
-                                <h4 className="font-semibold text-white">Exclusive Content</h4>
+                                <Users size={20} className="text-green-400" />
+                                <h4 className="font-semibold text-white">Live Spaces</h4>
                             </div>
-                            <p className="text-sm text-gray-300 mb-2">Premium features unlocked</p>
+                            <p className="text-sm text-gray-300 mb-2">Real-time collaborative content creation</p>
                             <div className="flex items-center gap-1">
-                                <Wand size={14} className="text-pink-400" />
-                                <span className="text-xs text-pink-300">VIP Access</span>
+                                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                <span className="text-xs text-green-300">3 people collaborating</span>
                             </div>
+                        </div>
+
+                        {/* Temporal Content (Time-based) */}
+                        <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-4 rounded-lg border border-purple-500/30">
+                            <div className="flex items-center gap-3 mb-2">
+                                <Clock size={20} className="text-purple-400" />
+                                <h4 className="font-semibold text-white">Time Capsules</h4>
+                            </div>
+                            <p className="text-sm text-gray-300 mb-2">Content that appears/disappears at specific times</p>
+                            <div className="text-xs text-purple-300">Next reveal: 2 hours</div>
+                        </div>
+
+                        {/* Emotional Impact Tracker */}
+                        <div className="bg-gradient-to-br from-red-500/20 to-orange-500/20 p-4 rounded-lg border border-red-500/30">
+                            <div className="flex items-center gap-3 mb-2">
+                                <Heart size={20} className="text-red-400" />
+                                <h4 className="font-semibold text-white">Emotion Tracker</h4>
+                            </div>
+                            <p className="text-sm text-gray-300 mb-2">Track emotional impact of your content</p>
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
+                                    <span className="text-xs text-red-400">😊</span>
+                                </div>
+                                <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                                    <span className="text-xs text-blue-400">😢</span>
+                                </div>
+                                <div className="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                                    <span className="text-xs text-yellow-400">🤔</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* AI Content Suggestions */}
+                        <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-4 rounded-lg border border-indigo-500/30">
+                            <div className="flex items-center gap-3 mb-2">
+                                <Wand2 size={20} className="text-indigo-400" />
+                                <h4 className="font-semibold text-white">AI Suggestions</h4>
+                            </div>
+                            <p className="text-sm text-gray-300 mb-2">AI-powered content ideas based on trends</p>
+                            <div className="text-xs text-indigo-300">5 new ideas ready</div>
+                        </div>
+
+                        {/* Anonymous Feedback System */}
+                        <div className="bg-gradient-to-br from-gray-500/20 to-slate-500/20 p-4 rounded-lg border border-gray-500/30">
+                            <div className="flex items-center gap-3 mb-2">
+                                <Eye size={20} className="text-gray-400" />
+                                <h4 className="font-semibold text-white">Anonymous Insights</h4>
+                            </div>
+                            <p className="text-sm text-gray-300 mb-2">Get honest feedback without revealing identity</p>
+                            <div className="text-xs text-gray-300">12 anonymous insights</div>
                         </div>
                     </div>
 
-                    {/* Quick Actions */}
+                    {/* Advanced Actions */}
                     <div className="mt-6 pt-4 border-t border-gray-700">
                         <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
                             <Zap size={18} className="text-yellow-400" />
-                            Quick Actions
+                            Advanced Actions
                         </h4>
                         <div className="flex flex-wrap gap-3">
-                            <button className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-sm font-medium hover:from-purple-600 hover:to-pink-600 transition-all flex items-center gap-2">
-                                <Gift size={16} />
-                                Send Gift
-                            </button>
                             <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full text-sm font-medium hover:from-blue-600 hover:to-cyan-600 transition-all flex items-center gap-2">
-                                <Badge size={16} />
-                                Claim Badge
+                                <Target size={16} />
+                                Set Mood Filter
                             </button>
                             <button className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full text-sm font-medium hover:from-green-600 hover:to-emerald-600 transition-all flex items-center gap-2">
-                                <Star size={16} />
-                                Rate Content
+                                <Users size={16} />
+                                Create Live Space
+                            </button>
+                            <button className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-sm font-medium hover:from-purple-600 hover:to-pink-600 transition-all flex items-center gap-2">
+                                <Clock size={16} />
+                                Schedule Time Capsule
                             </button>
                         </div>
                     </div>

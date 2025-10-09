@@ -19,6 +19,7 @@ import {
     Zap
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiFetch } from "@/lib/api";
 import AIFeatures from "./AIFeatures";
 import CollaborativeFeatures from "./CollaborativeFeatures";
 import GamificationSystem from "./GamificationSystem";
@@ -193,18 +194,23 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 userId: user?.id
             };
 
-            const response = await fetch("/api/desnaps", {
+            const response = await apiFetch("/api/desnaps", {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${localStorage.getItem('token')}`,
-                    "user-id": user?.id?.toString() || "",
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(deSnapData)
             });
 
             if (!response.ok) {
-                throw new Error("Failed to create DeSnap");
+                let errorMessage = "Failed to create DeSnap";
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorData.message || errorMessage;
+                } catch (e) {
+                    errorMessage = `Server error: ${response.status}`;
+                }
+                throw new Error(errorMessage);
             }
 
             const newDeSnap = await response.json();

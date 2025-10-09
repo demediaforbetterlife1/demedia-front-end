@@ -85,8 +85,14 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
                 setComments(prev => [newCommentData, ...prev]);
                 setNewComment("");
             } else {
-                const errorData = await response.json();
-                setError(errorData.error || 'Failed to add comment');
+                let errorMessage = 'Failed to add comment';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorData.message || errorMessage;
+                } catch (e) {
+                    errorMessage = `Server error: ${response.status}`;
+                }
+                setError(errorMessage);
             }
         } catch (err) {
             console.error('Error adding comment:', err);
