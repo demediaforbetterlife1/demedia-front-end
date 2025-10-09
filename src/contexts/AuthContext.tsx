@@ -189,35 +189,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (phoneNumber: string, password: string, retryCount = 2): Promise<boolean> => {
-    let timeoutId: NodeJS.Timeout | undefined;
-    
     try {
       console.log('AuthContext: Starting login process');
       
-      // Create a custom timeout for login requests
-      const controller = new AbortController();
-      timeoutId = setTimeout(() => {
-        console.log('AuthContext: Login timeout reached, aborting request');
-        controller.abort();
-      }, 10000); // 10 second timeout for login
-      
       console.log('AuthContext: Making login request...');
-      
-      // Use Promise.race to ensure we don't wait too long
-      const loginPromise = apiFetch(`/api/auth/login`, {
+      const res = await apiFetch(`/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber, password }),
-        signal: controller.signal
+        body: JSON.stringify({ phoneNumber, password })
       });
       
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Login request timed out')), 10000);
-      });
-      
-      const res = await Promise.race([loginPromise, timeoutPromise]) as Response;
-      
-      clearTimeout(timeoutId);
       console.log('AuthContext: Login request completed');
 
       console.log('AuthContext: Login response status:', res.status);
@@ -298,11 +279,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: unknown) {
       console.error('AuthContext: Login error:', error);
       
-      // Clean up timeout if it exists
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      
       // Retry on network errors and timeouts with shorter delays
       if (retryCount > 0 && error instanceof Error && (
         error.message.includes('Failed to fetch') || 
@@ -312,7 +288,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error.name === 'AbortError'
       )) {
         console.log(`Retrying login, attempts left: ${retryCount}`);
-        await new Promise(resolve => setTimeout(resolve, 1000 * (3 - retryCount)));
+        await new Promise(resolve => setTimeout(resolve, 500 * (3 - retryCount)));
         return login(phoneNumber, password, retryCount - 1);
       }
       

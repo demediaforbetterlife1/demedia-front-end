@@ -51,6 +51,7 @@ import TimeCapsules from "@/components/TimeCapsules";
 import EmotionTracker from "@/components/EmotionTracker";
 import AISuggestions from "@/components/AISuggestions";
 import AnonymousInsights from "@/components/AnonymousInsights";
+import { apiFetch } from "@/lib/api";
 
 interface Story {
     id: number;
@@ -659,7 +660,7 @@ export default function ProfilePage() {
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <p className="text-gray-400">No posts yet.</p>
+                            <UserPosts userId={user?.id} />
                         </motion.div>
                     )}
 
@@ -1176,3 +1177,122 @@ export default function ProfilePage() {
         </div>
     );
 }
+
+// UserPosts component to display user's posts
+const UserPosts = ({ userId }: { userId?: string }) => {
+    const [posts, setPosts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!userId) return;
+        
+        const fetchUserPosts = async () => {
+            try {
+                setLoading(true);
+                const response = await apiFetch(`/api/posts/user/${userId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch posts');
+                }
+                
+                const data = await response.json();
+                setPosts(data.posts || []);
+            } catch (err: any) {
+                console.error('Error fetching user posts:', err);
+                setError(err.message || 'Failed to load posts');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserPosts();
+    }, [userId]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-8">
+                <p className="text-red-400">{error}</p>
+            </div>
+        );
+    }
+
+    if (posts.length === 0) {
+        return (
+            <div className="text-center py-8">
+                <p className="text-gray-400">No posts yet.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            {posts.map((post) => (
+                <div key={post.id} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                    <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0">
+                            <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
+                                <UserIcon className="w-5 h-5 text-white" />
+                            </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-2">
+                                <p className="text-sm font-medium text-white">{post.author?.name || 'Unknown'}</p>
+                                <span className="text-xs text-gray-400">•</span>
+                                <p className="text-xs text-gray-400">
+                                    {new Date(post.createdAt).toLocaleDateString()}
+                                </p>
+                            </div>
+                            
+                            {post.content && (
+                                <p className="text-gray-300 mb-3">{post.content}</p>
+                            )}
+                            
+                            {post.imageUrl && (
+                                <div className="mb-3">
+                                    <img 
+                                        src={post.imageUrl} 
+                                        alt="Post image" 
+                                        className="max-w-full h-auto rounded-lg"
+                                    />
+                                </div>
+                            )}
+                            
+                            {post.videoUrl && (
+                                <div className="mb-3">
+                                    <video 
+                                        src={post.videoUrl} 
+                                        controls 
+                                        className="max-w-full h-auto rounded-lg"
+                                    />
+                                </div>
+                            )}
+                            
+                            <div className="flex items-center space-x-4 text-sm text-gray-400">
+                                <button className="flex items-center space-x-1 hover:text-red-400 transition-colors">
+                                    <Heart className="w-4 h-4" />
+                                    <span>{post.likes || 0}</span>
+                                </button>
+                                <button className="flex items-center space-x-1 hover:text-blue-400 transition-colors">
+                                    <MessageCircle className="w-4 h-4" />
+                                    <span>{post.comments || 0}</span>
+                                </button>
+                                <button className="flex items-center space-x-1 hover:text-green-400 transition-colors">
+                                    <Share className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
