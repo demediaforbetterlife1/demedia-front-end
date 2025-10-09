@@ -228,10 +228,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Use replace instead of push for faster navigation
         if (userData.isSetupComplete) {
           console.log('AuthContext: Setup complete, redirecting to home');
-          router.replace('/home');
+          // Add a small delay to ensure state is updated
+          setTimeout(() => {
+            router.replace('/home');
+          }, 100);
         } else {
           console.log('AuthContext: Setup not complete, redirecting to SignInSetUp');
-          router.replace('/SignInSetUp');
+          // Add a small delay to ensure state is updated
+          setTimeout(() => {
+            router.replace('/SignInSetUp');
+          }, 100);
         }
 
         // Fire a welcome notification (non-blocking)

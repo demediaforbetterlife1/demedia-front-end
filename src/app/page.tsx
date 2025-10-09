@@ -13,13 +13,18 @@ export default function Index() {
     useEffect(() => {
         if (isLoading) return;
 
+        console.log('Root page: Auth state:', { isAuthenticated, user: user ? { id: user.id, isSetupComplete: user.isSetupComplete } : null });
+
         if (isAuthenticated && user) {
             if (user.isSetupComplete) {
+                console.log('Root page: Redirecting to home');
                 router.replace("/home");
             } else {
+                console.log('Root page: Redirecting to SignInSetUp');
                 router.replace("/SignInSetUp");
             }
         } else {
+            console.log('Root page: Redirecting to sign-up');
             router.replace("/sign-up");
         }
     }, [isAuthenticated, isLoading, user, router]);

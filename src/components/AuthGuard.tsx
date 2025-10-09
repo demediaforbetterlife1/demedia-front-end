@@ -79,10 +79,10 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       console.log('AuthGuard: On auth page but authenticated, redirecting based on setup status');
       if (user.isSetupComplete) {
         console.log('AuthGuard: Setup complete, redirecting to home');
-        router.push('/home');
+        router.replace('/home');
       } else {
         console.log('AuthGuard: Setup not complete, redirecting to SignInSetUp');
-        router.push('/SignInSetUp');
+        router.replace('/SignInSetUp');
       }
       return;
     }
@@ -90,21 +90,21 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     // If trying to access protected pages without completing setup
     if (isProtectedPage && !user.isSetupComplete) {
       console.log('AuthGuard: Trying to access protected page without setup, redirecting to SignInSetUp');
-      router.push('/SignInSetUp');
+      router.replace('/SignInSetUp');
       return;
     }
 
     // If setup is complete but on setup pages, redirect to home
     if (isSetupPage && user.isSetupComplete) {
       console.log('AuthGuard: Setup complete but on setup page, redirecting to home');
-      router.push('/home');
+      router.replace('/home');
       return;
     }
 
     // If user is on root path and authenticated, redirect to home
     if (pathname === '/') {
       console.log('AuthGuard: On root path, redirecting to home');
-      router.push('/home');
+      router.replace('/home');
       return;
     }
 
