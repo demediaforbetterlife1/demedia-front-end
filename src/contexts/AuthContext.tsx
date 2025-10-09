@@ -102,8 +102,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const userData = await res.json();
             console.log('Auth check success, user data:', userData);
             
-            // Phone verification is now optional - proceed with user data
-            
             setUser(userData.user);
             if (userData.user?.language) {
               setLanguage(userData.user.language);
@@ -151,9 +149,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
-    checkAuth();
-
+    // Add a small delay to prevent rapid auth checks
+    const timeoutId = setTimeout(checkAuth, 100);
+    
     return () => {
+      clearTimeout(timeoutId);
       window.removeEventListener('auth:logout', handleAutoLogout);
     };
   }, []);
@@ -181,7 +181,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userData = data.user;
         console.log('AuthContext: User data received:', userData);
         
-        // Store auth data
+        // Store auth data immediately
         if (data.token) {
           localStorage.setItem('token', data.token);
           console.log('AuthContext: Token stored');
@@ -189,28 +189,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.setItem('userId', userData.id);
         console.log('AuthContext: User ID stored:', userData.id);
         
+        // Update user state immediately
         setUser(userData);
         if (userData.language) setLanguage(userData.language);
         
         console.log('AuthContext: User state updated, redirecting...');
         
-        // Redirect based on setup status
+        // Use replace instead of push for faster navigation
         if (userData.isSetupComplete) {
           console.log('AuthContext: Setup complete, redirecting to home');
-          router.push('/home');
+          router.replace('/home');
         } else {
           console.log('AuthContext: Setup not complete, redirecting to SignInSetUp');
-          router.push('/SignInSetUp');
+          router.replace('/SignInSetUp');
         }
 
         // Fire a welcome notification (non-blocking)
-        try {
-          if (userData.name) {
-            notificationService.showWelcomeNotification(userData.name);
+        setTimeout(() => {
+          try {
+            if (userData.name) {
+              notificationService.showWelcomeNotification(userData.name);
+            }
+          } catch (e) {
+            // ignore notification errors silently
           }
-        } catch (e) {
-          // ignore notification errors silently
-        }
+        }, 100);
         
         return true;
       } else {
@@ -236,14 +239,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: unknown) {
       console.error('AuthContext: Login error:', error);
       
-      // Retry on network errors
+      // Retry on network errors with shorter delays
       if (retryCount > 0 && error instanceof Error && (
         error.message.includes('Failed to fetch') || 
         error.message.includes('NetworkError') ||
         error.message.includes('timeout')
       )) {
         console.log(`Retrying login, attempts left: ${retryCount}`);
-        await new Promise(resolve => setTimeout(resolve, 1000 * (3 - retryCount)));
+        await new Promise(resolve => setTimeout(resolve, 500 * (3 - retryCount)));
         return login(phoneNumber, password, retryCount - 1);
       }
       
@@ -299,9 +302,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(newUser);
         console.log('AuthContext: User state updated');
         
-        // Redirect to setup
+        // Redirect to setup with replace for faster navigation
         console.log('AuthContext: Redirecting to SignInSetUp');
-        router.push('/SignInSetUp');
+        router.replace('/SignInSetUp');
         
         return true;
       } else {
@@ -339,19 +342,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Re-throw the error with proper message
       if (error instanceof Error) {
-        // Fix the "Something went wrong" error specifically
-        if (error.message === 'Something went wrong' || error.message.includes('Something went wrong')) {
-          console.log('AuthContext: Converting "Something went wrong" to proper error message');
-          throw new Error('Registration failed. Please try a different username or phone number.');
+        // Handle network errors
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          throw new Error('Network error. Please check your connection and try again.');
+        }
+        // Handle server errors
+        if (error.message.includes('Database connection error')) {
+          throw new Error('Server is temporarily unavailable. Please try again in a few moments.');
+        }
+        // Handle timeout errors
+        if (error.message.includes('timeout')) {
+          throw new Error('Request timeout. Please try again.');
         }
         throw error;
       } else {
-        // Handle non-Error objects that might contain "Something went wrong"
-        const errorStr = error?.toString() || '';
-        if (errorStr.includes('Something went wrong')) {
-          console.log('AuthContext: Converting non-Error "Something went wrong" to proper error message');
-          throw new Error('Registration failed. Please try a different username or phone number.');
-        }
         throw new Error(error instanceof Error ? error.message : 'Registration failed. Please try again.');
       }
     }

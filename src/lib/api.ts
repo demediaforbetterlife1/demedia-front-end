@@ -26,13 +26,18 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
   let url = `${API_BASE}${path}`;
   if (options.method === 'GET' || !options.method) {
     const cacheBuster = Date.now();
-    const version = 'v2.0.0'; // Force cache invalidation
+    const version = 'v2.1.0'; // Force cache invalidation
     url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}cb=${cacheBuster}&v=${version}`;
   }
 
   try {
     console.log('Making API request to:', url);
-    const res = await fetch(url, { ...options, headers });
+    const res = await fetch(url, { 
+      ...options, 
+      headers,
+      // Add timeout for faster error handling
+      signal: AbortSignal.timeout(10000) // 10 second timeout
+    });
     console.log('API response status:', res.status);
     
     if (res.status === 401) {
@@ -46,14 +51,14 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
       }
     }
     if (!res.ok && retryCount > 0 && (res.status >= 500 || res.status === 429)) {
-      await delay(300 * (3 - retryCount));
+      await delay(200 * (3 - retryCount)); // Reduced delay
       return apiFetch(path, options, retryCount - 1);
     }
     return res;
   } catch (err) {
     console.error('API fetch error:', err);
     if (retryCount > 0) {
-      await delay(300 * (3 - retryCount));
+      await delay(200 * (3 - retryCount)); // Reduced delay
       return apiFetch(path, options, retryCount - 1);
     }
     throw err;
