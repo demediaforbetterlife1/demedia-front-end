@@ -185,9 +185,21 @@ export default function SignIn() {
             }
         } catch (err: any) {
             console.error('Login error:', err);
+            console.error('Error details:', {
+                message: err.message,
+                status: err.status,
+                response: err.response
+            });
+            
             // Check if it's a phone verification error
             if (err.message && (err.message.includes("verify your phone") || err.message.includes("Verification SMS sent"))) {
                 setError(t('auth.verificationSent', 'Verification SMS sent to your phone! Please check your messages and enter the verification code to complete login.'));
+            } else if (err.message && err.message.includes("Invalid credentials")) {
+                setError(t('auth.invalidCredentials', 'Invalid phone number or password. Please check your credentials and try again.'));
+            } else if (err.message && err.message.includes("Database connection error")) {
+                setError(t('auth.databaseError', 'Server is temporarily unavailable. Please try again in a few moments.'));
+            } else if (err.message && err.message.includes("Authentication service error")) {
+                setError(t('auth.authServiceError', 'Authentication service is temporarily unavailable. Please try again later.'));
             } else {
                 setError(err.message || t('auth.loginFailed', 'Login failed. Please check your credentials and try again.'));
             }
