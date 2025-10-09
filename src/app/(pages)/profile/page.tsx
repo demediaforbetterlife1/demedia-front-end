@@ -45,6 +45,12 @@ import EditProfileModal from "@/app/layoutElementsComps/navdir/EditProfileModal"
 import CreateStoryModal from "@/app/layoutElementsComps/navdir/CreateStoryModal";
 import DeSnapsViewer from "@/components/DeSnapsViewer";
 import CreateDeSnapModal from "@/components/CreateDeSnapModal";
+import MoodFilter from "@/components/MoodFilter";
+import LiveSpaces from "@/components/LiveSpaces";
+import TimeCapsules from "@/components/TimeCapsules";
+import EmotionTracker from "@/components/EmotionTracker";
+import AISuggestions from "@/components/AISuggestions";
+import AnonymousInsights from "@/components/AnonymousInsights";
 
 interface Story {
     id: number;
@@ -109,6 +115,14 @@ export default function ProfilePage() {
     const [selectedDeSnap, setSelectedDeSnap] = useState<DeSnap | null>(null);
     const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    
+    // Unique Features State
+    const [showMoodFilter, setShowMoodFilter] = useState(false);
+    const [showLiveSpaces, setShowLiveSpaces] = useState(false);
+    const [showTimeCapsules, setShowTimeCapsules] = useState(false);
+    const [showEmotionTracker, setShowEmotionTracker] = useState(false);
+    const [showAISuggestions, setShowAISuggestions] = useState(false);
+    const [showAnonymousInsights, setShowAnonymousInsights] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -997,21 +1011,27 @@ export default function ProfilePage() {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {/* Mood-Based Content Filter */}
-                        <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 p-4 rounded-lg border border-blue-500/30">
+                        <button
+                            onClick={() => setShowMoodFilter(true)}
+                            className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 p-4 rounded-lg border border-blue-500/30 hover:border-blue-500/50 transition-all text-left"
+                        >
                             <div className="flex items-center gap-3 mb-2">
                                 <Target size={20} className="text-blue-400" />
                                 <h4 className="font-semibold text-white">Mood Filter</h4>
                             </div>
                             <p className="text-sm text-gray-300 mb-3">AI-powered content based on your current mood</p>
                             <div className="flex gap-2">
-                                <button className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs">Happy</button>
-                                <button className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs">Creative</button>
-                                <button className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs">Focused</button>
+                                <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs">Happy</span>
+                                <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs">Creative</span>
+                                <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs">Focused</span>
                             </div>
-                        </div>
+                        </button>
 
                         {/* Real-time Collaboration Spaces */}
-                        <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 p-4 rounded-lg border border-green-500/30">
+                        <button
+                            onClick={() => setShowLiveSpaces(true)}
+                            className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 p-4 rounded-lg border border-green-500/30 hover:border-green-500/50 transition-all text-left"
+                        >
                             <div className="flex items-center gap-3 mb-2">
                                 <Users size={20} className="text-green-400" />
                                 <h4 className="font-semibold text-white">Live Spaces</h4>
@@ -1021,20 +1041,26 @@ export default function ProfilePage() {
                                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                                 <span className="text-xs text-green-300">3 people collaborating</span>
                             </div>
-                        </div>
+                        </button>
 
                         {/* Temporal Content (Time-based) */}
-                        <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-4 rounded-lg border border-purple-500/30">
+                        <button
+                            onClick={() => setShowTimeCapsules(true)}
+                            className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-4 rounded-lg border border-purple-500/30 hover:border-purple-500/50 transition-all text-left"
+                        >
                             <div className="flex items-center gap-3 mb-2">
                                 <Clock size={20} className="text-purple-400" />
                                 <h4 className="font-semibold text-white">Time Capsules</h4>
                             </div>
                             <p className="text-sm text-gray-300 mb-2">Content that appears/disappears at specific times</p>
                             <div className="text-xs text-purple-300">Next reveal: 2 hours</div>
-                        </div>
+                        </button>
 
                         {/* Emotional Impact Tracker */}
-                        <div className="bg-gradient-to-br from-red-500/20 to-orange-500/20 p-4 rounded-lg border border-red-500/30">
+                        <button
+                            onClick={() => setShowEmotionTracker(true)}
+                            className="bg-gradient-to-br from-red-500/20 to-orange-500/20 p-4 rounded-lg border border-red-500/30 hover:border-red-500/50 transition-all text-left"
+                        >
                             <div className="flex items-center gap-3 mb-2">
                                 <Heart size={20} className="text-red-400" />
                                 <h4 className="font-semibold text-white">Emotion Tracker</h4>
@@ -1051,49 +1077,33 @@ export default function ProfilePage() {
                                     <span className="text-xs text-yellow-400">🤔</span>
                                 </div>
                             </div>
-                        </div>
+                        </button>
 
                         {/* AI Content Suggestions */}
-                        <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-4 rounded-lg border border-indigo-500/30">
+                        <button
+                            onClick={() => setShowAISuggestions(true)}
+                            className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-4 rounded-lg border border-indigo-500/30 hover:border-indigo-500/50 transition-all text-left"
+                        >
                             <div className="flex items-center gap-3 mb-2">
                                 <Wand2 size={20} className="text-indigo-400" />
                                 <h4 className="font-semibold text-white">AI Suggestions</h4>
                             </div>
                             <p className="text-sm text-gray-300 mb-2">AI-powered content ideas based on trends</p>
                             <div className="text-xs text-indigo-300">5 new ideas ready</div>
-                        </div>
+                        </button>
 
                         {/* Anonymous Feedback System */}
-                        <div className="bg-gradient-to-br from-gray-500/20 to-slate-500/20 p-4 rounded-lg border border-gray-500/30">
+                        <button
+                            onClick={() => setShowAnonymousInsights(true)}
+                            className="bg-gradient-to-br from-gray-500/20 to-slate-500/20 p-4 rounded-lg border border-gray-500/30 hover:border-gray-500/50 transition-all text-left"
+                        >
                             <div className="flex items-center gap-3 mb-2">
                                 <Eye size={20} className="text-gray-400" />
                                 <h4 className="font-semibold text-white">Anonymous Insights</h4>
                             </div>
                             <p className="text-sm text-gray-300 mb-2">Get honest feedback without revealing identity</p>
                             <div className="text-xs text-gray-300">12 anonymous insights</div>
-                        </div>
-                    </div>
-
-                    {/* Advanced Actions */}
-                    <div className="mt-6 pt-4 border-t border-gray-700">
-                        <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                            <Zap size={18} className="text-yellow-400" />
-                            Advanced Actions
-                        </h4>
-                        <div className="flex flex-wrap gap-3">
-                            <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full text-sm font-medium hover:from-blue-600 hover:to-cyan-600 transition-all flex items-center gap-2">
-                                <Target size={16} />
-                                Set Mood Filter
-                            </button>
-                            <button className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full text-sm font-medium hover:from-green-600 hover:to-emerald-600 transition-all flex items-center gap-2">
-                                <Users size={16} />
-                                Create Live Space
-                            </button>
-                            <button className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-sm font-medium hover:from-purple-600 hover:to-pink-600 transition-all flex items-center gap-2">
-                                <Clock size={16} />
-                                Schedule Time Capsule
-                            </button>
-                        </div>
+                        </button>
                     </div>
                 </div>
             )}
@@ -1155,6 +1165,61 @@ export default function ProfilePage() {
                     }}
                 />
             )}
+
+            {/* Unique Features Modals */}
+            <MoodFilter
+                isOpen={showMoodFilter}
+                onClose={() => setShowMoodFilter(false)}
+                onMoodChange={(mood, filters) => {
+                    console.log("Mood filter applied:", { mood, filters });
+                }}
+            />
+
+            <LiveSpaces
+                isOpen={showLiveSpaces}
+                onClose={() => setShowLiveSpaces(false)}
+                onCreateSpace={(spaceData) => {
+                    console.log("Live space created:", spaceData);
+                }}
+                onJoinSpace={(spaceId) => {
+                    console.log("Joined live space:", spaceId);
+                }}
+            />
+
+            <TimeCapsules
+                isOpen={showTimeCapsules}
+                onClose={() => setShowTimeCapsules(false)}
+                onCreateCapsule={(capsuleData) => {
+                    console.log("Time capsule created:", capsuleData);
+                }}
+                onRevealCapsule={(capsuleId) => {
+                    console.log("Time capsule revealed:", capsuleId);
+                }}
+            />
+
+            <EmotionTracker
+                isOpen={showEmotionTracker}
+                onClose={() => setShowEmotionTracker(false)}
+                onEmotionRecorded={(emotionData) => {
+                    console.log("Emotion recorded:", emotionData);
+                }}
+            />
+
+            <AISuggestions
+                isOpen={showAISuggestions}
+                onClose={() => setShowAISuggestions(false)}
+                onSuggestionSelected={(suggestion) => {
+                    console.log("AI suggestion selected:", suggestion);
+                }}
+            />
+
+            <AnonymousInsights
+                isOpen={showAnonymousInsights}
+                onClose={() => setShowAnonymousInsights(false)}
+                onInsightReceived={(insight) => {
+                    console.log("Anonymous insight received:", insight);
+                }}
+            />
         </div>
     );
 }
