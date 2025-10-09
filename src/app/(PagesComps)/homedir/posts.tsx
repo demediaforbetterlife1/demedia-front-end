@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Share2, Bookmark, BookmarkCheck, Flag, MoreHorizontal, Eye, EyeOff } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, BookmarkCheck, Flag, MoreHorizontal, Eye, EyeOff, Zap, Star, TrendingUp, Award, Crown, Flame, Diamond, Target, Sparkles, Magic, Gift } from "lucide-react";
 import Trending from "@/app/(PagesComps)/homedir/trending";
 import Suggestions from "@/app/(PagesComps)/homedir/suggestions";
 import { contentService } from "@/services/contentService";
@@ -224,11 +224,26 @@ export default function Posts() {
                         {/* Header */}
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center space-x-3">
-                                <div className="w-10 h-10 rounded-full theme-bg-tertiary flex items-center justify-center theme-text-secondary font-bold">
-                                    {post.user?.name?.charAt(0) ?? "U"}
+                                <div className="relative">
+                                    <div className="w-10 h-10 rounded-full theme-bg-tertiary flex items-center justify-center theme-text-secondary font-bold">
+                                        {post.user?.name?.charAt(0) ?? "U"}
+                                    </div>
+                                    {/* Online Status Indicator */}
+                                    <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
                                 </div>
                                 <div>
-                                    <div className="font-semibold theme-text-primary">{post.user?.name ?? t('posts.unknown','Unknown')}</div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-semibold theme-text-primary">{post.user?.name ?? t('posts.unknown','Unknown')}</span>
+                                        {/* Special Badges */}
+                                        <div className="flex gap-1">
+                                            <div className="w-5 h-5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                                                <Crown size={12} className="text-white" />
+                                            </div>
+                                            <div className="w-5 h-5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                                                <Diamond size={12} className="text-white" />
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div className="text-sm theme-text-muted">@{post.user?.username ?? 'user'}</div>
                                 </div>
                             </div>
@@ -246,18 +261,41 @@ export default function Posts() {
                         </div>
 
                         {/* Content */}
-                        <p className="mb-3 theme-text-secondary">{post.content}</p>
+                        <div className="mb-3">
+                            <p className="theme-text-secondary">{post.content}</p>
+                            {/* Engagement Indicators */}
+                            <div className="flex items-center gap-2 mt-2">
+                                {post.likes > 50 && (
+                                    <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-pink-500/20 to-red-500/20 rounded-full">
+                                        <TrendingUp size={12} className="text-pink-400" />
+                                        <span className="text-xs text-pink-400 font-medium">Trending</span>
+                                    </div>
+                                )}
+                                {post.comments > 20 && (
+                                    <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full">
+                                        <MessageCircle size={12} className="text-blue-400" />
+                                        <span className="text-xs text-blue-400 font-medium">Hot Discussion</span>
+                                    </div>
+                                )}
+                                {post.views && post.views > 1000 && (
+                                    <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-full">
+                                        <Eye size={12} className="text-green-400" />
+                                        <span className="text-xs text-green-400 font-medium">Viral</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
                         {/* Post Image Placeholder */}
                         <div className="rounded-xl theme-bg-tertiary h-48 flex items-center justify-center theme-text-muted">
                             {t('posts.image','Image')}
                         </div>
 
-                        {/* Actions */}
+                        {/* Enhanced Actions */}
                         <div className="flex items-center justify-between mt-3 theme-text-muted">
                             <div className="flex items-center gap-6">
                                 <button 
-                                    className={`flex items-center gap-1 cursor-pointer transition-colors ${
+                                    className={`flex items-center gap-1 cursor-pointer transition-all duration-200 hover:scale-105 ${
                                         post.liked 
                                             ? 'text-pink-500 hover:text-pink-400' 
                                             : 'hover:text-pink-500'
@@ -269,19 +307,36 @@ export default function Posts() {
                                         fill={post.liked ? 'currentColor' : 'none'}
                                     /> 
                                     <span className="text-sm">{post.likes}</span>
+                                    {post.likes > 100 && (
+                                        <div className="w-4 h-4 bg-gradient-to-r from-pink-500 to-red-500 rounded-full flex items-center justify-center">
+                                            <Flame size={10} className="text-white" />
+                                        </div>
+                                    )}
                                 </button>
                                 <button 
-                                    className="flex items-center gap-1 hover:text-blue-400 cursor-pointer transition-colors"
+                                    className="flex items-center gap-1 hover:text-blue-400 cursor-pointer transition-all duration-200 hover:scale-105"
                                     onClick={() => handleComment(post.id)}
                                 >
                                     <MessageCircle size={18} /> 
                                     <span className="text-sm">{post.comments}</span>
+                                    {post.comments > 50 && (
+                                        <div className="w-4 h-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
+                                            <Zap size={10} className="text-white" />
+                                        </div>
+                                    )}
                                 </button>
                                 <button 
-                                    className="flex items-center gap-1 hover:text-green-400 cursor-pointer transition-colors"
+                                    className="flex items-center gap-1 hover:text-green-400 cursor-pointer transition-all duration-200 hover:scale-105"
                                     onClick={() => handleShare(post.id)}
                                 >
                                     <Share2 size={18} />
+                                </button>
+                                {/* New Special Actions */}
+                                <button className="flex items-center gap-1 hover:text-purple-400 cursor-pointer transition-all duration-200 hover:scale-105">
+                                    <Sparkles size={18} />
+                                </button>
+                                <button className="flex items-center gap-1 hover:text-yellow-400 cursor-pointer transition-all duration-200 hover:scale-105">
+                                    <Star size={18} />
                                 </button>
                             </div>
                             <div className="flex items-center gap-4">

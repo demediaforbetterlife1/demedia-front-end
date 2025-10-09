@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Heart, Reply, MoreHorizontal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiFetch } from "@/lib/api";
 
 interface Comment {
     id: number;
@@ -44,13 +45,7 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
     const fetchComments = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`/api/posts/${postId}/comments`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'user-id': user?.id?.toString() || '',
-                    'Content-Type': 'application/json',
-                },
-            });
+            const response = await apiFetch(`/api/posts/${postId}/comments`);
 
             if (response.ok) {
                 const data = await response.json();
@@ -75,11 +70,9 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
         setError("");
 
         try {
-            const response = await fetch(`/api/posts/${postId}/comments`, {
+            const response = await apiFetch(`/api/posts/${postId}/comments`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'user-id': user?.id?.toString() || '',
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -105,11 +98,9 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
 
     const handleLikeComment = async (commentId: number) => {
         try {
-            const response = await fetch(`/api/comments/${commentId}/like`, {
+            const response = await apiFetch(`/api/comments/${commentId}/like`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'user-id': user?.id?.toString() || '',
                     'Content-Type': 'application/json',
                 },
             });

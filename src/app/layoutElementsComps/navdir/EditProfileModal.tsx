@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Camera, User, Mail, Calendar, MapPin, Link, Phone, Globe, Lock, Users, UserCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
+import { apiFetch } from "@/lib/api";
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -127,12 +128,10 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
         try {
             console.log('EditProfileModal: Submitting profile update:', profileData);
             
-            const response = await fetch(`/api/user/${user?.id}`, {
+            const response = await apiFetch(`/api/user/${user?.id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem('token')}`,
-                    "user-id": user?.id?.toString() || "",
                 },
                 body: JSON.stringify({
                     ...profileData,

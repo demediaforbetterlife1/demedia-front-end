@@ -23,7 +23,20 @@ import {
     Lock,
     UserCheck,
     Sparkles,
-    Zap
+    Zap,
+    Trophy,
+    Target,
+    TrendingUp,
+    Star,
+    Award,
+    Crown,
+    Flame,
+    Diamond,
+    Shield,
+    Badge,
+    Gift,
+    Magic,
+    Wand
 } from "lucide-react";
 import { getUserProfile } from "../../../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -974,6 +987,115 @@ export default function ProfilePage() {
                     )}
                 </AnimatePresence>
             </div>
+
+            {/* Special Features Section - Only for own profile */}
+            {isOwnProfile && (
+                <div className="mt-6 p-6 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-500/20">
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <Sparkles size={20} className="text-yellow-400" />
+                        Special Features
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* Achievement System */}
+                        <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 p-4 rounded-lg border border-yellow-500/30">
+                            <div className="flex items-center gap-3 mb-2">
+                                <Trophy size={20} className="text-yellow-400" />
+                                <h4 className="font-semibold text-white">Achievements</h4>
+                            </div>
+                            <p className="text-sm text-gray-300 mb-3">Unlock badges and rewards</p>
+                            <div className="flex gap-2">
+                                <div className="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                                    <Star size={16} className="text-yellow-400" />
+                                </div>
+                                <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                                    <Award size={16} className="text-blue-400" />
+                                </div>
+                                <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
+                                    <Crown size={16} className="text-purple-400" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Streak Counter */}
+                        <div className="bg-gradient-to-br from-red-500/20 to-pink-500/20 p-4 rounded-lg border border-red-500/30">
+                            <div className="flex items-center gap-3 mb-2">
+                                <Flame size={20} className="text-red-400" />
+                                <h4 className="font-semibold text-white">Daily Streak</h4>
+                            </div>
+                            <p className="text-2xl font-bold text-red-400 mb-1">7 days</p>
+                            <p className="text-sm text-gray-300">Keep it going!</p>
+                        </div>
+
+                        {/* Influence Score */}
+                        <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 p-4 rounded-lg border border-green-500/30">
+                            <div className="flex items-center gap-3 mb-2">
+                                <TrendingUp size={20} className="text-green-400" />
+                                <h4 className="font-semibold text-white">Influence Score</h4>
+                            </div>
+                            <p className="text-2xl font-bold text-green-400 mb-1">8.5/10</p>
+                            <p className="text-sm text-gray-300">Based on engagement</p>
+                        </div>
+
+                        {/* Content Creator Badge */}
+                        <div className="bg-gradient-to-br from-purple-500/20 to-indigo-500/20 p-4 rounded-lg border border-purple-500/30">
+                            <div className="flex items-center gap-3 mb-2">
+                                <Diamond size={20} className="text-purple-400" />
+                                <h4 className="font-semibold text-white">Creator Badge</h4>
+                            </div>
+                            <p className="text-sm text-gray-300 mb-2">Verified Content Creator</p>
+                            <div className="flex items-center gap-1">
+                                <Shield size={14} className="text-purple-400" />
+                                <span className="text-xs text-purple-300">Verified</span>
+                            </div>
+                        </div>
+
+                        {/* Social Impact */}
+                        <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 p-4 rounded-lg border border-blue-500/30">
+                            <div className="flex items-center gap-3 mb-2">
+                                <Target size={20} className="text-blue-400" />
+                                <h4 className="font-semibold text-white">Social Impact</h4>
+                            </div>
+                            <p className="text-2xl font-bold text-blue-400 mb-1">1.2K</p>
+                            <p className="text-sm text-gray-300">Lives touched</p>
+                        </div>
+
+                        {/* Exclusive Content */}
+                        <div className="bg-gradient-to-br from-pink-500/20 to-rose-500/20 p-4 rounded-lg border border-pink-500/30">
+                            <div className="flex items-center gap-3 mb-2">
+                                <Magic size={20} className="text-pink-400" />
+                                <h4 className="font-semibold text-white">Exclusive Content</h4>
+                            </div>
+                            <p className="text-sm text-gray-300 mb-2">Premium features unlocked</p>
+                            <div className="flex items-center gap-1">
+                                <Wand size={14} className="text-pink-400" />
+                                <span className="text-xs text-pink-300">VIP Access</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="mt-6 pt-4 border-t border-gray-700">
+                        <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+                            <Zap size={18} className="text-yellow-400" />
+                            Quick Actions
+                        </h4>
+                        <div className="flex flex-wrap gap-3">
+                            <button className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-sm font-medium hover:from-purple-600 hover:to-pink-600 transition-all flex items-center gap-2">
+                                <Gift size={16} />
+                                Send Gift
+                            </button>
+                            <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full text-sm font-medium hover:from-blue-600 hover:to-cyan-600 transition-all flex items-center gap-2">
+                                <Badge size={16} />
+                                Claim Badge
+                            </button>
+                            <button className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full text-sm font-medium hover:from-green-600 hover:to-emerald-600 transition-all flex items-center gap-2">
+                                <Star size={16} />
+                                Rate Content
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <EditProfileModal
                 isOpen={showEditModal}
