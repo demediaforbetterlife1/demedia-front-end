@@ -192,14 +192,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('AuthContext: Starting login process');
       
-      console.log('AuthContext: Making login request...');
       const res = await apiFetch(`/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phoneNumber, password })
       });
-      
-      console.log('AuthContext: Login request completed');
 
       console.log('AuthContext: Login response status:', res.status);
 
@@ -288,7 +285,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error.name === 'AbortError'
       )) {
         console.log(`Retrying login, attempts left: ${retryCount}`);
-        await new Promise(resolve => setTimeout(resolve, 500 * (3 - retryCount)));
+        await new Promise(resolve => setTimeout(resolve, 200 * (3 - retryCount)));
         return login(phoneNumber, password, retryCount - 1);
       }
       
