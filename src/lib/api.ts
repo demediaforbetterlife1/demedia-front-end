@@ -63,13 +63,13 @@ export async function apiFetch(path: string, options: RequestInit = {}, retryCou
       return apiFetch(path, options, retryCount - 1);
     }
     return res;
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('API fetch error:', err);
     if (retryCount > 0 && (
       err instanceof TypeError || // Network error
-      err.name === 'AbortError' || // Timeout
-      err.message?.includes('Failed to fetch') ||
-      err.message?.includes('NetworkError')
+      (err instanceof Error && err.name === 'AbortError') || // Timeout
+      (err instanceof Error && err.message?.includes('Failed to fetch')) ||
+      (err instanceof Error && err.message?.includes('NetworkError'))
     )) {
       console.log(`Retrying request due to network error, attempts left: ${retryCount}`);
       await delay(500 * (4 - retryCount)); // Progressive delay
