@@ -163,7 +163,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('AuthContext: Starting login process');
       
       // Add a small delay to prevent rapid requests
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Pre-check backend health for auth endpoints
+      try {
+        const healthCheck = await fetch('/api/health', { 
+          method: 'GET',
+          signal: AbortSignal.timeout(5000)
+        });
+        if (!healthCheck.ok) {
+          console.log('Backend health check failed, proceeding anyway...');
+        }
+      } catch (healthError) {
+        console.log('Backend health check error, proceeding with login...');
+      }
       
       const res = await apiFetch(`/api/auth/login`, {
         method: 'POST',
@@ -287,6 +300,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         username: userData.username, 
         phoneNumber: userData.phoneNumber 
       });
+      
+      // Add a small delay to prevent rapid requests
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Pre-check backend health for auth endpoints
+      try {
+        const healthCheck = await fetch('/api/health', { 
+          method: 'GET',
+          signal: AbortSignal.timeout(5000)
+        });
+        if (!healthCheck.ok) {
+          console.log('Backend health check failed, proceeding anyway...');
+        }
+      } catch (healthError) {
+        console.log('Backend health check error, proceeding with registration...');
+      }
       
       const res = await apiFetch(`/api/auth/sign-up`, {
         method: 'POST',

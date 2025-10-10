@@ -61,8 +61,11 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}cb=${cacheBuster}&v=${version}`;
   }
 
-  // Progressive timeout strategy
-  const timeouts = [5000, 15000, 30000]; // 5s, 15s, 30s
+  // Special handling for authentication endpoints
+  const isAuthEndpoint = path.includes('/auth/login') || path.includes('/auth/sign-up');
+  
+  // Progressive timeout strategy - start with longer timeouts
+  const timeouts = isAuthEndpoint ? [20000, 30000, 40000] : [15000, 25000, 35000]; // Auth gets longer timeouts
   const maxRetries = timeouts.length - 1;
   let lastError: unknown;
 
@@ -70,6 +73,13 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     const timeout = timeouts[attempt];
     try {
       console.log(`Making API request to: ${url} (attempt ${attempt + 1}, timeout: ${timeout}ms)`);
+      
+      // For auth endpoints, add a small delay between attempts
+      if (isAuthEndpoint && attempt > 0) {
+        console.log(`Waiting ${attempt * 2000}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+      }
+      
       const res = await fetch(url, { 
         ...options, 
         headers,
