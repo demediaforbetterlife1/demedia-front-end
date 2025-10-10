@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { Plus, Video, X } from 'lucide-react';
 import CreateDeSnapModal from './CreateDeSnapModal';
 
@@ -10,12 +11,26 @@ interface FloatingDeSnapButtonProps {
 
 export default function FloatingDeSnapButton({ className = "" }: FloatingDeSnapButtonProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [shouldShow, setShouldShow] = useState(false);
+    const pathname = usePathname();
+
+    // Hide button on login and signup pages
+    useEffect(() => {
+        const authPages = ['/login', '/signup', '/sign-up', '/auth/login', '/auth/signup'];
+        const isAuthPage = authPages.some(page => pathname?.includes(page));
+        setShouldShow(!isAuthPage);
+    }, [pathname]);
 
     const handleDeSnapCreated = (deSnap: any) => {
         console.log('DeSnap created:', deSnap);
         // You can add any additional logic here, like showing a success message
         setIsModalOpen(false);
     };
+
+    // Don't render if on auth pages
+    if (!shouldShow) {
+        return null;
+    }
 
     return (
         <>
