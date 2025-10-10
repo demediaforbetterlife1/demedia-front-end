@@ -44,6 +44,7 @@ import { useSearchParams } from "next/navigation";
 import EditProfileModal from "@/app/layoutElementsComps/navdir/EditProfileModal";
 import CreateStoryModal from "@/app/layoutElementsComps/navdir/CreateStoryModal";
 import DeSnapsViewer from "@/components/DeSnapsViewer";
+import DeSnapCreator from "@/components/DeSnapCreator";
 import CreateDeSnapModal from "@/components/CreateDeSnapModal";
 import MoodFilter from "@/components/MoodFilter";
 import LiveSpaces from "@/components/LiveSpaces";
@@ -1243,72 +1244,17 @@ export default function ProfilePage() {
                 </div>
             )}
 
-            {/* DeSnap Creation Modal */}
-            {showDeSnapModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold text-white">📸 Create DeSnap</h3>
-                            <button
-                                onClick={() => setShowDeSnapModal(false)}
-                                className="text-gray-400 hover:text-white"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Content
-                                </label>
-                                <textarea
-                                    placeholder="What's happening? Share a moment..."
-                                    className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-purple-500 focus:outline-none resize-none"
-                                    rows={3}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Duration (seconds)
-                                </label>
-                                <input
-                                    type="number"
-                                    placeholder="24"
-                                    className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-purple-500 focus:outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Visibility
-                                </label>
-                                <select className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-purple-500 focus:outline-none">
-                                    <option value="public">Public</option>
-                                    <option value="followers">Followers Only</option>
-                                    <option value="private">Private</option>
-                                </select>
-                            </div>
-                            <div className="flex space-x-3">
-                                <button
-                                    onClick={() => setShowDeSnapModal(false)}
-                                    className="flex-1 p-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        // TODO: Implement DeSnap creation
-                                        console.log("DeSnap created!");
-                                        setShowDeSnapModal(false);
-                                    }}
-                                    className="flex-1 p-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all"
-                                >
-                                    Create DeSnap
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <DeSnapCreator
+                isOpen={showDeSnapModal}
+                onClose={() => setShowDeSnapModal(false)}
+                onDeSnapCreated={(newDeSnap) => {
+                    setProfile(prev => prev ? {
+                        ...prev,
+                        deSnaps: [newDeSnap, ...prev.deSnaps]
+                    } : null);
+                    setShowDeSnapModal(false);
+                }}
+            />
         </div>
     );
 }
