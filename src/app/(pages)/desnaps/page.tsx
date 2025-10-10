@@ -138,6 +138,8 @@ export default function DeSnapsPage() {
         } catch (err) {
             console.error('Error fetching DeSnaps:', err);
             setError(`Network error: ${err instanceof Error ? err.message : 'Unable to fetch DeSnaps'}`);
+            // Set empty array as fallback
+            setDeSnaps([]);
         } finally {
             setLoading(false);
         }

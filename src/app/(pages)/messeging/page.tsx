@@ -169,6 +169,8 @@ export default function MessagingPage() {
         } catch (err) {
             console.error('Error fetching conversations:', err);
             setError(`Network error: ${err instanceof Error ? err.message : 'Unable to fetch conversations'}`);
+            // Set empty array as fallback
+            setConversations([]);
         } finally {
             setLoading(false);
         }
