@@ -14,7 +14,8 @@ import {
     Share,
     Sparkles,
     Grid3X3,
-    Settings
+    Settings,
+    Zap
 } from "lucide-react";
 import { getUserProfile } from "../../../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -733,11 +734,33 @@ export default function ProfilePage() {
                                             type="button"
                                             whileTap={{ scale: 0.95 }}
                                             whileHover={{ scale: 1.02 }}
+                                            onClick={() => {
+                                                // TODO: Implement mood filter
+                                                console.log('Mood filter clicked');
+                                                alert('Mood filter feature coming soon!');
+                                            }}
                                             className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white hover:from-pink-600 hover:to-rose-700 shadow-lg hover:shadow-xl`}
                                             title="Mood Filter"
                                         >
                                             <Sparkles size={18} />
                                             <span>Mood</span>
+                                        </motion.button>
+
+                                        {/* Unique Feature: Vibe Check Button */}
+                                        <motion.button
+                                            type="button"
+                                            whileTap={{ scale: 0.95 }}
+                                            whileHover={{ scale: 1.02 }}
+                                            onClick={() => {
+                                                // TODO: Implement vibe check
+                                                console.log('Vibe check clicked');
+                                                alert('Vibe check feature coming soon!');
+                                            }}
+                                            className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700 shadow-lg hover:shadow-xl`}
+                                            title="Vibe Check"
+                                        >
+                                            <Zap size={18} />
+                                            <span>Vibe</span>
                                         </motion.button>
                                         
                                         <motion.button
@@ -772,11 +795,33 @@ export default function ProfilePage() {
                                             type="button"
                                             whileTap={{ scale: 0.95 }}
                                             whileHover={{ scale: 1.02 }}
+                                            onClick={() => {
+                                                // TODO: Implement energy transfer
+                                                console.log('Send energy clicked');
+                                                alert('Energy transfer feature coming soon!');
+                                            }}
                                             className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl`}
                                             title="Send Energy"
                                         >
                                             <Sparkles size={18} />
                                             <span>Energy</span>
+                                        </motion.button>
+
+                                        {/* Unique Feature: Vibe Match Button */}
+                                        <motion.button
+                                            type="button"
+                                            whileTap={{ scale: 0.95 }}
+                                            whileHover={{ scale: 1.02 }}
+                                            onClick={() => {
+                                                // TODO: Implement vibe match
+                                                console.log('Vibe match clicked');
+                                                alert('Vibe match feature coming soon!');
+                                            }}
+                                            className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 shadow-lg hover:shadow-xl`}
+                                            title="Vibe Match"
+                                        >
+                                            <Heart size={18} />
+                                            <span>Vibe</span>
                                         </motion.button>
                                         
                                         <motion.button
@@ -872,23 +917,18 @@ export default function ProfilePage() {
                                                 </div>
                                                 <h3 className={`text-xl font-bold ${themeClasses.text} mb-2`}>DeSnaps</h3>
                                                 <p className={`${themeClasses.textSecondary} mb-4`}>Short-form video content with unique features</p>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                    <div className="p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl border border-purple-500/30">
-                                                        <div className="text-2xl font-bold text-purple-400">8</div>
-                                                        <div className="text-sm text-purple-300">Videos</div>
-                                                    </div>
-                                                    <div className="p-4 bg-gradient-to-r from-pink-500/20 to-rose-500/20 rounded-xl border border-pink-500/30">
-                                                        <div className="text-2xl font-bold text-pink-400">2.1K</div>
-                                                        <div className="text-sm text-pink-300">Views</div>
-                                                    </div>
-                                                    <div className="p-4 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-xl border border-cyan-500/30">
-                                                        <div className="text-2xl font-bold text-cyan-400">156</div>
-                                                        <div className="text-sm text-cyan-300">Likes</div>
-                                                    </div>
-                                                    <div className="p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl border border-green-500/30">
-                                                        <div className="text-2xl font-bold text-green-400">23</div>
-                                                        <div className="text-sm text-green-300">Comments</div>
-                                                    </div>
+                                                <div className="text-center">
+                                                    <p className={`${themeClasses.textSecondary} mb-4`}>No DeSnaps yet</p>
+                                                    {isOwnProfile && (
+                                                        <motion.button
+                                                            whileHover={{ scale: 1.05 }}
+                                                            whileTap={{ scale: 0.95 }}
+                                                            onClick={() => setShowDeSnapModal(true)}
+                                                            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-600 hover:to-pink-700 transition-all duration-300 shadow-lg"
+                                                        >
+                                                            Create Your First DeSnap
+                                                        </motion.button>
+                                                    )}
                                                 </div>
                                             </div>
                                         </motion.div>
@@ -908,23 +948,18 @@ export default function ProfilePage() {
                                                 </div>
                                                 <h3 className={`text-xl font-bold ${themeClasses.text} mb-2`}>Stories</h3>
                                                 <p className={`${themeClasses.textSecondary} mb-4`}>Temporary content that disappears after 24 hours</p>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                    <div className="p-4 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl border border-yellow-500/30">
-                                                        <div className="text-2xl font-bold text-yellow-400">5</div>
-                                                        <div className="text-sm text-yellow-300">Active</div>
-                                                    </div>
-                                                    <div className="p-4 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl border border-orange-500/30">
-                                                        <div className="text-2xl font-bold text-orange-400">1.8K</div>
-                                                        <div className="text-sm text-orange-300">Views</div>
-                                                    </div>
-                                                    <div className="p-4 bg-gradient-to-r from-red-500/20 to-pink-500/20 rounded-xl border border-red-500/30">
-                                                        <div className="text-2xl font-bold text-red-400">89</div>
-                                                        <div className="text-sm text-red-300">Reactions</div>
-                                                    </div>
-                                                    <div className="p-4 bg-gradient-to-r from-pink-500/20 to-purple-500/20 rounded-xl border border-pink-500/30">
-                                                        <div className="text-2xl font-bold text-pink-400">12</div>
-                                                        <div className="text-sm text-pink-300">Replies</div>
-                                                    </div>
+                                                <div className="text-center">
+                                                    <p className={`${themeClasses.textSecondary} mb-4`}>No stories yet</p>
+                                                    {isOwnProfile && (
+                                                        <motion.button
+                                                            whileHover={{ scale: 1.05 }}
+                                                            whileTap={{ scale: 0.95 }}
+                                                            onClick={() => setShowCreateStoryModal(true)}
+                                                            className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl font-semibold hover:from-yellow-600 hover:to-orange-700 transition-all duration-300 shadow-lg"
+                                                        >
+                                                            Create Your First Story
+                                                        </motion.button>
+                                                    )}
                                                 </div>
                                             </div>
                                         </motion.div>
@@ -954,7 +989,8 @@ export default function ProfilePage() {
                                                     </div>
                                                 </div>
                                                 
-                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                                {/* Unique Features Grid */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                                     <div className="p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl border border-green-500/30">
                                                         <div className="text-2xl font-bold text-green-400">85%</div>
                                                         <div className="text-sm text-green-300">Current Energy</div>
@@ -963,9 +999,52 @@ export default function ProfilePage() {
                                                         <div className="text-2xl font-bold text-cyan-400">Happy</div>
                                                         <div className="text-sm text-cyan-300">Mood</div>
                                                     </div>
-                                                    <div className="p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl border border-purple-500/30">
-                                                        <div className="text-2xl font-bold text-purple-400">Creative</div>
-                                                        <div className="text-sm text-purple-300">Vibe</div>
+                                                </div>
+
+                                                {/* Unique Feature: Energy Transfer */}
+                                                <div className="mb-6">
+                                                    <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Energy Transfer</h4>
+                                                    <div className="flex justify-center space-x-4">
+                                                        <motion.button
+                                                            whileHover={{ scale: 1.05 }}
+                                                            whileTap={{ scale: 0.95 }}
+                                                            className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300"
+                                                        >
+                                                            Send Energy
+                                                        </motion.button>
+                                                        <motion.button
+                                                            whileHover={{ scale: 1.05 }}
+                                                            whileTap={{ scale: 0.95 }}
+                                                            className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg font-semibold hover:from-purple-600 hover:to-pink-700 transition-all duration-300"
+                                                        >
+                                                            Receive Energy
+                                                        </motion.button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Unique Feature: Mood Ring */}
+                                                <div className="mb-6">
+                                                    <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Mood Ring</h4>
+                                                    <div className="relative w-24 h-24 mx-auto">
+                                                        <div className="absolute inset-0 rounded-full border-4 border-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 animate-pulse"></div>
+                                                        <div className="absolute inset-2 rounded-full bg-gradient-to-r from-pink-500/30 via-purple-500/30 to-cyan-500/30 flex items-center justify-center">
+                                                            <Sparkles className="w-8 h-8 text-white" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Unique Feature: Energy History */}
+                                                <div className="mb-6">
+                                                    <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Energy History</h4>
+                                                    <div className="grid grid-cols-7 gap-2">
+                                                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
+                                                            <div key={day} className="text-center">
+                                                                <div className="text-xs text-gray-400 mb-1">{day}</div>
+                                                                <div className={`w-8 h-8 rounded-full mx-auto ${
+                                                                    index < 5 ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gray-300'
+                                                                }`}></div>
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             </div>

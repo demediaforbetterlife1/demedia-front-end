@@ -196,15 +196,17 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
 
             {/* Post Modal */}
             {showPostModal && user && (
-                <AddPostModal
-                    isOpen={showPostModal}
-                    onClose={() => {
-                        console.log('CreateContentModal: Closing post modal');
-                        setShowPostModal(false);
-                        onClose(); // Close the main modal when post modal closes
-                    }}
-                    authorId={Number(user.id)}
-                />
+                <div className="fixed inset-0 z-50">
+                    <AddPostModal
+                        isOpen={showPostModal}
+                        onClose={() => {
+                            console.log('CreateContentModal: Closing post modal');
+                            setShowPostModal(false);
+                            onClose(); // Close the main modal when post modal closes
+                        }}
+                        authorId={Number(user.id)}
+                    />
+                </div>
             )}
 
             {/* DeSnap Modal */}
