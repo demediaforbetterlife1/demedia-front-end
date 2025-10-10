@@ -14,8 +14,7 @@ import {
     Share,
     Sparkles,
     Grid3X3,
-    Settings,
-    Zap
+    Settings
 } from "lucide-react";
 import { getUserProfile } from "../../../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,7 +23,6 @@ import { useSearchParams } from "next/navigation";
 import EditProfileModal from "@/app/layoutElementsComps/navdir/EditProfileModal";
 import CreateStoryModal from "@/app/layoutElementsComps/navdir/CreateStoryModal";
 import DeSnapsViewer from "@/components/DeSnapsViewer";
-import DeSnapCreator from "@/components/DeSnapCreator";
 import CreateDeSnapModal from "@/components/CreateDeSnapModal";
 import MoodFilter from "@/components/MoodFilter";
 import LiveSpaces from "@/components/LiveSpaces";
@@ -167,15 +165,8 @@ export default function ProfilePage() {
     const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
     
-    // Unique Features State
-    const [showMoodFilter, setShowMoodFilter] = useState(false);
-    const [showLiveSpaces, setShowLiveSpaces] = useState(false);
-    const [showTimeCapsules, setShowTimeCapsules] = useState(false);
-    const [showEmotionTracker, setShowEmotionTracker] = useState(false);
-    const [showAISuggestions, setShowAISuggestions] = useState(false);
-    const [showAnonymousInsights, setShowAnonymousInsights] = useState(false);
+    // State for modals and features
     const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
-    const [showDeSnapModal, setShowDeSnapModal] = useState(false);
     const [showQuickActions, setShowQuickActions] = useState(false);
 
     useEffect(() => {
@@ -682,7 +673,7 @@ export default function ProfilePage() {
                             )}
 
                             {/* Unique Stats with Special Features */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div className="grid grid-cols-3 gap-4 mb-6">
                                 <motion.div 
                                     whileHover={{ scale: 1.05 }}
                                     className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300`}
@@ -716,17 +707,6 @@ export default function ProfilePage() {
                                     </div>
                                 </motion.div>
                                 
-                                {/* Unique Feature: Energy Level */}
-                                <motion.div 
-                                    whileHover={{ scale: 1.05 }}
-                                    className={`text-center p-4 rounded-xl bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 cursor-pointer hover:shadow-lg transition-all duration-300`}
-                                >
-                                    <div className="text-2xl font-bold text-green-400">85%</div>
-                                    <div className="text-sm text-green-300">Energy</div>
-                                    <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
-                                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 h-1 rounded-full" style={{width: '85%'}}></div>
-                                    </div>
-                                </motion.div>
                             </div>
 
                             {/* Unique Action Buttons with Special Features */}
@@ -744,40 +724,6 @@ export default function ProfilePage() {
                                             <span>Edit Profile</span>
                                         </motion.button>
                                         
-                                        {/* Unique Feature: Mood Filter Button */}
-                                        <motion.button
-                                            type="button"
-                                            whileTap={{ scale: 0.95 }}
-                                            whileHover={{ scale: 1.02 }}
-                                            onClick={() => {
-                                                setShowMoodFilter(true);
-                                            }}
-                                            className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white hover:from-pink-600 hover:to-rose-700 shadow-lg hover:shadow-xl`}
-                                            title="Mood Filter"
-                                        >
-                                            <Sparkles size={18} />
-                                            <span>Mood</span>
-                                        </motion.button>
-
-                                        {/* Unique Feature: Vibe Check Button */}
-                                        <motion.button
-                                            type="button"
-                                            whileTap={{ scale: 0.95 }}
-                                            whileHover={{ scale: 1.02 }}
-                                            onClick={() => {
-                                                // Implement vibe check functionality
-                                                const moods = ['Happy', 'Excited', 'Calm', 'Energetic', 'Creative', 'Focused', 'Relaxed', 'Motivated'];
-                                                const randomMood = moods[Math.floor(Math.random() * moods.length)];
-                                                const energyLevel = Math.floor(Math.random() * 40) + 60; // 60-100%
-                                                
-                                                alert(`Your current vibe: ${randomMood}\nEnergy Level: ${energyLevel}%\n\nThis feature will be enhanced with real mood detection!`);
-                                            }}
-                                            className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700 shadow-lg hover:shadow-xl`}
-                                            title="Vibe Check"
-                                        >
-                                            <Zap size={18} />
-                                            <span>Vibe</span>
-                                        </motion.button>
                                         
                                         <motion.button
                                             type="button"
@@ -806,45 +752,6 @@ export default function ProfilePage() {
                                             {busyFollow ? "..." : isFollowing ? "Following" : "Follow"}
                                         </motion.button>
                                         
-                                        {/* Unique Feature: Send Energy Button */}
-                                        <motion.button
-                                            type="button"
-                                            whileTap={{ scale: 0.95 }}
-                                            whileHover={{ scale: 1.02 }}
-                                            onClick={() => {
-                                                // Implement energy transfer functionality
-                                                const energyTypes = ['Positive Vibes', 'Creative Energy', 'Motivation', 'Calm Energy', 'Excitement', 'Focus'];
-                                                const randomEnergy = energyTypes[Math.floor(Math.random() * energyTypes.length)];
-                                                const energyAmount = Math.floor(Math.random() * 20) + 10; // 10-30 energy points
-                                                
-                                                alert(`✨ Energy Sent! ✨\n\nYou sent ${energyAmount} points of ${randomEnergy} to ${name}!\n\nThey will receive a notification about your positive energy transfer.`);
-                                            }}
-                                            className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl`}
-                                            title="Send Energy"
-                                        >
-                                            <Sparkles size={18} />
-                                            <span>Energy</span>
-                                        </motion.button>
-
-                                        {/* Unique Feature: Vibe Match Button */}
-                                        <motion.button
-                                            type="button"
-                                            whileTap={{ scale: 0.95 }}
-                                            whileHover={{ scale: 1.02 }}
-                                            onClick={() => {
-                                                // Implement vibe match functionality
-                                                const compatibility = Math.floor(Math.random() * 40) + 60; // 60-100%
-                                                const vibeTypes = ['Creative', 'Adventurous', 'Calm', 'Energetic', 'Intellectual', 'Artistic'];
-                                                const randomVibe = vibeTypes[Math.floor(Math.random() * vibeTypes.length)];
-                                                
-                                                alert(`🔮 Vibe Match Analysis 🔮\n\nCompatibility: ${compatibility}%\nShared Vibe: ${randomVibe}\n\nYou and ${name} have a ${compatibility >= 80 ? 'strong' : compatibility >= 60 ? 'good' : 'moderate'} vibe connection!`);
-                                            }}
-                                            className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 shadow-lg hover:shadow-xl`}
-                                            title="Vibe Match"
-                                        >
-                                            <Heart size={18} />
-                                            <span>Vibe</span>
-                                        </motion.button>
                                         
                                         <motion.button
                                             type="button"
@@ -873,10 +780,9 @@ export default function ProfilePage() {
                             {/* Unique Navigation Tabs with Special Features */}
                             <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto">
                                 {[
-                                    { id: "posts", label: "Posts", icon: Grid3X3, color: "from-blue-500 to-cyan-600", count: "12" },
-                                    { id: "desnaps", label: "DeSnaps", icon: Video, color: "from-purple-500 to-pink-600", count: "8" },
-                                    { id: "stories", label: "Stories", icon: Sparkles, color: "from-yellow-500 to-orange-600", count: "5" },
-                                    { id: "energy", label: "Energy", icon: Sparkles, color: "from-green-500 to-emerald-600", count: "85%" },
+                                    { id: "posts", label: "Posts", icon: Grid3X3, color: "from-blue-500 to-cyan-600" },
+                                    { id: "desnaps", label: "DeSnaps", icon: Video, color: "from-purple-500 to-pink-600" },
+                                    { id: "stories", label: "Stories", icon: Sparkles, color: "from-yellow-500 to-orange-600" },
                                 ].map((tab) => (
                                     <motion.button
                                         key={tab.id}
@@ -891,13 +797,6 @@ export default function ProfilePage() {
                                     >
                                         <tab.icon size={18} />
                                         <span>{tab.label}</span>
-                                        <span className={`text-xs px-2 py-1 rounded-full ${
-                                            activeTab === tab.id 
-                                                ? 'bg-white/20 text-white' 
-                                                : 'bg-gray-200 text-gray-600'
-                                        }`}>
-                                            {tab.count}
-                                        </span>
                                         {activeTab === tab.id && (
                                             <motion.div
                                                 layoutId="activeTab"
@@ -941,16 +840,7 @@ export default function ProfilePage() {
                                                 <p className={`${themeClasses.textSecondary} mb-4`}>Short-form video content with unique features</p>
                                                 <div className="text-center">
                                                     <p className={`${themeClasses.textSecondary} mb-4`}>No DeSnaps yet</p>
-                                                    {isOwnProfile && (
-                                                        <motion.button
-                                                            whileHover={{ scale: 1.05 }}
-                                                            whileTap={{ scale: 0.95 }}
-                                                            onClick={() => setShowDeSnapModal(true)}
-                                                            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-600 hover:to-pink-700 transition-all duration-300 shadow-lg"
-                                                        >
-                                                            Create Your First DeSnap
-                                                        </motion.button>
-                                                    )}
+                                                    <p className={`${themeClasses.textSecondary} mb-4`}>DeSnaps will appear here when created</p>
                                                 </div>
                                             </div>
                                         </motion.div>
@@ -987,91 +877,6 @@ export default function ProfilePage() {
                                         </motion.div>
                                     )}
 
-                                    {activeTab === "energy" && (
-                                        <motion.div
-                                            key="energy"
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            transition={{ duration: 0.3 }}
-                                        >
-                                            <div className="text-center py-8">
-                                                <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                                                    <Sparkles className="w-10 h-10 text-white" />
-                                                </div>
-                                                <h3 className={`text-xl font-bold ${themeClasses.text} mb-2`}>Energy Profile</h3>
-                                                <p className={`${themeClasses.textSecondary} mb-6`}>Your unique energy signature and mood patterns</p>
-                                                
-                                                {/* Unique Feature: Energy Circle */}
-                                                <div className="relative w-32 h-32 mx-auto mb-6">
-                                                    <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-                                                    <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-green-500 border-r-cyan-500 border-b-purple-500 border-l-pink-500 animate-spin-slow"></div>
-                                                    <div className="absolute inset-4 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 flex items-center justify-center">
-                                                        <div className="text-2xl font-bold text-green-400">85%</div>
-                                                    </div>
-                                                </div>
-                                                
-                                                {/* Unique Features Grid */}
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                                                    <div className="p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl border border-green-500/30">
-                                                        <div className="text-2xl font-bold text-green-400">85%</div>
-                                                        <div className="text-sm text-green-300">Current Energy</div>
-                                                    </div>
-                                                    <div className="p-4 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-xl border border-cyan-500/30">
-                                                        <div className="text-2xl font-bold text-cyan-400">Happy</div>
-                                                        <div className="text-sm text-cyan-300">Mood</div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Unique Feature: Energy Transfer */}
-                                                <div className="mb-6">
-                                                    <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Energy Transfer</h4>
-                                                    <div className="flex justify-center space-x-4">
-                                                        <motion.button
-                                                            whileHover={{ scale: 1.05 }}
-                                                            whileTap={{ scale: 0.95 }}
-                                                            className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300"
-                                                        >
-                                                            Send Energy
-                                                        </motion.button>
-                                                        <motion.button
-                                                            whileHover={{ scale: 1.05 }}
-                                                            whileTap={{ scale: 0.95 }}
-                                                            className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg font-semibold hover:from-purple-600 hover:to-pink-700 transition-all duration-300"
-                                                        >
-                                                            Receive Energy
-                                                        </motion.button>
-                                                    </div>
-                                                </div>
-
-                                                {/* Unique Feature: Mood Ring */}
-                                                <div className="mb-6">
-                                                    <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Mood Ring</h4>
-                                                    <div className="relative w-24 h-24 mx-auto">
-                                                        <div className="absolute inset-0 rounded-full border-4 border-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 animate-pulse"></div>
-                                                        <div className="absolute inset-2 rounded-full bg-gradient-to-r from-pink-500/30 via-purple-500/30 to-cyan-500/30 flex items-center justify-center">
-                                                            <Sparkles className="w-8 h-8 text-white" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Unique Feature: Energy History */}
-                                                <div className="mb-6">
-                                                    <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Energy History</h4>
-                                                    <div className="grid grid-cols-7 gap-2">
-                                                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
-                                                            <div key={day} className="text-center">
-                                                                <div className="text-xs text-gray-400 mb-1">{day}</div>
-                                                                <div className={`w-8 h-8 rounded-full mx-auto ${
-                                                                    index < 5 ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gray-300'
-                                                                }`}></div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    )}
                                 </AnimatePresence>
                             </div>
                         </div>
@@ -1101,17 +906,6 @@ export default function ProfilePage() {
                 }}
             />
 
-            <DeSnapCreator
-                isOpen={showDeSnapModal}
-                onClose={() => setShowDeSnapModal(false)}
-                onDeSnapCreated={(newDeSnap) => {
-                    setProfile(prev => prev ? {
-                        ...prev,
-                        deSnaps: [newDeSnap, ...prev.deSnaps]
-                    } : null);
-                    setShowDeSnapModal(false);
-                }}
-            />
         </div>
         </>
     );
