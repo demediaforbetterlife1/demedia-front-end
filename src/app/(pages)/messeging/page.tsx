@@ -441,7 +441,7 @@ export default function MessagingPage() {
                                         onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                                         className={`w-full px-4 py-2 ${themeClasses.input} border rounded-lg ${themeClasses.text} placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500`}
                                     />
-                                </div>
+        </div>
                                 
                                 <button
                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
