@@ -227,6 +227,8 @@ export default function ProfilePage() {
     // State for modals and features
     const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
     const [showQuickActions, setShowQuickActions] = useState(false);
+    const [showCommentModal, setShowCommentModal] = useState(false);
+    const [selectedPost, setSelectedPost] = useState<any>(null);
     
     // Unique Features State
     const [showAchievements, setShowAchievements] = useState(false);
@@ -596,7 +598,7 @@ export default function ProfilePage() {
                 }
             `}</style>
             <div className={`min-h-screen ${themeClasses.bg} pb-20 md:pb-0`}>
-            <div className={`max-w-6xl mx-auto p-4 ${themeClasses.card} rounded-3xl shadow-2xl border ${themeClasses.border} overflow-hidden`}>
+                <div className={`max-w-6xl mx-auto p-4 ${themeClasses.card} rounded-3xl shadow-2xl border ${themeClasses.border} overflow-hidden`}>
                 {/* Modern Cover Section */}
                 <div className="relative">
                     {coverPicture ? (
@@ -862,14 +864,14 @@ export default function ProfilePage() {
                             {/* Advanced Navigation Tabs with Unique Features */}
                             <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto">
                                 {[
-                                    { id: "posts", label: "Posts", icon: Grid3X3, color: "from-blue-500 to-cyan-600", badge: "12" },
-                                    { id: "desnaps", label: "DeSnaps", icon: Video, color: "from-purple-500 to-pink-600", badge: "8" },
-                                    { id: "stories", label: "Stories", icon: Sparkles, color: "from-yellow-500 to-orange-600", badge: "5" },
-                                    { id: "achievements", label: "Achievements", icon: Trophy, color: "from-yellow-500 to-amber-600", badge: "15" },
-                                    { id: "analytics", label: "Analytics", icon: BarChart3, color: "from-green-500 to-emerald-600", badge: "Live" },
-                                    { id: "wellness", label: "Wellness", icon: Heart, color: "from-red-500 to-rose-600", badge: "85%" },
-                                    { id: "goals", label: "Goals", icon: Target, color: "from-indigo-500 to-purple-600", badge: "3/5" },
-                                    { id: "memories", label: "Memories", icon: Clock, color: "from-pink-500 to-rose-600", badge: "24" },
+                                    { id: "posts", label: "Posts", icon: Grid3X3, color: "from-blue-500 to-cyan-600" },
+                                    { id: "desnaps", label: "DeSnaps", icon: Video, color: "from-purple-500 to-pink-600" },
+                                    { id: "stories", label: "Stories", icon: Sparkles, color: "from-yellow-500 to-orange-600" },
+                                    { id: "achievements", label: "Achievements", icon: Trophy, color: "from-yellow-500 to-amber-600" },
+                                    { id: "analytics", label: "Analytics", icon: BarChart3, color: "from-green-500 to-emerald-600" },
+                                    { id: "wellness", label: "Wellness", icon: Heart, color: "from-red-500 to-rose-600" },
+                                    { id: "goals", label: "Goals", icon: Target, color: "from-indigo-500 to-purple-600" },
+                                    { id: "memories", label: "Memories", icon: Clock, color: "from-pink-500 to-rose-600" },
                                 ].map((tab) => (
                                     <motion.button
                                         key={tab.id}
@@ -884,13 +886,6 @@ export default function ProfilePage() {
                                     >
                                         <tab.icon size={18} />
                                         <span>{tab.label}</span>
-                                        <span className={`text-xs px-2 py-1 rounded-full ${
-                                            activeTab === tab.id 
-                                                ? 'bg-white/20 text-white' 
-                                                : 'bg-gray-200 text-gray-600'
-                                        }`}>
-                                            {tab.badge}
-                                        </span>
                                         {activeTab === tab.id && (
                                             <motion.div
                                                 layoutId="activeTab"
@@ -914,7 +909,13 @@ export default function ProfilePage() {
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <UserPosts userId={user?.id} />
+                            <UserPosts 
+                                userId={user?.id} 
+                                showCommentModal={showCommentModal}
+                                setShowCommentModal={setShowCommentModal}
+                                selectedPost={selectedPost}
+                                setSelectedPost={setSelectedPost}
+                            />
                         </motion.div>
                     )}
 
@@ -1060,34 +1061,10 @@ export default function ProfilePage() {
                                                 {/* Achievement Progress */}
                                                 <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border}`}>
                                                     <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Achievement Progress</h4>
-                                                    <div className="space-y-4">
-                                                        <div>
-                                                            <div className="flex justify-between items-center mb-2">
-                                                                <span className={`text-sm ${themeClasses.textSecondary}`}>Social Butterfly</span>
-                                                                <span className={`text-sm font-medium ${themeClasses.text}`}>75%</span>
-                                                            </div>
-                                                            <div className="w-full bg-gray-200 rounded-full h-2">
-                                                                <div className="bg-gradient-to-r from-blue-500 to-cyan-600 h-2 rounded-full" style={{width: '75%'}}></div>
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="flex justify-between items-center mb-2">
-                                                                <span className={`text-sm ${themeClasses.textSecondary}`}>Content Creator</span>
-                                                                <span className={`text-sm font-medium ${themeClasses.text}`}>60%</span>
-                                                            </div>
-                                                            <div className="w-full bg-gray-200 rounded-full h-2">
-                                                                <div className="bg-gradient-to-r from-purple-500 to-pink-600 h-2 rounded-full" style={{width: '60%'}}></div>
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="flex justify-between items-center mb-2">
-                                                                <span className={`text-sm ${themeClasses.textSecondary}`}>Wellness Champion</span>
-                                                                <span className={`text-sm font-medium ${themeClasses.text}`}>90%</span>
-                                                            </div>
-                                                            <div className="w-full bg-gray-200 rounded-full h-2">
-                                                                <div className="bg-gradient-to-r from-red-500 to-rose-600 h-2 rounded-full" style={{width: '90%'}}></div>
-                                                            </div>
-                                                        </div>
+                                                    <div className="text-center py-8">
+                                                        <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                                        <p className={`text-lg ${themeClasses.textSecondary}`}>No achievements yet</p>
+                                                        <p className={`text-sm ${themeClasses.textSecondary}`}>Start engaging to unlock achievements</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1118,9 +1095,9 @@ export default function ProfilePage() {
                                                             <Eye className="w-8 h-8 text-blue-500" />
                                                             <TrendingUp className="w-5 h-5 text-green-500" />
                                                         </div>
-                                                        <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>12.5K</div>
+                                                        <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>0</div>
                                                         <div className={`text-sm ${themeClasses.textSecondary}`}>Total Views</div>
-                                                        <div className="text-xs text-green-500 mt-2">+15% this week</div>
+                                                        <div className="text-xs text-gray-500 mt-2">Analytics coming soon</div>
                                                     </div>
 
                                                     <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
@@ -1128,9 +1105,9 @@ export default function ProfilePage() {
                                                             <Heart className="w-8 h-8 text-red-500" />
                                                             <TrendingUp className="w-5 h-5 text-green-500" />
                                                         </div>
-                                                        <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>2.3K</div>
+                                                        <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>0</div>
                                                         <div className={`text-sm ${themeClasses.textSecondary}`}>Total Likes</div>
-                                                        <div className="text-xs text-green-500 mt-2">+8% this week</div>
+                                                        <div className="text-xs text-gray-500 mt-2">Analytics coming soon</div>
                                                     </div>
 
                                                     <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
@@ -1138,9 +1115,9 @@ export default function ProfilePage() {
                                                             <MessageCircle className="w-8 h-8 text-purple-500" />
                                                             <TrendingUp className="w-5 h-5 text-green-500" />
                                                         </div>
-                                                        <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>456</div>
+                                                        <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>0</div>
                                                         <div className={`text-sm ${themeClasses.textSecondary}`}>Total Comments</div>
-                                                        <div className="text-xs text-green-500 mt-2">+12% this week</div>
+                                                        <div className="text-xs text-gray-500 mt-2">Analytics coming soon</div>
                                                     </div>
 
                                                     <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
@@ -1148,69 +1125,31 @@ export default function ProfilePage() {
                                                             <Share className="w-8 h-8 text-cyan-500" />
                                                             <TrendingUp className="w-5 h-5 text-green-500" />
                                                         </div>
-                                                        <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>89</div>
+                                                        <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>0</div>
                                                         <div className={`text-sm ${themeClasses.textSecondary}`}>Total Shares</div>
-                                                        <div className="text-xs text-green-500 mt-2">+5% this week</div>
+                                                        <div className="text-xs text-gray-500 mt-2">Analytics coming soon</div>
                                                     </div>
                                                 </div>
 
                                                 {/* Engagement Chart */}
                                                 <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} mb-8`}>
                                                     <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Engagement Over Time</h4>
-                                                    <div className="h-64 flex items-end justify-between space-x-2">
-                                                        {[65, 78, 82, 75, 88, 92, 85, 90, 87, 95, 88, 92].map((height, index) => (
-                                                            <div key={index} className="flex-1 flex flex-col items-center">
-                                                                <div 
-                                                                    className="w-full bg-gradient-to-t from-blue-500 to-cyan-500 rounded-t"
-                                                                    style={{ height: `${height}%` }}
-                                                                ></div>
-                                                                <span className={`text-xs ${themeClasses.textSecondary} mt-2`}>
-                                                                    {index + 1}
-                                                                </span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    <div className="flex justify-between mt-4">
-                                                        <span className={`text-sm ${themeClasses.textSecondary}`}>Last 12 days</span>
-                                                        <span className={`text-sm ${themeClasses.textSecondary}`}>Engagement Rate: 4.2%</span>
+                                                    <div className="h-64 flex items-center justify-center">
+                                                        <div className="text-center">
+                                                            <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                                            <p className={`text-lg ${themeClasses.textSecondary}`}>Analytics data will appear here</p>
+                                                            <p className={`text-sm ${themeClasses.textSecondary}`}>Start posting to see your engagement metrics</p>
+                                                        </div>
                                                     </div>
                                                 </div>
 
                                                 {/* Top Performing Content */}
                                                 <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border}`}>
                                                     <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Top Performing Content</h4>
-                                                    <div className="space-y-4">
-                                                        <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
-                                                            <div className="flex items-center space-x-3">
-                                                                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center">
-                                                                    <Grid3X3 className="w-5 h-5 text-white" />
-                                                                </div>
-                                                                <div>
-                                                                    <div className={`font-medium ${themeClasses.text}`}>My Latest Post</div>
-                                                                    <div className={`text-sm ${themeClasses.textSecondary}`}>2 hours ago</div>
-                                                                </div>
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <div className={`font-bold ${themeClasses.text}`}>1.2K views</div>
-                                                                <div className={`text-sm ${themeClasses.textSecondary}`}>95% engagement</div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10">
-                                                            <div className="flex items-center space-x-3">
-                                                                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
-                                                                    <Video className="w-5 h-5 text-white" />
-                                                                </div>
-                                                                <div>
-                                                                    <div className={`font-medium ${themeClasses.text}`}>DeSnap Video</div>
-                                                                    <div className={`text-sm ${themeClasses.textSecondary}`}>1 day ago</div>
-                                                                </div>
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <div className={`font-bold ${themeClasses.text}`}>856 views</div>
-                                                                <div className={`text-sm ${themeClasses.textSecondary}`}>87% engagement</div>
-                                                            </div>
-                                                        </div>
+                                                    <div className="text-center py-8">
+                                                        <Grid3X3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                                        <p className={`text-lg ${themeClasses.textSecondary}`}>No content yet</p>
+                                                        <p className={`text-sm ${themeClasses.textSecondary}`}>Create posts to see your top performers here</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1239,37 +1178,40 @@ export default function ProfilePage() {
                                                     <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
                                                         <div className="flex items-center justify-between mb-4">
                                                             <Heart className="w-8 h-8 text-red-500" />
-                                                            <div className="text-2xl font-bold text-red-500">85%</div>
+                                                            <div className="text-2xl font-bold text-gray-400">--</div>
                                                         </div>
                                                         <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>Mental Health</div>
-                                                        <div className={`text-sm ${themeClasses.textSecondary}`}>Current mood and wellness level</div>
+                                                        <div className={`text-sm ${themeClasses.textSecondary}`}>Track your mood and wellness</div>
                                                         <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                                                            <div className="bg-gradient-to-r from-red-500 to-rose-600 h-2 rounded-full" style={{width: '85%'}}></div>
+                                                            <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{width: '0%'}}></div>
                                                         </div>
+                                                        <div className="text-xs text-gray-500 mt-2">Start tracking to see data</div>
                                                     </div>
 
                                                     <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
                                                         <div className="flex items-center justify-between mb-4">
                                                             <Activity className="w-8 h-8 text-green-500" />
-                                                            <div className="text-2xl font-bold text-green-500">92%</div>
+                                                            <div className="text-2xl font-bold text-gray-400">--</div>
                                                         </div>
                                                         <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>Social Balance</div>
                                                         <div className={`text-sm ${themeClasses.textSecondary}`}>Healthy social media usage</div>
                                                         <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                                                            <div className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full" style={{width: '92%'}}></div>
+                                                            <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{width: '0%'}}></div>
                                                         </div>
+                                                        <div className="text-xs text-gray-500 mt-2">Start tracking to see data</div>
                                                     </div>
 
                                                     <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
                                                         <div className="flex items-center justify-between mb-4">
                                                             <Sun className="w-8 h-8 text-yellow-500" />
-                                                            <div className="text-2xl font-bold text-yellow-500">78%</div>
+                                                            <div className="text-2xl font-bold text-gray-400">--</div>
                                                         </div>
                                                         <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>Energy Level</div>
                                                         <div className={`text-sm ${themeClasses.textSecondary}`}>Daily energy and motivation</div>
                                                         <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                                                            <div className="bg-gradient-to-r from-yellow-500 to-orange-600 h-2 rounded-full" style={{width: '78%'}}></div>
+                                                            <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{width: '0%'}}></div>
                                                         </div>
+                                                        <div className="text-xs text-gray-500 mt-2">Start tracking to see data</div>
                                                     </div>
                                                 </div>
 
@@ -1280,15 +1222,13 @@ export default function ProfilePage() {
                                                         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
                                                             <div key={day} className="text-center">
                                                                 <div className="text-xs text-gray-400 mb-2">{day}</div>
-                                                                <div className={`w-8 h-8 rounded-full mx-auto ${
-                                                                    index < 5 ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gray-300'
-                                                                }`}></div>
+                                                                <div className="w-8 h-8 rounded-full mx-auto bg-gray-300"></div>
                                                             </div>
                                                         ))}
                                                     </div>
                                                     <div className="flex justify-between text-sm">
-                                                        <span className={`${themeClasses.textSecondary}`}>Weekly mood average: Happy</span>
-                                                        <span className={`${themeClasses.textSecondary}`}>7-day streak</span>
+                                                        <span className={`${themeClasses.textSecondary}`}>Start tracking your mood</span>
+                                                        <span className={`${themeClasses.textSecondary}`}>0-day streak</span>
                                                     </div>
                                                 </div>
 
@@ -1353,27 +1293,27 @@ export default function ProfilePage() {
                                                     <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
                                                         <div className="flex items-center justify-between mb-4">
                                                             <Users className="w-8 h-8 text-blue-500" />
-                                                            <div className="text-2xl font-bold text-blue-500">75%</div>
+                                                            <div className="text-2xl font-bold text-gray-400">--</div>
                                                         </div>
-                                                        <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>Reach 1000 Followers</div>
-                                                        <div className={`text-sm ${themeClasses.textSecondary} mb-3`}>Currently at 750 followers</div>
+                                                        <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>No Goals Set</div>
+                                                        <div className={`text-sm ${themeClasses.textSecondary} mb-3`}>Create your first goal to get started</div>
                                                         <div className="w-full bg-gray-200 rounded-full h-2">
-                                                            <div className="bg-gradient-to-r from-blue-500 to-cyan-600 h-2 rounded-full" style={{width: '75%'}}></div>
+                                                            <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{width: '0%'}}></div>
                                                         </div>
-                                                        <div className="text-xs text-blue-500 mt-2">250 more to go!</div>
+                                                        <div className="text-xs text-gray-500 mt-2">Set a goal to track progress</div>
                                                     </div>
 
                                                     <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
                                                         <div className="flex items-center justify-between mb-4">
                                                             <Heart className="w-8 h-8 text-red-500" />
-                                                            <div className="text-2xl font-bold text-red-500">60%</div>
+                                                            <div className="text-2xl font-bold text-gray-400">--</div>
                                                         </div>
-                                                        <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>Post Daily for a Month</div>
-                                                        <div className={`text-sm ${themeClasses.textSecondary} mb-3`}>18 days completed</div>
+                                                        <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>No Goals Set</div>
+                                                        <div className={`text-sm ${themeClasses.textSecondary} mb-3`}>Create your first goal to get started</div>
                                                         <div className="w-full bg-gray-200 rounded-full h-2">
-                                                            <div className="bg-gradient-to-r from-red-500 to-rose-600 h-2 rounded-full" style={{width: '60%'}}></div>
+                                                            <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{width: '0%'}}></div>
                                                         </div>
-                                                        <div className="text-xs text-red-500 mt-2">12 days remaining</div>
+                                                        <div className="text-xs text-gray-500 mt-2">Set a goal to track progress</div>
                                                     </div>
                                                 </div>
 
@@ -1384,22 +1324,22 @@ export default function ProfilePage() {
                                                         <div className="text-center p-4 rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
                                                             <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
                                                             <div className={`text-sm font-medium ${themeClasses.text}`}>Social</div>
-                                                            <div className={`text-xs ${themeClasses.textSecondary}`}>3 goals</div>
+                                                            <div className={`text-xs ${themeClasses.textSecondary}`}>0 goals</div>
                                                         </div>
                                                         <div className="text-center p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10">
                                                             <Sparkles className="w-8 h-8 text-purple-500 mx-auto mb-2" />
                                                             <div className={`text-sm font-medium ${themeClasses.text}`}>Creative</div>
-                                                            <div className={`text-xs ${themeClasses.textSecondary}`}>2 goals</div>
+                                                            <div className={`text-xs ${themeClasses.textSecondary}`}>0 goals</div>
                                                         </div>
                                                         <div className="text-center p-4 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
                                                             <Heart className="w-8 h-8 text-green-500 mx-auto mb-2" />
                                                             <div className={`text-sm font-medium ${themeClasses.text}`}>Wellness</div>
-                                                            <div className={`text-xs ${themeClasses.textSecondary}`}>1 goal</div>
+                                                            <div className={`text-xs ${themeClasses.textSecondary}`}>0 goals</div>
                                                         </div>
                                                         <div className="text-center p-4 rounded-lg bg-gradient-to-r from-yellow-500/10 to-orange-500/10">
                                                             <Trophy className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
                                                             <div className={`text-sm font-medium ${themeClasses.text}`}>Achievement</div>
-                                                            <div className={`text-xs ${themeClasses.textSecondary}`}>2 goals</div>
+                                                            <div className={`text-xs ${themeClasses.textSecondary}`}>0 goals</div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1407,22 +1347,16 @@ export default function ProfilePage() {
                                                 {/* Goal Progress Chart */}
                                                 <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border}`}>
                                                     <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Monthly Progress</h4>
-                                                    <div className="h-32 flex items-end justify-between space-x-2">
-                                                        {[45, 52, 48, 61, 58, 67, 72, 68, 75, 78, 82, 85].map((height, index) => (
-                                                            <div key={index} className="flex-1 flex flex-col items-center">
-                                                                <div 
-                                                                    className="w-full bg-gradient-to-t from-indigo-500 to-purple-600 rounded-t"
-                                                                    style={{ height: `${height}%` }}
-                                                                ></div>
-                                                                <span className={`text-xs ${themeClasses.textSecondary} mt-2`}>
-                                                                    {index + 1}
-                                                                </span>
-                                                            </div>
-                                                        ))}
+                                                    <div className="h-32 flex items-center justify-center">
+                                                        <div className="text-center">
+                                                            <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                                            <p className={`text-lg ${themeClasses.textSecondary}`}>No goals set yet</p>
+                                                            <p className={`text-sm ${themeClasses.textSecondary}`}>Create goals to see your progress here</p>
+                                                        </div>
                                                     </div>
                                                     <div className="flex justify-between mt-4">
                                                         <span className={`text-sm ${themeClasses.textSecondary}`}>Goal completion rate</span>
-                                                        <span className={`text-sm font-medium ${themeClasses.text}`}>85% this month</span>
+                                                        <span className={`text-sm font-medium ${themeClasses.text}`}>0% this month</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1448,55 +1382,10 @@ export default function ProfilePage() {
 
                                                 {/* Memory Timeline */}
                                                 <div className="space-y-6">
-                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                                        <div className="flex items-start space-x-4">
-                                                            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                                                <Calendar className="w-6 h-6 text-white" />
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <div className={`text-lg font-semibold ${themeClasses.text} mb-1`}>First Post Anniversary</div>
-                                                                <div className={`text-sm ${themeClasses.textSecondary} mb-2`}>1 year ago today</div>
-                                                                <div className={`text-sm ${themeClasses.textSecondary}`}>You shared your first post and started your journey on the platform</div>
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <div className={`text-2xl font-bold ${themeClasses.text}`}>365</div>
-                                                                <div className={`text-xs ${themeClasses.textSecondary}`}>days ago</div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                                        <div className="flex items-start space-x-4">
-                                                            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                                                <Trophy className="w-6 h-6 text-white" />
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <div className={`text-lg font-semibold ${themeClasses.text} mb-1`}>Viral Content Milestone</div>
-                                                                <div className={`text-sm ${themeClasses.textSecondary} mb-2`}>6 months ago</div>
-                                                                <div className={`text-sm ${themeClasses.textSecondary}`}>Your DeSnap reached 10K views and became your most popular content</div>
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <div className={`text-2xl font-bold ${themeClasses.text}`}>10K</div>
-                                                                <div className={`text-xs ${themeClasses.textSecondary}`}>views</div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                                        <div className="flex items-start space-x-4">
-                                                            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                                                <Users className="w-6 h-6 text-white" />
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <div className={`text-lg font-semibold ${themeClasses.text} mb-1`}>500 Followers Celebration</div>
-                                                                <div className={`text-sm ${themeClasses.textSecondary} mb-2`}>3 months ago</div>
-                                                                <div className={`text-sm ${themeClasses.textSecondary}`}>You reached your first major follower milestone</div>
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <div className={`text-2xl font-bold ${themeClasses.text}`}>500</div>
-                                                                <div className={`text-xs ${themeClasses.textSecondary}`}>followers</div>
-                                                            </div>
-                                                        </div>
+                                                    <div className="text-center py-8">
+                                                        <Clock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                                        <p className={`text-lg ${themeClasses.textSecondary}`}>No memories yet</p>
+                                                        <p className={`text-sm ${themeClasses.textSecondary}`}>Your milestones and memories will appear here</p>
                                                     </div>
                                                 </div>
 
@@ -1505,19 +1394,19 @@ export default function ProfilePage() {
                                                     <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Memory Statistics</h4>
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                                         <div className="text-center">
-                                                            <div className={`text-2xl font-bold ${themeClasses.text}`}>24</div>
+                                                            <div className={`text-2xl font-bold ${themeClasses.text}`}>0</div>
                                                             <div className={`text-sm ${themeClasses.textSecondary}`}>Memories</div>
                                                         </div>
                                                         <div className="text-center">
-                                                            <div className={`text-2xl font-bold ${themeClasses.text}`}>365</div>
+                                                            <div className={`text-2xl font-bold ${themeClasses.text}`}>0</div>
                                                             <div className={`text-sm ${themeClasses.textSecondary}`}>Days Active</div>
                                                         </div>
                                                         <div className="text-center">
-                                                            <div className={`text-2xl font-bold ${themeClasses.text}`}>12</div>
+                                                            <div className={`text-2xl font-bold ${themeClasses.text}`}>0</div>
                                                             <div className={`text-sm ${themeClasses.textSecondary}`}>Milestones</div>
                                                         </div>
                                                         <div className="text-center">
-                                                            <div className={`text-2xl font-bold ${themeClasses.text}`}>5</div>
+                                                            <div className={`text-2xl font-bold ${themeClasses.text}`}>0</div>
                                                             <div className={`text-sm ${themeClasses.textSecondary}`}>Viral Posts</div>
                                                         </div>
                                                     </div>
@@ -1528,10 +1417,9 @@ export default function ProfilePage() {
 
                                 </AnimatePresence>
                             </div>
-                                </div>
-                                </div>
-                                </div>
-                            </div>
+                        </div>
+                    </div>
+                </div>
 
             {/* Modals */}
             <EditProfileModal
@@ -1554,19 +1442,29 @@ export default function ProfilePage() {
                     setShowCreateStoryModal(false);
                 }}
             />
-
-                        </div>
+                </div>
+            </div>
         </>
     );
 }
 
 // UserPosts component to display user's posts
-const UserPosts = ({ userId }: { userId?: string }) => {
+const UserPosts = ({ 
+    userId, 
+    showCommentModal, 
+    setShowCommentModal, 
+    selectedPost, 
+    setSelectedPost 
+}: { 
+    userId?: string;
+    showCommentModal: boolean;
+    setShowCommentModal: (show: boolean) => void;
+    selectedPost: any;
+    setSelectedPost: (post: any) => void;
+}) => {
     const [posts, setPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [showCommentModal, setShowCommentModal] = useState(false);
-    const [selectedPost, setSelectedPost] = useState<any>(null);
 
     useEffect(() => {
         if (!userId) return;
