@@ -222,7 +222,16 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 throw new Error(errorMessage);
             }
 
-            const uploadData = await uploadResponse.json();
+            // Use safe JSON parsing for upload response
+            let uploadData;
+            try {
+                uploadData = await uploadResponse.json();
+            } catch (jsonError) {
+                console.error('Upload JSON parsing error:', jsonError);
+                const responseText = await uploadResponse.text();
+                console.error('Upload response text:', responseText);
+                throw new Error('Invalid upload response from server. Please try again.');
+            }
             
             // Now create the DeSnap with the uploaded video URL
             const deSnapData = {
@@ -252,7 +261,16 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 throw new Error(errorMessage);
             }
 
-            const newDeSnap = await response.json();
+            // Use safe JSON parsing to avoid "unexpected token" errors
+            let newDeSnap;
+            try {
+                newDeSnap = await response.json();
+            } catch (jsonError) {
+                console.error('JSON parsing error:', jsonError);
+                const responseText = await response.text();
+                console.error('Response text:', responseText);
+                throw new Error('Invalid response from server. Please try again.');
+            }
             
             if (onDeSnapCreated) {
                 onDeSnapCreated(newDeSnap);
