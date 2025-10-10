@@ -196,7 +196,7 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
                 <AddPostModal
                     isOpen={showPostModal}
                     onClose={() => setShowPostModal(false)}
-                    authorId={user.id}
+                    authorId={Number(user.id)}
                 />
             )}
 
