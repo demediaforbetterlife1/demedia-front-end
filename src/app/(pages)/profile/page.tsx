@@ -509,7 +509,17 @@ export default function ProfilePage() {
         profile;
 
     return (
-        <div className={`min-h-screen ${themeClasses.bg} pb-20 md:pb-0`}>
+        <>
+            <style jsx>{`
+                @keyframes spin-slow {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+                .animate-spin-slow {
+                    animation: spin-slow 3s linear infinite;
+                }
+            `}</style>
+            <div className={`min-h-screen ${themeClasses.bg} pb-20 md:pb-0`}>
             <div className={`max-w-6xl mx-auto p-4 ${themeClasses.card} rounded-3xl shadow-2xl border ${themeClasses.border} overflow-hidden`}>
                 {/* Modern Cover Section */}
                 <div className="relative">
@@ -550,10 +560,11 @@ export default function ProfilePage() {
 
                     {/* Modern Profile Section */}
                     <div className="relative px-6 pb-6">
-                        {/* Profile Picture */}
+                        {/* Circular Profile Picture with Unique Features */}
                         <div className="absolute -top-24 left-6">
-                            <div className="relative">
-                                <div className={`w-32 h-32 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl`}>
+                            <div className="relative group">
+                                {/* Main Profile Circle */}
+                                <div className={`w-32 h-32 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl relative`}>
                                     {profilePicture ? (
                                         <motion.img
                                             key={profilePicture}
@@ -580,15 +591,40 @@ export default function ProfilePage() {
                                     <div className={`absolute inset-0 w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold ${profilePicture ? "hidden" : ""}`}>
                                         {name.charAt(0).toUpperCase()}
                                     </div>
+                                    
+                                    {/* Unique Feature: Mood Ring */}
+                                    <div className="absolute inset-0 rounded-full border-2 border-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 opacity-60 animate-pulse"></div>
+                                    
+                                    {/* Unique Feature: Online Status */}
+                                    <div className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
                                 </div>
+                                
+                                {/* Unique Feature: Floating Action Buttons */}
                                 {isOwnProfile && (
-                                    <button
-                                        type="button"
-                                        className="absolute -bottom-2 -right-2 p-2 bg-white/90 backdrop-blur-md rounded-full text-gray-700 hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg"
-                                    >
-                                        <Camera size={16} />
-                                    </button>
+                                    <div className="absolute -bottom-2 -right-2 flex space-x-2">
+                                        <motion.button
+                                            type="button"
+                                            whileHover={{ scale: 1.1 }}
+                                            whileTap={{ scale: 0.9 }}
+                                            className="p-2 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                                            title="Change Photo"
+                                        >
+                                            <Camera size={16} />
+                                        </motion.button>
+                                        <motion.button
+                                            type="button"
+                                            whileHover={{ scale: 1.1 }}
+                                            whileTap={{ scale: 0.9 }}
+                                            className="p-2 bg-gradient-to-r from-pink-500 to-rose-600 rounded-full text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                                            title="Mood Filter"
+                                        >
+                                            <Sparkles size={16} />
+                                        </motion.button>
+                                    </div>
                                 )}
+                                
+                                {/* Unique Feature: Energy Ring */}
+                                <div className="absolute -inset-2 rounded-full border-2 border-transparent bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 opacity-20 animate-spin-slow"></div>
                             </div>
                         </div>
 
@@ -607,39 +643,86 @@ export default function ProfilePage() {
                                 </div>
                             )}
 
-                            {/* Stats */}
-                            <div className="flex items-center space-x-8 mb-6">
-                                <div className="text-center">
+                            {/* Unique Stats with Special Features */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                <motion.div 
+                                    whileHover={{ scale: 1.05 }}
+                                    className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300`}
+                                >
                                     <div className={`text-2xl font-bold ${themeClasses.text}`}>{followersCount}</div>
                                     <div className={`text-sm ${themeClasses.textSecondary}`}>Followers</div>
-                                </div>
-                                <div className="text-center">
+                                    <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
+                                        <div className="bg-gradient-to-r from-cyan-500 to-purple-600 h-1 rounded-full" style={{width: `${Math.min(100, (followersCount / 1000) * 100)}%`}}></div>
+                                    </div>
+                                </motion.div>
+                                
+                                <motion.div 
+                                    whileHover={{ scale: 1.05 }}
+                                    className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300`}
+                                >
                                     <div className={`text-2xl font-bold ${themeClasses.text}`}>{followingCount}</div>
                                     <div className={`text-sm ${themeClasses.textSecondary}`}>Following</div>
-                                </div>
-                                <div className="text-center">
+                                    <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
+                                        <div className="bg-gradient-to-r from-pink-500 to-rose-600 h-1 rounded-full" style={{width: `${Math.min(100, (followingCount / 500) * 100)}%`}}></div>
+                                    </div>
+                                </motion.div>
+                                
+                                <motion.div 
+                                    whileHover={{ scale: 1.05 }}
+                                    className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300`}
+                                >
                                     <div className={`text-2xl font-bold ${themeClasses.text}`}>{likesCount}</div>
                                     <div className={`text-sm ${themeClasses.textSecondary}`}>Likes</div>
-                                </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
+                                        <div className="bg-gradient-to-r from-yellow-500 to-orange-600 h-1 rounded-full" style={{width: `${Math.min(100, (likesCount / 10000) * 100)}%`}}></div>
+                                    </div>
+                                </motion.div>
+                                
+                                {/* Unique Feature: Energy Level */}
+                                <motion.div 
+                                    whileHover={{ scale: 1.05 }}
+                                    className={`text-center p-4 rounded-xl bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 cursor-pointer hover:shadow-lg transition-all duration-300`}
+                                >
+                                    <div className="text-2xl font-bold text-green-400">85%</div>
+                                    <div className="text-sm text-green-300">Energy</div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
+                                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 h-1 rounded-full" style={{width: '85%'}}></div>
+                                    </div>
+                                </motion.div>
                             </div>
 
-                            {/* Action Buttons */}
-                            <div className="flex items-center gap-3 mb-6">
+                            {/* Unique Action Buttons with Special Features */}
+                            <div className="flex flex-wrap items-center gap-3 mb-6">
                                 {isOwnProfile ? (
                                     <>
                                         <motion.button
                                             type="button"
                                             onClick={() => setShowEditModal(true)}
                                             whileTap={{ scale: 0.95 }}
-                                            className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${themeClasses.hover} ${themeClasses.border} border shadow-lg`}
+                                            whileHover={{ scale: 1.02 }}
+                                            className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-600 hover:to-purple-700 shadow-lg hover:shadow-xl`}
                                         >
                                             <Edit size={18} />
                                             <span>Edit Profile</span>
                                         </motion.button>
+                                        
+                                        {/* Unique Feature: Mood Filter Button */}
                                         <motion.button
                                             type="button"
                                             whileTap={{ scale: 0.95 }}
-                                            className={`p-3 rounded-xl ${themeClasses.hover} ${themeClasses.border} border transition-all duration-300`}
+                                            whileHover={{ scale: 1.02 }}
+                                            className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white hover:from-pink-600 hover:to-rose-700 shadow-lg hover:shadow-xl`}
+                                            title="Mood Filter"
+                                        >
+                                            <Sparkles size={18} />
+                                            <span>Mood</span>
+                                        </motion.button>
+                                        
+                                        <motion.button
+                                            type="button"
+                                            whileTap={{ scale: 0.95 }}
+                                            whileHover={{ scale: 1.02 }}
+                                            className={`p-3 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-lg hover:shadow-xl transition-all duration-300`}
                                             title="Settings"
                                         >
                                             <Settings size={18} />
@@ -650,29 +733,46 @@ export default function ProfilePage() {
                                         <motion.button
                                             type="button"
                                             whileTap={{ scale: 0.95 }}
+                                            whileHover={{ scale: 1.02 }}
                                             onClick={handleFollowToggle}
                                             disabled={busyFollow}
                                             className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
                                                 isFollowing
-                                                    ? `${themeClasses.hover} ${themeClasses.border} border`
-                                                    : `bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-600 hover:to-purple-700 shadow-lg`
+                                                    ? `bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800`
+                                                    : `bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-600 hover:to-purple-700 shadow-lg hover:shadow-xl`
                                             } ${busyFollow ? "opacity-70 cursor-wait" : ""}`}
                                         >
                                             {busyFollow ? "..." : isFollowing ? "Following" : "Follow"}
                                         </motion.button>
+                                        
+                                        {/* Unique Feature: Send Energy Button */}
                                         <motion.button
                                             type="button"
                                             whileTap={{ scale: 0.95 }}
+                                            whileHover={{ scale: 1.02 }}
+                                            className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl`}
+                                            title="Send Energy"
+                                        >
+                                            <Sparkles size={18} />
+                                            <span>Energy</span>
+                                        </motion.button>
+                                        
+                                        <motion.button
+                                            type="button"
+                                            whileTap={{ scale: 0.95 }}
+                                            whileHover={{ scale: 1.02 }}
                                             onClick={handleStartChat}
-                                            className={`p-3 rounded-xl ${themeClasses.hover} ${themeClasses.border} border transition-all duration-300`}
+                                            className={`p-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:from-blue-600 hover:to-cyan-700 shadow-lg hover:shadow-xl transition-all duration-300`}
                                             title="Message"
                                         >
                                             <MessageCircle size={18} />
                                         </motion.button>
+                                        
                                         <motion.button
                                             type="button"
                                             whileTap={{ scale: 0.95 }}
-                                            className={`p-3 rounded-xl ${themeClasses.hover} ${themeClasses.border} border transition-all duration-300`}
+                                            whileHover={{ scale: 1.02 }}
+                                            className={`p-3 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-lg hover:shadow-xl transition-all duration-300`}
                                             title="More"
                                         >
                                             <MoreVertical size={18} />
@@ -681,29 +781,47 @@ export default function ProfilePage() {
                                 )}
                             </div>
 
-                            {/* Navigation Tabs */}
-                            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
+                            {/* Unique Navigation Tabs with Special Features */}
+                            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto">
                                 {[
-                                    { id: "posts", label: "Posts", icon: Grid3X3 },
-                                    { id: "desnaps", label: "DeSnaps", icon: Video },
-                                    { id: "stories", label: "Stories", icon: Sparkles },
+                                    { id: "posts", label: "Posts", icon: Grid3X3, color: "from-blue-500 to-cyan-600", count: "12" },
+                                    { id: "desnaps", label: "DeSnaps", icon: Video, color: "from-purple-500 to-pink-600", count: "8" },
+                                    { id: "stories", label: "Stories", icon: Sparkles, color: "from-yellow-500 to-orange-600", count: "5" },
+                                    { id: "energy", label: "Energy", icon: Sparkles, color: "from-green-500 to-emerald-600", count: "85%" },
                                 ].map((tab) => (
-                                    <button
+                                    <motion.button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
-                                        className={`flex-1 py-3 px-4 text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 ${
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className={`flex-1 py-3 px-4 text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 relative ${
                                             activeTab === tab.id
-                                                ? `${themeClasses.accent} border-b-2 border-current`
-                                                : `${themeClasses.textSecondary} hover:${themeClasses.text}`
+                                                ? `text-white bg-gradient-to-r ${tab.color} shadow-lg`
+                                                : `${themeClasses.textSecondary} hover:${themeClasses.text} hover:bg-gray-100/10`
                                         }`}
                                     >
                                         <tab.icon size={18} />
                                         <span>{tab.label}</span>
-                                    </button>
+                                        <span className={`text-xs px-2 py-1 rounded-full ${
+                                            activeTab === tab.id 
+                                                ? 'bg-white/20 text-white' 
+                                                : 'bg-gray-200 text-gray-600'
+                                        }`}>
+                                            {tab.count}
+                                        </span>
+                                        {activeTab === tab.id && (
+                                            <motion.div
+                                                layoutId="activeTab"
+                                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full"
+                                                initial={false}
+                                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                            />
+                                        )}
+                                    </motion.button>
                                 ))}
                             </div>
 
-                            {/* Content Tabs */}
+                            {/* Unique Content Sections with Special Features */}
                             <div className="p-6">
                                 <AnimatePresence mode="wait">
                                     {activeTab === "posts" && (
@@ -727,7 +845,29 @@ export default function ProfilePage() {
                                             transition={{ duration: 0.3 }}
                                         >
                                             <div className="text-center py-8">
-                                                <p className={`${themeClasses.textSecondary}`}>DeSnaps coming soon!</p>
+                                                <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                                                    <Video className="w-10 h-10 text-white" />
+                                                </div>
+                                                <h3 className={`text-xl font-bold ${themeClasses.text} mb-2`}>DeSnaps</h3>
+                                                <p className={`${themeClasses.textSecondary} mb-4`}>Short-form video content with unique features</p>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                    <div className="p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl border border-purple-500/30">
+                                                        <div className="text-2xl font-bold text-purple-400">8</div>
+                                                        <div className="text-sm text-purple-300">Videos</div>
+                                                    </div>
+                                                    <div className="p-4 bg-gradient-to-r from-pink-500/20 to-rose-500/20 rounded-xl border border-pink-500/30">
+                                                        <div className="text-2xl font-bold text-pink-400">2.1K</div>
+                                                        <div className="text-sm text-pink-300">Views</div>
+                                                    </div>
+                                                    <div className="p-4 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-xl border border-cyan-500/30">
+                                                        <div className="text-2xl font-bold text-cyan-400">156</div>
+                                                        <div className="text-sm text-cyan-300">Likes</div>
+                                                    </div>
+                                                    <div className="p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl border border-green-500/30">
+                                                        <div className="text-2xl font-bold text-green-400">23</div>
+                                                        <div className="text-sm text-green-300">Comments</div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </motion.div>
                                     )}
@@ -741,7 +881,71 @@ export default function ProfilePage() {
                                             transition={{ duration: 0.3 }}
                                         >
                                             <div className="text-center py-8">
-                                                <p className={`${themeClasses.textSecondary}`}>Stories coming soon!</p>
+                                                <div className="w-20 h-20 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                                                    <Sparkles className="w-10 h-10 text-white" />
+                                                </div>
+                                                <h3 className={`text-xl font-bold ${themeClasses.text} mb-2`}>Stories</h3>
+                                                <p className={`${themeClasses.textSecondary} mb-4`}>Temporary content that disappears after 24 hours</p>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                    <div className="p-4 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl border border-yellow-500/30">
+                                                        <div className="text-2xl font-bold text-yellow-400">5</div>
+                                                        <div className="text-sm text-yellow-300">Active</div>
+                                                    </div>
+                                                    <div className="p-4 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl border border-orange-500/30">
+                                                        <div className="text-2xl font-bold text-orange-400">1.8K</div>
+                                                        <div className="text-sm text-orange-300">Views</div>
+                                                    </div>
+                                                    <div className="p-4 bg-gradient-to-r from-red-500/20 to-pink-500/20 rounded-xl border border-red-500/30">
+                                                        <div className="text-2xl font-bold text-red-400">89</div>
+                                                        <div className="text-sm text-red-300">Reactions</div>
+                                                    </div>
+                                                    <div className="p-4 bg-gradient-to-r from-pink-500/20 to-purple-500/20 rounded-xl border border-pink-500/30">
+                                                        <div className="text-2xl font-bold text-pink-400">12</div>
+                                                        <div className="text-sm text-pink-300">Replies</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    {activeTab === "energy" && (
+                                        <motion.div
+                                            key="energy"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <div className="text-center py-8">
+                                                <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                                                    <Sparkles className="w-10 h-10 text-white" />
+                                                </div>
+                                                <h3 className={`text-xl font-bold ${themeClasses.text} mb-2`}>Energy Profile</h3>
+                                                <p className={`${themeClasses.textSecondary} mb-6`}>Your unique energy signature and mood patterns</p>
+                                                
+                                                {/* Unique Feature: Energy Circle */}
+                                                <div className="relative w-32 h-32 mx-auto mb-6">
+                                                    <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+                                                    <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-green-500 border-r-cyan-500 border-b-purple-500 border-l-pink-500 animate-spin-slow"></div>
+                                                    <div className="absolute inset-4 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 flex items-center justify-center">
+                                                        <div className="text-2xl font-bold text-green-400">85%</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                                    <div className="p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl border border-green-500/30">
+                                                        <div className="text-2xl font-bold text-green-400">85%</div>
+                                                        <div className="text-sm text-green-300">Current Energy</div>
+                                                    </div>
+                                                    <div className="p-4 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-xl border border-cyan-500/30">
+                                                        <div className="text-2xl font-bold text-cyan-400">Happy</div>
+                                                        <div className="text-sm text-cyan-300">Mood</div>
+                                                    </div>
+                                                    <div className="p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl border border-purple-500/30">
+                                                        <div className="text-2xl font-bold text-purple-400">Creative</div>
+                                                        <div className="text-sm text-purple-300">Vibe</div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </motion.div>
                                     )}
@@ -786,6 +990,7 @@ export default function ProfilePage() {
                 }}
             />
         </div>
+        </>
     );
 }
 
