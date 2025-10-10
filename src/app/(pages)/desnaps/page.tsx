@@ -119,19 +119,25 @@ export default function DeSnapsPage() {
             setLoading(true);
             setError(null);
             
-            // Try the API endpoint
+            console.log('Fetching DeSnaps with filter:', filter);
+            
+            // Try the API endpoint with proper error handling
             const response = await apiFetch(`/api/desnaps?filter=${filter}`);
+            
+            console.log('DeSnaps API response:', response.status, response.ok);
             
             if (response.ok) {
                 const data = await response.json();
-                setDeSnaps(data || []);
+                console.log('DeSnaps data received:', data);
+                setDeSnaps(Array.isArray(data) ? data : []);
             } else {
-                console.error('API response not ok:', response.status, response.statusText);
-                setError(`Failed to fetch DeSnaps: ${response.status}`);
+                const errorText = await response.text();
+                console.error('API response not ok:', response.status, response.statusText, errorText);
+                setError(`Failed to fetch DeSnaps: ${response.status} - ${response.statusText}`);
             }
         } catch (err) {
             console.error('Error fetching DeSnaps:', err);
-            setError('Network error: Unable to fetch DeSnaps');
+            setError(`Network error: ${err instanceof Error ? err.message : 'Unable to fetch DeSnaps'}`);
         } finally {
             setLoading(false);
         }

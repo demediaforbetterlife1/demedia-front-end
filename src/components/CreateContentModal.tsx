@@ -32,6 +32,7 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
     };
 
     const handlePostClick = () => {
+        console.log('CreateContentModal: Opening post modal');
         setShowPostModal(true);
         // Don't close the main modal immediately, let the post modal handle it
     };
@@ -195,14 +196,18 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
 
             {/* Post Modal */}
             {showPostModal && user && (
-                <AddPostModal
-                    isOpen={showPostModal}
-                    onClose={() => {
-                        setShowPostModal(false);
-                        onClose(); // Close the main modal when post modal closes
-                    }}
-                    authorId={Number(user.id)}
-                />
+                <>
+                    {console.log('CreateContentModal: Rendering AddPostModal', { showPostModal, userId: user.id })}
+                    <AddPostModal
+                        isOpen={showPostModal}
+                        onClose={() => {
+                            console.log('CreateContentModal: Closing post modal');
+                            setShowPostModal(false);
+                            onClose(); // Close the main modal when post modal closes
+                        }}
+                        authorId={Number(user.id)}
+                    />
+                </>
             )}
 
             {/* DeSnap Modal */}

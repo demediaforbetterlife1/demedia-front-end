@@ -151,18 +151,24 @@ export default function MessagingPage() {
             setLoading(true);
             setError(null);
             
+            console.log('Fetching conversations...');
+            
             const response = await apiFetch('/api/conversations');
+            
+            console.log('Conversations API response:', response.status, response.ok);
             
             if (response.ok) {
                 const data = await response.json();
-                setConversations(data || []);
+                console.log('Conversations data received:', data);
+                setConversations(Array.isArray(data) ? data : []);
             } else {
-                console.error('API response not ok:', response.status, response.statusText);
-                setError(`Failed to fetch conversations: ${response.status}`);
+                const errorText = await response.text();
+                console.error('API response not ok:', response.status, response.statusText, errorText);
+                setError(`Failed to fetch conversations: ${response.status} - ${response.statusText}`);
             }
         } catch (err) {
             console.error('Error fetching conversations:', err);
-            setError('Network error: Unable to fetch conversations');
+            setError(`Network error: ${err instanceof Error ? err.message : 'Unable to fetch conversations'}`);
         } finally {
             setLoading(false);
         }
@@ -170,10 +176,18 @@ export default function MessagingPage() {
 
     const fetchMessages = async (conversationId: number) => {
         try {
+            console.log('Fetching messages for conversation:', conversationId);
             const response = await apiFetch(`/api/conversations/${conversationId}/messages`);
+            
+            console.log('Messages API response:', response.status, response.ok);
+            
             if (response.ok) {
                 const data = await response.json();
-                setMessages(data);
+                console.log('Messages data received:', data);
+                setMessages(Array.isArray(data) ? data : []);
+            } else {
+                const errorText = await response.text();
+                console.error('Failed to fetch messages:', response.status, response.statusText, errorText);
             }
         } catch (err) {
             console.error('Failed to fetch messages:', err);

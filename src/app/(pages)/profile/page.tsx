@@ -36,10 +36,43 @@ import {
     Badge,
     Gift,
     Wand2,
-    Wand
+    Wand,
+    Plus,
+    Settings,
+    Bell,
+    Palette,
+    Layers,
+    Grid3X3,
+    List,
+    Filter,
+    Search,
+    ChevronDown,
+    ChevronUp,
+    Activity,
+    BarChart3,
+    Calendar,
+    MapPin,
+    Link as LinkIcon,
+    Mail,
+    Phone,
+    Instagram,
+    Twitter,
+    Github,
+    Linkedin,
+    Youtube,
+    Twitch,
+    Discord,
+    Telegram,
+    Snapchat,
+    Tiktok,
+    Facebook,
+    Pinterest,
+    Reddit,
+    Spotify
 } from "lucide-react";
 import { getUserProfile } from "../../../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useSearchParams } from "next/navigation";
 import EditProfileModal from "@/app/layoutElementsComps/navdir/EditProfileModal";
 import CreateStoryModal from "@/app/layoutElementsComps/navdir/CreateStoryModal";
@@ -100,10 +133,78 @@ interface Profile {
 
 export default function ProfilePage() {
     const { user, isLoading: authLoading } = useAuth();
+    const { theme } = useTheme();
     const searchParams = useSearchParams();
     const userIdFromUrl = searchParams.get('userId');
     const userId = userIdFromUrl || user?.id;
     const isOwnProfile = !userIdFromUrl || userIdFromUrl === user?.id?.toString();
+
+    const getThemeClasses = () => {
+        switch (theme) {
+            case 'light':
+                return {
+                    bg: 'bg-gray-50',
+                    card: 'bg-white',
+                    text: 'text-gray-900',
+                    textSecondary: 'text-gray-600',
+                    border: 'border-gray-200',
+                    hover: 'hover:bg-gray-100',
+                    gradient: 'from-blue-500/10 to-purple-500/10',
+                    accent: 'text-blue-600',
+                    accentBg: 'bg-blue-50'
+                };
+            case 'super-light':
+                return {
+                    bg: 'bg-gray-100',
+                    card: 'bg-white',
+                    text: 'text-gray-800',
+                    textSecondary: 'text-gray-500',
+                    border: 'border-gray-100',
+                    hover: 'hover:bg-gray-50',
+                    gradient: 'from-blue-400/10 to-purple-400/10',
+                    accent: 'text-blue-500',
+                    accentBg: 'bg-blue-50'
+                };
+            case 'dark':
+                return {
+                    bg: 'bg-gray-900',
+                    card: 'bg-gray-800',
+                    text: 'text-white',
+                    textSecondary: 'text-gray-300',
+                    border: 'border-gray-700',
+                    hover: 'hover:bg-gray-700',
+                    gradient: 'from-cyan-500/20 to-purple-500/20',
+                    accent: 'text-cyan-400',
+                    accentBg: 'bg-cyan-900/20'
+                };
+            case 'super-dark':
+                return {
+                    bg: 'bg-black',
+                    card: 'bg-gray-900',
+                    text: 'text-gray-100',
+                    textSecondary: 'text-gray-400',
+                    border: 'border-gray-800',
+                    hover: 'hover:bg-gray-800',
+                    gradient: 'from-cyan-400/20 to-purple-400/20',
+                    accent: 'text-cyan-300',
+                    accentBg: 'bg-cyan-900/30'
+                };
+            default:
+                return {
+                    bg: 'bg-gray-900',
+                    card: 'bg-gray-800',
+                    text: 'text-white',
+                    textSecondary: 'text-gray-300',
+                    border: 'border-gray-700',
+                    hover: 'hover:bg-gray-700',
+                    gradient: 'from-cyan-500/20 to-purple-500/20',
+                    accent: 'text-cyan-400',
+                    accentBg: 'bg-cyan-900/20'
+                };
+        }
+    };
+
+    const themeClasses = getThemeClasses();
     const [activeTab, setActiveTab] = useState<string>("posts");
     const [isFollowing, setIsFollowing] = useState<boolean>(false);
     const [profile, setProfile] = useState<Profile | null>(null);
@@ -462,40 +563,61 @@ export default function ProfilePage() {
         profile;
 
     return (
-        <div className="max-w-4xl mx-auto mt-6 rounded-2xl shadow-2xl bg-gradient-to-b from-gray-900 to-black overflow-hidden border border-gray-800">
-            {/* Cover photo */}
-            {coverPicture && (
-                <div className="relative h-56">
-                    <img
-                        src={coverPicture}
-                        alt="Cover"
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => (e.currentTarget.style.display = "none")}
-                    />
-                    <button
-                        type="button"
-                        className="absolute bottom-3 right-3 p-2 bg-black/60 rounded-full text-white hover:scale-110 transition"
-                    >
-                        <Camera size={18} />
-                    </button>
-                </div>
-            )}
-
-            <div className="relative px-6 pb-6">
-                {/* Profile pic */}
-                <div className="absolute -top-20 left-6">
-                    <div className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-gray-900 shadow-lg">
-                    {profilePicture ? (
-                        <motion.img
-                                key={profilePicture} // Force re-render when profile picture changes
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ type: "spring", stiffness: 120 }}
-                            src={profilePicture}
-                            alt={name}
+        <div className={`min-h-screen ${themeClasses.bg} pb-20 md:pb-0`}>
+            <div className={`max-w-6xl mx-auto p-4 ${themeClasses.card} rounded-3xl shadow-2xl border ${themeClasses.border} overflow-hidden`}>
+                {/* Modern Cover Section */}
+                <div className="relative">
+                    {coverPicture ? (
+                        <div className="relative h-64 md:h-80 overflow-hidden rounded-t-3xl">
+                            <img
+                                src={coverPicture}
+                                alt="Cover"
                                 className="w-full h-full object-cover"
-                            loading="lazy"
+                                loading="lazy"
+                                onError={(e) => (e.currentTarget.style.display = "none")}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                            {isOwnProfile && (
+                                <button
+                                    type="button"
+                                    className="absolute bottom-4 right-4 p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all duration-300 hover:scale-110"
+                                >
+                                    <Camera size={20} />
+                                </button>
+                            )}
+                        </div>
+                    ) : (
+                        <div className={`h-64 md:h-80 bg-gradient-to-br ${themeClasses.gradient} rounded-t-3xl flex items-center justify-center`}>
+                            <div className="text-center">
+                                <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <UserIcon className="w-10 h-10 text-white" />
+                                </div>
+                                <p className={`text-lg font-medium ${themeClasses.text}`}>No cover photo</p>
+                                {isOwnProfile && (
+                                    <button className="mt-2 px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all">
+                                        Add Cover Photo
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                {/* Modern Profile Section */}
+                <div className="relative px-6 pb-6">
+                    {/* Profile Picture */}
+                    <div className="absolute -top-24 left-6">
+                        <div className="relative">
+                            <div className={`w-32 h-32 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl`}>
+                                {profilePicture ? (
+                                    <motion.img
+                                        key={profilePicture}
+                                        initial={{ scale: 0.8, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        transition={{ type: "spring", stiffness: 120 }}
+                                        src={profilePicture}
+                                        alt={name}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
                                 style={{ 
                                     width: '100%', 
                                     height: '100%',
@@ -503,30 +625,32 @@ export default function ProfilePage() {
                                     objectPosition: 'center',
                                     display: 'block'
                                 }}
-                            onError={(e) => {
-                                    console.log("Profile picture failed to load:", profilePicture);
-                                e.currentTarget.style.display = "none";
-                                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                                    if (fallback) {
-                                        fallback.classList.remove("hidden");
-                                    }
-                                }}
-                                onLoad={() => {
-                                    console.log("Profile picture loaded successfully:", profilePicture);
-                            }}
-                        />
-                    ) : null}
-                        <div className={`absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold ${profilePicture ? "hidden" : ""}`}>
-                        {name.charAt(0).toUpperCase()}
+                                        onError={(e) => {
+                                            console.log("Profile picture failed to load:", profilePicture);
+                                            e.currentTarget.style.display = "none";
+                                            const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                            if (fallback) {
+                                                fallback.classList.remove("hidden");
+                                            }
+                                        }}
+                                        onLoad={() => {
+                                            console.log("Profile picture loaded successfully:", profilePicture);
+                                        }}
+                                    />
+                                ) : null}
+                                <div className={`absolute inset-0 w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold ${profilePicture ? "hidden" : ""}`}>
+                                    {name.charAt(0).toUpperCase()}
+                                </div>
+                            </div>
+                            {isOwnProfile && (
+                                <button
+                                    type="button"
+                                    className="absolute -bottom-2 -right-2 p-2 bg-white/90 backdrop-blur-md rounded-full text-gray-700 hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg"
+                                >
+                                    <Camera size={16} />
+                                </button>
+                            )}
                         </div>
-                    </div>
-                    <button
-                        type="button"
-                        className="absolute bottom-2 right-2 p-2 bg-black/60 rounded-full text-white hover:scale-110 transition"
-                    >
-                        <Camera size={16} />
-                    </button>
-                </div>
 
                 <div className="flex justify-end gap-2 mt-2">
                     {isOwnProfile ? (
@@ -558,73 +682,118 @@ export default function ProfilePage() {
                     )}
                 </div>
 
-                <div className="mt-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h2 className="text-3xl font-extrabold text-white tracking-tight">
-                            {name}
-                        </h2>
-                        {username && (
-                            <p className="text-gray-400">@{username}</p>
-                        )}
-                        {bio && (
-                            <p className="mt-2 text-gray-300 max-w-xl">{bio}</p>
-                        )}
-                    </div>
-
-                    {isOwnProfile ? (
-                        <motion.button
-                            type="button"
-                            onClick={() => setShowEditModal(true)}
-                            whileTap={{ scale: 0.95 }}
-                            className="px-6 py-2 rounded-full font-semibold shadow-md transition text-sm bg-indigo-500 text-white hover:bg-indigo-600"
-                        >
-                            Edit Profile
-                        </motion.button>
-                    ) : (
-                        <div className="flex gap-3">
-                            <motion.button
-                                type="button"
-                                whileTap={{ scale: 0.95 }}
-                                onClick={handleFollowToggle}
-                                disabled={busyFollow}
-                                className={`px-6 py-2 rounded-full font-semibold shadow-md transition text-sm ${
-                                    isFollowing
-                                        ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                                        : "bg-indigo-500 text-white hover:bg-indigo-600"
-                                } ${busyFollow ? "opacity-70 cursor-wait" : ""}`}
-                            >
-                                {isFollowing ? "Unfollow" : "Follow"}
-                            </motion.button>
-                            
-                            <motion.button
-                                type="button"
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => {
-                                    // Create or find existing chat with this user
-                                    handleStartChat();
-                                }}
-                                className="px-6 py-2 rounded-full font-semibold shadow-md transition text-sm bg-green-500 text-white hover:bg-green-600 flex items-center gap-2"
-                            >
-                                <MessageCircle size={16} />
-                                Message
-                            </motion.button>
+                    {/* Modern Profile Info Section */}
+                    <div className="pt-20 px-6">
+                        {/* Name and Username */}
+                        <div className="mb-4">
+                            <h1 className={`text-3xl font-bold ${themeClasses.text} mb-1`}>{name}</h1>
+                            <p className={`text-lg ${themeClasses.textSecondary}`}>@{username}</p>
                         </div>
-                    )}
+
+                        {/* Bio */}
+                        {bio && (
+                            <div className="mb-6">
+                                <p className={`text-sm leading-relaxed ${themeClasses.textSecondary} max-w-2xl`}>{bio}</p>
+                            </div>
+                        )}
+
+                        {/* Stats */}
+                        <div className="flex items-center space-x-8 mb-6">
+                            <div className="text-center">
+                                <div className={`text-2xl font-bold ${themeClasses.text}`}>{followersCount}</div>
+                                <div className={`text-sm ${themeClasses.textSecondary}`}>Followers</div>
+                            </div>
+                            <div className="text-center">
+                                <div className={`text-2xl font-bold ${themeClasses.text}`}>{followingCount}</div>
+                                <div className={`text-sm ${themeClasses.textSecondary}`}>Following</div>
+                            </div>
+                            <div className="text-center">
+                                <div className={`text-2xl font-bold ${themeClasses.text}`}>{likesCount}</div>
+                                <div className={`text-sm ${themeClasses.textSecondary}`}>Likes</div>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-3 mb-6">
+                            {isOwnProfile ? (
+                                <>
+                                    <motion.button
+                                        type="button"
+                                        onClick={() => setShowEditModal(true)}
+                                        whileTap={{ scale: 0.95 }}
+                                        className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${themeClasses.hover} ${themeClasses.border} border shadow-lg`}
+                                    >
+                                        <Edit size={18} />
+                                        <span>Edit Profile</span>
+                                    </motion.button>
+                                    <motion.button
+                                        type="button"
+                                        whileTap={{ scale: 0.95 }}
+                                        className={`p-3 rounded-xl ${themeClasses.hover} ${themeClasses.border} border transition-all duration-300`}
+                                        title="Settings"
+                                    >
+                                        <Settings size={18} />
+                                    </motion.button>
+                                </>
+                            ) : (
+                                <>
+                                    <motion.button
+                                        type="button"
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={handleFollowToggle}
+                                        disabled={busyFollow}
+                                        className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                                            isFollowing
+                                                ? `${themeClasses.hover} ${themeClasses.border} border`
+                                                : `bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-600 hover:to-purple-700 shadow-lg`
+                                        } ${busyFollow ? "opacity-70 cursor-wait" : ""}`}
+                                    >
+                                        {busyFollow ? "..." : isFollowing ? "Following" : "Follow"}
+                                    </motion.button>
+                                    <motion.button
+                                        type="button"
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={handleStartChat}
+                                        className={`p-3 rounded-xl ${themeClasses.hover} ${themeClasses.border} border transition-all duration-300`}
+                                        title="Message"
+                                    >
+                                        <MessageCircle size={18} />
+                                    </motion.button>
+                                    <motion.button
+                                        type="button"
+                                        whileTap={{ scale: 0.95 }}
+                                        className={`p-3 rounded-xl ${themeClasses.hover} ${themeClasses.border} border transition-all duration-300`}
+                                        title="More"
+                                    >
+                                        <MoreVertical size={18} />
+                                    </motion.button>
+                                </>
+                            )}
+                        </div>
                 </div>
 
-                <div className="flex gap-6 mt-6 text-sm text-gray-300">
-                    <span className="flex items-center gap-1 hover:text-cyan-400 transition-colors cursor-pointer">
-                        <Users size={16} /> {followersCount} followers
-          </span>
-                    <span className="flex items-center gap-1 hover:text-cyan-400 transition-colors cursor-pointer">
-                        <UserIcon size={16} /> {followingCount} following
-          </span>
-                    <span className="flex items-center gap-1 hover:text-cyan-400 transition-colors cursor-pointer">
-                        <Heart size={16} /> {likesCount} likes
-                    </span>
-                    <span className="flex items-center gap-1 hover:text-cyan-400 transition-colors cursor-pointer">
-                        <Eye size={16} /> {profile?.deSnaps?.reduce((total, deSnap) => total + deSnap.views, 0) || 0} views
-          </span>
+                        {/* Navigation Tabs */}
+                        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
+                            {[
+                                { id: "posts", label: "Posts", icon: Grid3X3 },
+                                { id: "desnaps", label: "DeSnaps", icon: Video },
+                                { id: "stories", label: "Stories", icon: Sparkles },
+                            ].map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`flex-1 py-3 px-4 text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 ${
+                                        activeTab === tab.id
+                                            ? `${themeClasses.accent} border-b-2 border-current`
+                                            : `${themeClasses.textSecondary} hover:${themeClasses.text}`
+                                    }`}
+                                >
+                                    <tab.icon size={18} />
+                                    <span>{tab.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
             </div>
