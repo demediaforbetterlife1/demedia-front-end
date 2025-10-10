@@ -33,10 +33,12 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
 
     const handlePostClick = () => {
         setShowPostModal(true);
+        onClose(); // Close the main modal
     };
 
     const handleDeSnapClick = () => {
         setShowDeSnapModal(true);
+        onClose(); // Close the main modal
     };
 
     const getThemeClasses = () => {

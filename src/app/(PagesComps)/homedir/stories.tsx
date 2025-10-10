@@ -2,11 +2,13 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { IoAdd } from "react-icons/io5";
+import { Plus, Sparkles, Eye, Clock } from "lucide-react";
 import { dataService } from "@/services/dataService";
 import { contentService } from "@/services/contentService";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import CreateStoryModal from "@/app/layoutElementsComps/navdir/CreateStoryModal";
 import StoryViewerModal from "@/app/layoutElementsComps/navdir/StoryViewerModal";
 
@@ -37,6 +39,64 @@ export default function Stories() {
     const { showNewPostNotification } = useNotifications();
     const { user } = useAuth();
     const { t } = useI18n();
+    const { theme } = useTheme();
+
+    const getThemeClasses = () => {
+        switch (theme) {
+            case 'light':
+                return {
+                    bg: 'bg-white/80',
+                    card: 'bg-white',
+                    text: 'text-gray-900',
+                    textSecondary: 'text-gray-600',
+                    border: 'border-gray-200',
+                    hover: 'hover:bg-gray-50',
+                    gradient: 'from-blue-500/10 to-purple-500/10'
+                };
+            case 'super-light':
+                return {
+                    bg: 'bg-gray-50/80',
+                    card: 'bg-white',
+                    text: 'text-gray-800',
+                    textSecondary: 'text-gray-500',
+                    border: 'border-gray-100',
+                    hover: 'hover:bg-gray-100',
+                    gradient: 'from-blue-400/10 to-purple-400/10'
+                };
+            case 'dark':
+                return {
+                    bg: 'bg-gray-900/80',
+                    card: 'bg-gray-800',
+                    text: 'text-white',
+                    textSecondary: 'text-gray-300',
+                    border: 'border-gray-700',
+                    hover: 'hover:bg-gray-700',
+                    gradient: 'from-cyan-500/20 to-purple-500/20'
+                };
+            case 'super-dark':
+                return {
+                    bg: 'bg-black/80',
+                    card: 'bg-gray-900',
+                    text: 'text-gray-100',
+                    textSecondary: 'text-gray-400',
+                    border: 'border-gray-800',
+                    hover: 'hover:bg-gray-800',
+                    gradient: 'from-cyan-400/20 to-purple-400/20'
+                };
+            default:
+                return {
+                    bg: 'bg-gray-900/80',
+                    card: 'bg-gray-800',
+                    text: 'text-white',
+                    textSecondary: 'text-gray-300',
+                    border: 'border-gray-700',
+                    hover: 'hover:bg-gray-700',
+                    gradient: 'from-cyan-500/20 to-purple-500/20'
+                };
+        }
+    };
+
+    const themeClasses = getThemeClasses();
 
     useEffect(() => {
         fetchStories();
@@ -154,49 +214,55 @@ export default function Stories() {
     );
 
     return (
-        <div className="relative bg-gradient-to-r from-gray-900/50 to-gray-800/50 rounded-xl border border-gray-700/50 backdrop-blur-sm">
-            <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3">
-                <h3 className="text-base sm:text-lg font-semibold theme-text-primary">Stories</h3>
+        <div className={`relative ${themeClasses.bg} backdrop-blur-xl rounded-2xl border ${themeClasses.border} shadow-lg`}>
+            <div className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full flex items-center justify-center">
+                        <Sparkles className="w-4 h-4 text-white" />
+                    </div>
+                    <h3 className={`text-lg font-bold ${themeClasses.text}`}>Stories</h3>
+                </div>
                 <button
                     onClick={fetchStories}
-                    className="p-1.5 sm:p-2 rounded-full theme-bg-tertiary/60 hover:theme-bg-tertiary transition-all duration-200 hover:scale-105"
+                    className={`p-2 rounded-full ${themeClasses.hover} transition-all duration-200 hover:scale-105`}
                     title="Refresh stories"
                 >
-                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 theme-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-4 h-4 ${themeClasses.textSecondary}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                 </button>
             </div>
-            <div className="flex overflow-x-auto gap-3 sm:gap-4 px-3 sm:px-4 pb-4 scrollbar-hide">
+            <div className="flex overflow-x-auto gap-4 px-4 pb-4 scrollbar-hide">
                 <motion.div
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex flex-col items-center min-w-[70px] cursor-pointer"
+                    className="flex flex-col items-center min-w-[80px] cursor-pointer"
                     onClick={handleAddStory}
                 >
-                <div className="w-16 h-16 rounded-full theme-bg-secondary flex items-center justify-center theme-text-muted font-bold border-2 border-dashed border-cyan-400 relative group">
-                    <IoAdd size={24} className="text-cyan-400" />
-                    <div className="absolute inset-0 rounded-full bg-cyan-400/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-                <span className="mt-1 text-sm theme-text-secondary">{t('stories.add', 'Add Story')}</span>
-            </motion.div>
+                    <div className={`w-16 h-16 rounded-full ${themeClasses.card} flex items-center justify-center border-2 border-dashed border-cyan-400 relative group shadow-lg`}>
+                        <Plus className="w-6 h-6 text-cyan-400" />
+                        <div className={`absolute inset-0 rounded-full bg-gradient-to-tr ${themeClasses.gradient} opacity-0 group-hover:opacity-100 transition-opacity`} />
+                    </div>
+                    <span className={`mt-2 text-xs font-medium ${themeClasses.textSecondary} text-center`}>
+                        {t('stories.add', 'Add Story')}
+                    </span>
+                </motion.div>
 
             {stories.map((story, index) => (
                 <motion.div
                     key={story.id}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex flex-col items-center min-w-[70px] cursor-pointer"
+                    className="flex flex-col items-center min-w-[80px] cursor-pointer"
                     onClick={() => handleStoryClick(story, index)}
                 >
-                    <div className="w-16 h-16 rounded-full theme-bg-secondary flex items-center justify-center theme-text-muted font-bold border-2 border-cyan-400 relative overflow-hidden">
+                    <div className={`w-16 h-16 rounded-full ${themeClasses.card} flex items-center justify-center border-2 border-cyan-400 relative overflow-hidden shadow-lg`}>
                         {story.content?.startsWith('http') ? (
                             <img 
                                 src={story.content} 
                                 alt="Story"
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
-                                    // Fallback to author avatar if image fails
                                     const target = e.target as HTMLImageElement;
                                     if (story.author?.profilePicture) {
                                         target.src = story.author.profilePicture;
@@ -213,24 +279,32 @@ export default function Stories() {
                                 className="w-full h-full object-cover"
                             />
                         ) : (
-                            <span className="text-lg font-bold">
+                            <span className={`text-lg font-bold ${themeClasses.text}`}>
                                 {story.author?.name?.charAt(0)?.toUpperCase() || 'U'}
                             </span>
                         )}
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-cyan-400/20 to-purple-400/20" />
+                        <div className={`absolute inset-0 rounded-full bg-gradient-to-tr ${themeClasses.gradient}`} />
+                        
+                        {/* View indicator */}
                         {story.views > 0 && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                                <span className="text-xs text-white">✓</span>
+                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                                <Eye className="w-3 h-3 text-white" />
                             </div>
                         )}
+                        
+                        {/* Time indicator */}
+                        <div className="absolute -bottom-1 -left-1 w-5 h-5 bg-gray-800 rounded-full flex items-center justify-center shadow-lg">
+                            <Clock className="w-3 h-3 text-white" />
+                        </div>
+                        
                         {/* Visibility indicator */}
-                        <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border border-white">
+                        <div className="absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white shadow-lg">
                             {story.visibility === 'public' && <div className="w-full h-full bg-green-500 rounded-full" />}
                             {story.visibility === 'followers' && <div className="w-full h-full bg-blue-500 rounded-full" />}
                             {story.visibility === 'close_friends' && <div className="w-full h-full bg-purple-500 rounded-full" />}
                         </div>
                     </div>
-                    <span className="mt-1 text-sm theme-text-secondary truncate max-w-[60px]">
+                    <span className={`mt-2 text-xs font-medium ${themeClasses.textSecondary} text-center truncate max-w-[70px]`}>
                         {story.author?.name || 'Unknown'}
                     </span>
                 </motion.div>

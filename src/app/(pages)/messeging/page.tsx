@@ -154,9 +154,11 @@ export default function MessagingPage() {
                 const data = await response.json();
                 setConversations(data);
             } else {
+                console.error('Failed to fetch conversations:', response.status);
                 setError('Failed to fetch conversations');
             }
         } catch (err) {
+            console.error('Error fetching conversations:', err);
             setError('Failed to fetch conversations');
         } finally {
             setLoading(false);

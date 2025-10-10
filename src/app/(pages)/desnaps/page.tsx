@@ -125,6 +125,7 @@ export default function DeSnapsPage() {
                 setError('Failed to fetch DeSnaps');
             }
         } catch (err) {
+            console.error('Error fetching DeSnaps:', err);
             setError('Failed to fetch DeSnaps');
         } finally {
             setLoading(false);
