@@ -380,10 +380,10 @@ export default function MessagingPage() {
                                     key={message.id}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
+                                    className={`flex ${message.senderId === Number(user?.id) ? 'justify-end' : 'justify-start'}`}
                                 >
                                     <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                                        message.senderId === user?.id
+                                        message.senderId === Number(user?.id)
                                             ? 'bg-purple-500 text-white'
                                             : `${themeClasses.card} ${themeClasses.text}`
                                     }`}>
@@ -395,7 +395,7 @@ export default function MessagingPage() {
                                                     minute: '2-digit' 
                                                 })}
                                             </span>
-                                            {message.senderId === user?.id && (
+                                            {message.senderId === Number(user?.id) && (
                                                 <CheckCheck className="w-3 h-3 opacity-70" />
                                             )}
                                         </div>
