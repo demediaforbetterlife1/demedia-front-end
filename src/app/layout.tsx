@@ -13,7 +13,6 @@ import NotificationProvider from "@/components/NotificationProvider";
 import GlowingPlanets from "@/components/GlowingPlanets";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import WebGLErrorHandler from "@/components/WebGLErrorHandler";
-import FloatingDeSnapButton from "@/components/FloatingDeSnapButton";
 import "@/utils/errorHandler";
 
 
@@ -76,7 +75,6 @@ export default function RootLayout({
                     <AnimatedStars />
                     <GlowingPlanets />
                     <NavbarClient />
-                    <FloatingDeSnapButton />
                     {children}
                   </AuthGuard>
                 </NotificationProvider>

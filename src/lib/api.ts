@@ -80,27 +80,27 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
         await new Promise(resolve => setTimeout(resolve, attempt * 2000));
       }
       
-      const res = await fetch(url, { 
-        ...options, 
-        headers,
+    const res = await fetch(url, { 
+      ...options, 
+      headers,
         // Progressive timeout strategy
         signal: AbortSignal.timeout(timeout)
-      });
-      console.log('API response status:', res.status);
-      
-      if (res.status === 401) {
-        // Only auto logout if it's not an auth check request
-        if (typeof window !== "undefined" && !path.includes('/auth/me')) {
-          console.log('Auto logout due to 401 response');
-          localStorage.removeItem("token");
-          localStorage.removeItem("userId");
-          // Dispatch a custom event to notify AuthContext
-          window.dispatchEvent(new CustomEvent('auth:logout'));
-        }
+    });
+    console.log('API response status:', res.status);
+    
+    if (res.status === 401) {
+      // Only auto logout if it's not an auth check request
+      if (typeof window !== "undefined" && !path.includes('/auth/me')) {
+        console.log('Auto logout due to 401 response');
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        // Dispatch a custom event to notify AuthContext
+        window.dispatchEvent(new CustomEvent('auth:logout'));
       }
-      
-      return res;
-    } catch (err: unknown) {
+    }
+    
+    return res;
+  } catch (err: unknown) {
       lastError = err;
       console.error(`API fetch error (attempt ${attempt + 1}):`, err);
       
@@ -132,8 +132,8 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
         }
       }
       
-      throw err;
-    }
+    throw err;
+  }
   }
   
   throw lastError;
