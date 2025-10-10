@@ -2,6 +2,19 @@ export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 const API_BASE = ""; // same-origin; Next.js rewrite proxies /api to backend
 
+// Health check function
+async function checkBackendHealth(): Promise<boolean> {
+  try {
+    const response = await fetch('/api/health', { 
+      method: 'GET',
+      signal: AbortSignal.timeout(5000) // 5 second timeout for health check
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -30,32 +43,54 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}cb=${cacheBuster}&v=${version}`;
   }
 
-  try {
-    console.log('Making API request to:', url);
-    const res = await fetch(url, { 
-      ...options, 
-      headers,
-      // Add timeout for better error handling
-      signal: AbortSignal.timeout(10000) // 10 second timeout
-    });
-    console.log('API response status:', res.status);
-    
-    if (res.status === 401) {
-      // Only auto logout if it's not an auth check request
-      if (typeof window !== "undefined" && !path.includes('/auth/me')) {
-        console.log('Auto logout due to 401 response');
-        localStorage.removeItem("token");
-        localStorage.removeItem("userId");
-        // Dispatch a custom event to notify AuthContext
-        window.dispatchEvent(new CustomEvent('auth:logout'));
+  // Retry logic for network issues
+  const maxRetries = 2;
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Making API request to: ${url} (attempt ${attempt + 1})`);
+      const res = await fetch(url, { 
+        ...options, 
+        headers,
+        // Add timeout for better error handling
+        signal: AbortSignal.timeout(30000) // 30 second timeout
+      });
+      console.log('API response status:', res.status);
+      
+      if (res.status === 401) {
+        // Only auto logout if it's not an auth check request
+        if (typeof window !== "undefined" && !path.includes('/auth/me')) {
+          console.log('Auto logout due to 401 response');
+          localStorage.removeItem("token");
+          localStorage.removeItem("userId");
+          // Dispatch a custom event to notify AuthContext
+          window.dispatchEvent(new CustomEvent('auth:logout'));
+        }
       }
+      
+      return res;
+    } catch (err: unknown) {
+      lastError = err;
+      console.error(`API fetch error (attempt ${attempt + 1}):`, err);
+      
+      // Only retry on network errors, not on auth errors
+      if (attempt < maxRetries && err instanceof Error && (
+        err.message.includes('Failed to fetch') || 
+        err.message.includes('NetworkError') ||
+        err.message.includes('timeout') ||
+        err.name === 'AbortError'
+      )) {
+        console.log(`Retrying request in ${(attempt + 1) * 1000}ms...`);
+        await new Promise(resolve => setTimeout(resolve, (attempt + 1) * 1000));
+        continue;
+      }
+      
+      throw err;
     }
-    
-    return res;
-  } catch (err: unknown) {
-    console.error('API fetch error:', err);
-    throw err;
   }
+  
+  throw lastError;
 }
 
 export async function readJsonSafe<T = any>(res: Response): Promise<T | { error?: string }> {

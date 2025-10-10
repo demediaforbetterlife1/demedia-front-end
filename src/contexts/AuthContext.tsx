@@ -247,11 +247,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('AuthContext: Login error:', error);
       
       if (error instanceof Error) {
-        if (error.message.includes('signal timed out') || error.name === 'AbortError') {
+        if (error.message.includes('signal timed out') || error.name === 'AbortError' || error.message.includes('timeout')) {
           throw new Error('Login request timed out. Please check your internet connection and try again.');
         }
-        if (error.message.includes('Failed to fetch')) {
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
           throw new Error('Cannot connect to server. Please check your internet connection.');
+        }
+        if (error.message.includes('ERR_NETWORK') || error.message.includes('ERR_INTERNET_DISCONNECTED')) {
+          throw new Error('Network error. Please check your internet connection and try again.');
         }
       }
       
