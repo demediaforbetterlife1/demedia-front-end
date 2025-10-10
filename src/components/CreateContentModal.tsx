@@ -33,12 +33,12 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
 
     const handlePostClick = () => {
         setShowPostModal(true);
-        onClose(); // Close the main modal
+        // Don't close the main modal immediately, let the post modal handle it
     };
 
     const handleDeSnapClick = () => {
         setShowDeSnapModal(true);
-        onClose(); // Close the main modal
+        // Don't close the main modal immediately, let the desnap modal handle it
     };
 
     const getThemeClasses = () => {
@@ -197,7 +197,10 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
             {showPostModal && user && (
                 <AddPostModal
                     isOpen={showPostModal}
-                    onClose={() => setShowPostModal(false)}
+                    onClose={() => {
+                        setShowPostModal(false);
+                        onClose(); // Close the main modal when post modal closes
+                    }}
                     authorId={Number(user.id)}
                 />
             )}
@@ -206,7 +209,10 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
             {showDeSnapModal && (
                 <CreateDeSnapModal
                     isOpen={showDeSnapModal}
-                    onClose={() => setShowDeSnapModal(false)}
+                    onClose={() => {
+                        setShowDeSnapModal(false);
+                        onClose(); // Close the main modal when desnap modal closes
+                    }}
                 />
             )}
         </>

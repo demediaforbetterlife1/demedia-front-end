@@ -214,37 +214,37 @@ export default function Stories() {
     );
 
     return (
-        <div className={`relative ${themeClasses.bg} backdrop-blur-xl rounded-2xl border ${themeClasses.border} shadow-lg`}>
-            <div className="flex items-center justify-between px-4 py-3">
+        <div className={`relative ${themeClasses.bg} backdrop-blur-xl rounded-xl border ${themeClasses.border} shadow-md`}>
+            <div className="flex items-center justify-between px-3 py-2">
                 <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 text-white" />
+                    <div className="w-6 h-6 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full flex items-center justify-center">
+                        <Sparkles className="w-3 h-3 text-white" />
                     </div>
-                    <h3 className={`text-lg font-bold ${themeClasses.text}`}>Stories</h3>
+                    <h3 className={`text-sm font-semibold ${themeClasses.text}`}>Stories</h3>
                 </div>
                 <button
                     onClick={fetchStories}
-                    className={`p-2 rounded-full ${themeClasses.hover} transition-all duration-200 hover:scale-105`}
+                    className={`p-1.5 rounded-full ${themeClasses.hover} transition-all duration-200 hover:scale-105`}
                     title="Refresh stories"
                 >
-                    <svg className={`w-4 h-4 ${themeClasses.textSecondary}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-3 h-3 ${themeClasses.textSecondary}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                 </button>
             </div>
-            <div className="flex overflow-x-auto gap-4 px-4 pb-4 scrollbar-hide">
+            <div className="flex overflow-x-auto gap-3 px-3 pb-3 scrollbar-hide">
                 <motion.div
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex flex-col items-center min-w-[80px] cursor-pointer"
+                    className="flex flex-col items-center min-w-[60px] cursor-pointer"
                     onClick={handleAddStory}
                 >
-                    <div className={`w-16 h-16 rounded-full ${themeClasses.card} flex items-center justify-center border-2 border-dashed border-cyan-400 relative group shadow-lg`}>
-                        <Plus className="w-6 h-6 text-cyan-400" />
+                    <div className={`w-12 h-12 rounded-full ${themeClasses.card} flex items-center justify-center border-2 border-dashed border-cyan-400 relative group shadow-md`}>
+                        <Plus className="w-4 h-4 text-cyan-400" />
                         <div className={`absolute inset-0 rounded-full bg-gradient-to-tr ${themeClasses.gradient} opacity-0 group-hover:opacity-100 transition-opacity`} />
                     </div>
-                    <span className={`mt-2 text-xs font-medium ${themeClasses.textSecondary} text-center`}>
-                        {t('stories.add', 'Add Story')}
+                    <span className={`mt-1 text-xs font-medium ${themeClasses.textSecondary} text-center`}>
+                        {t('stories.add', 'Add')}
                     </span>
                 </motion.div>
 
@@ -253,10 +253,10 @@ export default function Stories() {
                     key={story.id}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex flex-col items-center min-w-[80px] cursor-pointer"
+                    className="flex flex-col items-center min-w-[60px] cursor-pointer"
                     onClick={() => handleStoryClick(story, index)}
                 >
-                    <div className={`w-16 h-16 rounded-full ${themeClasses.card} flex items-center justify-center border-2 border-cyan-400 relative overflow-hidden shadow-lg`}>
+                    <div className={`w-12 h-12 rounded-full ${themeClasses.card} flex items-center justify-center border-2 border-cyan-400 relative overflow-hidden shadow-md`}>
                         {story.content?.startsWith('http') ? (
                             <img 
                                 src={story.content} 
@@ -287,24 +287,24 @@ export default function Stories() {
                         
                         {/* View indicator */}
                         {story.views > 0 && (
-                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
-                                <Eye className="w-3 h-3 text-white" />
+                            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center shadow-md">
+                                <Eye className="w-2 h-2 text-white" />
                             </div>
                         )}
                         
                         {/* Time indicator */}
-                        <div className="absolute -bottom-1 -left-1 w-5 h-5 bg-gray-800 rounded-full flex items-center justify-center shadow-lg">
-                            <Clock className="w-3 h-3 text-white" />
+                        <div className="absolute -bottom-0.5 -left-0.5 w-3 h-3 bg-gray-800 rounded-full flex items-center justify-center shadow-md">
+                            <Clock className="w-2 h-2 text-white" />
                         </div>
                         
                         {/* Visibility indicator */}
-                        <div className="absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white shadow-lg">
+                        <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border border-white shadow-md">
                             {story.visibility === 'public' && <div className="w-full h-full bg-green-500 rounded-full" />}
                             {story.visibility === 'followers' && <div className="w-full h-full bg-blue-500 rounded-full" />}
                             {story.visibility === 'close_friends' && <div className="w-full h-full bg-purple-500 rounded-full" />}
                         </div>
                     </div>
-                    <span className={`mt-2 text-xs font-medium ${themeClasses.textSecondary} text-center truncate max-w-[70px]`}>
+                    <span className={`mt-1 text-xs font-medium ${themeClasses.textSecondary} text-center truncate max-w-[50px]`}>
                         {story.author?.name || 'Unknown'}
                     </span>
                 </motion.div>

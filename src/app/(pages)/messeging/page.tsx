@@ -149,17 +149,20 @@ export default function MessagingPage() {
     const fetchConversations = async () => {
         try {
             setLoading(true);
+            setError(null);
+            
             const response = await apiFetch('/api/conversations');
+            
             if (response.ok) {
                 const data = await response.json();
-                setConversations(data);
+                setConversations(data || []);
             } else {
-                console.error('Failed to fetch conversations:', response.status);
-                setError('Failed to fetch conversations');
+                console.error('API response not ok:', response.status, response.statusText);
+                setError(`Failed to fetch conversations: ${response.status}`);
             }
         } catch (err) {
             console.error('Error fetching conversations:', err);
-            setError('Failed to fetch conversations');
+            setError('Network error: Unable to fetch conversations');
         } finally {
             setLoading(false);
         }
