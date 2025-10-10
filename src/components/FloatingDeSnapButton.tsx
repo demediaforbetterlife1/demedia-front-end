@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Plus, Video, X } from 'lucide-react';
 import CreateDeSnapModal from './CreateDeSnapModal';
