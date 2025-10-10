@@ -31,6 +31,7 @@ import TimeCapsules from "@/components/TimeCapsules";
 import EmotionTracker from "@/components/EmotionTracker";
 import AISuggestions from "@/components/AISuggestions";
 import AnonymousInsights from "@/components/AnonymousInsights";
+import CommentModal from "@/components/CommentModal";
 import { apiFetch } from "@/lib/api";
 
 interface Story {
@@ -534,12 +535,19 @@ export default function ProfilePage() {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                             {isOwnProfile && (
-                                <button
+                                <motion.button
                                     type="button"
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={() => {
+                                        // TODO: Implement cover photo upload
+                                        console.log('Cover photo upload clicked');
+                                        alert('Cover photo upload feature coming soon!');
+                                    }}
                                     className="absolute bottom-4 right-4 p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all duration-300 hover:scale-110"
                                 >
                                     <Camera size={20} />
-                                </button>
+                                </motion.button>
                             )}
                         </div>
                     ) : (
@@ -550,9 +558,18 @@ export default function ProfilePage() {
                                 </div>
                                 <p className={`text-lg font-medium ${themeClasses.text}`}>No cover photo</p>
                                 {isOwnProfile && (
-                                    <button className="mt-2 px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all">
+                                    <motion.button 
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => {
+                                            // TODO: Implement cover photo upload
+                                            console.log('Add cover photo clicked');
+                                            alert('Cover photo upload feature coming soon!');
+                                        }}
+                                        className="mt-2 px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all"
+                                    >
                                         Add Cover Photo
-                                    </button>
+                                    </motion.button>
                                 )}
                             </div>
                         </div>
@@ -606,6 +623,11 @@ export default function ProfilePage() {
                                             type="button"
                                             whileHover={{ scale: 1.1 }}
                                             whileTap={{ scale: 0.9 }}
+                                            onClick={() => {
+                                                // TODO: Implement profile photo upload
+                                                console.log('Profile photo upload clicked');
+                                                alert('Profile photo upload feature coming soon!');
+                                            }}
                                             className="p-2 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full text-white shadow-lg hover:shadow-xl transition-all duration-300"
                                             title="Change Photo"
                                         >
@@ -999,6 +1021,8 @@ const UserPosts = ({ userId }: { userId?: string }) => {
     const [posts, setPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showCommentModal, setShowCommentModal] = useState(false);
+    const [selectedPost, setSelectedPost] = useState<any>(null);
 
     useEffect(() => {
         if (!userId) return;
@@ -1054,36 +1078,83 @@ const UserPosts = ({ userId }: { userId?: string }) => {
                 <div key={post.id} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
                     <div className="flex items-start space-x-3">
                         <div className="flex-shrink-0">
-                            <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => window.location.href = `/profile?userId=${post.author?.id}`}
+                                className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold hover:shadow-lg transition-all duration-300 cursor-pointer"
+                            >
                                 {post.author?.name?.charAt(0) || 'U'}
-                            </div>
+                            </motion.button>
                         </div>
                         <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-2">
-                                <span className="font-semibold text-white">{post.author?.name || 'Unknown'}</span>
-                                <span className="text-gray-400 text-sm">@{post.author?.username || 'unknown'}</span>
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    onClick={() => window.location.href = `/profile?userId=${post.author?.id}`}
+                                    className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer"
+                                >
+                                    {post.author?.name || 'Unknown'}
+                                </motion.button>
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    onClick={() => window.location.href = `/profile?userId=${post.author?.id}`}
+                                    className="text-gray-400 text-sm hover:text-cyan-400 transition-colors cursor-pointer"
+                                >
+                                    @{post.author?.username || 'unknown'}
+                                </motion.button>
                                 <span className="text-gray-500 text-sm">•</span>
                                 <span className="text-gray-500 text-sm">{new Date(post.createdAt).toLocaleDateString()}</span>
                             </div>
                             <p className="text-gray-300 mb-3">{post.content}</p>
                             <div className="flex items-center space-x-4 text-gray-400">
-                                <button className="flex items-center space-x-1 hover:text-red-400 transition-colors">
+                                <motion.button 
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="flex items-center space-x-1 hover:text-red-400 transition-colors"
+                                >
                                     <Heart size={16} />
                                     <span>{post.likes || 0}</span>
-                                </button>
-                                <button className="flex items-center space-x-1 hover:text-blue-400 transition-colors">
+                                </motion.button>
+                                <motion.button 
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => {
+                                        setSelectedPost(post);
+                                        setShowCommentModal(true);
+                                    }}
+                                    className="flex items-center space-x-1 hover:text-blue-400 transition-colors"
+                                >
                                     <MessageCircle size={16} />
                                     <span>{post.comments || 0}</span>
-                                </button>
-                                <button className="flex items-center space-x-1 hover:text-green-400 transition-colors">
+                                </motion.button>
+                                <motion.button 
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="flex items-center space-x-1 hover:text-green-400 transition-colors"
+                                >
                                     <Share size={16} />
                                     <span>Share</span>
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
                     </div>
                 </div>
             ))}
+            
+            {/* Comment Modal */}
+            {showCommentModal && selectedPost && (
+                <CommentModal
+                    isOpen={showCommentModal}
+                    onClose={() => {
+                        setShowCommentModal(false);
+                        setSelectedPost(null);
+                    }}
+                    postId={selectedPost.id}
+                    postContent={selectedPost.content}
+                    postAuthor={selectedPost.author?.name || 'Unknown'}
+                />
+            )}
         </div>
     );
-};3
+};

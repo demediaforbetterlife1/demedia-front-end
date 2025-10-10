@@ -185,14 +185,17 @@ export default function SignInSetUp() {
                 throw new Error("User not authenticated");
             }
 
-            const API_BASE = "";
-
             const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
-            const res = await fetch(`${API_BASE}/api/users/${userId}/profile`, {
+            if (!token) {
+                throw new Error("Authentication token not found. Please log in again.");
+            }
+
+            const res = await fetch(`/api/users/${userId}/profile`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                    'Authorization': `Bearer ${token}`,
+                    'user-id': userId.toString(),
                 },
                 body: JSON.stringify({ dob: dobIso }),
             });
