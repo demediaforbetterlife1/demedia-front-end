@@ -217,7 +217,9 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                     const errorData = await uploadResponse.json();
                     errorMessage = errorData.error || errorData.message || errorMessage;
                 } catch (e) {
-                    errorMessage = `Upload error: ${uploadResponse.status}`;
+                    const responseText = await uploadResponse.text();
+                    console.error('Upload error response:', responseText);
+                    errorMessage = `Upload error: ${uploadResponse.status} - ${responseText}`;
                 }
                 throw new Error(errorMessage);
             }
@@ -225,7 +227,14 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             // Use safe JSON parsing for upload response
             let uploadData;
             try {
-                uploadData = await uploadResponse.json();
+                const responseText = await uploadResponse.text();
+                console.log('Upload response text:', responseText);
+                
+                if (!responseText.trim()) {
+                    throw new Error('Empty response from server');
+                }
+                
+                uploadData = JSON.parse(responseText);
             } catch (jsonError) {
                 console.error('Upload JSON parsing error:', jsonError);
                 const responseText = await uploadResponse.text();
@@ -264,7 +273,14 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             // Use safe JSON parsing to avoid "unexpected token" errors
             let newDeSnap;
             try {
-                newDeSnap = await response.json();
+                const responseText = await response.text();
+                console.log('DeSnap creation response text:', responseText);
+                
+                if (!responseText.trim()) {
+                    throw new Error('Empty response from server');
+                }
+                
+                newDeSnap = JSON.parse(responseText);
             } catch (jsonError) {
                 console.error('JSON parsing error:', jsonError);
                 const responseText = await response.text();
