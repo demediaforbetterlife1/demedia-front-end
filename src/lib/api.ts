@@ -1,6 +1,7 @@
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 const API_BASE = ""; // same-origin; Next.js rewrite proxies /api to backend
+const DIRECT_API_BASE = "https://demedia-backend.fly.dev"; // Direct backend URL as fallback
 
 // Health check function
 async function checkBackendHealth(): Promise<boolean> {
@@ -13,6 +14,23 @@ async function checkBackendHealth(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+// Fallback function to try direct backend connection
+async function tryDirectConnection(path: string, options: RequestInit = {}): Promise<Response> {
+  console.log('Trying direct backend connection...');
+  const directUrl = `${DIRECT_API_BASE}${path}`;
+  
+  const response = await fetch(directUrl, {
+    ...options,
+    headers: {
+      ...options.headers,
+      'Content-Type': 'application/json',
+    },
+    signal: AbortSignal.timeout(15000) // 15 second timeout for direct connection
+  });
+  
+  return response;
 }
 
 function delay(ms: number) {
@@ -43,18 +61,20 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}cb=${cacheBuster}&v=${version}`;
   }
 
-  // Retry logic for network issues
-  const maxRetries = 2;
+  // Progressive timeout strategy
+  const timeouts = [5000, 15000, 30000]; // 5s, 15s, 30s
+  const maxRetries = timeouts.length - 1;
   let lastError: unknown;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const timeout = timeouts[attempt];
     try {
-      console.log(`Making API request to: ${url} (attempt ${attempt + 1})`);
+      console.log(`Making API request to: ${url} (attempt ${attempt + 1}, timeout: ${timeout}ms)`);
       const res = await fetch(url, { 
         ...options, 
         headers,
-        // Add timeout for better error handling
-        signal: AbortSignal.timeout(30000) // 30 second timeout
+        // Progressive timeout strategy
+        signal: AbortSignal.timeout(timeout)
       });
       console.log('API response status:', res.status);
       
@@ -84,6 +104,22 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
         console.log(`Retrying request in ${(attempt + 1) * 1000}ms...`);
         await new Promise(resolve => setTimeout(resolve, (attempt + 1) * 1000));
         continue;
+      }
+      
+      // If all retries failed, try direct connection as last resort
+      if (attempt === maxRetries && err instanceof Error && (
+        err.message.includes('Failed to fetch') || 
+        err.message.includes('NetworkError') ||
+        err.message.includes('timeout') ||
+        err.name === 'AbortError'
+      )) {
+        console.log('All retries failed, trying direct backend connection...');
+        try {
+          return await tryDirectConnection(path, options);
+        } catch (directError) {
+          console.error('Direct connection also failed:', directError);
+          throw err; // Throw original error
+        }
       }
       
       throw err;

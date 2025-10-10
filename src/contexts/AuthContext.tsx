@@ -162,6 +162,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('AuthContext: Starting login process');
       
+      // Add a small delay to prevent rapid requests
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const res = await apiFetch(`/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
