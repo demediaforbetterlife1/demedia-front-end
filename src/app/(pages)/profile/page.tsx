@@ -124,6 +124,8 @@ export default function ProfilePage() {
     const [showEmotionTracker, setShowEmotionTracker] = useState(false);
     const [showAISuggestions, setShowAISuggestions] = useState(false);
     const [showAnonymousInsights, setShowAnonymousInsights] = useState(false);
+    const [showDeSnapModal, setShowDeSnapModal] = useState(false);
+    const [showQuickActions, setShowQuickActions] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -1058,6 +1060,13 @@ export default function ProfilePage() {
                         >
                             Anonymous Insights
                         </button>
+                        <button
+                            onClick={() => setShowQuickActions(!showQuickActions)}
+                            className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm hover:bg-yellow-500/30 transition-all flex items-center space-x-1"
+                        >
+                            <span>⚡</span>
+                            <span>Quick Actions</span>
+                        </button>
                     </div>
                 </div>
             )}
@@ -1174,6 +1183,132 @@ export default function ProfilePage() {
                     console.log("Anonymous insight received:", insight);
                 }}
             />
+
+            {/* Quick Actions Modal */}
+            {showQuickActions && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold text-white">⚡ Quick Actions</h3>
+                            <button
+                                onClick={() => setShowQuickActions(false)}
+                                className="text-gray-400 hover:text-white"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="space-y-3">
+                            <button
+                                onClick={() => {
+                                    setShowDeSnapModal(true);
+                                    setShowQuickActions(false);
+                                }}
+                                className="w-full p-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all flex items-center justify-center space-x-2"
+                            >
+                                <span>📸</span>
+                                <span>Create DeSnap</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowCreateStoryModal(true);
+                                    setShowQuickActions(false);
+                                }}
+                                className="w-full p-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all flex items-center justify-center space-x-2"
+                            >
+                                <span>📖</span>
+                                <span>Create Story</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowMoodFilter(true);
+                                    setShowQuickActions(false);
+                                }}
+                                className="w-full p-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all flex items-center justify-center space-x-2"
+                            >
+                                <span>😊</span>
+                                <span>Mood Filter</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowEmotionTracker(true);
+                                    setShowQuickActions(false);
+                                }}
+                                className="w-full p-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg hover:from-orange-700 hover:to-red-700 transition-all flex items-center justify-center space-x-2"
+                            >
+                                <span>💭</span>
+                                <span>Track Emotion</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* DeSnap Creation Modal */}
+            {showDeSnapModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold text-white">📸 Create DeSnap</h3>
+                            <button
+                                onClick={() => setShowDeSnapModal(false)}
+                                className="text-gray-400 hover:text-white"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Content
+                                </label>
+                                <textarea
+                                    placeholder="What's happening? Share a moment..."
+                                    className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-purple-500 focus:outline-none resize-none"
+                                    rows={3}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Duration (seconds)
+                                </label>
+                                <input
+                                    type="number"
+                                    placeholder="24"
+                                    className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-purple-500 focus:outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Visibility
+                                </label>
+                                <select className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-purple-500 focus:outline-none">
+                                    <option value="public">Public</option>
+                                    <option value="followers">Followers Only</option>
+                                    <option value="private">Private</option>
+                                </select>
+                            </div>
+                            <div className="flex space-x-3">
+                                <button
+                                    onClick={() => setShowDeSnapModal(false)}
+                                    className="flex-1 p-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        // TODO: Implement DeSnap creation
+                                        console.log("DeSnap created!");
+                                        setShowDeSnapModal(false);
+                                    }}
+                                    className="flex-1 p-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all"
+                                >
+                                    Create DeSnap
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
