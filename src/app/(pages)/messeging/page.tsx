@@ -146,6 +146,7 @@ export default function MessagingPage() {
         }
     }, [selectedConversation]);
 
+
     const fetchConversations = async () => {
         try {
             setLoading(true);
@@ -223,9 +224,9 @@ export default function MessagingPage() {
             }
         }
             
-            // If all methods fail, show a more helpful message
-            console.warn('All conversation endpoints failed - this feature may not be available yet');
-            setError(`The messaging feature is not available yet. This feature is coming soon!`);
+            // If all methods fail, show error
+            console.error('All conversation endpoints failed');
+            setError(`Unable to fetch conversations. Please check your connection and try again.`);
             setConversations([]);
             
         } catch (err) {
@@ -565,5 +566,5 @@ export default function MessagingPage() {
                 )}
             </div>
         </div>
-    );
+      );
 }

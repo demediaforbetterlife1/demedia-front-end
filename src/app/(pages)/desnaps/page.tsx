@@ -114,6 +114,7 @@ export default function DeSnapsPage() {
         fetchDeSnaps();
     }, [filter]);
 
+
     const fetchDeSnaps = async () => {
         try {
             setLoading(true);
@@ -193,9 +194,9 @@ export default function DeSnapsPage() {
             }
         }
             
-            // If all methods fail, show a more helpful message
-            console.warn('All DeSnaps endpoints failed - this feature may not be available yet');
-            setError(`The DeSnaps feature is not available yet. This feature is coming soon!`);
+            // If all methods fail, show error
+            console.error('All DeSnaps endpoints failed');
+            setError(`Unable to fetch DeSnaps. Please check your connection and try again.`);
             setDeSnaps([]);
             
         } catch (err) {

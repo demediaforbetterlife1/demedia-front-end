@@ -1530,84 +1530,24 @@ const UserPosts = ({
         if (!postToDelete) return;
 
         try {
-            // Try multiple delete endpoints
-            let response;
-            let success = false;
-
-            // First try the standard delete endpoint through proxy
-            try {
-                response = await fetch(`/api/posts/${postToDelete.id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    }
-                });
-
-                if (response.ok) {
-                    success = true;
-                    console.log('Post deleted successfully via proxy');
-                } else {
-                    const errorText = await response.text();
-                    console.warn('Standard delete failed:', response.status, errorText);
-                    throw new Error(`Standard delete failed: ${response.status}`);
+            const response = await fetch(`/api/posts/${postToDelete.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 }
-            } catch (standardError) {
-                console.warn('Standard delete failed, trying alternative:', standardError);
-                
-                // Try alternative delete endpoint
-                try {
-                    response = await fetch(`/api/posts/${postToDelete.id}/delete`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        }
-                    });
+            });
 
-                    if (response.ok) {
-                        success = true;
-                        console.log('Post deleted successfully via alternative endpoint');
-                    } else {
-                        const errorText = await response.text();
-                        console.warn('Alternative delete failed:', response.status, errorText);
-                        throw new Error(`Alternative delete failed: ${response.status}`);
-                    }
-                } catch (altError) {
-                    console.warn('Alternative delete failed, trying direct backend:', altError);
-                    
-                    // Try direct backend call
-                    try {
-                        response = await fetch(`https://demedia-backend.fly.dev/api/posts/${postToDelete.id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                            }
-                        });
-
-                        if (response.ok) {
-                            success = true;
-                            console.log('Post deleted successfully via direct backend');
-                        } else {
-                            const errorText = await response.text();
-                            console.warn('Direct backend delete failed:', response.status, errorText);
-                            throw new Error(`Direct backend delete failed: ${response.status}`);
-                        }
-                    } catch (directError) {
-                        console.error('All delete methods failed:', directError);
-                        throw new Error('All delete endpoints failed');
-                    }
-                }
-            }
-
-            if (success) {
+            if (response.ok) {
                 setPosts(prev => prev.filter(p => p.id !== postToDelete.id));
                 setShowDeleteConfirm(false);
                 setPostToDelete(null);
-                console.log('Post deleted successfully from UI');
+                console.log('Post deleted successfully');
+                alert('Post deleted successfully!');
             } else {
-                console.error('Failed to delete post - no success response');
+                const errorText = await response.text();
+                console.error('Delete failed:', response.status, errorText);
+                alert(`Failed to delete post: ${response.status}`);
             }
         } catch (error) {
             console.error('Error deleting post:', error);
