@@ -92,6 +92,8 @@ import AnonymousInsights from "@/components/AnonymousInsights";
 import CommentModal from "@/components/CommentModal";
 import EditPostModal from "@/components/EditPostModal";
 import FollowersModal from "@/components/FollowersModal";
+import ProfileAnalytics from "@/components/ProfileAnalytics";
+import ProfileCustomization from "@/components/ProfileCustomization";
 import { apiFetch } from "@/lib/api";
 
 interface Story {
@@ -821,6 +823,15 @@ export default function ProfilePage() {
                                             <Edit size={18} />
                                             <span>Edit Profile</span>
                         </motion.button>
+                        
+                        {/* Profile Customization Button */}
+                        <ProfileCustomization 
+                            user={user} 
+                            onUpdate={(updates) => {
+                                console.log('Profile customization updated:', updates);
+                                // Here you can implement the actual update logic
+                            }} 
+                        />
                                         
                                         
                                         <motion.button
@@ -1093,80 +1104,7 @@ export default function ProfilePage() {
                                             exit={{ opacity: 0, y: -10 }}
                                             transition={{ duration: 0.3 }}
                                         >
-                                            <div className="py-8">
-                                                <div className="text-center mb-8">
-                                                    <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                                                        <BarChart3 className="w-10 h-10 text-white" />
-                                                    </div>
-                                                    <h3 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>Analytics Dashboard</h3>
-                                                    <p className={`${themeClasses.textSecondary} mb-6`}>Real-time insights into your social media performance</p>
-                                                </div>
-
-                                                {/* Key Metrics */}
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                                        <div className="flex items-center justify-between mb-4">
-                                                            <Eye className="w-8 h-8 text-blue-500" />
-                                                            <TrendingUp className="w-5 h-5 text-green-500" />
-                                                        </div>
-                                                        <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>0</div>
-                                                        <div className={`text-sm ${themeClasses.textSecondary}`}>Total Views</div>
-                                                        <div className="text-xs text-gray-500 mt-2">Analytics coming soon</div>
-                                                    </div>
-
-                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                                        <div className="flex items-center justify-between mb-4">
-                                                            <Heart className="w-8 h-8 text-red-500" />
-                                                            <TrendingUp className="w-5 h-5 text-green-500" />
-                                                        </div>
-                                                        <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>0</div>
-                                                        <div className={`text-sm ${themeClasses.textSecondary}`}>Total Likes</div>
-                                                        <div className="text-xs text-gray-500 mt-2">Analytics coming soon</div>
-                                                    </div>
-
-                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                                        <div className="flex items-center justify-between mb-4">
-                                                            <MessageCircle className="w-8 h-8 text-purple-500" />
-                                                            <TrendingUp className="w-5 h-5 text-green-500" />
-                                                        </div>
-                                                        <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>0</div>
-                                                        <div className={`text-sm ${themeClasses.textSecondary}`}>Total Comments</div>
-                                                        <div className="text-xs text-gray-500 mt-2">Analytics coming soon</div>
-                                                    </div>
-
-                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                                        <div className="flex items-center justify-between mb-4">
-                                                            <Share className="w-8 h-8 text-cyan-500" />
-                                                            <TrendingUp className="w-5 h-5 text-green-500" />
-                                                        </div>
-                                                        <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>0</div>
-                                                        <div className={`text-sm ${themeClasses.textSecondary}`}>Total Shares</div>
-                                                        <div className="text-xs text-gray-500 mt-2">Analytics coming soon</div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Engagement Chart */}
-                                                <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} mb-8`}>
-                                                    <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Engagement Over Time</h4>
-                                                    <div className="h-64 flex items-center justify-center">
-                                                        <div className="text-center">
-                                                            <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                                                            <p className={`text-lg ${themeClasses.textSecondary}`}>Analytics data will appear here</p>
-                                                            <p className={`text-sm ${themeClasses.textSecondary}`}>Start posting to see your engagement metrics</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Top Performing Content */}
-                                                <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border}`}>
-                                                    <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Top Performing Content</h4>
-                                                    <div className="text-center py-8">
-                                                        <Grid3X3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                                                        <p className={`text-lg ${themeClasses.textSecondary}`}>No content yet</p>
-                                                        <p className={`text-sm ${themeClasses.textSecondary}`}>Create posts to see your top performers here</p>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <ProfileAnalytics userId={user?.id?.toString() || ''} posts={[]} />
                                         </motion.div>
                                     )}
 
