@@ -365,6 +365,10 @@ export default function SignUpPage() {
 
         if (!form.name.trim()) {
             newErrors.name = t('auth.nameRequired', 'Full name is required');
+        } else if (form.name.trim().length < 2) {
+            newErrors.name = t('auth.nameMinLength', 'Name must be at least 2 characters');
+        } else if (form.name.trim().length > 50) {
+            newErrors.name = t('auth.nameMaxLength', 'Name must be 50 characters or less');
         }
 
         if (!form.username.trim()) {
@@ -439,6 +443,9 @@ export default function SignUpPage() {
                 setErrors({ username: t('auth.usernameTaken', 'This username is already taken') });
             } else if (errorMessage.includes("Phone number already registered") || errorMessage.includes("phone")) {
                 setErrors({ phoneNumber: t('auth.phoneRegistered', 'This phone number is already registered') });
+            } else if (errorMessage.includes("2-50") && errorMessage.includes("chars") && errorMessage.includes("spaces")) {
+                // Handle the specific backend name validation error
+                setErrors({ name: t('auth.nameBackendError', 'Name must be 2-50 characters and can contain letters, spaces, and common punctuation') });
             } else if (errorMessage.includes("Something went wrong") || errorMessage.includes("Registration failed")) {
                 // This is the generic error - show a more helpful message
                 setErrors({ general: t('auth.registrationFailed', 'Registration failed. Please try a different username or phone number.') });
@@ -499,6 +506,9 @@ export default function SignUpPage() {
                                     />
                                 </div>
                                 {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
+                                <p className="text-cyan-200/70 text-xs mt-1">
+                                    {t('auth.nameHelp', 'Supports all languages including Arabic, Chinese, etc.')}
+                                </p>
                             </div>
                             
                             {/* Username Input */}
