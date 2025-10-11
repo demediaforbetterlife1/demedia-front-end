@@ -90,6 +90,8 @@ import EmotionTracker from "@/components/EmotionTracker";
 import AISuggestions from "@/components/AISuggestions";
 import AnonymousInsights from "@/components/AnonymousInsights";
 import CommentModal from "@/components/CommentModal";
+import EditPostModal from "@/components/EditPostModal";
+import FollowersModal from "@/components/FollowersModal";
 import { apiFetch } from "@/lib/api";
 
 interface Story {
@@ -229,6 +231,8 @@ export default function ProfilePage() {
     const [showQuickActions, setShowQuickActions] = useState(false);
     const [showCommentModal, setShowCommentModal] = useState(false);
     const [selectedPost, setSelectedPost] = useState<any>(null);
+    const [showFollowersModal, setShowFollowersModal] = useState(false);
+    const [followersModalType, setFollowersModalType] = useState<'followers' | 'following'>('followers');
     
     // Unique Features State
     const [showAchievements, setShowAchievements] = useState(false);
@@ -760,17 +764,27 @@ export default function ProfilePage() {
                             <div className="grid grid-cols-3 gap-4 mb-6">
                                 <motion.div 
                                     whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => {
+                                        setFollowersModalType('followers');
+                                        setShowFollowersModal(true);
+                                    }}
                                     className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300`}
                                 >
                                     <div className={`text-2xl font-bold ${themeClasses.text}`}>{followersCount}</div>
                                     <div className={`text-sm ${themeClasses.textSecondary}`}>Followers</div>
                                     <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
                                         <div className="bg-gradient-to-r from-cyan-500 to-purple-600 h-1 rounded-full" style={{width: `${Math.min(100, (followersCount / 1000) * 100)}%`}}></div>
-                    </div>
+                                    </div>
                                 </motion.div>
                                 
                                 <motion.div 
                                     whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => {
+                                        setFollowersModalType('following');
+                                        setShowFollowersModal(true);
+                                    }}
                                     className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300`}
                                 >
                                     <div className={`text-2xl font-bold ${themeClasses.text}`}>{followingCount}</div>
@@ -1442,6 +1456,14 @@ export default function ProfilePage() {
                     setShowCreateStoryModal(false);
                 }}
             />
+
+            {/* Followers/Following Modal */}
+            <FollowersModal
+                isOpen={showFollowersModal}
+                onClose={() => setShowFollowersModal(false)}
+                userId={user?.id?.toString() || ''}
+                type={followersModalType}
+            />
                 </div>
             </div>
         </>
@@ -1465,6 +1487,10 @@ const UserPosts = ({
     const [posts, setPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [postToDelete, setPostToDelete] = useState<any>(null);
+    const { user } = useAuth();
 
     useEffect(() => {
         if (!userId) return;
@@ -1489,6 +1515,43 @@ const UserPosts = ({
 
         fetchUserPosts();
     }, [userId]);
+
+    const handleEdit = (post: any) => {
+        setSelectedPost(post);
+        setShowEditModal(true);
+    };
+
+    const handleDelete = (post: any) => {
+        setPostToDelete(post);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!postToDelete) return;
+
+        try {
+            const response = await apiFetch(`/api/posts/${postToDelete.id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (response.ok) {
+                setPosts(prev => prev.filter(p => p.id !== postToDelete.id));
+                setShowDeleteConfirm(false);
+                setPostToDelete(null);
+            }
+        } catch (error) {
+            console.error('Error deleting post:', error);
+        }
+    };
+
+    const handlePostUpdated = (updatedPost: any) => {
+        setPosts(prev => prev.map(p => 
+            p.id === updatedPost.id ? updatedPost : p
+        ));
+        setShowEditModal(false);
+        setSelectedPost(null);
+    };
 
     if (loading) {
         return (
@@ -1528,8 +1591,37 @@ const UserPosts = ({
                             >
                                 {post.author?.name?.charAt(0) || 'U'}
                             </motion.button>
-                            </div>
+                        </div>
                         <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                                <div>
+                                    <h3 className="font-semibold text-white">{post.author?.name || 'Unknown User'}</h3>
+                                    <p className="text-sm text-gray-400">@{post.author?.username || 'unknown'}</p>
+                                </div>
+                                {/* Edit/Delete buttons - only show for current user's posts */}
+                                {user?.id && Number(user.id) === Number(userId) && (
+                                    <div className="flex items-center space-x-2">
+                                        <motion.button
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => handleEdit(post)}
+                                            className="p-2 rounded-full bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                                            title="Edit Post"
+                                        >
+                                            <Edit size={16} />
+                                        </motion.button>
+                                        <motion.button
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => handleDelete(post)}
+                                            className="p-2 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors"
+                                            title="Delete Post"
+                                        >
+                                            <Trash2 size={16} />
+                                        </motion.button>
+                                    </div>
+                                )}
+                            </div>
                             <div className="flex items-center space-x-2 mb-2">
                                 <motion.button
                                     whileHover={{ scale: 1.02 }}
@@ -1596,6 +1688,64 @@ const UserPosts = ({
                     postContent={selectedPost.content}
                     postAuthor={selectedPost.author?.name || 'Unknown'}
                 />
+            )}
+
+            {/* Edit Post Modal */}
+            {selectedPost && (
+                <EditPostModal
+                    isOpen={showEditModal}
+                    onClose={() => {
+                        setShowEditModal(false);
+                        setSelectedPost(null);
+                    }}
+                    post={selectedPost}
+                    onPostUpdated={handlePostUpdated}
+                />
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <motion.div
+                        className="bg-gray-800 rounded-2xl w-full max-w-md shadow-2xl border border-gray-700"
+                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <div className="p-6">
+                            <div className="flex items-center space-x-3 mb-4">
+                                <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
+                                    <Trash2 className="w-5 h-5 text-red-400" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">Delete Post</h2>
+                                    <p className="text-sm text-gray-400">This action cannot be undone</p>
+                                </div>
+                            </div>
+                            <p className="text-gray-300 mb-6">
+                                Are you sure you want to delete this post? This action cannot be undone.
+                            </p>
+                            <div className="flex items-center justify-end space-x-3">
+                                <button
+                                    onClick={() => {
+                                        setShowDeleteConfirm(false);
+                                        setPostToDelete(null);
+                                    }}
+                                    className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+                                >
+                                    Delete Post
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
             )}
         </div>
     );
