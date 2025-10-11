@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Save, Image, Video, Hash, AtSign, MapPin, Calendar, Eye, EyeOff } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { notificationService } from "@/services/notificationService";
 
 interface EditPostModalProps {
     isOpen: boolean;
@@ -179,17 +180,34 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }: 
 
             if (response.ok) {
                 const updatedPost = await response.json();
+                console.log('Update response:', updatedPost);
+                
                 onPostUpdated(updatedPost);
                 onClose();
                 console.log('Post updated successfully');
+                notificationService.showNotification({
+                    title: 'Post Updated',
+                    body: 'Your post has been successfully updated',
+                    tag: 'post_updated'
+                });
             } else {
                 const errorText = await response.text();
                 console.error('Update failed:', response.status, errorText);
-                setError(`Failed to update post: ${response.status}`);
+                
+                // Try to parse error message
+                let errorMessage = `Failed to update post (${response.status})`;
+                try {
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.error || errorMessage;
+                } catch (e) {
+                    errorMessage = errorText || errorMessage;
+                }
+                
+                setError(errorMessage);
             }
         } catch (error) {
             console.error('Error updating post:', error);
-            setError(`Failed to update post: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            setError(`Network error: ${error instanceof Error ? error.message : 'Unable to connect to server'}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -387,8 +405,13 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }: 
 
                         {/* Error Message */}
                         {error && (
-                            <div className="p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg">
-                                {error}
+                            <div className="p-3 bg-red-100 border border-red-500 text-red-700 rounded-lg">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
+                                        <span className="text-white text-xs">!</span>
+                                    </div>
+                                    {error}
+                                </div>
                             </div>
                         )}
                     </div>

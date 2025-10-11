@@ -78,6 +78,7 @@ import {
 import { getUserProfile } from "../../../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { notificationService } from "@/services/notificationService";
 import { useSearchParams } from "next/navigation";
 import EditProfileModal from "@/app/layoutElementsComps/navdir/EditProfileModal";
 import CreateStoryModal from "@/app/layoutElementsComps/navdir/CreateStoryModal";
@@ -1428,6 +1429,7 @@ const UserPosts = ({
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [postToDelete, setPostToDelete] = useState<any>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
     const { user } = useAuth();
 
     useEffect(() => {
@@ -1467,6 +1469,7 @@ const UserPosts = ({
     const confirmDelete = async () => {
         if (!postToDelete) return;
 
+        setIsDeleting(true);
         try {
             const response = await fetch(`/api/posts/${postToDelete.id}`, {
                 method: 'DELETE',
@@ -1477,19 +1480,49 @@ const UserPosts = ({
             });
 
             if (response.ok) {
+                const result = await response.json();
+                console.log('Delete response:', result);
+                
+                // Remove from local state immediately
                 setPosts(prev => prev.filter(p => p.id !== postToDelete.id));
                 setShowDeleteConfirm(false);
                 setPostToDelete(null);
+                
+                // Show success message
                 console.log('Post deleted successfully');
-                alert('Post deleted successfully!');
+                notificationService.showNotification({
+                    title: 'Post Deleted',
+                    body: 'Your post has been successfully deleted',
+                    tag: 'post_deleted'
+                });
             } else {
                 const errorText = await response.text();
                 console.error('Delete failed:', response.status, errorText);
-                alert(`Failed to delete post: ${response.status}`);
+                
+                // Try to parse error message
+                let errorMessage = `Failed to delete post (${response.status})`;
+                try {
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.error || errorMessage;
+                } catch (e) {
+                    errorMessage = errorText || errorMessage;
+                }
+                
+                notificationService.showNotification({
+                    title: 'Delete Failed',
+                    body: errorMessage,
+                    tag: 'delete_error'
+                });
             }
         } catch (error) {
             console.error('Error deleting post:', error);
-            alert(`Failed to delete post: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            notificationService.showNotification({
+                title: 'Network Error',
+                body: `Network error: ${error instanceof Error ? error.message : 'Unable to connect to server'}`,
+                tag: 'network_error'
+            });
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -1738,9 +1771,17 @@ const UserPosts = ({
                                 </button>
                                 <button
                                     onClick={confirmDelete}
-                                    className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+                                    disabled={isDeleting}
+                                    className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
                                 >
-                                    Delete Post
+                                    {isDeleting ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            Deleting...
+                                        </>
+                                    ) : (
+                                        'Delete Post'
+                                    )}
                                 </button>
                             </div>
                         </div>
