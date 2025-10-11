@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Share2, Bookmark, BookmarkCheck, Flag, MoreHorizontal, Eye, EyeOff, Zap, Star, TrendingUp, Award, Crown, Flame, Diamond, Target, Sparkles, Gift } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, BookmarkCheck, Flag, MoreHorizontal, Eye, EyeOff, Zap, Star, TrendingUp, Award, Crown, Flame, Diamond, Target, Sparkles, Gift, Edit, Trash2 } from "lucide-react";
 import Trending from "@/app/(PagesComps)/homedir/trending";
 import Suggestions from "@/app/(PagesComps)/homedir/suggestions";
 import { contentService } from "@/services/contentService";
@@ -11,6 +11,7 @@ import { useI18n } from "@/contexts/I18nContext";
 import { useNotifications } from "@/components/NotificationProvider";
 import CommentModal from "@/components/CommentModal";
 import ReportModal from "@/components/ReportModal";
+import EditPostModal from "@/components/EditPostModal";
 import { apiFetch } from "@/lib/api";
 
 type PostType = {
@@ -31,6 +32,13 @@ type PostType = {
     createdAt?: string;
     imageUrl?: string;
     videoUrl?: string;
+    images?: string[];
+    videos?: string[];
+    media?: {
+        type: 'image' | 'video';
+        url: string;
+        thumbnail?: string;
+    }[];
 };
 
 export default function Posts() {
@@ -39,10 +47,29 @@ export default function Posts() {
     const [error, setError] = useState<string | null>(null);
     const [showCommentModal, setShowCommentModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [selectedPost, setSelectedPost] = useState<PostType | null>(null);
+    const [showDropdown, setShowDropdown] = useState<number | null>(null);
     const { user } = useAuth();
     const { t } = useI18n();
     const { showSuccess, showError } = useNotifications();
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (showDropdown !== null) {
+                setShowDropdown(null);
+            }
+        };
+
+        if (showDropdown !== null) {
+            document.addEventListener('click', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [showDropdown]);
 
     useEffect(() => {
         const abort = new AbortController();
@@ -158,6 +185,31 @@ export default function Posts() {
                     }
                     : p
             ));
+
+            // Send notification if user liked the post (not their own)
+            if (!isCurrentlyLiked && post.user?.id && post.user.id !== user?.id) {
+                try {
+                    await fetch('/api/notifications', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        },
+                        body: JSON.stringify({
+                            userId: post.user.id,
+                            type: 'like',
+                            message: `${user?.name || 'Someone'} liked your post`,
+                            data: {
+                                postId: postId,
+                                likerId: user?.id,
+                                likerName: user?.name
+                            }
+                        })
+                    });
+                } catch (notificationError) {
+                    console.warn('Failed to send like notification:', notificationError);
+                }
+            }
         } catch (error: unknown) {
             console.error('Error liking post:', error);
             // Revert optimistic update on error
@@ -244,6 +296,20 @@ export default function Posts() {
         }
     };
 
+    const handleEdit = (post: PostType) => {
+        setSelectedPost(post);
+        setShowEditModal(true);
+    };
+
+    const handlePostUpdated = (updatedPost: PostType) => {
+        setPosts(prev => prev.map(p => 
+            p.id === updatedPost.id ? updatedPost : p
+        ));
+        setShowEditModal(false);
+        setSelectedPost(null);
+        showSuccess('Post updated successfully');
+    };
+
     const formatTimeAgo = (dateString: string) => {
         const date = new Date(dateString);
         const now = new Date();
@@ -302,7 +368,12 @@ export default function Posts() {
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => window.location.href = `/profile?userId=${post.user?.id || post.id}`}
+                                    onClick={() => {
+                                        // If it's the current user's post, go to their own profile
+                                        // Otherwise, go to the post author's profile
+                                        const targetUserId = post.user?.id || post.id;
+                                        window.location.href = `/profile?userId=${targetUserId}`;
+                                    }}
                                     className="w-10 h-10 rounded-full theme-bg-tertiary flex items-center justify-center theme-text-secondary font-bold hover:shadow-lg transition-all duration-300 cursor-pointer"
                                 >
                                     {post.user?.name?.charAt(0) ?? "U"}
@@ -312,7 +383,16 @@ export default function Posts() {
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <span className="font-semibold theme-text-primary">{post.user?.name ?? t('posts.unknown','Unknown')}</span>
+                                        <motion.button
+                                            whileHover={{ scale: 1.02 }}
+                                            onClick={() => {
+                                                const targetUserId = post.user?.id || post.id;
+                                                window.location.href = `/profile?userId=${targetUserId}`;
+                                            }}
+                                            className="font-semibold theme-text-primary hover:text-cyan-400 transition-colors cursor-pointer"
+                                        >
+                                            {post.user?.name || 'Unknown User'}
+                                        </motion.button>
                                         {/* Special Badges */}
                                         <div className="flex gap-1">
                                             <div className="w-5 h-5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
@@ -323,19 +403,72 @@ export default function Posts() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-sm theme-text-muted">@{post.user?.username ?? 'user'}</div>
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        onClick={() => {
+                                            const targetUserId = post.user?.id || post.id;
+                                            window.location.href = `/profile?userId=${targetUserId}`;
+                                        }}
+                                        className="text-sm theme-text-muted hover:text-cyan-400 transition-colors cursor-pointer"
+                                    >
+                                        @{post.user?.username || 'unknown'}
+                                    </motion.button>
                                 </div>
                             </div>
                             <div className="flex items-center space-x-2">
                                 {post.createdAt && (
                                     <span className="text-sm theme-text-muted">{formatTimeAgo(post.createdAt)}</span>
                                 )}
-                                <button 
-                                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                    onClick={() => handleReport(post)}
-                                >
-                                    <MoreHorizontal size={16} className="theme-text-muted" />
-                                </button>
+                                <div className="relative">
+                                    <button 
+                                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                        onClick={() => setShowDropdown(showDropdown === post.id ? null : post.id)}
+                                    >
+                                        <MoreHorizontal size={16} className="theme-text-muted" />
+                                    </button>
+                                    
+                                    {showDropdown === post.id && (
+                                        <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                                            {post.user?.id === user?.id ? (
+                                                // Author options
+                                                <>
+                                                    <button
+                                                        onClick={() => {
+                                                            handleEdit(post);
+                                                            setShowDropdown(null);
+                                                        }}
+                                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                                    >
+                                                        <Edit size={16} />
+                                                        Edit Post
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            // Handle delete
+                                                            setShowDropdown(null);
+                                                        }}
+                                                        className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                        Delete Post
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                // Non-author options
+                                                <button
+                                                    onClick={() => {
+                                                        handleReport(post);
+                                                        setShowDropdown(null);
+                                                    }}
+                                                    className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                                >
+                                                    <Flag size={16} />
+                                                    Report Post
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -368,16 +501,74 @@ export default function Posts() {
                             </div>
                         </div>
 
-                        {/* Post Media - Only show if there's actual media */}
-                        {post.imageUrl && (
+                        {/* Post Media - Enhanced media display */}
+                        {(post.imageUrl || post.images?.length || post.media?.length) && (
                             <div className="mb-3">
-                                <img 
-                                    src={post.imageUrl} 
-                                    alt="Post content" 
-                                    className="w-full rounded-xl object-cover max-h-96"
-                                />
+                                {/* Single image */}
+                                {post.imageUrl && (
+                                    <img 
+                                        src={post.imageUrl} 
+                                        alt="Post content" 
+                                        className="w-full rounded-xl object-cover max-h-96"
+                                        onError={(e) => {
+                                            console.log('Image failed to load:', post.imageUrl);
+                                            e.currentTarget.style.display = 'none';
+                                        }}
+                                        onLoad={() => console.log('Image loaded successfully:', post.imageUrl)}
+                                    />
+                                )}
+                                
+                                {/* Multiple images */}
+                                {post.images && post.images.length > 0 && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        {post.images.map((imageUrl, index) => (
+                                            <img 
+                                                key={index}
+                                                src={imageUrl} 
+                                                alt={`Post content ${index + 1}`} 
+                                                className="w-full rounded-xl object-cover max-h-96"
+                                                onError={(e) => {
+                                                    console.log('Image failed to load:', imageUrl);
+                                                    e.currentTarget.style.display = 'none';
+                                                }}
+                                                onLoad={() => console.log('Image loaded successfully:', imageUrl)}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                                
+                                {/* Media array */}
+                                {post.media && post.media.length > 0 && (
+                                    <div className="space-y-2">
+                                        {post.media.map((media, index) => (
+                                            <div key={index}>
+                                                {media.type === 'image' ? (
+                                                    <img 
+                                                        src={media.url} 
+                                                        alt={`Post content ${index + 1}`} 
+                                                        className="w-full rounded-xl object-cover max-h-96"
+                                                        onError={(e) => {
+                                                            console.log('Media image failed to load:', media.url);
+                                                            e.currentTarget.style.display = 'none';
+                                                        }}
+                                                        onLoad={() => console.log('Media image loaded successfully:', media.url)}
+                                                    />
+                                                ) : (
+                                                    <video 
+                                                        src={media.url} 
+                                                        controls 
+                                                        className="w-full rounded-xl max-h-96"
+                                                        poster={media.thumbnail}
+                                                    />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
+                        
+                        {/* Single video */}
                         {post.videoUrl && (
                             <div className="mb-3">
                                 <video 
@@ -385,6 +576,20 @@ export default function Posts() {
                                     controls 
                                     className="w-full rounded-xl max-h-96"
                                 />
+                            </div>
+                        )}
+                        
+                        {/* Multiple videos */}
+                        {post.videos && post.videos.length > 0 && (
+                            <div className="mb-3 space-y-2">
+                                {post.videos.map((videoUrl, index) => (
+                                    <video 
+                                        key={index}
+                                        src={videoUrl} 
+                                        controls 
+                                        className="w-full rounded-xl max-h-96"
+                                    />
+                                ))}
                             </div>
                         )}
 
@@ -492,18 +697,30 @@ export default function Posts() {
             )}
 
             {/* Report Modal */}
-            {selectedPost && (
-                <ReportModal
-                    isOpen={showReportModal}
-                    onClose={() => {
-                        setShowReportModal(false);
-                        setSelectedPost(null);
-                    }}
-                    postId={selectedPost.id}
-                    postAuthor={selectedPost.user?.name || 'Unknown'}
-                    onReportSubmitted={handleReportSubmitted}
-                />
-            )}
+        {selectedPost && (
+            <ReportModal
+                isOpen={showReportModal}
+                onClose={() => {
+                    setShowReportModal(false);
+                    setSelectedPost(null);
+                }}
+                postId={selectedPost.id}
+                postAuthor={selectedPost.user?.name || 'Unknown'}
+                onReportSubmitted={handleReportSubmitted}
+            />
+        )}
+
+        {selectedPost && (
+            <EditPostModal
+                isOpen={showEditModal}
+                onClose={() => {
+                    setShowEditModal(false);
+                    setSelectedPost(null);
+                }}
+                post={selectedPost}
+                onPostUpdated={handlePostUpdated}
+            />
+        )}
         </div>
     );
 }

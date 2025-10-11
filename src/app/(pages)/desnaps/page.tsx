@@ -155,24 +155,43 @@ export default function DeSnapsPage() {
                 console.warn('User API failed, trying direct fetch:', userError);
             }
             
-            // Final fallback: Direct fetch to backend
+        // Final fallback: Direct fetch to backend with multiple endpoints
+        try {
+            const directResponse = await fetch('https://demedia-backend.fly.dev/api/desnaps', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (directResponse.ok) {
+                data = await directResponse.json();
+                console.log('Direct DeSnaps data received:', data);
+                setDeSnaps(Array.isArray(data) ? data : []);
+                return;
+            }
+        } catch (directError) {
+            console.warn('Direct fetch failed, trying alternative endpoints:', directError);
+            
+            // Try alternative endpoints
             try {
-                const directResponse = await fetch('https://demedia-backend.fly.dev/api/desnaps', {
+                const altResponse = await fetch('https://demedia-backend.fly.dev/api/snaps', {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json',
                     },
                 });
-                
-                if (directResponse.ok) {
-                    data = await directResponse.json();
-                    console.log('Direct DeSnaps data received:', data);
+
+                if (altResponse.ok) {
+                    data = await altResponse.json();
+                    console.log('Alternative DeSnaps data received:', data);
                     setDeSnaps(Array.isArray(data) ? data : []);
                     return;
                 }
-            } catch (directError) {
-                console.warn('Direct fetch failed:', directError);
+            } catch (altError) {
+                console.warn('Alternative endpoint failed:', altError);
             }
+        }
             
             // If all methods fail, show error but don't crash
             const errorText = response ? await response.text() : 'All fetch methods failed';

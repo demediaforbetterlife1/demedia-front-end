@@ -16,6 +16,7 @@ import {
     EyeOff
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface SearchResult {
     id: number;
@@ -40,6 +41,36 @@ interface ImprovedSearchModalProps {
     onClose: () => void;
 }
 
+// Helper function to try search endpoints with fallback
+const trySearchEndpoint = async (primaryUrl: string, fallbackUrl: string): Promise<any[]> => {
+    const headers = {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json',
+    };
+
+    try {
+        // Try primary endpoint first
+        const response = await fetch(primaryUrl, { headers });
+        if (response.ok) {
+            return await response.json();
+        }
+    } catch (error) {
+        console.warn('Primary search endpoint failed:', error);
+    }
+
+    try {
+        // Try fallback endpoint
+        const response = await fetch(fallbackUrl, { headers });
+        if (response.ok) {
+            return await response.json();
+        }
+    } catch (error) {
+        console.warn('Fallback search endpoint failed:', error);
+    }
+
+    return [];
+};
+
 export default function ImprovedSearchModal({ isOpen, onClose }: ImprovedSearchModalProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -49,6 +80,64 @@ export default function ImprovedSearchModal({ isOpen, onClose }: ImprovedSearchM
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const [showAdultContent, setShowAdultContent] = useState(false);
     const { user } = useAuth();
+    const { theme } = useTheme();
+
+    const getThemeClasses = () => {
+        switch (theme) {
+            case 'light':
+                return {
+                    bg: 'bg-white',
+                    text: 'text-gray-900',
+                    textSecondary: 'text-gray-600',
+                    border: 'border-gray-200',
+                    hover: 'hover:bg-gray-50',
+                    accent: 'text-blue-500',
+                    accentBg: 'bg-blue-50'
+                };
+            case 'super-light':
+                return {
+                    bg: 'bg-gray-50',
+                    text: 'text-gray-800',
+                    textSecondary: 'text-gray-500',
+                    border: 'border-gray-100',
+                    hover: 'hover:bg-gray-100',
+                    accent: 'text-blue-500',
+                    accentBg: 'bg-blue-50'
+                };
+            case 'dark':
+                return {
+                    bg: 'bg-gray-800',
+                    text: 'text-white',
+                    textSecondary: 'text-gray-300',
+                    border: 'border-gray-700',
+                    hover: 'hover:bg-gray-700',
+                    accent: 'text-blue-400',
+                    accentBg: 'bg-blue-900/20'
+                };
+            case 'super-dark':
+                return {
+                    bg: 'bg-gray-900',
+                    text: 'text-gray-100',
+                    textSecondary: 'text-gray-400',
+                    border: 'border-gray-800',
+                    hover: 'hover:bg-gray-800',
+                    accent: 'text-blue-400',
+                    accentBg: 'bg-blue-900/30'
+                };
+            default:
+                return {
+                    bg: 'bg-gray-800',
+                    text: 'text-white',
+                    textSecondary: 'text-gray-300',
+                    border: 'border-gray-700',
+                    hover: 'hover:bg-gray-700',
+                    accent: 'text-blue-400',
+                    accentBg: 'bg-blue-900/20'
+                };
+        }
+    };
+
+    const themeClasses = getThemeClasses();
 
     // Load recent searches from localStorage
     useEffect(() => {
@@ -94,50 +183,46 @@ export default function ImprovedSearchModal({ isOpen, onClose }: ImprovedSearchM
                 includeAdult: showAdultContent ? 'true' : 'false'
             });
 
-            // Make multiple API calls in parallel for better performance
+            // Enhanced search with multiple fallback strategies
             const searchPromises = [];
+            const searchEndpoints = [];
 
             if (activeFilter === 'all' || activeFilter === 'users') {
-                searchPromises.push(
-                    fetch(`/api/search/users?${searchParams}`, {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                            'Content-Type': 'application/json',
-                        },
-                    }).then(res => res.ok ? res.json() : [])
-                );
+                searchEndpoints.push({
+                    url: `/api/search/users?${searchParams}`,
+                    fallback: `https://demedia-backend.fly.dev/api/search/users?${searchParams}`,
+                    type: 'users'
+                });
             }
 
             if (activeFilter === 'all' || activeFilter === 'posts') {
-                searchPromises.push(
-                    fetch(`/api/search/posts?${searchParams}`, {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                            'Content-Type': 'application/json',
-                        },
-                    }).then(res => res.ok ? res.json() : [])
-                );
+                searchEndpoints.push({
+                    url: `/api/search/posts?${searchParams}`,
+                    fallback: `https://demedia-backend.fly.dev/api/search/posts?${searchParams}`,
+                    type: 'posts'
+                });
             }
 
             if (activeFilter === 'all' || activeFilter === 'stories') {
-                searchPromises.push(
-                    fetch(`/api/search/stories?${searchParams}`, {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                            'Content-Type': 'application/json',
-                        },
-                    }).then(res => res.ok ? res.json() : [])
-                );
+                searchEndpoints.push({
+                    url: `/api/search/stories?${searchParams}`,
+                    fallback: `https://demedia-backend.fly.dev/api/search/stories?${searchParams}`,
+                    type: 'stories'
+                });
             }
 
             if (activeFilter === 'all' || activeFilter === 'hashtags') {
+                searchEndpoints.push({
+                    url: `/api/search/hashtags?${searchParams}`,
+                    fallback: `https://demedia-backend.fly.dev/api/search/hashtags?${searchParams}`,
+                    type: 'hashtags'
+                });
+            }
+
+            // Try each endpoint with fallback
+            for (const endpoint of searchEndpoints) {
                 searchPromises.push(
-                    fetch(`/api/search/hashtags?${searchParams}`, {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                            'Content-Type': 'application/json',
-                        },
-                    }).then(res => res.ok ? res.json() : [])
+                    trySearchEndpoint(endpoint.url, endpoint.fallback)
                 );
             }
 
@@ -290,7 +375,7 @@ export default function ImprovedSearchModal({ isOpen, onClose }: ImprovedSearchM
         <AnimatePresence>
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                 <motion.div
-                    className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-2xl max-h-[80vh] shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col"
+                    className={`${themeClasses.bg} rounded-2xl w-full max-w-2xl max-h-[80vh] shadow-2xl border ${themeClasses.border} flex flex-col`}
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 20 }}

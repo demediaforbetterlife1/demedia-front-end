@@ -53,6 +53,28 @@ export default function Suggestions() {
                 setFollowing(prev => new Set([...prev, userId]));
                 // Remove from suggestions after following
                 setSuggestions(prev => prev.filter(s => s.id !== userId));
+
+                // Send follow notification
+                try {
+                    await fetch('/api/notifications', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        },
+                        body: JSON.stringify({
+                            userId: userId,
+                            type: 'follow',
+                            message: `${user?.name || 'Someone'} started following you`,
+                            data: {
+                                followerId: user?.id,
+                                followerName: user?.name
+                            }
+                        })
+                    });
+                } catch (notificationError) {
+                    console.warn('Failed to send follow notification:', notificationError);
+                }
             }
         } catch (error) {
             console.error('Failed to follow user:', error);

@@ -185,24 +185,43 @@ export default function MessagingPage() {
                 console.warn('Chat API failed, trying direct fetch:', chatError);
             }
             
-            // Final fallback: Direct fetch to backend
+        // Final fallback: Direct fetch to backend with multiple endpoints
+        try {
+            const directResponse = await fetch('https://demedia-backend.fly.dev/api/conversations', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (directResponse.ok) {
+                data = await directResponse.json();
+                console.log('Direct conversations data received:', data);
+                setConversations(Array.isArray(data) ? data : []);
+                return;
+            }
+        } catch (directError) {
+            console.warn('Direct fetch failed, trying alternative endpoints:', directError);
+            
+            // Try alternative endpoints
             try {
-                const directResponse = await fetch('https://demedia-backend.fly.dev/api/conversations', {
+                const altResponse = await fetch('https://demedia-backend.fly.dev/api/chat', {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json',
                     },
                 });
-                
-                if (directResponse.ok) {
-                    data = await directResponse.json();
-                    console.log('Direct conversations data received:', data);
+
+                if (altResponse.ok) {
+                    data = await altResponse.json();
+                    console.log('Alternative conversations data received:', data);
                     setConversations(Array.isArray(data) ? data : []);
                     return;
                 }
-            } catch (directError) {
-                console.warn('Direct fetch failed:', directError);
+            } catch (altError) {
+                console.warn('Alternative endpoint failed:', altError);
             }
+        }
             
             // If all methods fail, show error but don't crash
             const errorText = response ? await response.text() : 'All fetch methods failed';
