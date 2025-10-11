@@ -1530,15 +1530,68 @@ const UserPosts = ({
         if (!postToDelete) return;
 
         try {
-            const response = await apiFetch(`/api/posts/${postToDelete.id}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' }
-            });
+            // Try multiple delete endpoints
+            let response;
+            let success = false;
 
-            if (response.ok) {
+            // First try the standard delete endpoint
+            try {
+                response = await apiFetch(`/api/posts/${postToDelete.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    success = true;
+                } else {
+                    throw new Error('Standard delete endpoint failed');
+                }
+            } catch (standardError) {
+                console.warn('Standard delete failed, trying alternative:', standardError);
+                
+                // Try alternative delete endpoint
+                try {
+                    response = await fetch(`/api/posts/${postToDelete.id}/delete`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        }
+                    });
+
+                    if (response.ok) {
+                        success = true;
+                    } else {
+                        throw new Error('Alternative delete endpoint failed');
+                    }
+                } catch (altError) {
+                    console.warn('Alternative delete failed, trying direct backend:', altError);
+                    
+                    // Try direct backend call
+                    response = await fetch(`https://demedia-backend.fly.dev/api/posts/${postToDelete.id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        }
+                    });
+
+                    if (response.ok) {
+                        success = true;
+                    } else {
+                        throw new Error('All delete endpoints failed');
+                    }
+                }
+            }
+
+            if (success) {
                 setPosts(prev => prev.filter(p => p.id !== postToDelete.id));
                 setShowDeleteConfirm(false);
                 setPostToDelete(null);
+                // Show success message
+                console.log('Post deleted successfully');
+            } else {
+                console.error('Failed to delete post');
             }
         } catch (error) {
             console.error('Error deleting post:', error);
@@ -1578,102 +1631,154 @@ const UserPosts = ({
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             {posts.map((post) => (
-                <div key={post.id} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                    <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0">
+                <motion.div 
+                    key={post.id} 
+                    className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-2xl p-6 border border-gray-700/50 shadow-xl backdrop-blur-sm"
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    {/* Post Header */}
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-start space-x-4">
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => window.location.href = `/profile?userId=${post.author?.id}`}
-                                className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold hover:shadow-lg transition-all duration-300 cursor-pointer"
+                                className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold hover:shadow-lg transition-all duration-300 cursor-pointer ring-2 ring-cyan-500/20"
                             >
                                 {post.author?.name?.charAt(0) || 'U'}
                             </motion.button>
-                        </div>
-                        <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                                <div>
-                                    <h3 className="font-semibold text-white">{post.author?.name || 'Unknown User'}</h3>
-                                    <p className="text-sm text-gray-400">@{post.author?.username || 'unknown'}</p>
-                                </div>
-                                {/* Edit/Delete buttons - only show for current user's posts */}
-                                {user?.id && Number(user.id) === Number(userId) && (
-                                    <div className="flex items-center space-x-2">
-                                        <motion.button
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 0.95 }}
-                                            onClick={() => handleEdit(post)}
-                                            className="p-2 rounded-full bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
-                                            title="Edit Post"
-                                        >
-                                            <Edit size={16} />
-                                        </motion.button>
-                                        <motion.button
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 0.95 }}
-                                            onClick={() => handleDelete(post)}
-                                            className="p-2 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors"
-                                            title="Delete Post"
-                                        >
-                                            <Trash2 size={16} />
-                                        </motion.button>
+                            <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-1">
+                                    <h3 className="font-bold text-white text-lg">{post.author?.name || 'Unknown User'}</h3>
+                                    <div className="flex items-center space-x-1">
+                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                        <span className="text-xs text-green-400">Online</span>
                                     </div>
-                                )}
+                                </div>
+                                <p className="text-sm text-gray-400 mb-1">@{post.author?.username || 'unknown'}</p>
+                                <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                    <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                                    <span>•</span>
+                                    <span>{new Date(post.createdAt).toLocaleTimeString()}</span>
+                                </div>
                             </div>
-                            <div className="flex items-center space-x-2 mb-2">
+                        </div>
+                        
+                        {/* Edit/Delete buttons - only show for current user's posts */}
+                        {user?.id && Number(user.id) === Number(userId) && (
+                            <div className="flex items-center space-x-2">
                                 <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    onClick={() => window.location.href = `/profile?userId=${post.author?.id}`}
-                                    className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer"
-                                >
-                                    {post.author?.name || 'Unknown'}
-                                </motion.button>
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    onClick={() => window.location.href = `/profile?userId=${post.author?.id}`}
-                                    className="text-gray-400 text-sm hover:text-cyan-400 transition-colors cursor-pointer"
-                                >
-                                    @{post.author?.username || 'unknown'}
-                                </motion.button>
-                                <span className="text-gray-500 text-sm">•</span>
-                                <span className="text-gray-500 text-sm">{new Date(post.createdAt).toLocaleDateString()}</span>
-                            </div>
-                                <p className="text-gray-300 mb-3">{post.content}</p>
-                            <div className="flex items-center space-x-4 text-gray-400">
-                                <motion.button 
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="flex items-center space-x-1 hover:text-red-400 transition-colors"
+                                    onClick={() => handleEdit(post)}
+                                    className="p-3 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-all duration-300 border border-blue-500/30"
+                                    title="Edit Post"
                                 >
-                                    <Heart size={16} />
-                                    <span>{post.likes || 0}</span>
+                                    <Edit size={18} />
                                 </motion.button>
-                                <motion.button 
+                                <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => {
-                                        setSelectedPost(post);
-                                        setShowCommentModal(true);
+                                    onClick={() => handleDelete(post)}
+                                    className="p-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-all duration-300 border border-red-500/30"
+                                    title="Delete Post"
+                                >
+                                    <Trash2 size={18} />
+                                </motion.button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Post Content */}
+                    <div className="mb-4">
+                        {post.title && (
+                            <h2 className="text-xl font-bold text-white mb-3 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                                {post.title}
+                            </h2>
+                        )}
+                        <p className="text-gray-300 text-base leading-relaxed whitespace-pre-wrap">
+                            {post.content}
+                        </p>
+                    </div>
+
+                    {/* Post Media */}
+                    {(post.imageUrl || post.images?.length || post.media?.length) && (
+                        <div className="mb-4">
+                            {post.imageUrl && (
+                                <img 
+                                    src={post.imageUrl} 
+                                    alt="Post content" 
+                                    className="w-full rounded-xl object-cover max-h-96 shadow-lg"
+                                    onError={(e) => {
+                                        console.log('Image failed to load:', post.imageUrl);
+                                        e.currentTarget.style.display = 'none';
                                     }}
-                                    className="flex items-center space-x-1 hover:text-blue-400 transition-colors"
-                                >
-                                    <MessageCircle size={16} />
-                                    <span>{post.comments || 0}</span>
-                                </motion.button>
-                                <motion.button 
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className="flex items-center space-x-1 hover:text-green-400 transition-colors"
-                                >
-                                    <Share size={16} />
-                                    <span>Share</span>
-                                </motion.button>
-                            </div>
+                                />
+                            )}
+                            
+                            {post.images && post.images.length > 0 && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {post.images.map((imageUrl: string, index: number) => (
+                                        <img 
+                                            key={index}
+                                            src={imageUrl} 
+                                            alt={`Post content ${index + 1}`} 
+                                            className="w-full rounded-xl object-cover max-h-64 shadow-lg"
+                                            onError={(e) => {
+                                                console.log('Image failed to load:', imageUrl);
+                                                e.currentTarget.style.display = 'none';
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Post Actions */}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-700/50">
+                        <div className="flex items-center space-x-6">
+                            <motion.button 
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="flex items-center space-x-2 text-gray-400 hover:text-red-400 transition-colors"
+                            >
+                                <Heart size={20} />
+                                <span className="font-medium">{post.likes || 0}</span>
+                            </motion.button>
+                            <motion.button 
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => {
+                                    setSelectedPost(post);
+                                    setShowCommentModal(true);
+                                }}
+                                className="flex items-center space-x-2 text-gray-400 hover:text-blue-400 transition-colors"
+                            >
+                                <MessageCircle size={20} />
+                                <span className="font-medium">{post.comments || 0}</span>
+                            </motion.button>
+                            <motion.button 
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="flex items-center space-x-2 text-gray-400 hover:text-green-400 transition-colors"
+                            >
+                                <Share size={20} />
+                                <span className="font-medium">Share</span>
+                            </motion.button>
+                        </div>
+                        
+                        {/* Engagement Stats */}
+                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            <span>{post.views || 0} views</span>
+                            <span>•</span>
+                            <span>{post.likes || 0} likes</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
             ))}
             
             {/* Comment Modal */}

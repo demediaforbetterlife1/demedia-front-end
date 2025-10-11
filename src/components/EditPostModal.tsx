@@ -161,29 +161,92 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }: 
         setError(null);
 
         try {
-            const response = await fetch(`/api/posts/${post.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                },
-                body: JSON.stringify({
-                    title: title.trim() || null,
-                    content: content.trim(),
-                    hashtags,
-                    mentions,
-                    location: location.trim() || null,
-                    privacySettings
-                })
-            });
+            // Try multiple API endpoints for editing
+            let response;
+            let updatedPost;
 
-            if (response.ok) {
-                const updatedPost = await response.json();
+            // First try the standard edit endpoint
+            try {
+                response = await fetch(`/api/posts/${post.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    },
+                    body: JSON.stringify({
+                        title: title.trim() || null,
+                        content: content.trim(),
+                        hashtags,
+                        mentions,
+                        location: location.trim() || null,
+                        privacySettings
+                    })
+                });
+
+                if (response.ok) {
+                    updatedPost = await response.json();
+                } else {
+                    throw new Error('Standard edit endpoint failed');
+                }
+            } catch (standardError) {
+                console.warn('Standard edit failed, trying alternative:', standardError);
+                
+                // Try alternative edit endpoint
+                try {
+                    response = await fetch(`/api/posts/${post.id}/edit`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        },
+                        body: JSON.stringify({
+                            title: title.trim() || null,
+                            content: content.trim(),
+                            hashtags,
+                            mentions,
+                            location: location.trim() || null,
+                            privacySettings
+                        })
+                    });
+
+                    if (response.ok) {
+                        updatedPost = await response.json();
+                    } else {
+                        throw new Error('Alternative edit endpoint failed');
+                    }
+                } catch (altError) {
+                    console.warn('Alternative edit failed, trying direct backend:', altError);
+                    
+                    // Try direct backend call
+                    response = await fetch(`https://demedia-backend.fly.dev/api/posts/${post.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        },
+                        body: JSON.stringify({
+                            title: title.trim() || null,
+                            content: content.trim(),
+                            hashtags,
+                            mentions,
+                            location: location.trim() || null,
+                            privacySettings
+                        })
+                    });
+
+                    if (response.ok) {
+                        updatedPost = await response.json();
+                    } else {
+                        throw new Error('All edit endpoints failed');
+                    }
+                }
+            }
+
+            if (updatedPost) {
                 onPostUpdated(updatedPost);
                 onClose();
             } else {
-                const errorData = await response.json();
-                setError(errorData.error || 'Failed to update post');
+                setError('Failed to update post - no response data');
             }
         } catch (error) {
             console.error('Error updating post:', error);

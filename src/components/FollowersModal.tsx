@@ -101,27 +101,74 @@ export default function FollowersModal({ isOpen, onClose, userId, type }: Follow
             setLoading(true);
             setError(null);
 
-            const endpoint = type === 'followers' 
-                ? `/api/users/${userId}/followers`
-                : `/api/users/${userId}/following`;
+            let response;
+            let data;
 
-            const response = await apiFetch(endpoint);
-            
-            if (response.ok) {
-                const data = await response.json();
-                setFollowers(data[type] || []);
+            // Try multiple endpoints with fallback
+            try {
+                // First try the main endpoint
+                const endpoint = type === 'followers' 
+                    ? `/api/users/${userId}/followers`
+                    : `/api/users/${userId}/following`;
+
+                response = await apiFetch(endpoint);
                 
-                // Check which users the current user is following
-                if (user?.id) {
-                    const followingIds = data[type]?.map((f: Follower) => f.id) || [];
-                    setFollowing(new Set(followingIds));
+                if (response.ok) {
+                    data = await response.json();
+                    setFollowers(data[type] || data || []);
+                    return;
                 }
-            } else {
-                setError('Failed to fetch followers');
+            } catch (apiError) {
+                console.warn('Main API failed, trying fallback:', apiError);
             }
+
+            // Fallback: Try alternative endpoints
+            try {
+                const altEndpoint = type === 'followers' 
+                    ? `/api/followers/${userId}`
+                    : `/api/following/${userId}`;
+
+                response = await apiFetch(altEndpoint);
+                
+                if (response.ok) {
+                    data = await response.json();
+                    setFollowers(data[type] || data || []);
+                    return;
+                }
+            } catch (altError) {
+                console.warn('Alternative API failed, trying direct fetch:', altError);
+            }
+
+            // Final fallback: Direct fetch to backend
+            try {
+                const directEndpoint = type === 'followers' 
+                    ? `https://demedia-backend.fly.dev/api/users/${userId}/followers`
+                    : `https://demedia-backend.fly.dev/api/users/${userId}/following`;
+
+                response = await fetch(directEndpoint, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (response.ok) {
+                    data = await response.json();
+                    setFollowers(data[type] || data || []);
+                    return;
+                }
+            } catch (directError) {
+                console.warn('Direct fetch failed:', directError);
+            }
+
+            // If all methods fail, show error but don't crash
+            setError(`Unable to fetch ${type}. Please check your connection and try again.`);
+            setFollowers([]);
+            
         } catch (err) {
             console.error('Error fetching followers:', err);
             setError('Failed to load followers');
+            setFollowers([]);
         } finally {
             setLoading(false);
         }
