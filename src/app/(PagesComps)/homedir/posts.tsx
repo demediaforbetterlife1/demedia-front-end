@@ -23,6 +23,7 @@ type PostType = {
     bookmarked?: boolean;
     views?: number;
     user?: {
+        id?: number;
         name?: string;
         username?: string;
         profilePicture?: string;

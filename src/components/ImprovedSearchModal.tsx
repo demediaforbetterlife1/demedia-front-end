@@ -146,7 +146,7 @@ export default function ImprovedSearchModal({ isOpen, onClose }: ImprovedSearchM
 
             // Process results based on active filter
             if (activeFilter === 'all' || activeFilter === 'users') {
-                const users = results[0] || 0] || [];
+                const users = results[0] || [];
                 allResults.push(...users.map((user: any) => ({
                     ...user,
                     type: 'user' as const
