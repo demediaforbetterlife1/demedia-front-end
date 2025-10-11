@@ -6,15 +6,33 @@ export async function GET(
 ) {
   try {
     const { id: userId } = await params;
-    
+
     // Get the authorization token
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
     }
 
-    // Since the backend doesn't have this endpoint, create sample following data
-    // This will work until the backend implements the endpoint
+    // Try to connect to the actual backend first
+    try {
+      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/users/${userId}/following`, {
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (backendResponse.ok) {
+        const data = await backendResponse.json();
+        return NextResponse.json(data);
+      } else {
+        console.log('Backend following fetch failed, using fallback');
+      }
+    } catch (backendError) {
+      console.log('Backend not available for following, using fallback');
+    }
+
+    // Fallback: Create sample following data
     const following = [
       {
         id: 4,
@@ -44,7 +62,7 @@ export async function GET(
         followedAt: '2024-02-20T08:45:00Z'
       }
     ];
-    
+
     return NextResponse.json({ following });
   } catch (error) {
     console.error('Error fetching following:', error);

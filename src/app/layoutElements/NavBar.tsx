@@ -161,18 +161,26 @@ export default function Navbar() {
                             placeholder="Search users, posts..."
                             value={searchQuery}
                             onChange={handleSearchInputChange}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    handleSearchSubmit(searchQuery);
+                                }
+                            }}
                             onBlur={() => setTimeout(() => hideSearchResults(), 200)}
-                            className="w-full px-5 py-2 rounded-full theme-bg-tertiary/60 theme-text-primary placeholder-gray-400
+                            className="w-full px-5 py-3 rounded-full theme-bg-tertiary/60 theme-text-primary placeholder-gray-400
                      border theme-border focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500
-                     outline-none transition"
+                     outline-none transition-all duration-200 shadow-lg hover:shadow-xl"
                         />
                     <div className="absolute inset-y-0 right-4 flex items-center gap-2 text-cyan-400">
                         <button
                             onClick={() => setShowEnhancedSearch(true)}
-                            className="p-1 hover:bg-cyan-500/20 rounded-full transition-colors"
+                            className="p-1.5 hover:bg-cyan-500/20 rounded-full transition-colors"
                             title="Enhanced Search"
                         >
-                            <IoChatbubbleEllipsesOutline size={18} />
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
                         </button>
                         {isSearching && (
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-400"></div>
@@ -238,6 +246,8 @@ export default function Navbar() {
 
                 <div className="flex items-center space-x-4">
                     <LanguageSwitcher />
+                    
+                    {/* Home Button */}
                     <button
                         onClick={() => router.push('/home')}
                         className="w-10 h-10 rounded-full theme-bg-tertiary/60 flex items-center justify-center
@@ -250,16 +260,30 @@ export default function Navbar() {
                             <polyline points="9,22 9,12 15,12 15,22"/>
                         </svg>
                     </button>
+
+                    {/* Profile Button */}
+                    <button
+                        onClick={() => router.push('/profile')}
+                        className="w-10 h-10 rounded-full theme-bg-tertiary/60 flex items-center justify-center
+                       theme-text-muted hover:text-cyan-400 hover:shadow-[0_0_12px_rgba(34,211,238,0.5)]
+                       transition"
+                        title="Profile"
+                    >
+                        <IoPersonOutline size={22} />
+                    </button>
+
+                    {/* Messages Button */}
                     <button
                         onClick={() => router.push('/messeging')}
                         className="w-10 h-10 rounded-full theme-bg-tertiary/60 flex items-center justify-center
                        theme-text-muted hover:text-purple-400 hover:shadow-[0_0_12px_rgba(168,85,247,0.5)]
                        transition"
-                        title="Chat"
+                        title="Messages"
                     >
                         <IoChatbubbleEllipsesOutline size={22} />
                     </button>
 
+                    {/* Add Post Button */}
                     <button
                         onClick={() => setShowAddPost(true)}
                         className="w-10 h-10 rounded-full theme-bg-tertiary/60 flex items-center justify-center
@@ -268,6 +292,20 @@ export default function Navbar() {
                         title="Add Post"
                     >
                         <span className="text-lg font-bold">+</span>
+                    </button>
+
+                    {/* DeSnaps Button */}
+                    <button
+                        onClick={() => router.push('/desnaps')}
+                        className="w-10 h-10 rounded-full theme-bg-tertiary/60 flex items-center justify-center
+                       theme-text-muted hover:text-orange-400 hover:shadow-[0_0_12px_rgba(251,146,60,0.5)]
+                       transition"
+                        title="DeSnaps"
+                    >
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                            <circle cx="12" cy="13" r="3"/>
+                        </svg>
                     </button>
 
                     <div className="relative">
