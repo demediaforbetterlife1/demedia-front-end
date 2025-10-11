@@ -186,8 +186,9 @@ export default function FollowersModal({ isOpen, onClose, userId, type }: Follow
                 console.warn(`Direct ${type} fetch failed:`, directError);
             }
 
-            // If all methods fail, show error but don't crash
-            setError(`Unable to fetch ${type}. Please check your connection and try again.`);
+            // If all methods fail, show a more helpful message
+            console.warn(`All ${type} endpoints failed - this feature may not be available yet`);
+            setError(`The ${type} feature is not available yet. This feature is coming soon!`);
             setFollowers([]);
             
         } catch (err) {

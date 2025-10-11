@@ -223,10 +223,9 @@ export default function MessagingPage() {
             }
         }
             
-            // If all methods fail, show error but don't crash
-            const errorText = response ? await response.text() : 'All fetch methods failed';
-            console.error('All conversation fetch methods failed:', errorText);
-            setError(`Unable to fetch conversations. Please check your connection and try again.`);
+            // If all methods fail, show a more helpful message
+            console.warn('All conversation endpoints failed - this feature may not be available yet');
+            setError(`The messaging feature is not available yet. This feature is coming soon!`);
             setConversations([]);
             
         } catch (err) {
