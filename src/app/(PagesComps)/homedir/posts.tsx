@@ -10,10 +10,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { useNotifications } from "@/components/NotificationProvider";
 import CommentModal from "@/components/CommentModal";
+import ReportModal from "@/components/ReportModal";
 import { apiFetch } from "@/lib/api";
 
 type PostType = {
     id: number;
+    title?: string;
     content: string;
     likes: number;
     comments: number;
@@ -35,6 +37,7 @@ export default function Posts() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showCommentModal, setShowCommentModal] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
     const [selectedPost, setSelectedPost] = useState<PostType | null>(null);
     const { user } = useAuth();
     const { t } = useI18n();
@@ -214,17 +217,29 @@ export default function Posts() {
         }
     };
 
-    const handleReport = async (postId: number) => {
+    const handleReport = (post: PostType) => {
+        setSelectedPost(post);
+        setShowReportModal(true);
+    };
+
+    const handleReportSubmitted = async (reason: string, details: string) => {
+        if (!selectedPost) return;
+
         try {
-            // Call API to report the post
-            await apiFetch(`/api/posts/${postId}/report`, {
+            // Call API to report the post with reason and details
+            await apiFetch(`/api/posts/${selectedPost.id}/report`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    reason,
+                    details,
+                    postId: selectedPost.id
+                })
             });
-            showSuccess('Post Reported', 'Post reported successfully');
+            showSuccess('Post Reported', 'Thank you for your report. We will review it shortly.');
         } catch (error: unknown) {
             console.error('Error reporting post:', error);
-            showError('Report Failed', 'Failed to report post');
+            showError('Report Failed', 'Failed to submit report. Please try again.');
         }
     };
 
@@ -283,9 +298,14 @@ export default function Posts() {
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center space-x-3">
                                 <div className="relative">
-                                <div className="w-10 h-10 rounded-full theme-bg-tertiary flex items-center justify-center theme-text-secondary font-bold">
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => window.location.href = `/profile?userId=${post.user?.id || post.id}`}
+                                    className="w-10 h-10 rounded-full theme-bg-tertiary flex items-center justify-center theme-text-secondary font-bold hover:shadow-lg transition-all duration-300 cursor-pointer"
+                                >
                                     {post.user?.name?.charAt(0) ?? "U"}
-                                    </div>
+                                </motion.button>
                                     {/* Online Status Indicator */}
                                     <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
                                 </div>
@@ -311,7 +331,7 @@ export default function Posts() {
                                 )}
                                 <button 
                                     className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                    onClick={() => handleReport(post.id)}
+                                    onClick={() => handleReport(post)}
                                 >
                                     <MoreHorizontal size={16} className="theme-text-muted" />
                                 </button>
@@ -320,6 +340,9 @@ export default function Posts() {
 
                         {/* Content */}
                         <div className="mb-3">
+                            {post.title && (
+                                <h3 className="text-lg font-semibold theme-text-primary mb-2">{post.title}</h3>
+                            )}
                             <p className="theme-text-secondary">{post.content}</p>
                             {/* Engagement Indicators */}
                             <div className="flex items-center gap-2 mt-2">
@@ -435,7 +458,7 @@ export default function Posts() {
                                 </button>
                                 <button 
                                     className="flex items-center gap-1 hover:text-red-500 cursor-pointer transition-colors"
-                                    onClick={() => handleReport(post.id)}
+                                    onClick={() => handleReport(post)}
                                 >
                                     <Flag size={18} />
                                 </button>
@@ -464,6 +487,20 @@ export default function Posts() {
                     postId={selectedPost.id}
                     postContent={selectedPost.content}
                     postAuthor={selectedPost.user?.name || 'Unknown'}
+                />
+            )}
+
+            {/* Report Modal */}
+            {selectedPost && (
+                <ReportModal
+                    isOpen={showReportModal}
+                    onClose={() => {
+                        setShowReportModal(false);
+                        setSelectedPost(null);
+                    }}
+                    postId={selectedPost.id}
+                    postAuthor={selectedPost.user?.name || 'Unknown'}
+                    onReportSubmitted={handleReportSubmitted}
                 />
             )}
         </div>

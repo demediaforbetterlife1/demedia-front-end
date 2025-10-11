@@ -153,23 +153,66 @@ export default function MessagingPage() {
             
             console.log('Fetching conversations...');
             
-            const response = await apiFetch('/api/conversations');
+            // Try multiple endpoints with fallback
+            let response;
+            let data;
             
-            console.log('Conversations API response:', response.status, response.ok);
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Conversations data received:', data);
-                setConversations(Array.isArray(data) ? data : []);
-            } else {
-                const errorText = await response.text();
-                console.error('API response not ok:', response.status, response.statusText, errorText);
-                setError(`Failed to fetch conversations: ${response.status} - ${response.statusText}`);
+            try {
+                // First try the main conversations endpoint
+                response = await apiFetch('/api/conversations');
+                console.log('Conversations API response:', response.status, response.ok);
+                
+                if (response.ok) {
+                    data = await response.json();
+                    console.log('Conversations data received:', data);
+                    setConversations(Array.isArray(data) ? data : []);
+                    return;
+                }
+            } catch (apiError) {
+                console.warn('Main API failed, trying fallback:', apiError);
             }
+            
+            // Fallback: Try chat endpoint
+            try {
+                response = await apiFetch('/api/chat');
+                if (response.ok) {
+                    data = await response.json();
+                    console.log('Chat data received:', data);
+                    setConversations(Array.isArray(data) ? data : []);
+                    return;
+                }
+            } catch (chatError) {
+                console.warn('Chat API failed, trying direct fetch:', chatError);
+            }
+            
+            // Final fallback: Direct fetch to backend
+            try {
+                const directResponse = await fetch('https://demedia-backend.fly.dev/api/conversations', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                if (directResponse.ok) {
+                    data = await directResponse.json();
+                    console.log('Direct conversations data received:', data);
+                    setConversations(Array.isArray(data) ? data : []);
+                    return;
+                }
+            } catch (directError) {
+                console.warn('Direct fetch failed:', directError);
+            }
+            
+            // If all methods fail, show error but don't crash
+            const errorText = response ? await response.text() : 'All fetch methods failed';
+            console.error('All conversation fetch methods failed:', errorText);
+            setError(`Unable to fetch conversations. Please check your connection and try again.`);
+            setConversations([]);
+            
         } catch (err) {
             console.error('Error fetching conversations:', err);
             setError(`Network error: ${err instanceof Error ? err.message : 'Unable to fetch conversations'}`);
-            // Set empty array as fallback
             setConversations([]);
         } finally {
             setLoading(false);
@@ -179,20 +222,53 @@ export default function MessagingPage() {
     const fetchMessages = async (conversationId: number) => {
         try {
             console.log('Fetching messages for conversation:', conversationId);
-            const response = await apiFetch(`/api/conversations/${conversationId}/messages`);
             
-            console.log('Messages API response:', response.status, response.ok);
+            // Try multiple endpoints with fallback
+            let response;
+            let data;
             
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Messages data received:', data);
-                setMessages(Array.isArray(data) ? data : []);
-            } else {
-                const errorText = await response.text();
-                console.error('Failed to fetch messages:', response.status, response.statusText, errorText);
+            try {
+                // First try the main messages endpoint
+                response = await apiFetch(`/api/conversations/${conversationId}/messages`);
+                console.log('Messages API response:', response.status, response.ok);
+                
+                if (response.ok) {
+                    data = await response.json();
+                    console.log('Messages data received:', data);
+                    setMessages(Array.isArray(data) ? data : []);
+                    return;
+                }
+            } catch (apiError) {
+                console.warn('Main API failed, trying fallback:', apiError);
             }
+            
+            // Fallback: Try direct fetch to backend
+            try {
+                const directResponse = await fetch(`https://demedia-backend.fly.dev/api/conversations/${conversationId}/messages`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                if (directResponse.ok) {
+                    data = await directResponse.json();
+                    console.log('Direct messages data received:', data);
+                    setMessages(Array.isArray(data) ? data : []);
+                    return;
+                }
+            } catch (directError) {
+                console.warn('Direct fetch failed:', directError);
+            }
+            
+            // If all methods fail, show error but don't crash
+            const errorText = response ? await response.text() : 'All fetch methods failed';
+            console.error('All message fetch methods failed:', errorText);
+            setMessages([]);
+            
         } catch (err) {
             console.error('Failed to fetch messages:', err);
+            setMessages([]);
         }
     };
 

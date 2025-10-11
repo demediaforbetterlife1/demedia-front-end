@@ -216,24 +216,35 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
                 return;
             }
 
-            const postData = {
-                title: title || content.substring(0, 50) + (content.length > 50 ? "..." : "") || "New Post",
-                content,
-                authorId: parseInt(userId),
-                privacySettings,
-                hashtags,
-                mentions,
-                location: location || null,
-                scheduledDate: isScheduled && scheduleDate ? new Date(scheduleDate).toISOString() : null
-            };
+            // Create FormData to handle file uploads
+            const formData = new FormData();
+            formData.append('title', title || content.substring(0, 50) + (content.length > 50 ? "..." : "") || "New Post");
+            formData.append('content', content);
+            formData.append('authorId', userId);
+            formData.append('privacySettings', JSON.stringify(privacySettings));
+            formData.append('hashtags', JSON.stringify(hashtags));
+            formData.append('mentions', JSON.stringify(mentions));
+            formData.append('location', location || '');
+            if (isScheduled && scheduleDate) {
+                formData.append('scheduledDate', new Date(scheduleDate).toISOString());
+            }
+
+            // Add images
+            images.forEach((image, index) => {
+                formData.append(`images`, image);
+            });
+
+            // Add videos
+            videos.forEach((video, index) => {
+                formData.append(`videos`, video);
+            });
 
             const res = await fetch(`/api/posts`, {
                 method: "POST",
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(postData),
+                body: formData,
             });
 
             if (!res.ok) {

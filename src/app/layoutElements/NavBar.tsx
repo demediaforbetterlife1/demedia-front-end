@@ -17,6 +17,7 @@ import SettingsItems from "@/app/(PagesComps)/settingsdir/settingsItems";
 import { useRouter } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useSearch } from "@/hooks/useSearch";
+import ImprovedSearchModal from "@/components/ImprovedSearchModal";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import EnhancedSearchModal from "@/components/EnhancedSearchModal";
 
@@ -676,8 +677,8 @@ export default function Navbar() {
                 </div>
             )}
 
-            {/* Enhanced Search Modal */}
-            <EnhancedSearchModal
+            {/* Improved Search Modal */}
+            <ImprovedSearchModal
                 isOpen={showEnhancedSearch}
                 onClose={() => setShowEnhancedSearch(false)}
             />

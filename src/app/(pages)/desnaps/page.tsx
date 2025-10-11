@@ -121,24 +121,68 @@ export default function DeSnapsPage() {
             
             console.log('Fetching DeSnaps with filter:', filter);
             
-            // Try the API endpoint with proper error handling
-            const response = await apiFetch(`/api/desnaps?filter=${filter}`);
+            // Try multiple endpoints with fallback
+            let response;
+            let data;
             
-            console.log('DeSnaps API response:', response.status, response.ok);
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('DeSnaps data received:', data);
-                setDeSnaps(Array.isArray(data) ? data : []);
-            } else {
-                const errorText = await response.text();
-                console.error('API response not ok:', response.status, response.statusText, errorText);
-                setError(`Failed to fetch DeSnaps: ${response.status} - ${response.statusText}`);
+            try {
+                // First try the main DeSnaps endpoint
+                response = await apiFetch(`/api/desnaps?filter=${filter}`);
+                console.log('DeSnaps API response:', response.status, response.ok);
+                
+                if (response.ok) {
+                    data = await response.json();
+                    console.log('DeSnaps data received:', data);
+                    setDeSnaps(Array.isArray(data) ? data : []);
+                    return;
+                }
+            } catch (apiError) {
+                console.warn('Main API failed, trying fallback:', apiError);
             }
+            
+            // Fallback: Try to fetch from user-specific endpoint
+            try {
+                if (user?.id) {
+                    response = await apiFetch(`/api/desnaps/user/${user.id}`);
+                    if (response.ok) {
+                        data = await response.json();
+                        console.log('User DeSnaps data received:', data);
+                        setDeSnaps(Array.isArray(data) ? data : []);
+                        return;
+                    }
+                }
+            } catch (userError) {
+                console.warn('User API failed, trying direct fetch:', userError);
+            }
+            
+            // Final fallback: Direct fetch to backend
+            try {
+                const directResponse = await fetch('https://demedia-backend.fly.dev/api/desnaps', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                if (directResponse.ok) {
+                    data = await directResponse.json();
+                    console.log('Direct DeSnaps data received:', data);
+                    setDeSnaps(Array.isArray(data) ? data : []);
+                    return;
+                }
+            } catch (directError) {
+                console.warn('Direct fetch failed:', directError);
+            }
+            
+            // If all methods fail, show error but don't crash
+            const errorText = response ? await response.text() : 'All fetch methods failed';
+            console.error('All DeSnaps fetch methods failed:', errorText);
+            setError(`Unable to fetch DeSnaps. Please check your connection and try again.`);
+            setDeSnaps([]);
+            
         } catch (err) {
             console.error('Error fetching DeSnaps:', err);
             setError(`Network error: ${err instanceof Error ? err.message : 'Unable to fetch DeSnaps'}`);
-            // Set empty array as fallback
             setDeSnaps([]);
         } finally {
             setLoading(false);
