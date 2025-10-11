@@ -165,7 +165,7 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }: 
             let response;
             let updatedPost;
 
-            // First try the standard edit endpoint
+            // First try the standard edit endpoint through proxy
             try {
                 response = await fetch(`/api/posts/${post.id}`, {
                     method: 'PUT',
@@ -186,14 +186,16 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }: 
                 if (response.ok) {
                     updatedPost = await response.json();
                 } else {
-                    throw new Error('Standard edit endpoint failed');
+                    const errorText = await response.text();
+                    console.warn('Standard edit failed:', response.status, errorText);
+                    throw new Error(`Standard edit failed: ${response.status}`);
                 }
             } catch (standardError) {
                 console.warn('Standard edit failed, trying alternative:', standardError);
                 
                 // Try alternative edit endpoint
                 try {
-                    response = await fetch(`/api/posts/${post.id}/edit`, {
+                    response = await fetch(`/api/posts/${post.id}/update`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -212,31 +214,40 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }: 
                     if (response.ok) {
                         updatedPost = await response.json();
                     } else {
-                        throw new Error('Alternative edit endpoint failed');
+                        const errorText = await response.text();
+                        console.warn('Alternative edit failed:', response.status, errorText);
+                        throw new Error(`Alternative edit failed: ${response.status}`);
                     }
                 } catch (altError) {
                     console.warn('Alternative edit failed, trying direct backend:', altError);
                     
                     // Try direct backend call
-                    response = await fetch(`https://demedia-backend.fly.dev/api/posts/${post.id}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        },
-                        body: JSON.stringify({
-                            title: title.trim() || null,
-                            content: content.trim(),
-                            hashtags,
-                            mentions,
-                            location: location.trim() || null,
-                            privacySettings
-                        })
-                    });
+                    try {
+                        response = await fetch(`https://demedia-backend.fly.dev/api/posts/${post.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                            },
+                            body: JSON.stringify({
+                                title: title.trim() || null,
+                                content: content.trim(),
+                                hashtags,
+                                mentions,
+                                location: location.trim() || null,
+                                privacySettings
+                            })
+                        });
 
-                    if (response.ok) {
-                        updatedPost = await response.json();
-                    } else {
+                        if (response.ok) {
+                            updatedPost = await response.json();
+                        } else {
+                            const errorText = await response.text();
+                            console.warn('Direct backend edit failed:', response.status, errorText);
+                            throw new Error(`Direct backend edit failed: ${response.status}`);
+                        }
+                    } catch (directError) {
+                        console.error('All edit methods failed:', directError);
                         throw new Error('All edit endpoints failed');
                     }
                 }
@@ -250,7 +261,7 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }: 
             }
         } catch (error) {
             console.error('Error updating post:', error);
-            setError('Failed to update post. Please try again.');
+            setError(`Failed to update post: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsSubmitting(false);
         }

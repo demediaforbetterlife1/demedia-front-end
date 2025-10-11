@@ -106,20 +106,30 @@ export default function FollowersModal({ isOpen, onClose, userId, type }: Follow
 
             // Try multiple endpoints with fallback
             try {
-                // First try the main endpoint
+                // First try the main endpoint through proxy
                 const endpoint = type === 'followers' 
                     ? `/api/users/${userId}/followers`
                     : `/api/users/${userId}/following`;
 
-                response = await apiFetch(endpoint);
+                response = await fetch(endpoint, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
                 
                 if (response.ok) {
                     data = await response.json();
+                    console.log(`${type} data received via proxy:`, data);
                     setFollowers(data[type] || data || []);
                     return;
+                } else {
+                    const errorText = await response.text();
+                    console.warn(`Main ${type} API failed:`, response.status, errorText);
+                    throw new Error(`Main API failed: ${response.status}`);
                 }
             } catch (apiError) {
-                console.warn('Main API failed, trying fallback:', apiError);
+                console.warn(`Main ${type} API failed, trying fallback:`, apiError);
             }
 
             // Fallback: Try alternative endpoints
@@ -128,15 +138,25 @@ export default function FollowersModal({ isOpen, onClose, userId, type }: Follow
                     ? `/api/followers/${userId}`
                     : `/api/following/${userId}`;
 
-                response = await apiFetch(altEndpoint);
+                response = await fetch(altEndpoint, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
                 
                 if (response.ok) {
                     data = await response.json();
+                    console.log(`${type} data received via alternative:`, data);
                     setFollowers(data[type] || data || []);
                     return;
+                } else {
+                    const errorText = await response.text();
+                    console.warn(`Alternative ${type} API failed:`, response.status, errorText);
+                    throw new Error(`Alternative API failed: ${response.status}`);
                 }
             } catch (altError) {
-                console.warn('Alternative API failed, trying direct fetch:', altError);
+                console.warn(`Alternative ${type} API failed, trying direct fetch:`, altError);
             }
 
             // Final fallback: Direct fetch to backend
@@ -154,11 +174,16 @@ export default function FollowersModal({ isOpen, onClose, userId, type }: Follow
 
                 if (response.ok) {
                     data = await response.json();
+                    console.log(`${type} data received via direct backend:`, data);
                     setFollowers(data[type] || data || []);
                     return;
+                } else {
+                    const errorText = await response.text();
+                    console.warn(`Direct ${type} fetch failed:`, response.status, errorText);
+                    throw new Error(`Direct fetch failed: ${response.status}`);
                 }
             } catch (directError) {
-                console.warn('Direct fetch failed:', directError);
+                console.warn(`Direct ${type} fetch failed:`, directError);
             }
 
             // If all methods fail, show error but don't crash
@@ -166,8 +191,8 @@ export default function FollowersModal({ isOpen, onClose, userId, type }: Follow
             setFollowers([]);
             
         } catch (err) {
-            console.error('Error fetching followers:', err);
-            setError('Failed to load followers');
+            console.error(`Error fetching ${type}:`, err);
+            setError(`Failed to load ${type}`);
             setFollowers([]);
         } finally {
             setLoading(false);
@@ -176,13 +201,47 @@ export default function FollowersModal({ isOpen, onClose, userId, type }: Follow
 
     const handleFollow = async (followerId: number) => {
         try {
-            const response = await apiFetch(`/api/user/${followerId}/follow`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
+            let response;
+            
+            // Try multiple follow endpoints
+            try {
+                response = await fetch(`/api/user/${followerId}/follow`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    }
+                });
 
-            if (response.ok) {
-                setFollowing(prev => new Set([...prev, followerId]));
+                if (response.ok) {
+                    setFollowing(prev => new Set([...prev, followerId]));
+                    console.log('User followed successfully via proxy');
+                    return;
+                } else {
+                    const errorText = await response.text();
+                    console.warn('Follow via proxy failed:', response.status, errorText);
+                    throw new Error(`Follow failed: ${response.status}`);
+                }
+            } catch (proxyError) {
+                console.warn('Follow via proxy failed, trying direct backend:', proxyError);
+                
+                // Try direct backend call
+                response = await fetch(`https://demedia-backend.fly.dev/api/user/${followerId}/follow`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    }
+                });
+
+                if (response.ok) {
+                    setFollowing(prev => new Set([...prev, followerId]));
+                    console.log('User followed successfully via direct backend');
+                } else {
+                    const errorText = await response.text();
+                    console.warn('Follow via direct backend failed:', response.status, errorText);
+                    throw new Error(`Follow failed: ${response.status}`);
+                }
             }
         } catch (error) {
             console.error('Error following user:', error);
@@ -191,17 +250,55 @@ export default function FollowersModal({ isOpen, onClose, userId, type }: Follow
 
     const handleUnfollow = async (followerId: number) => {
         try {
-            const response = await apiFetch(`/api/user/${followerId}/unfollow`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (response.ok) {
-                setFollowing(prev => {
-                    const newSet = new Set(prev);
-                    newSet.delete(followerId);
-                    return newSet;
+            let response;
+            
+            // Try multiple unfollow endpoints
+            try {
+                response = await fetch(`/api/user/${followerId}/unfollow`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    }
                 });
+
+                if (response.ok) {
+                    setFollowing(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(followerId);
+                        return newSet;
+                    });
+                    console.log('User unfollowed successfully via proxy');
+                    return;
+                } else {
+                    const errorText = await response.text();
+                    console.warn('Unfollow via proxy failed:', response.status, errorText);
+                    throw new Error(`Unfollow failed: ${response.status}`);
+                }
+            } catch (proxyError) {
+                console.warn('Unfollow via proxy failed, trying direct backend:', proxyError);
+                
+                // Try direct backend call
+                response = await fetch(`https://demedia-backend.fly.dev/api/user/${followerId}/unfollow`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    }
+                });
+
+                if (response.ok) {
+                    setFollowing(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(followerId);
+                        return newSet;
+                    });
+                    console.log('User unfollowed successfully via direct backend');
+                } else {
+                    const errorText = await response.text();
+                    console.warn('Unfollow via direct backend failed:', response.status, errorText);
+                    throw new Error(`Unfollow failed: ${response.status}`);
+                }
             }
         } catch (error) {
             console.error('Error unfollowing user:', error);
