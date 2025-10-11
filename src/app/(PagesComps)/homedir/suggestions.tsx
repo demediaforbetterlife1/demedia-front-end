@@ -46,7 +46,7 @@ export default function Suggestions() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 },
-                body: JSON.stringify({ followerId: user?.id })
+                body: JSON.stringify({ followerId: Number(user?.id) })
             });
 
             if (response.ok) {

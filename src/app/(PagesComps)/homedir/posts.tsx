@@ -187,7 +187,7 @@ export default function Posts() {
             ));
 
             // Send notification if user liked the post (not their own)
-            if (!isCurrentlyLiked && post.user?.id && post.user.id !== user?.id) {
+            if (!isCurrentlyLiked && post.user?.id && post.user.id !== Number(user?.id)) {
                 try {
                     await fetch('/api/notifications', {
                         method: 'POST',
@@ -307,7 +307,7 @@ export default function Posts() {
         ));
         setShowEditModal(false);
         setSelectedPost(null);
-        showSuccess('Post updated successfully');
+        showSuccess('Post Updated', 'Your post has been updated successfully');
     };
 
     const formatTimeAgo = (dateString: string) => {
@@ -429,7 +429,7 @@ export default function Posts() {
                                     
                                     {showDropdown === post.id && (
                                         <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
-                                            {post.user?.id === user?.id ? (
+                                            {post.user?.id === Number(user?.id) ? (
                                                 // Author options
                                                 <>
                                                     <button
