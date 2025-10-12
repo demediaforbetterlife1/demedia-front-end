@@ -174,7 +174,7 @@ interface UserProfileResponse {
 
 export async function getUserProfile(userId: string | number): Promise<UserProfileResponse | null> {
     try {
-        const res = await fetch(`/api/user/${userId}/profile`, {
+        const res = await fetch(`/api/users/${userId}/profile`, {
             cache: "no-store", // عشان ما يكاشي
         });
 

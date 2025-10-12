@@ -25,7 +25,7 @@ export async function GET(
         console.log('Could not extract user ID from token');
       }
 
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/user/${userId}/profile`, {
+      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/users/${userId}/profile`, {
         headers: {
           'Authorization': authHeader,
           'user-id': currentUserId,
