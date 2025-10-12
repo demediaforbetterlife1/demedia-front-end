@@ -995,7 +995,7 @@ export default function ProfilePage() {
                             transition={{ duration: 0.3 }}
                         >
                             <UserPosts 
-                                userId={user?.id} 
+                                userId={userId} 
                                 showCommentModal={showCommentModal}
                                 setShowCommentModal={setShowCommentModal}
                                 selectedPost={selectedPost}
@@ -1599,6 +1599,7 @@ const UserPosts = ({
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'user-id': user?.id?.toString() || '',
                 }
             });
 

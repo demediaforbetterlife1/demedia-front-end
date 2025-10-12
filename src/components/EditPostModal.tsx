@@ -167,6 +167,7 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }: 
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'user-id': localStorage.getItem('userId') || '',
                 },
                 body: JSON.stringify({
                     title: title.trim() || null,
