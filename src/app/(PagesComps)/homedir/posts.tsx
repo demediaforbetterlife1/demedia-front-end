@@ -29,6 +29,12 @@ type PostType = {
         username?: string;
         profilePicture?: string;
     };
+    author?: {
+        id?: number;
+        name?: string;
+        username?: string;
+        profilePicture?: string;
+    };
     createdAt?: string;
     imageUrl?: string;
     videoUrl?: string;
