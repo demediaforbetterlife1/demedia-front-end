@@ -375,9 +375,12 @@ export default function Posts() {
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => {
-                                        // If it's the current user's post, go to their own profile
-                                        // Otherwise, go to the post author's profile
-                                        const targetUserId = post.user?.id || post.author?.id || post.id;
+                                        // Get the author ID from the post
+                                        const targetUserId = post.user?.id || post.author?.id;
+                                        if (!targetUserId) {
+                                            console.error('No user ID found for post:', post);
+                                            return;
+                                        }
                                         window.location.href = `/profile?userId=${targetUserId}`;
                                     }}
                                     className="w-10 h-10 rounded-full theme-bg-tertiary flex items-center justify-center theme-text-secondary font-bold hover:shadow-lg transition-all duration-300 cursor-pointer"
@@ -392,7 +395,11 @@ export default function Posts() {
                                         <motion.button
                                             whileHover={{ scale: 1.02 }}
                                             onClick={() => {
-                                                const targetUserId = post.user?.id || post.author?.id || post.id;
+                                                const targetUserId = post.user?.id || post.author?.id;
+                                                if (!targetUserId) {
+                                                    console.error('No user ID found for post:', post);
+                                                    return;
+                                                }
                                                 window.location.href = `/profile?userId=${targetUserId}`;
                                             }}
                                             className="font-semibold theme-text-primary hover:text-cyan-400 transition-colors cursor-pointer"
@@ -412,7 +419,11 @@ export default function Posts() {
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}
                                         onClick={() => {
-                                            const targetUserId = post.user?.id || post.author?.id || post.id;
+                                            const targetUserId = post.user?.id || post.author?.id;
+                                            if (!targetUserId) {
+                                                console.error('No user ID found for post:', post);
+                                                return;
+                                            }
                                             window.location.href = `/profile?userId=${targetUserId}`;
                                         }}
                                         className="text-sm theme-text-muted hover:text-cyan-400 transition-colors cursor-pointer"
