@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Save, Image, Video, Hash, AtSign, MapPin, Calendar, Eye, EyeOff } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { notificationService } from "@/services/notificationService";
 
 interface EditPostModalProps {
@@ -35,6 +36,7 @@ interface EditPostModalProps {
 }
 
 export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }: EditPostModalProps) {
+    const { user } = useAuth();
     const [title, setTitle] = useState(post.title || '');
     const [content, setContent] = useState(post.content);
     const [hashtags, setHashtags] = useState<string[]>(post.hashtags || []);
@@ -167,7 +169,7 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }: 
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'user-id': localStorage.getItem('userId') || '',
+                    'user-id': user?.id?.toString() || '',
                 },
                 body: JSON.stringify({
                     title: title.trim() || null,

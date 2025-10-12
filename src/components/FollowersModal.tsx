@@ -109,6 +109,7 @@ export default function FollowersModal({ isOpen, onClose, userId, type }: Follow
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json',
+                    'user-id': user?.id?.toString() || '',
                 },
             });
             
@@ -137,6 +138,7 @@ export default function FollowersModal({ isOpen, onClose, userId, type }: Follow
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'user-id': user?.id?.toString() || '',
                 }
             });
 
@@ -159,6 +161,7 @@ export default function FollowersModal({ isOpen, onClose, userId, type }: Follow
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'user-id': user?.id?.toString() || '',
                 }
             });
 
