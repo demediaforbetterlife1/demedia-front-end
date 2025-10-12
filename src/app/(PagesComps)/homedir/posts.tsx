@@ -400,7 +400,15 @@ export default function Posts() {
                                             whileHover={{ scale: 1.02 }}
                                             onClick={() => {
                                                 const targetUserId = post.user?.id || post.author?.id;
+                                                console.log('Post navigation debug:', {
+                                                    postId: post.id,
+                                                    postUser: post.user,
+                                                    postAuthor: post.author,
+                                                    targetUserId,
+                                                    currentUserId: user?.id
+                                                });
                                                 if (targetUserId) {
+                                                    console.log('Navigating to profile with userId:', targetUserId);
                                                     window.location.href = `/profile?userId=${targetUserId}`;
                                                 } else {
                                                     console.error('No user ID found for post:', post);

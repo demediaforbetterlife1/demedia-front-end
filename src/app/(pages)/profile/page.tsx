@@ -155,58 +155,71 @@ export default function ProfilePage() {
         userIdFromUrl,
         currentUserId: user?.id,
         finalUserId: userId,
-        isOwnProfile
+        isOwnProfile,
+        url: window.location.href
     });
 
     const getThemeClasses = () => {
         switch (theme) {
             case 'light':
                 return {
-                    bg: 'bg-gray-50',
-                    card: 'bg-white',
+                    bg: 'bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30',
+                    card: 'bg-white/90 backdrop-blur-sm shadow-lg border border-white/20',
                     text: 'text-gray-900',
                     textSecondary: 'text-gray-600',
-                    border: 'border-gray-200',
-                    hover: 'hover:bg-gray-100',
-                    gradient: 'from-blue-500/10 to-purple-500/10',
+                    border: 'border-gray-200/50',
+                    hover: 'hover:bg-white/80 hover:shadow-xl transition-all duration-300',
+                    gradient: 'from-blue-500/10 via-purple-500/10 to-pink-500/10',
                     accent: 'text-blue-600',
-                    accentBg: 'bg-blue-50'
+                    accentBg: 'bg-gradient-to-r from-blue-50 to-purple-50',
+                    coverGradient: 'from-blue-500/20 via-purple-500/20 to-pink-500/20',
+                    button: 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl',
+                    buttonSecondary: 'bg-white/80 hover:bg-white text-gray-700 border border-gray-200/50 shadow-md hover:shadow-lg'
                 };
             case 'super-light':
                 return {
-                    bg: 'bg-gray-100',
-                    card: 'bg-white',
+                    bg: 'bg-gradient-to-br from-white via-blue-50/20 to-purple-50/20',
+                    card: 'bg-white/95 backdrop-blur-sm shadow-xl border border-white/30',
                     text: 'text-gray-800',
                     textSecondary: 'text-gray-500',
-                    border: 'border-gray-100',
-                    hover: 'hover:bg-gray-50',
-                    gradient: 'from-blue-400/10 to-purple-400/10',
+                    border: 'border-gray-100/50',
+                    hover: 'hover:bg-white/90 hover:shadow-2xl transition-all duration-300',
+                    gradient: 'from-blue-400/10 via-purple-400/10 to-pink-400/10',
                     accent: 'text-blue-500',
-                    accentBg: 'bg-blue-50'
+                    accentBg: 'bg-gradient-to-r from-blue-50/80 to-purple-50/80',
+                    coverGradient: 'from-blue-400/15 via-purple-400/15 to-pink-400/15',
+                    button: 'bg-gradient-to-r from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white shadow-lg hover:shadow-xl',
+                    buttonSecondary: 'bg-white/90 hover:bg-white text-gray-600 border border-gray-100/50 shadow-lg hover:shadow-xl'
                 };
             case 'dark':
                 return {
-                    bg: 'bg-gray-900',
-                    card: 'bg-gray-800',
+                    bg: 'bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20',
+                    card: 'bg-gray-800/90 backdrop-blur-sm shadow-2xl border border-gray-700/50',
                     text: 'text-white',
                     textSecondary: 'text-gray-300',
-                    border: 'border-gray-700',
-                    hover: 'hover:bg-gray-700',
-                    gradient: 'from-cyan-500/20 to-purple-500/20',
+                    border: 'border-gray-700/50',
+                    hover: 'hover:bg-gray-700/80 hover:shadow-2xl transition-all duration-300',
+                    gradient: 'from-cyan-500/20 via-purple-500/20 to-pink-500/20',
                     accent: 'text-cyan-400',
-                    accentBg: 'bg-cyan-900/20'
+                    accentBg: 'bg-gradient-to-r from-cyan-900/30 to-purple-900/30',
+                    coverGradient: 'from-cyan-500/25 via-purple-500/25 to-pink-500/25',
+                    button: 'bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white shadow-xl hover:shadow-2xl',
+                    buttonSecondary: 'bg-gray-700/80 hover:bg-gray-600 text-gray-200 border border-gray-600/50 shadow-lg hover:shadow-xl'
                 };
             case 'super-dark':
                 return {
-                    bg: 'bg-black',
-                    card: 'bg-gray-900',
+                    bg: 'bg-gradient-to-br from-black via-gray-900/50 to-blue-900/20',
+                    card: 'bg-gray-900/95 backdrop-blur-sm shadow-2xl border border-gray-800/50',
                     text: 'text-gray-100',
                     textSecondary: 'text-gray-400',
-                    border: 'border-gray-800',
-                    hover: 'hover:bg-gray-800',
-                    gradient: 'from-cyan-400/20 to-purple-400/20',
+                    border: 'border-gray-800/50',
+                    hover: 'hover:bg-gray-800/90 hover:shadow-2xl transition-all duration-300',
+                    gradient: 'from-cyan-400/20 via-purple-400/20 to-pink-400/20',
                     accent: 'text-cyan-300',
-                    accentBg: 'bg-cyan-900/30'
+                    accentBg: 'bg-gradient-to-r from-cyan-900/40 to-purple-900/40',
+                    coverGradient: 'from-cyan-400/30 via-purple-400/30 to-pink-400/30',
+                    button: 'bg-gradient-to-r from-cyan-400 to-purple-500 hover:from-cyan-300 hover:to-purple-400 text-black shadow-xl hover:shadow-2xl',
+                    buttonSecondary: 'bg-gray-800/90 hover:bg-gray-700 text-gray-300 border border-gray-700/50 shadow-lg hover:shadow-xl'
                 };
             default:
                 return {
@@ -691,7 +704,7 @@ export default function ProfilePage() {
                 }
             `}</style>
             <div className={`min-h-screen ${themeClasses.bg} pb-20 md:pb-0`}>
-                <div className={`max-w-6xl mx-auto p-4 ${themeClasses.card} rounded-3xl shadow-2xl border ${themeClasses.border} overflow-hidden`}>
+                <div className={`max-w-6xl mx-auto p-4 ${themeClasses.card} rounded-3xl shadow-2xl border ${themeClasses.border} overflow-hidden backdrop-blur-sm`}>
                 {/* Modern Cover Section */}
                 <div className="relative">
                     {coverPicture ? (
@@ -721,7 +734,8 @@ export default function ProfilePage() {
                             )}
                         </div>
                     ) : (
-                        <div className={`h-64 md:h-80 bg-gradient-to-br ${themeClasses.gradient} rounded-t-3xl flex items-center justify-center`}>
+                        <div className={`h-64 md:h-80 bg-gradient-to-br ${themeClasses.coverGradient} rounded-t-3xl flex items-center justify-center relative overflow-hidden`}>
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10"></div>
                             <div className="text-center">
                                 <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <UserIcon className="w-10 h-10 text-white" />
@@ -751,7 +765,7 @@ export default function ProfilePage() {
                         <div className="absolute -top-16 sm:-top-20 md:-top-24 left-4 sm:left-6">
                             <div className="relative group">
                                 {/* Main Profile Circle */}
-                                <div className={`w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl relative`}>
+                                <div className={`w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl relative ring-4 ring-white/20 backdrop-blur-sm`}>
                     {profilePicture ? (
                         <motion.img
                                             key={profilePicture}
@@ -895,7 +909,7 @@ export default function ProfilePage() {
                             onClick={() => setShowEditModal(true)}
                             whileTap={{ scale: 0.95 }}
                                             whileHover={{ scale: 1.02 }}
-                                            className={`flex-1 px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-600 hover:to-purple-700 shadow-lg hover:shadow-xl text-sm sm:text-base`}
+                                            className={`flex-1 px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${themeClasses.button} text-sm sm:text-base`}
                         >
                                             <Edit size={18} />
                                             <span>Edit Profile</span>
@@ -915,7 +929,7 @@ export default function ProfilePage() {
                                             type="button"
                                             whileTap={{ scale: 0.95 }}
                                             whileHover={{ scale: 1.02 }}
-                                            className={`p-3 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-lg hover:shadow-xl transition-all duration-300`}
+                                            className={`p-3 rounded-xl ${themeClasses.buttonSecondary} transition-all duration-300`}
                                             title="Settings"
                                         >
                                             <Settings size={18} />
@@ -931,8 +945,8 @@ export default function ProfilePage() {
                                 disabled={busyFollow}
                                             className={`flex-1 px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
                                     isFollowing
-                                                    ? `bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800`
-                                                    : `bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-600 hover:to-purple-700 shadow-lg hover:shadow-xl`
+                                                    ? `${themeClasses.buttonSecondary}`
+                                                    : `${themeClasses.button}`
                                 } ${busyFollow ? "opacity-70 cursor-wait" : ""} text-sm sm:text-base`}
                             >
                                             {busyFollow ? "..." : isFollowing ? "Following" : "Follow"}
@@ -944,7 +958,7 @@ export default function ProfilePage() {
                                 whileTap={{ scale: 0.95 }}
                                 whileHover={{ scale: 1.02 }}
                                 onClick={() => handleStartChat()}
-                                className="px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-300 bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl flex items-center space-x-2 text-sm sm:text-base"
+                                className={`px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${themeClasses.button} flex items-center space-x-2 text-sm sm:text-base`}
                             >
                                 <MessageCircle size={18} />
                                 <span>Chat</span>
