@@ -149,6 +149,14 @@ export default function ProfilePage() {
     const userIdFromUrl = searchParams.get('userId');
     const userId = userIdFromUrl || user?.id?.toString();
     const isOwnProfile = !userIdFromUrl || userIdFromUrl === user?.id?.toString();
+    
+    // Debug logging
+    console.log('Profile Page Debug:', {
+        userIdFromUrl,
+        currentUserId: user?.id,
+        finalUserId: userId,
+        isOwnProfile
+    });
 
     const getThemeClasses = () => {
         switch (theme) {
@@ -574,11 +582,8 @@ export default function ProfilePage() {
             formData.append('type', type);
             formData.append('userId', user?.id?.toString() || '');
             
-            const response = await fetch(`/api/upload/profile`, {
+            const response = await apiFetch(`/api/upload/profile`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                },
                 body: formData,
             });
             
