@@ -216,7 +216,32 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
                 return;
             }
 
-            // Create JSON payload (file uploads will be handled separately in the future)
+            // Upload images first if any
+            let imageUrls: string[] = [];
+            if (images.length > 0) {
+                for (const image of images) {
+                    const formData = new FormData();
+                    formData.append('image', image);
+                    formData.append('userId', userId);
+
+                    const uploadResponse = await fetch(`/api/upload/post`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        },
+                        body: formData,
+                    });
+
+                    if (uploadResponse.ok) {
+                        const uploadData = await uploadResponse.json();
+                        imageUrls.push(uploadData.url);
+                    } else {
+                        console.error('Failed to upload image:', image.name);
+                    }
+                }
+            }
+
+            // Create JSON payload with image URLs
             const postData = {
                 title: title || content.substring(0, 50) + (content.length > 50 ? "..." : "") || "New Post",
                 content: content,
@@ -225,7 +250,8 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
                 hashtags: hashtags,
                 mentions: mentions,
                 location: location || '',
-                scheduledDate: isScheduled && scheduleDate ? new Date(scheduleDate).toISOString() : null
+                scheduledDate: isScheduled && scheduleDate ? new Date(scheduleDate).toISOString() : null,
+                imageUrls: imageUrls
             };
 
             const res = await fetch(`/api/posts`, {
