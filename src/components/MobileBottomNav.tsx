@@ -4,13 +4,10 @@ import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    Home, 
     Video, 
     Plus, 
     MessageCircle,
     FileText,
-    Zap,
-    X,
     User
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -228,86 +225,6 @@ export default function MobileBottomNav() {
                 </div>
             </motion.div>
 
-            {/* Desktop Navigation - Hidden on mobile */}
-            <motion.div
-                initial={{ y: -60, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                className="hidden md:block fixed top-0 left-0 right-0 z-50"
-            >
-                <div className={`${themeClasses.bg} ${themeClasses.backdrop} border-b ${themeClasses.border} px-6 py-4`}>
-                    <div className="flex items-center justify-between max-w-6xl mx-auto">
-                        {/* Logo */}
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            className="flex items-center space-x-3 cursor-pointer"
-                            onClick={() => router.push('/home')}
-                        >
-                            <div className="w-10 h-10 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full flex items-center justify-center">
-                                <Zap className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 font-extrabold text-xl">
-                                DeMedia
-                            </span>
-                        </motion.div>
-
-                        {/* Desktop Navigation Items */}
-                        <div className="flex items-center space-x-8">
-                            {navItems.map((item) => {
-                                const Icon = item.icon;
-                                const active = isActive(item.path);
-                                
-                                return (
-                                    <button
-                                        key={item.id}
-                                        onClick={() => handleNavClick(item)}
-                                        className={`relative flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                                            active 
-                                                ? themeClasses.active 
-                                                : themeClasses.hover
-                                        }`}
-                                    >
-                                        {item.isSpecial ? (
-                                            // Special create button for desktop
-                                            <div className="relative">
-                                                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg">
-                                                    <Icon size={20} className="text-white" />
-                                                </div>
-                                                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full animate-ping opacity-30"></div>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <Icon 
-                                                    size={20} 
-                                                    className={`transition-colors ${
-                                                        active 
-                                                            ? item.color 
-                                                            : themeClasses.text
-                                                    }`} 
-                                                />
-                                                <span className={`text-sm font-medium transition-colors ${
-                                                    active 
-                                                        ? item.color 
-                                                        : themeClasses.text
-                                                }`}>
-                                                    {item.label}
-                                                </span>
-                                                {active && (
-                                                    <motion.div
-                                                        layoutId="desktopActiveIndicator"
-                                                        className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-current rounded-full"
-                                                        style={{ color: 'inherit' }}
-                                                    />
-                                                )}
-                                            </>
-                                        )}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            </motion.div>
 
             {/* Create Content Modal */}
             <CreateContentModal
