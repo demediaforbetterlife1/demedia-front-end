@@ -86,6 +86,7 @@ export default function EmotionTracker({ isOpen, onClose, onEmotionRecorded }: E
         emotion: "",
         intensity: 5,
         notes: "",
+        contentId: "",
         contentType: "post" as const
     });
 
@@ -137,6 +138,7 @@ export default function EmotionTracker({ isOpen, onClose, onEmotionRecorded }: E
             emotion: "",
             intensity: 5,
             notes: "",
+            contentId: "",
             contentType: "post"
         });
         setSelectedEmotion("");

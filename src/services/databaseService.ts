@@ -11,11 +11,19 @@ class DatabaseService {
     }
 
     private getHeaders() {
-        return {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.token}`,
-            'user-id': this.userId
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json'
         };
+        
+        if (this.token) {
+            headers['Authorization'] = `Bearer ${this.token}`;
+        }
+        
+        if (this.userId) {
+            headers['user-id'] = this.userId;
+        }
+        
+        return headers;
     }
 
     // Mood tracking methods
