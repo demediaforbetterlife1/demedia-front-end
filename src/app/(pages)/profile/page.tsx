@@ -1599,7 +1599,7 @@ const UserPosts = ({
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'user-id': user?.id?.toString() || '',
+                    'user-id': localStorage.getItem('userId') || '',
                 }
             });
 

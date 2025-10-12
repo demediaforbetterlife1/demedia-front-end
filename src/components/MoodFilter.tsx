@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { databaseService } from "@/services/databaseService";
 import { 
     Smile, 
     Frown, 
@@ -61,28 +62,27 @@ export default function MoodFilter({ isOpen, onClose, onMoodChange, currentMood 
 
     const loadUserMoodData = async () => {
         try {
-            // Load user's mood history from localStorage
-            const savedMoodHistory = localStorage.getItem('userMoodHistory');
-            if (savedMoodHistory) {
-                setUserMoodHistory(JSON.parse(savedMoodHistory));
-            }
+            const moodData = await databaseService.getMoodHistory();
+            setUserMoodHistory(moodData);
         } catch (error) {
             console.error('Error loading mood data:', error);
         }
     };
 
-    const handleMoodSelect = (moodId: string) => {
+    const handleMoodSelect = async (moodId: string) => {
         setSelectedMood(moodId);
-        // Save mood selection to localStorage
-        const moodHistory = JSON.parse(localStorage.getItem('userMoodHistory') || '[]');
-        const newEntry = {
-            mood: moodId,
-            timestamp: new Date().toISOString(),
-            intensity: intensity
-        };
-        moodHistory.push(newEntry);
-        localStorage.setItem('userMoodHistory', JSON.stringify(moodHistory));
-        setUserMoodHistory(moodHistory);
+        
+        try {
+            const newMood = await databaseService.saveMood(
+                moodId, 
+                intensity, 
+                selectedFilters.length > 0 ? `Filters: ${selectedFilters.join(', ')}` : undefined
+            );
+            setUserMoodHistory(prev => [newMood, ...prev]);
+            console.log('Mood saved to database successfully');
+        } catch (error) {
+            console.error('Error saving mood to database:', error);
+        }
     };
 
     const handleFilterToggle = (filterId: string) => {

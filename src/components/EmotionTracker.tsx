@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { databaseService } from "@/services/databaseService";
 import { 
     Heart, 
     Smile, 
@@ -91,6 +92,22 @@ export default function EmotionTracker({ isOpen, onClose, onEmotionRecorded }: E
     const [selectedEmotion, setSelectedEmotion] = useState<string>("");
     const [intensity, setIntensity] = useState(5);
 
+    // Load emotions from database when component mounts
+    useEffect(() => {
+        if (isOpen) {
+            loadEmotionsFromDatabase();
+        }
+    }, [isOpen]);
+
+    const loadEmotionsFromDatabase = async () => {
+        try {
+            const emotionData = await databaseService.getEmotionHistory();
+            setEmotions(emotionData);
+        } catch (error) {
+            console.error('Error loading emotions from database:', error);
+        }
+    };
+
     const handleEmotionSelect = (emotionId: string) => {
         setSelectedEmotion(emotionId);
         setNewEmotion(prev => ({ ...prev, emotion: emotionId }));
@@ -101,18 +118,20 @@ export default function EmotionTracker({ isOpen, onClose, onEmotionRecorded }: E
 
         setIsRecording(true);
         
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+            const emotionData = await databaseService.saveEmotion(
+                selectedEmotion,
+                intensity,
+                newEmotion.contentId || undefined,
+                newEmotion.contentType || undefined,
+                newEmotion.notes || undefined
+            );
+            setEmotions(prev => [emotionData, ...prev]);
+            console.log('Emotion saved to database successfully');
+        } catch (error) {
+            console.error('Error saving emotion to database:', error);
+        }
         
-        const emotionData = {
-            ...newEmotion,
-            id: Date.now().toString(),
-            emotion: selectedEmotion,
-            intensity: intensity,
-            timestamp: new Date()
-        };
-        
-        setEmotions(prev => [emotionData, ...prev]);
         setShowRecordForm(false);
         setNewEmotion({
             emotion: "",
@@ -123,7 +142,6 @@ export default function EmotionTracker({ isOpen, onClose, onEmotionRecorded }: E
         setSelectedEmotion("");
         setIntensity(5);
         setIsRecording(false);
-        onEmotionRecorded(emotionData);
     };
 
     const getEmotionStats = () => {

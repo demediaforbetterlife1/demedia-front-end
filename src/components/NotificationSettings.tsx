@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNotifications } from '@/hooks/useNotifications';
+import { databaseService } from '@/services/databaseService';
 import { motion } from 'framer-motion';
 
 interface NotificationSettingsProps {
@@ -30,17 +31,49 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onCl
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Load settings from localStorage
-    const savedSettings = localStorage.getItem('notificationSettings');
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings));
-    }
+    // Load settings from database
+    loadNotificationSettings();
   }, []);
 
-  const handleSettingChange = (key: string, value: boolean) => {
+  const loadNotificationSettings = async () => {
+    try {
+      const userPreferences = await databaseService.getUserPreferences();
+      if (userPreferences.notifications) {
+        setSettings({
+          pushNotifications: userPreferences.notifications.push || false,
+          emailNotifications: userPreferences.notifications.email || true,
+          smsNotifications: userPreferences.notifications.sms || false,
+          newPostNotifications: userPreferences.notifications.posts || true,
+          messageNotifications: userPreferences.notifications.messages || true,
+          likeNotifications: userPreferences.notifications.likes || true,
+          commentNotifications: userPreferences.notifications.comments || true,
+          mentionNotifications: userPreferences.notifications.mentions || true,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading notification settings:', error);
+    }
+  };
+
+  const handleSettingChange = async (key: string, value: boolean) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
-    localStorage.setItem('notificationSettings', JSON.stringify(newSettings));
+    
+    try {
+      // Update in database
+      const userPreferences = await databaseService.getUserPreferences();
+      const updatedNotifications = {
+        ...userPreferences.notifications,
+        [key]: value
+      };
+      
+      await databaseService.updateUserPreferences({
+        ...userPreferences,
+        notifications: updatedNotifications
+      });
+    } catch (error) {
+      console.error('Error updating notification settings:', error);
+    }
   };
 
   const handleRequestPermission = async () => {
