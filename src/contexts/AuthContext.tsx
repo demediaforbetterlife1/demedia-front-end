@@ -119,10 +119,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // Don't clear tokens for server errors, only for auth errors
             if (res.status >= 500) {
               console.log('Server error, keeping tokens for retry');
-          } else {
-            localStorage.removeItem('token');
-            localStorage.removeItem('userId');
-            setUser(null);
+            } else {
+              localStorage.removeItem('token');
+              localStorage.removeItem('userId');
+              setUser(null);
             }
           }
         } else {
@@ -139,8 +139,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         )) {
           console.log('Network error during auth check, keeping tokens');
         } else {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userId');
+          localStorage.removeItem('token');
+          localStorage.removeItem('userId');
         }
         setUser(null);
       } finally {

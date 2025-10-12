@@ -99,8 +99,8 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       }
     }
     
-    return res;
-  } catch (err: unknown) {
+      return res;
+    } catch (err: unknown) {
       lastError = err;
       console.error(`API fetch error (attempt ${attempt + 1}):`, err);
       
@@ -132,8 +132,8 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
         }
       }
       
-    throw err;
-  }
+      throw err;
+    }
   }
   
   throw lastError;
@@ -174,8 +174,16 @@ interface UserProfileResponse {
 
 export async function getUserProfile(userId: string | number): Promise<UserProfileResponse | null> {
     try {
+        console.log('getUserProfile called with userId:', userId, 'type:', typeof userId);
+        
         const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
         const currentUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+        
+        console.log('Auth data:', { 
+            hasToken: !!token, 
+            currentUserId, 
+            targetUserId: userId 
+        });
         
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',
@@ -189,17 +197,25 @@ export async function getUserProfile(userId: string | number): Promise<UserProfi
             headers['user-id'] = currentUserId;
         }
 
+        console.log('Making profile request to:', `/api/users/${userId}/profile`);
+        console.log('Request headers:', headers);
+
         const res = await fetch(`/api/users/${userId}/profile`, {
             cache: "no-store",
             headers
         });
 
+        console.log('Profile response status:', res.status, 'ok:', res.ok);
+
         if (!res.ok) {
             const errorText = await res.text();
+            console.error('Profile request failed:', res.status, errorText);
             throw new Error(`Failed to fetch profile: ${res.status} ${errorText}`);
         }
         
-        return await res.json() as UserProfileResponse;
+        const profileData = await res.json();
+        console.log('Profile data received:', profileData);
+        return profileData as UserProfileResponse;
     } catch (err) {
         console.error("Error fetching user profile:", err);
         return null; // Return null instead of throwing to handle gracefully

@@ -287,7 +287,17 @@ export default function ProfilePage() {
             try {
                 setLoading(true);
                 setError(null);
+                console.log('Loading profile for userId:', userId);
                 const data = await getUserProfile(userId);
+                
+                if (!data) {
+                    console.error('getUserProfile returned null');
+                    setError("Profile not found - User may not exist");
+                    setLoading(false);
+                    return;
+                }
+                
+                console.log('Profile data loaded:', data);
                 
                 // Fetch stories for this user
                 const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
