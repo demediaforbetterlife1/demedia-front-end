@@ -570,9 +570,11 @@ export default function ProfilePage() {
         setIsUploadingPhoto(true);
         try {
             const formData = new FormData();
-            formData.append(type === 'profile' ? 'profilePhoto' : 'coverPhoto', file);
+            formData.append('file', file);
+            formData.append('type', type);
+            formData.append('userId', user?.id?.toString() || '');
             
-            const response = await fetch(`/api/upload/${type}`, {
+            const response = await fetch(`/api/upload/profile`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -818,11 +820,11 @@ export default function ProfilePage() {
                 </div>
 
                         {/* Profile Info Section */}
-                        <div className="pt-20 px-6">
+                        <div className="pt-20 px-4 sm:px-6">
                             {/* Name and Username */}
                             <div className="mb-4">
-                                <h1 className={`text-3xl font-bold ${themeClasses.text} mb-1`}>{name}</h1>
-                                <p className={`text-lg ${themeClasses.textSecondary}`}>@{username}</p>
+                                <h1 className={`text-2xl sm:text-3xl font-bold ${themeClasses.text} mb-1`}>{name}</h1>
+                                <p className={`text-base sm:text-lg ${themeClasses.textSecondary}`}>@{username}</p>
                             </div>
 
                             {/* Bio */}
@@ -833,7 +835,7 @@ export default function ProfilePage() {
                             )}
 
                             {/* Unique Stats with Special Features */}
-                            <div className="grid grid-cols-3 gap-4 mb-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                                 <motion.div 
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
@@ -880,7 +882,7 @@ export default function ProfilePage() {
                             </div>
 
                             {/* Unique Action Buttons with Special Features */}
-                            <div className="flex flex-wrap items-center gap-3 mb-6">
+                            <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 mb-6">
                     {isOwnProfile ? (
                                     <>
                         <motion.button
@@ -929,6 +931,18 @@ export default function ProfilePage() {
                                 } ${busyFollow ? "opacity-70 cursor-wait" : ""}`}
                             >
                                             {busyFollow ? "..." : isFollowing ? "Following" : "Follow"}
+                            </motion.button>
+                            
+                            {/* Chat Button */}
+                            <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: 1.02 }}
+                                onClick={() => handleStartChat()}
+                                className="px-6 py-3 rounded-xl font-semibold transition-all duration-300 bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl flex items-center space-x-2"
+                            >
+                                <MessageCircle size={18} />
+                                <span>Chat</span>
                             </motion.button>
                                         
                             
@@ -1801,8 +1815,8 @@ const UserPosts = ({
                     )}
 
                     {/* Post Actions */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-700/50">
-                        <div className="flex items-center space-x-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t border-gray-700/50 gap-4">
+                        <div className="flex items-center space-x-4 sm:space-x-6">
                             <motion.button 
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}

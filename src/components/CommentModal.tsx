@@ -46,7 +46,7 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
     const fetchComments = async () => {
         try {
             setLoading(true);
-            const response = await apiFetch(`/api/posts/${postId}/comments`);
+            const response = await apiFetch(`/api/comments/${postId}`);
 
             if (response.ok) {
                 const data = await response.json();
@@ -83,7 +83,7 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
             }
             
             console.log('CommentModal: Comment moderation passed');
-            const response = await apiFetch(`/api/posts/${postId}/comments`, {
+            const response = await apiFetch(`/api/comments/${postId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

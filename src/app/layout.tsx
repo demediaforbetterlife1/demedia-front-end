@@ -30,6 +30,7 @@ export const metadata: Metadata = {
   title: "DeMEDIA",
   description: "Powerful social media platform with high-quality UI for better experience, try DeMedia today!",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://example.com"),
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   icons: {
     icon: "/logo1.png",
     shortcut: "/logo1.png",

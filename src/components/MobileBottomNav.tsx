@@ -158,7 +158,7 @@ export default function MobileBottomNav() {
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
             >
-                <div className={`${themeClasses.bg} ${themeClasses.backdrop} border-t ${themeClasses.border} px-4 py-3 shadow-lg`}>
+                <div className={`${themeClasses.bg} ${themeClasses.backdrop} border-t ${themeClasses.border} px-2 sm:px-4 py-3 shadow-lg`}>
                     <div className="flex items-center justify-around max-w-md mx-auto">
                         {navItems.map((item) => {
                             const Icon = item.icon;
@@ -168,7 +168,7 @@ export default function MobileBottomNav() {
                                 <button
                                     key={item.id}
                                     onClick={() => handleNavClick(item)}
-                                    className={`relative flex flex-col items-center justify-center py-2 px-4 rounded-2xl transition-all duration-300 ${
+                                    className={`relative flex flex-col items-center justify-center py-2 px-2 sm:px-4 rounded-2xl transition-all duration-300 ${
                                         active 
                                             ? `${themeClasses.active} shadow-lg` 
                                             : `${themeClasses.hover} hover:shadow-md`

@@ -473,7 +473,7 @@ export default function Navbar() {
                         animate={{ opacity: 1, y: 10, scale: 1 }}
                         exit={{ opacity: 0, y: -20, scale: 0.9 }}
                         transition={{ duration: 0.25 }}
-                        className="fixed top-16 left-1/2 -translate-x-1/2 w-[90vw] max-w-sm bg-gray-900/98 border border-cyan-500/30 rounded-xl shadow-2xl p-6 z-40 backdrop-blur-md"
+                        className="fixed top-16 left-1/2 -translate-x-1/2 w-[95vw] max-w-sm bg-gray-900/98 border border-cyan-500/30 rounded-xl shadow-2xl p-4 sm:p-6 z-40 backdrop-blur-md"
                     >
                             <div className="flex flex-col space-y-4 theme-text-secondary">
                                 {/* Logo */}
