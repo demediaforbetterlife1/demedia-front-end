@@ -202,7 +202,7 @@ export default function Posts() {
                             'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         },
                         body: JSON.stringify({
-                            userId: post.user.id,
+                            userId: post.user?.id || post.author?.id,
                             type: 'like',
                             message: `${user?.name || 'Someone'} liked your post`,
                             data: {
