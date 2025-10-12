@@ -187,7 +187,7 @@ export default function Posts() {
             ));
 
             // Send notification if user liked the post (not their own)
-            if (!isCurrentlyLiked && post.user?.id && post.user.id !== Number(user?.id)) {
+            if (!isCurrentlyLiked && (post.user?.id || post.author?.id) && (post.user?.id || post.author?.id) !== Number(user?.id)) {
                 try {
                     await fetch('/api/notifications', {
                         method: 'POST',
@@ -371,12 +371,12 @@ export default function Posts() {
                                     onClick={() => {
                                         // If it's the current user's post, go to their own profile
                                         // Otherwise, go to the post author's profile
-                                        const targetUserId = post.user?.id || post.id;
+                                        const targetUserId = post.user?.id || post.author?.id || post.id;
                                         window.location.href = `/profile?userId=${targetUserId}`;
                                     }}
                                     className="w-10 h-10 rounded-full theme-bg-tertiary flex items-center justify-center theme-text-secondary font-bold hover:shadow-lg transition-all duration-300 cursor-pointer"
                                 >
-                                    {post.user?.name?.charAt(0) ?? "U"}
+                                    {(post.user?.name || post.author?.name)?.charAt(0) ?? "U"}
                                 </motion.button>
                                     {/* Online Status Indicator */}
                                     <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
@@ -386,12 +386,12 @@ export default function Posts() {
                                         <motion.button
                                             whileHover={{ scale: 1.02 }}
                                             onClick={() => {
-                                                const targetUserId = post.user?.id || post.id;
+                                                const targetUserId = post.user?.id || post.author?.id || post.id;
                                                 window.location.href = `/profile?userId=${targetUserId}`;
                                             }}
                                             className="font-semibold theme-text-primary hover:text-cyan-400 transition-colors cursor-pointer"
                                         >
-                                            {post.user?.name || 'Unknown User'}
+                                            {post.user?.name || post.author?.name || 'Unknown User'}
                                         </motion.button>
                                         {/* Special Badges */}
                                         <div className="flex gap-1">
@@ -406,12 +406,12 @@ export default function Posts() {
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}
                                         onClick={() => {
-                                            const targetUserId = post.user?.id || post.id;
+                                            const targetUserId = post.user?.id || post.author?.id || post.id;
                                             window.location.href = `/profile?userId=${targetUserId}`;
                                         }}
                                         className="text-sm theme-text-muted hover:text-cyan-400 transition-colors cursor-pointer"
                                     >
-                                        @{post.user?.username || 'unknown'}
+                                        @{post.user?.username || post.author?.username || 'unknown'}
                                     </motion.button>
                                 </div>
                             </div>
@@ -429,7 +429,7 @@ export default function Posts() {
                                     
                                     {showDropdown === post.id && (
                                         <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
-                                            {post.user?.id === Number(user?.id) ? (
+                                            {(post.user?.id || post.author?.id) === Number(user?.id) ? (
                                                 // Author options
                                                 <>
                                                     <button
