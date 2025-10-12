@@ -147,8 +147,14 @@ export default function ProfilePage() {
     const { theme } = useTheme();
     const searchParams = useSearchParams();
     const userIdFromUrl = searchParams.get('userId');
-    const userId = userIdFromUrl || user?.id?.toString();
+    // Fix: Only use current user's ID if no userIdFromUrl is provided
+    const userId = userIdFromUrl ? userIdFromUrl : user?.id?.toString();
     const isOwnProfile = !userIdFromUrl || userIdFromUrl === user?.id?.toString();
+    
+    // Additional validation
+    if (userIdFromUrl && userIdFromUrl !== user?.id?.toString()) {
+        console.log('Loading different user profile:', userIdFromUrl, 'vs current user:', user?.id);
+    }
     
     // Debug logging
     console.log('Profile Page Debug:', {
@@ -156,7 +162,8 @@ export default function ProfilePage() {
         currentUserId: user?.id,
         finalUserId: userId,
         isOwnProfile,
-        url: window.location.href
+        url: window.location.href,
+        searchParams: Object.fromEntries(searchParams.entries())
     });
 
     const getThemeClasses = () => {
@@ -305,11 +312,20 @@ export default function ProfilePage() {
                 return;
             }
 
+            // Reset profile state when userId changes
+            if (profile && profile.id.toString() !== userId) {
+                console.log('User ID changed, resetting profile state');
+                setProfile(null);
+                setIsFollowing(false);
+            }
+
             try {
                 setLoading(true);
                 setError(null);
-                console.log('Loading profile for userId:', userId);
+                console.log('Loading profile for userId:', userId, 'type:', typeof userId);
+                console.log('About to call getUserProfile with:', userId);
                 const data = await getUserProfile(userId);
+                console.log('getUserProfile returned:', data);
                 
                 if (!data) {
                     console.error('getUserProfile returned null');
@@ -693,7 +709,7 @@ export default function ProfilePage() {
         profile;
 
     return (
-        <>
+        <div key={userId}>
             <style jsx>{`
                 @keyframes spin-slow {
                     from { transform: rotate(0deg); }
@@ -1956,6 +1972,7 @@ const UserPosts = ({
                 </div>
             )}
 
+        </div>
         </div>
     );
 };
