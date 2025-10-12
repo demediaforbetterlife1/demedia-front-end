@@ -28,6 +28,8 @@ import {
     LineChart,
     Gauge,
     Clock,
+    Upload,
+    X,
     Calendar,
     MapPin,
     Globe,
@@ -46,7 +48,6 @@ import {
     Repeat,
     Shuffle,
     Download,
-    Upload,
     Trash2,
     Archive,
     Copy,
@@ -259,6 +260,11 @@ export default function ProfilePage() {
     const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
     const [isProfileOptimized, setIsProfileOptimized] = useState(false);
     const [showPerformanceMetrics, setShowPerformanceMetrics] = useState(false);
+    
+    // Photo Upload State
+    const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+    const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false);
+    const [photoUploadType, setPhotoUploadType] = useState<'profile' | 'cover'>('profile');
 
     useEffect(() => {
         let mounted = true;
@@ -547,6 +553,69 @@ export default function ProfilePage() {
         }
     }
 
+    // Photo Upload Functions
+    const handlePhotoUpload = async (file: File, type: 'profile' | 'cover') => {
+        if (!file) return;
+        
+        setIsUploadingPhoto(true);
+        try {
+            const formData = new FormData();
+            formData.append(type === 'profile' ? 'profilePhoto' : 'coverPhoto', file);
+            
+            const response = await fetch(`/api/upload/${type}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                },
+                body: formData,
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log(`${type} photo uploaded:`, data);
+                
+                // Update profile state with new photo URL
+                setProfile(prev => prev ? {
+                    ...prev,
+                    [type === 'profile' ? 'profilePicture' : 'coverPicture']: data.url
+                } : null);
+                
+                // Show success notification
+                if (typeof window !== 'undefined' && window.Notification) {
+                    new Notification(`${type === 'profile' ? 'Profile' : 'Cover'} photo updated!`);
+                }
+            } else {
+                console.error(`Failed to upload ${type} photo`);
+                alert(`Failed to upload ${type} photo. Please try again.`);
+            }
+        } catch (error) {
+            console.error(`Error uploading ${type} photo:`, error);
+            alert(`Error uploading ${type} photo. Please try again.`);
+        } finally {
+            setIsUploadingPhoto(false);
+            setShowPhotoUploadModal(false);
+        }
+    };
+
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file.');
+                return;
+            }
+            
+            // Validate file size (5MB limit)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be less than 5MB.');
+                return;
+            }
+            
+            handlePhotoUpload(file, photoUploadType);
+        }
+    };
+
     if (authLoading || loading)
         return (
             <div className={`min-h-screen ${themeClasses.bg} pb-20 md:pb-0 flex items-center justify-center`}>
@@ -624,10 +693,10 @@ export default function ProfilePage() {
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.9 }}
                                     onClick={() => {
-                                        // TODO: Implement cover photo upload
-                                        console.log('Cover photo upload clicked');
-                                        alert('Cover photo upload feature coming soon!');
+                                        setPhotoUploadType('cover');
+                                        setShowPhotoUploadModal(true);
                                     }}
+                                    disabled={isUploadingPhoto}
                                     className="absolute bottom-4 right-4 p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all duration-300 hover:scale-110"
                                 >
                                     <Camera size={20} />
@@ -646,27 +715,13 @@ export default function ProfilePage() {
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
                                         onClick={() => {
-                                            // Implement cover photo upload functionality
-                                            const input = document.createElement('input');
-                                            input.type = 'file';
-                                            input.accept = 'image/*';
-                                            input.onchange = (e) => {
-                                                const file = (e.target as HTMLInputElement).files?.[0];
-                                                if (file) {
-                                                    const reader = new FileReader();
-                                                    reader.onload = (e) => {
-                                                        const result = e.target?.result as string;
-                                                        setCoverPhoto(result);
-                                                        alert('Cover photo updated successfully! 🎉');
-                                                    };
-                                                    reader.readAsDataURL(file);
-                                                }
-                                            };
-                                            input.click();
+                                            setPhotoUploadType('cover');
+                                            setShowPhotoUploadModal(true);
                                         }}
-                                        className="mt-2 px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all"
+                                        disabled={isUploadingPhoto}
+                                        className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50"
                                     >
-                                        Add Cover Photo
+                                        {isUploadingPhoto ? 'Uploading...' : 'Add Cover Photo'}
                                     </motion.button>
                                 )}
                             </div>
@@ -722,14 +777,18 @@ export default function ProfilePage() {
                                             whileHover={{ scale: 1.1 }}
                                             whileTap={{ scale: 0.9 }}
                                             onClick={() => {
-                                                // TODO: Implement profile photo upload
-                                                console.log('Profile photo upload clicked');
-                                                alert('Profile photo upload feature coming soon!');
+                                                setPhotoUploadType('profile');
+                                                setShowPhotoUploadModal(true);
                                             }}
-                                            className="p-2 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                                            disabled={isUploadingPhoto}
+                                            className="p-2 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
                                             title="Change Photo"
                     >
-                        <Camera size={16} />
+                        {isUploadingPhoto ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            <Camera size={16} />
+                        )}
                                         </motion.button>
                                         <motion.button
                                 type="button"
@@ -941,6 +1000,7 @@ export default function ProfilePage() {
                                 setShowCommentModal={setShowCommentModal}
                                 selectedPost={selectedPost}
                                 setSelectedPost={setSelectedPost}
+                                themeClasses={themeClasses}
                             />
                         </motion.div>
                     )}
@@ -1403,6 +1463,67 @@ export default function ProfilePage() {
                 userId={user?.id?.toString() || ''}
                 type={followersModalType}
             />
+
+            {/* Photo Upload Modal */}
+            {showPhotoUploadModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <motion.div
+                        className={`${themeClasses.bg} rounded-2xl w-full max-w-md shadow-2xl border ${themeClasses.border} p-6`}
+                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className={`text-lg font-bold ${themeClasses.text}`}>
+                                Upload {photoUploadType === 'profile' ? 'Profile' : 'Cover'} Photo
+                            </h3>
+                            <button
+                                onClick={() => setShowPhotoUploadModal(false)}
+                                className={`p-2 ${themeClasses.hover} rounded-full transition-colors`}
+                            >
+                                <X className={`w-5 h-5 ${themeClasses.textSecondary}`} />
+                            </button>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <div className="text-center">
+                                <Upload className={`w-12 h-12 mx-auto mb-2 ${themeClasses.textSecondary}`} />
+                                <p className={`${themeClasses.textSecondary} mb-4`}>
+                                    Choose an image file to upload
+                                </p>
+                            </div>
+                            
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileSelect}
+                                className="w-full p-3 border border-gray-300 rounded-lg"
+                                disabled={isUploadingPhoto}
+                            />
+                            
+                            <div className="flex space-x-3">
+                                <button
+                                    onClick={() => setShowPhotoUploadModal(false)}
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                    disabled={isUploadingPhoto}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+                                        input?.click();
+                                    }}
+                                    className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+                                    disabled={isUploadingPhoto}
+                                >
+                                    {isUploadingPhoto ? 'Uploading...' : 'Select File'}
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
                 </div>
             </div>
         </>
@@ -1415,13 +1536,15 @@ const UserPosts = ({
     showCommentModal, 
     setShowCommentModal, 
     selectedPost, 
-    setSelectedPost 
+    setSelectedPost,
+    themeClasses
 }: { 
     userId?: string;
     showCommentModal: boolean;
     setShowCommentModal: (show: boolean) => void;
     selectedPost: any;
     setSelectedPost: (post: any) => void;
+    themeClasses: any;
 }) => {
     const [posts, setPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -1788,6 +1911,7 @@ const UserPosts = ({
                     </motion.div>
                 </div>
             )}
+
         </div>
     );
 };

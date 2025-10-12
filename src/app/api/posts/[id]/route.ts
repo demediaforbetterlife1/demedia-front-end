@@ -18,10 +18,21 @@ export async function PUT(
 
     // Try to connect to the actual backend first
     try {
+      // Extract user ID from token for backend
+      const token = authHeader.replace('Bearer ', '');
+      let userId = null;
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        userId = payload.sub || payload.userId || payload.id;
+      } catch (e) {
+        console.log('Could not extract user ID from token');
+      }
+
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/posts/${postId}`, {
         method: 'PUT',
         headers: {
           'Authorization': authHeader,
+          'user-id': userId,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
@@ -68,10 +79,21 @@ export async function DELETE(
 
     // Try to connect to the actual backend first
     try {
+      // Extract user ID from token for backend
+      const token = authHeader.replace('Bearer ', '');
+      let userId = null;
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        userId = payload.sub || payload.userId || payload.id;
+      } catch (e) {
+        console.log('Could not extract user ID from token');
+      }
+
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/posts/${postId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': authHeader,
+          'user-id': userId,
           'Content-Type': 'application/json',
         },
       });
