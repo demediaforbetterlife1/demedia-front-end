@@ -377,11 +377,15 @@ export default function Posts() {
                                     onClick={() => {
                                         // Get the author ID from the post
                                         const targetUserId = post.user?.id || post.author?.id;
-                                        if (!targetUserId) {
+                                        if (targetUserId) {
+                                            window.location.href = `/profile?userId=${targetUserId}`;
+                                        } else {
                                             console.error('No user ID found for post:', post);
-                                            return;
+                                            // Fallback to current user's profile if no author ID
+                                            if (user?.id) {
+                                                window.location.href = `/profile`;
+                                            }
                                         }
-                                        window.location.href = `/profile?userId=${targetUserId}`;
                                     }}
                                     className="w-10 h-10 rounded-full theme-bg-tertiary flex items-center justify-center theme-text-secondary font-bold hover:shadow-lg transition-all duration-300 cursor-pointer"
                                 >
@@ -396,11 +400,15 @@ export default function Posts() {
                                             whileHover={{ scale: 1.02 }}
                                             onClick={() => {
                                                 const targetUserId = post.user?.id || post.author?.id;
-                                                if (!targetUserId) {
+                                                if (targetUserId) {
+                                                    window.location.href = `/profile?userId=${targetUserId}`;
+                                                } else {
                                                     console.error('No user ID found for post:', post);
-                                                    return;
+                                                    // Fallback to current user's profile if no author ID
+                                                    if (user?.id) {
+                                                        window.location.href = `/profile`;
+                                                    }
                                                 }
-                                                window.location.href = `/profile?userId=${targetUserId}`;
                                             }}
                                             className="font-semibold theme-text-primary hover:text-cyan-400 transition-colors cursor-pointer"
                                         >
@@ -420,11 +428,15 @@ export default function Posts() {
                                         whileHover={{ scale: 1.02 }}
                                         onClick={() => {
                                             const targetUserId = post.user?.id || post.author?.id;
-                                            if (!targetUserId) {
+                                            if (targetUserId) {
+                                                window.location.href = `/profile?userId=${targetUserId}`;
+                                            } else {
                                                 console.error('No user ID found for post:', post);
-                                                return;
+                                                // Fallback to current user's profile if no author ID
+                                                if (user?.id) {
+                                                    window.location.href = `/profile`;
+                                                }
                                             }
-                                            window.location.href = `/profile?userId=${targetUserId}`;
                                         }}
                                         className="text-sm theme-text-muted hover:text-cyan-400 transition-colors cursor-pointer"
                                     >

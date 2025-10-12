@@ -10,7 +10,8 @@ import {
     MessageCircle,
     FileText,
     Zap,
-    X
+    X,
+    User
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import CreateContentModal from './CreateContentModal';
@@ -63,6 +64,14 @@ export default function MobileBottomNav() {
             path: '/messeging',
             color: 'text-purple-500',
             activeColor: 'text-purple-400'
+        },
+        {
+            id: 'profile',
+            label: 'Profile',
+            icon: User,
+            path: '/profile',
+            color: 'text-indigo-500',
+            activeColor: 'text-indigo-400'
         }
     ];
 
@@ -77,6 +86,7 @@ export default function MobileBottomNav() {
     const isActive = (path: string | null) => {
         if (!path) return false;
         if (path === '/home') return pathname === '/home' || pathname === '/';
+        if (path === '/profile') return pathname === '/profile' || pathname?.startsWith('/profile?');
         return pathname?.startsWith(path);
     };
 
