@@ -147,7 +147,7 @@ export default function ProfilePage() {
     const { theme } = useTheme();
     const searchParams = useSearchParams();
     const userIdFromUrl = searchParams.get('userId');
-    const userId = userIdFromUrl || user?.id;
+    const userId = userIdFromUrl || user?.id?.toString();
     const isOwnProfile = !userIdFromUrl || userIdFromUrl === user?.id?.toString();
 
     const getThemeClasses = () => {

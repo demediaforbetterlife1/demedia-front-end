@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { contentModerationService } from "@/services/contentModeration";
+import { apiFetch } from "@/lib/api";
 import { 
     X, 
     Image as ImageIcon, 
@@ -254,12 +255,10 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
                 imageUrls: imageUrls
             };
 
-            const res = await fetch(`/api/posts`, {
+            const res = await apiFetch(`/api/posts`, {
                 method: "POST",
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'user-id': userId,
-                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(postData),
             });
