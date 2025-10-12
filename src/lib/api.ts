@@ -174,8 +174,24 @@ interface UserProfileResponse {
 
 export async function getUserProfile(userId: string | number): Promise<UserProfileResponse | null> {
     try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        const currentUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+        
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+        };
+        
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        if (currentUserId) {
+            headers['user-id'] = currentUserId;
+        }
+
         const res = await fetch(`/api/users/${userId}/profile`, {
-            cache: "no-store", // عشان ما يكاشي
+            cache: "no-store",
+            headers
         });
 
         if (!res.ok) {
