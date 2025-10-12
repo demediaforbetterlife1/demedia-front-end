@@ -258,6 +258,7 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
                 method: "POST",
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'user-id': userId,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(postData),

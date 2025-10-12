@@ -109,14 +109,8 @@ export default function MoodFilter({ isOpen, onClose, onMoodChange, currentMood 
 
         setIsAnalyzing(true);
         
-        // Save mood preferences to localStorage
-        const moodPreferences = {
-            mood: selectedMood,
-            filters: selectedFilters,
-            intensity: intensity,
-            timestamp: new Date().toISOString()
-        };
-        localStorage.setItem('currentMoodPreferences', JSON.stringify(moodPreferences));
+        // Save mood to database
+        await databaseService.saveMood(selectedMood, intensity, `Filters: ${selectedFilters.join(', ')}`);
         
         // Simulate AI analysis
         await new Promise(resolve => setTimeout(resolve, 1500));

@@ -93,20 +93,11 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ onCl
   const handleSaveSettings = async () => {
     setIsLoading(true);
     try {
-      // Save to backend
-      const userId = localStorage.getItem('userId');
-      if (userId) {
-        await fetch(`/api/user/${userId}/notification-settings`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(settings),
-        });
-      }
-      
-      // Save to localStorage
-      localStorage.setItem('notificationSettings', JSON.stringify(settings));
+      // Save to database using databaseService
+      const { databaseService } = await import('@/services/databaseService');
+      await databaseService.updateUserPreferences({
+        notifications: settings
+      });
       
       onClose();
     } catch (error: unknown) {
