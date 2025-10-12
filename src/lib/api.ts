@@ -200,7 +200,7 @@ export async function getUserProfile(userId: string | number): Promise<UserProfi
         console.log('Making profile request to:', `/api/users/${userId}/profile`);
         console.log('Request headers:', headers);
 
-        const res = await fetch(`/api/users/${userId}/profile`, {
+        const res = await apiFetch(`/api/users/${userId}/profile`, {
             cache: "no-store",
             headers
         });

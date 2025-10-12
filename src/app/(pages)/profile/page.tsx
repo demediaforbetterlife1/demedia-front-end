@@ -690,7 +690,7 @@ export default function ProfilePage() {
                 {/* Modern Cover Section */}
                 <div className="relative">
                     {coverPicture ? (
-                        <div className="relative h-64 md:h-80 overflow-hidden rounded-t-3xl">
+                        <div className="relative h-48 sm:h-64 md:h-80 lg:h-96 overflow-hidden rounded-t-3xl">
                     <img
                         src={coverPicture}
                         alt="Cover"
@@ -743,10 +743,10 @@ export default function ProfilePage() {
                     {/* Modern Profile Section */}
             <div className="relative px-6 pb-6">
                         {/* Circular Profile Picture with Unique Features */}
-                        <div className="absolute -top-24 left-6">
+                        <div className="absolute -top-16 sm:-top-20 md:-top-24 left-4 sm:left-6">
                             <div className="relative group">
                                 {/* Main Profile Circle */}
-                                <div className={`w-32 h-32 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl relative`}>
+                                <div className={`w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl relative`}>
                     {profilePicture ? (
                         <motion.img
                                             key={profilePicture}
@@ -820,7 +820,7 @@ export default function ProfilePage() {
                 </div>
 
                         {/* Profile Info Section */}
-                        <div className="pt-20 px-4 sm:px-6">
+                        <div className="pt-16 sm:pt-20 px-4 sm:px-6">
                             {/* Name and Username */}
                             <div className="mb-4">
                                 <h1 className={`text-2xl sm:text-3xl font-bold ${themeClasses.text} mb-1`}>{name}</h1>
@@ -890,7 +890,7 @@ export default function ProfilePage() {
                             onClick={() => setShowEditModal(true)}
                             whileTap={{ scale: 0.95 }}
                                             whileHover={{ scale: 1.02 }}
-                                            className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-600 hover:to-purple-700 shadow-lg hover:shadow-xl`}
+                                            className={`flex-1 px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-600 hover:to-purple-700 shadow-lg hover:shadow-xl text-sm sm:text-base`}
                         >
                                             <Edit size={18} />
                                             <span>Edit Profile</span>
@@ -924,11 +924,11 @@ export default function ProfilePage() {
                                             whileHover={{ scale: 1.02 }}
                                 onClick={handleFollowToggle}
                                 disabled={busyFollow}
-                                            className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                                            className={`flex-1 px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
                                     isFollowing
                                                     ? `bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800`
                                                     : `bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-600 hover:to-purple-700 shadow-lg hover:shadow-xl`
-                                } ${busyFollow ? "opacity-70 cursor-wait" : ""}`}
+                                } ${busyFollow ? "opacity-70 cursor-wait" : ""} text-sm sm:text-base`}
                             >
                                             {busyFollow ? "..." : isFollowing ? "Following" : "Follow"}
                             </motion.button>
@@ -939,7 +939,7 @@ export default function ProfilePage() {
                                 whileTap={{ scale: 0.95 }}
                                 whileHover={{ scale: 1.02 }}
                                 onClick={() => handleStartChat()}
-                                className="px-6 py-3 rounded-xl font-semibold transition-all duration-300 bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl flex items-center space-x-2"
+                                className="px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-300 bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl flex items-center space-x-2 text-sm sm:text-base"
                             >
                                 <MessageCircle size={18} />
                                 <span>Chat</span>
