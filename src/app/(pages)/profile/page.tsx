@@ -1744,7 +1744,7 @@ const UserPosts = ({
                         </div>
                         
                         {/* Edit/Delete buttons - only show for current user's posts */}
-                        {user?.id && Number(user.id) === Number(userId) && (
+                        {user?.id && (Number(user.id) === Number(userId) || (post.user?.id || post.author?.id) === Number(user?.id)) && (
                             <div className="flex items-center space-x-2">
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
