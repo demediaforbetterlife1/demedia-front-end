@@ -216,35 +216,25 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
                 return;
             }
 
-            // Create FormData to handle file uploads
-            const formData = new FormData();
-            formData.append('title', title || content.substring(0, 50) + (content.length > 50 ? "..." : "") || "New Post");
-            formData.append('content', content);
-            formData.append('authorId', userId);
-            formData.append('privacySettings', JSON.stringify(privacySettings));
-            formData.append('hashtags', JSON.stringify(hashtags));
-            formData.append('mentions', JSON.stringify(mentions));
-            formData.append('location', location || '');
-            if (isScheduled && scheduleDate) {
-                formData.append('scheduledDate', new Date(scheduleDate).toISOString());
-            }
-
-            // Add images
-            images.forEach((image, index) => {
-                formData.append(`images`, image);
-            });
-
-            // Add videos
-            videos.forEach((video, index) => {
-                formData.append(`videos`, video);
-            });
+            // Create JSON payload (file uploads will be handled separately in the future)
+            const postData = {
+                title: title || content.substring(0, 50) + (content.length > 50 ? "..." : "") || "New Post",
+                content: content,
+                authorId: parseInt(userId),
+                privacySettings: privacySettings,
+                hashtags: hashtags,
+                mentions: mentions,
+                location: location || '',
+                scheduledDate: isScheduled && scheduleDate ? new Date(scheduleDate).toISOString() : null
+            };
 
             const res = await fetch(`/api/posts`, {
                 method: "POST",
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
                 },
-                body: formData,
+                body: JSON.stringify(postData),
             });
 
             if (!res.ok) {
