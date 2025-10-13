@@ -877,8 +877,8 @@ export default function ProfilePage() {
                                 </div>
                             )}
 
-                            {/* Modern Stats Section */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                            {/* Modern Stats Section - Vertical Layout */}
+                            <div className="flex flex-col sm:flex-row gap-6 mb-8">
                                 <motion.div 
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
@@ -886,7 +886,7 @@ export default function ProfilePage() {
                                         setFollowersModalType('followers');
                                         setShowFollowersModal(true);
                                     }}
-                                    className={`text-center p-6 rounded-2xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-xl transition-all duration-300 backdrop-blur-sm`}
+                                    className={`text-center p-6 rounded-2xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-xl transition-all duration-300 backdrop-blur-sm flex-1`}
                                 >
                                     <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>{followersCount}</div>
                                     <div className={`text-sm font-medium ${themeClasses.textSecondary} mb-3`}>Followers</div>
@@ -902,7 +902,7 @@ export default function ProfilePage() {
                                         setFollowersModalType('following');
                                         setShowFollowersModal(true);
                                     }}
-                                    className={`text-center p-6 rounded-2xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-xl transition-all duration-300 backdrop-blur-sm`}
+                                    className={`text-center p-6 rounded-2xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-xl transition-all duration-300 backdrop-blur-sm flex-1`}
                                 >
                                     <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>{followingCount}</div>
                                     <div className={`text-sm font-medium ${themeClasses.textSecondary} mb-3`}>Following</div>
@@ -913,7 +913,7 @@ export default function ProfilePage() {
                                 
                                 <motion.div 
                                     whileHover={{ scale: 1.05 }}
-                                    className={`text-center p-6 rounded-2xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-xl transition-all duration-300 backdrop-blur-sm`}
+                                    className={`text-center p-6 rounded-2xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-xl transition-all duration-300 backdrop-blur-sm flex-1`}
                                 >
                                     <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>{likesCount}</div>
                                     <div className={`text-sm font-medium ${themeClasses.textSecondary} mb-3`}>Likes</div>
@@ -947,17 +947,6 @@ export default function ProfilePage() {
                                 // Here you can implement the actual update logic
                             }} 
                         />
-                                        
-                                        
-                                        <motion.button
-                                            type="button"
-                                            whileTap={{ scale: 0.95 }}
-                                            whileHover={{ scale: 1.02 }}
-                                            className={`p-4 rounded-2xl ${themeClasses.buttonSecondary} transition-all duration-300 shadow-lg hover:shadow-xl`}
-                                            title="Settings"
-                                        >
-                                            <Settings size={18} />
-                                        </motion.button>
                                     </>
                                 ) : (
                                     <>
@@ -1896,6 +1885,15 @@ const UserPosts = ({
                 </div>
             )}
 
+            {/* Edit Profile Modal */}
+            <EditProfileModal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                onProfileUpdated={(updatedProfile) => {
+                    setProfile(updatedProfile);
+                    setShowEditModal(false);
+                }}
+            />
         </div>
     );
 }

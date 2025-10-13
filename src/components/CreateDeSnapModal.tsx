@@ -242,7 +242,6 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 uploadData = JSON.parse(responseText);
             } catch (jsonError) {
                 console.error('Upload JSON parsing error:', jsonError);
-                const responseText = await uploadResponse.text();
                 console.error('Upload response text:', responseText);
                 throw new Error('Invalid upload response from server. Please try again.');
             }
@@ -293,7 +292,6 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 newDeSnap = JSON.parse(responseText);
             } catch (jsonError) {
                 console.error('JSON parsing error:', jsonError);
-                const responseText = await response.text();
                 console.error('Response text:', responseText);
                 throw new Error('Invalid response from server. Please try again.');
             }
