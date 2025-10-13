@@ -1489,8 +1489,18 @@ export default function ProfilePage() {
                         </div>
                     </div>
                 </div>
-            </div>
                 </div>
+            </div>
+
+            {/* Edit Profile Modal */}
+            <EditProfileModal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                onProfileUpdated={(updatedProfile) => {
+                    setProfile(updatedProfile);
+                    setShowEditModal(false);
+                }}
+            />
         </div>
     );
 }
@@ -1885,15 +1895,6 @@ const UserPosts = ({
                 </div>
             )}
 
-            {/* Edit Profile Modal */}
-            <EditProfileModal
-                isOpen={showEditModal}
-                onClose={() => setShowEditModal(false)}
-                onProfileUpdated={(updatedProfile) => {
-                    setProfile(updatedProfile);
-                    setShowEditModal(false);
-                }}
-            />
         </div>
     );
 }
