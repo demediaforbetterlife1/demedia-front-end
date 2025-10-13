@@ -722,19 +722,19 @@ export default function ProfilePage() {
                 }
             `}</style>
             <div className={`min-h-screen theme-bg-primary pb-20 md:pb-0`}>
-                <div className={`max-w-6xl mx-auto p-4 ${themeClasses.card} rounded-3xl shadow-2xl border ${themeClasses.border} overflow-hidden backdrop-blur-sm`}>
+                <div className="max-w-6xl mx-auto p-4">
                     {/* Modern Cover Section */}
-                <div className="relative">
-                    {coverPicture ? (
-                        <div className="relative h-48 sm:h-64 md:h-80 lg:h-96 overflow-hidden rounded-t-3xl">
-                    <img
-                        src={coverPicture}
-                        alt="Cover"
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => (e.currentTarget.style.display = "none")}
-                    />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    <div className="relative mb-8">
+                        {coverPicture ? (
+                            <div className="relative h-64 sm:h-80 md:h-96 lg:h-[28rem] overflow-hidden rounded-3xl shadow-2xl">
+                                <img
+                                    src={coverPicture}
+                                    alt="Cover"
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                    onError={(e) => (e.currentTarget.style.display = "none")}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                             {isOwnProfile && (
                                 <motion.button
                         type="button"
@@ -751,39 +751,39 @@ export default function ProfilePage() {
                                 </motion.button>
                             )}
                         </div>
-                    ) : (
-                        <div className={`h-64 md:h-80 bg-gradient-to-br ${themeClasses.coverGradient} rounded-t-3xl flex items-center justify-center relative overflow-hidden`}>
-                            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10"></div>
-                            <div className="text-center">
-                                <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <UserIcon className="w-10 h-10 text-white" />
+                        ) : (
+                            <div className={`h-64 sm:h-80 md:h-96 lg:h-[28rem] bg-gradient-to-br ${themeClasses.coverGradient} rounded-3xl flex items-center justify-center relative overflow-hidden shadow-2xl`}>
+                                <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10"></div>
+                                <div className="text-center relative z-10">
+                                    <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+                                        <UserIcon className="w-10 h-10 text-white" />
+                                    </div>
+                                    <p className={`text-lg font-medium ${themeClasses.text} mb-4`}>No cover photo</p>
+                                    {isOwnProfile && (
+                                        <motion.button 
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => {
+                                                setPhotoUploadType('cover');
+                                                setShowPhotoUploadModal(true);
+                                            }}
+                                            disabled={isUploadingPhoto}
+                                            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 shadow-lg"
+                                        >
+                                            {isUploadingPhoto ? 'Uploading...' : 'Add Cover Photo'}
+                                        </motion.button>
+                                    )}
                                 </div>
-                                <p className={`text-lg font-medium ${themeClasses.text}`}>No cover photo</p>
-                                {isOwnProfile && (
-                                    <motion.button 
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => {
-                                            setPhotoUploadType('cover');
-                                            setShowPhotoUploadModal(true);
-                                        }}
-                                        disabled={isUploadingPhoto}
-                                        className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50"
-                                    >
-                                        {isUploadingPhoto ? 'Uploading...' : 'Add Cover Photo'}
-                                    </motion.button>
-                                )}
                             </div>
-                </div>
-            )}
+                        )}
 
                     {/* Modern Profile Section */}
-            <div className="relative px-6 pb-6">
+                    <div className="relative px-6 pb-6">
                         {/* Circular Profile Picture with Unique Features */}
-                        <div className="absolute -top-16 sm:-top-20 md:-top-24 left-4 sm:left-6">
+                        <div className="absolute -top-20 sm:-top-24 md:-top-28 left-6 sm:left-8">
                             <div className="relative group">
                                 {/* Main Profile Circle */}
-                                <div className={`w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl relative ring-4 ring-white/20 backdrop-blur-sm`}>
+                                <div className={`w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl relative ring-4 ring-white/20 backdrop-blur-sm`}>
                     {profilePicture ? (
                         <motion.img
                                             key={profilePicture}
@@ -857,11 +857,17 @@ export default function ProfilePage() {
                 </div>
 
                         {/* Profile Info Section */}
-                        <div className="pt-16 sm:pt-20 px-4 sm:px-6">
+                        <div className="pt-20 sm:pt-24 px-4 sm:px-6">
                             {/* Name and Username */}
-                            <div className="mb-4">
-                                <h1 className={`text-2xl sm:text-3xl font-bold ${themeClasses.text} mb-1`}>{name}</h1>
-                                <p className={`text-base sm:text-lg ${themeClasses.textSecondary}`}>@{username}</p>
+                            <div className="mb-6">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <h1 className={`text-3xl sm:text-4xl font-bold ${themeClasses.text}`}>{name}</h1>
+                                    <PremiumUserIndicator 
+                                        subscriptionTier={profile?.subscriptionTier}
+                                        size="md"
+                                    />
+                                </div>
+                                <p className={`text-lg sm:text-xl ${themeClasses.textSecondary}`}>@{username}</p>
                             </div>
 
                             {/* Bio */}
@@ -871,8 +877,8 @@ export default function ProfilePage() {
                                 </div>
                             )}
 
-                            {/* Unique Stats with Special Features */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                            {/* Modern Stats Section */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
                                 <motion.div 
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
@@ -880,12 +886,12 @@ export default function ProfilePage() {
                                         setFollowersModalType('followers');
                                         setShowFollowersModal(true);
                                     }}
-                                    className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300`}
+                                    className={`text-center p-6 rounded-2xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-xl transition-all duration-300 backdrop-blur-sm`}
                                 >
-                                    <div className={`text-2xl font-bold ${themeClasses.text}`}>{followersCount}</div>
-                                    <div className={`text-sm ${themeClasses.textSecondary}`}>Followers</div>
-                                    <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
-                                        <div className="bg-gradient-to-r from-cyan-500 to-purple-600 h-1 rounded-full" style={{width: `${Math.min(100, (followersCount / 1000) * 100)}%`}}></div>
+                                    <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>{followersCount}</div>
+                                    <div className={`text-sm font-medium ${themeClasses.textSecondary} mb-3`}>Followers</div>
+                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                        <div className="bg-gradient-to-r from-cyan-500 to-purple-600 h-2 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (followersCount / 1000) * 100)}%`}}></div>
                                     </div>
                                 </motion.div>
                                 
@@ -896,41 +902,41 @@ export default function ProfilePage() {
                                         setFollowersModalType('following');
                                         setShowFollowersModal(true);
                                     }}
-                                    className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300`}
+                                    className={`text-center p-6 rounded-2xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-xl transition-all duration-300 backdrop-blur-sm`}
                                 >
-                                    <div className={`text-2xl font-bold ${themeClasses.text}`}>{followingCount}</div>
-                                    <div className={`text-sm ${themeClasses.textSecondary}`}>Following</div>
-                                    <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
-                                        <div className="bg-gradient-to-r from-pink-500 to-rose-600 h-1 rounded-full" style={{width: `${Math.min(100, (followingCount / 500) * 100)}%`}}></div>
+                                    <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>{followingCount}</div>
+                                    <div className={`text-sm font-medium ${themeClasses.textSecondary} mb-3`}>Following</div>
+                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                        <div className="bg-gradient-to-r from-pink-500 to-rose-600 h-2 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (followingCount / 500) * 100)}%`}}></div>
                                     </div>
                                 </motion.div>
                                 
                                 <motion.div 
                                     whileHover={{ scale: 1.05 }}
-                                    className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300`}
+                                    className={`text-center p-6 rounded-2xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-xl transition-all duration-300 backdrop-blur-sm`}
                                 >
-                                    <div className={`text-2xl font-bold ${themeClasses.text}`}>{likesCount}</div>
-                                    <div className={`text-sm ${themeClasses.textSecondary}`}>Likes</div>
-                                    <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
-                                        <div className="bg-gradient-to-r from-yellow-500 to-orange-600 h-1 rounded-full" style={{width: `${Math.min(100, (likesCount / 10000) * 100)}%`}}></div>
+                                    <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>{likesCount}</div>
+                                    <div className={`text-sm font-medium ${themeClasses.textSecondary} mb-3`}>Likes</div>
+                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                        <div className="bg-gradient-to-r from-yellow-500 to-orange-600 h-2 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (likesCount / 10000) * 100)}%`}}></div>
                                     </div>
                                 </motion.div>
                                 
                             </div>
 
-                            {/* Unique Action Buttons with Special Features */}
-                            <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 mb-6">
+                            {/* Modern Action Buttons */}
+                            <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 mb-8">
                     {isOwnProfile ? (
                                     <>
                         <motion.button
                             type="button"
                             onClick={() => setShowEditModal(true)}
                             whileTap={{ scale: 0.95 }}
-                                            whileHover={{ scale: 1.02 }}
-                                            className={`flex-1 px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${themeClasses.button} text-sm sm:text-base`}
+                            whileHover={{ scale: 1.02 }}
+                            className={`flex-1 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${themeClasses.button} text-sm sm:text-base shadow-lg hover:shadow-xl`}
                         >
-                                            <Edit size={18} />
-                                            <span>Edit Profile</span>
+                            <Edit size={18} />
+                            <span>Edit Profile</span>
                         </motion.button>
                         
                         {/* Profile Customization Button */}
@@ -947,7 +953,7 @@ export default function ProfilePage() {
                                             type="button"
                                             whileTap={{ scale: 0.95 }}
                                             whileHover={{ scale: 1.02 }}
-                                            className={`p-3 rounded-xl ${themeClasses.buttonSecondary} transition-all duration-300`}
+                                            className={`p-4 rounded-2xl ${themeClasses.buttonSecondary} transition-all duration-300 shadow-lg hover:shadow-xl`}
                                             title="Settings"
                                         >
                                             <Settings size={18} />
@@ -958,16 +964,16 @@ export default function ProfilePage() {
                             <motion.button
                                 type="button"
                                 whileTap={{ scale: 0.95 }}
-                                            whileHover={{ scale: 1.02 }}
+                                whileHover={{ scale: 1.02 }}
                                 onClick={handleFollowToggle}
                                 disabled={busyFollow}
-                                            className={`flex-1 px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                                className={`flex-1 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${
                                     isFollowing
-                                                    ? `${themeClasses.buttonSecondary}`
-                                                    : `${themeClasses.button}`
-                                } ${busyFollow ? "opacity-70 cursor-wait" : ""} text-sm sm:text-base`}
+                                        ? `${themeClasses.buttonSecondary}`
+                                        : `${themeClasses.button}`
+                                } ${busyFollow ? "opacity-70 cursor-wait" : ""} text-sm sm:text-base shadow-lg hover:shadow-xl`}
                             >
-                                            {busyFollow ? "..." : isFollowing ? "Following" : "Follow"}
+                                {busyFollow ? "..." : isFollowing ? "Following" : "Follow"}
                             </motion.button>
                             
                             {/* Chat Button */}
@@ -976,7 +982,7 @@ export default function ProfilePage() {
                                 whileTap={{ scale: 0.95 }}
                                 whileHover={{ scale: 1.02 }}
                                 onClick={() => handleStartChat()}
-                                className={`px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${themeClasses.button} flex items-center space-x-2 text-sm sm:text-base`}
+                                className={`px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${themeClasses.button} flex items-center space-x-2 text-sm sm:text-base shadow-lg hover:shadow-xl`}
                             >
                                 <MessageCircle size={18} />
                                 <span>Chat</span>
@@ -1007,8 +1013,8 @@ export default function ProfilePage() {
                     )}
                 </div>
 
-                            {/* Advanced Navigation Tabs with Unique Features */}
-                            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto">
+                            {/* Modern Navigation Tabs */}
+                            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-8 overflow-x-auto">
                                 {[
                                     { id: "posts", label: "Posts", icon: Grid3X3, color: "from-blue-500 to-cyan-600" },
                                     { id: "desnaps", label: "DeSnaps", icon: Video, color: "from-purple-500 to-pink-600" },
@@ -1024,7 +1030,7 @@ export default function ProfilePage() {
                                         onClick={() => setActiveTab(tab.id)}
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
-                                        className={`flex-1 py-3 px-4 text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 relative ${
+                                        className={`flex-1 py-4 px-6 text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 relative rounded-t-xl ${
                                             activeTab === tab.id
                                                 ? `text-white bg-gradient-to-r ${tab.color} shadow-lg`
                                                 : `${themeClasses.textSecondary} hover:${themeClasses.text} hover:bg-gray-100/10`
@@ -1044,8 +1050,8 @@ export default function ProfilePage() {
                 ))}
             </div>
 
-                            {/* Unique Content Sections with Special Features */}
-            <div className="p-6">
+                            {/* Modern Content Sections */}
+                            <div className="p-8">
                 <AnimatePresence mode="wait">
                     {activeTab === "posts" && (
                         <motion.div
