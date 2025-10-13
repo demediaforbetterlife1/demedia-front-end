@@ -13,6 +13,7 @@ import CommentModal from "@/components/CommentModal";
 import ReportModal from "@/components/ReportModal";
 import EditPostModal from "@/components/EditPostModal";
 import { apiFetch } from "@/lib/api";
+import PremiumUserIndicator from "@/components/PremiumUserIndicator";
 
 type PostType = {
     id: number;
@@ -422,15 +423,11 @@ export default function Posts() {
                                         >
                                             {post.user?.name || post.author?.name || 'Unknown User'}
                                         </motion.button>
-                                        {/* Special Badges */}
-                                        <div className="flex gap-1">
-                                            <div className="w-5 h-5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                                                <Crown size={12} className="text-white" />
-                                            </div>
-                                            <div className="w-5 h-5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                                                <Diamond size={12} className="text-white" />
-                                            </div>
-                                        </div>
+                                        {/* Premium Indicator */}
+                                        <PremiumUserIndicator 
+                                            subscriptionTier={post.user?.subscriptionTier || post.author?.subscriptionTier}
+                                            size="sm"
+                                        />
                                     </div>
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}

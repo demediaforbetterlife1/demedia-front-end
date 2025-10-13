@@ -8,7 +8,8 @@ import {
     Plus, 
     MessageCircle,
     FileText,
-    User
+    User,
+    Crown
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import CreateContentModal from './CreateContentModal';
@@ -69,6 +70,14 @@ export default function MobileBottomNav() {
             path: '/profile',
             color: 'text-indigo-500',
             activeColor: 'text-indigo-400'
+        },
+        {
+            id: 'pricing',
+            label: 'Pricing',
+            icon: Crown,
+            path: '/pricing',
+            color: 'text-yellow-500',
+            activeColor: 'text-yellow-400'
         }
     ];
 
@@ -84,6 +93,7 @@ export default function MobileBottomNav() {
         if (!path) return false;
         if (path === '/home') return pathname === '/home' || pathname === '/';
         if (path === '/profile') return pathname === '/profile' || pathname?.startsWith('/profile?');
+        if (path === '/pricing') return pathname === '/pricing';
         return pathname?.startsWith(path);
     };
 

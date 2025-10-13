@@ -37,18 +37,18 @@ interface PricingTier {
 const pricingTiers: PricingTier[] = [
     {
         id: "monthly",
-        name: "Starter",
+        name: "Premium",
         duration: "1 Month",
         originalPrice: "$9.99",
-        currentPrice: "Coming Soon",
-        discount: "7 days free trial",
+        currentPrice: "$9.99",
+        discount: "Special sign beside your name",
         features: [
+            "Special sign beside your name in profile and posts",
+            "Highlighted comments with special background",
             "Unlimited posts and stories",
             "Basic analytics",
             "Standard support",
-            "Custom themes",
-            "Basic AI features",
-            "Social media integration"
+            "Custom themes"
         ],
         popular: false,
         icon: Star,
@@ -58,20 +58,20 @@ const pricingTiers: PricingTier[] = [
     },
     {
         id: "quarterly",
-        name: "Professional",
+        name: "Pro",
         duration: "3 Months",
         originalPrice: "$24.99",
-        currentPrice: "Coming Soon",
+        currentPrice: "$24.99",
         discount: "Save 17%",
         features: [
-            "Everything in Starter",
+            "Different special sign beside your name",
+            "Highlighted comments with special background",
+            "More features coming soon",
+            "Everything in Premium",
             "Advanced analytics",
             "Priority support",
             "Premium themes",
-            "Advanced AI features",
-            "Collaboration tools",
-            "Custom branding",
-            "API access"
+            "Advanced AI features"
         ],
         popular: true,
         icon: Crown,
@@ -81,19 +81,18 @@ const pricingTiers: PricingTier[] = [
     },
     {
         id: "semiannual",
-        name: "Enterprise",
+        name: "Elite",
         duration: "6 Months",
         originalPrice: "$44.99",
-        currentPrice: "Coming Soon",
+        currentPrice: "$44.99",
         discount: "Save 25%",
         features: [
-            "Everything in Professional",
-            "White-label solution",
-            "Dedicated support",
+            "We are thinking of the best features for you",
+            "Everything in Pro",
+            "Advanced features",
+            "Priority support",
             "Custom integrations",
-            "Advanced security",
             "Team management",
-            "Custom AI models",
             "24/7 support"
         ],
         popular: false,

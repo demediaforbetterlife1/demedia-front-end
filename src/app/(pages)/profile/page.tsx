@@ -96,6 +96,7 @@ import EditPostModal from "@/components/EditPostModal";
 import FollowersModal from "@/components/FollowersModal";
 import ProfileAnalytics from "@/components/ProfileAnalytics";
 import ProfileCustomization from "@/components/ProfileCustomization";
+import PremiumUserIndicator from "@/components/PremiumUserIndicator";
 import { apiFetch } from "@/lib/api";
 
 interface Story {
@@ -719,7 +720,7 @@ export default function ProfilePage() {
                     animation: spin-slow 3s linear infinite;
                 }
             `}</style>
-            <div className={`min-h-screen ${themeClasses.bg} pb-20 md:pb-0`}>
+            <div className={`min-h-screen theme-bg-primary pb-20 md:pb-0`}>
                 <div className={`max-w-6xl mx-auto p-4 ${themeClasses.card} rounded-3xl shadow-2xl border ${themeClasses.border} overflow-hidden backdrop-blur-sm`}>
                     {/* Modern Cover Section */}
                 <div className="relative">
@@ -1673,6 +1674,10 @@ const UserPosts = ({
                             <div className="flex-1">
                                 <div className="flex items-center space-x-2 mb-1">
                                     <h3 className="font-bold text-white text-lg">{post.author?.name || 'Unknown User'}</h3>
+                                    <PremiumUserIndicator 
+                                        subscriptionTier={post.author?.subscriptionTier}
+                                        size="sm"
+                                    />
                                     <div className="flex items-center space-x-1">
                                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                         <span className="text-xs text-green-400">Online</span>

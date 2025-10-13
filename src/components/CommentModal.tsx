@@ -5,6 +5,8 @@ import { X, Send, Heart, Reply, MoreHorizontal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { contentModerationService } from "@/services/contentModeration";
+import PremiumComment from "./PremiumComment";
+import PremiumUserIndicator from "./PremiumUserIndicator";
 
 interface Comment {
     id: number;
@@ -198,13 +200,21 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
                         ) : (
                             <div className="p-4 space-y-4">
                                 {comments.map((comment) => (
-                                    <div key={comment.id} className="flex space-x-3">
+                                    <PremiumComment 
+                                        key={comment.id} 
+                                        subscriptionTier={comment.user.subscriptionTier}
+                                        className="flex space-x-3"
+                                    >
                                         <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
                                             {comment.user.name.charAt(0).toUpperCase()}
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex items-center space-x-2 mb-1">
                                                 <span className="font-semibold text-white text-sm">{comment.user.name}</span>
+                                                <PremiumUserIndicator 
+                                                    subscriptionTier={comment.user.subscriptionTier}
+                                                    size="sm"
+                                                />
                                                 <span className="text-gray-400 text-xs">@{comment.user.username}</span>
                                                 <span className="text-gray-500 text-xs">{formatTimeAgo(comment.createdAt)}</span>
                                             </div>
@@ -230,7 +240,7 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
                                                 </button>
                                             </div>
                                         </div>
-                                    </div>
+                                    </PremiumComment>
                                 ))}
                             </div>
                         )}

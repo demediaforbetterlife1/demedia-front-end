@@ -234,6 +234,11 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                     throw new Error('Empty response from server');
                 }
                 
+                // Check if response is HTML (error page)
+                if (responseText.trim().startsWith('<')) {
+                    throw new Error('Server returned HTML error page. Please check your connection.');
+                }
+                
                 uploadData = JSON.parse(responseText);
             } catch (jsonError) {
                 console.error('Upload JSON parsing error:', jsonError);
@@ -278,6 +283,11 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 
                 if (!responseText.trim()) {
                     throw new Error('Empty response from server');
+                }
+                
+                // Check if response is HTML (error page)
+                if (responseText.trim().startsWith('<')) {
+                    throw new Error('Server returned HTML error page. Please check your connection.');
                 }
                 
                 newDeSnap = JSON.parse(responseText);
