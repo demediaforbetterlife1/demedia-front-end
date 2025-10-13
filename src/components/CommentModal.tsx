@@ -17,6 +17,7 @@ interface Comment {
         name: string;
         username: string;
         profilePicture?: string;
+        subscriptionTier?: 'monthly' | 'quarterly' | 'semiannual' | null;
     };
     likes: number;
     isLiked?: boolean;

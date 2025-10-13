@@ -29,12 +29,14 @@ type PostType = {
         name?: string;
         username?: string;
         profilePicture?: string;
+        subscriptionTier?: 'monthly' | 'quarterly' | 'semiannual' | null;
     };
     author?: {
         id?: number;
         name?: string;
         username?: string;
         profilePicture?: string;
+        subscriptionTier?: 'monthly' | 'quarterly' | 'semiannual' | null;
     };
     createdAt?: string;
     imageUrl?: string;

@@ -141,6 +141,7 @@ interface Profile {
     likesCount: number;
     isFollowing?: boolean;
     privacy?: 'public' | 'followers' | 'private';
+    subscriptionTier?: 'monthly' | 'quarterly' | 'semiannual' | null;
 }
 
 export default function ProfilePage() {
