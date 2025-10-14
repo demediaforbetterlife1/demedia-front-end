@@ -75,7 +75,19 @@ async function proxy(req: NextRequest, path: string[]): Promise<Response> {
   }
 
   try {
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    
+    init.signal = controller.signal;
+    
+    console.log(`🔄 Proxying ${req.method} request to: ${targetUrl}`);
+    
     const res = await fetch(targetUrl, init);
+    clearTimeout(timeoutId);
+    
+    console.log(`✅ Backend response: ${res.status} ${res.statusText}`);
+    
     const resHeaders = new Headers(res.headers);
     resHeaders.delete("transfer-encoding");
     resHeaders.delete("connection");
@@ -87,6 +99,16 @@ async function proxy(req: NextRequest, path: string[]): Promise<Response> {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error(`❌ Backend request failed: ${message}`);
+    
+    // Handle timeout specifically
+    if (err instanceof Error && err.name === 'AbortError') {
+      return NextResponse.json(
+        { error: "Request timeout - Backend took too long to respond", details: "Please try again" },
+        { status: 504 }
+      );
+    }
+    
     return NextResponse.json(
       { error: "Upstream fetch failed", details: message },
       { status: 502 }

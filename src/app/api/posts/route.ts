@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
 
     // Try to connect to the actual backend first
     try {
+      console.log('🔄 Attempting to fetch from backend...');
       const backendResponse = await fetch('https://demedia-backend.fly.dev/api/posts', {
         headers: {
           'Authorization': authHeader || '',
@@ -23,16 +24,42 @@ export async function GET(request: NextRequest) {
 
       if (backendResponse.ok) {
         const data = await backendResponse.json();
-        console.log('Backend posts data received:', data.length, 'posts');
-        console.log('First post structure:', data[0]);
+        console.log('✅ Backend posts data received:', data.length, 'posts');
+        console.log('✅ First post structure:', data[0]);
+        if (data[0]) {
+          console.log('✅ First post user data:', data[0].user);
+          console.log('✅ First post author data:', data[0].author);
+        }
         return NextResponse.json(data);
       } else {
         const errorText = await backendResponse.text();
-        console.log('Backend posts fetch failed:', backendResponse.status, errorText);
-        console.log('Error details:', errorText);
+        console.log('❌ Backend posts fetch failed:', backendResponse.status, errorText);
+        console.log('❌ Error details:', errorText);
       }
     } catch (backendError) {
-      console.log('Backend connection error:', backendError);
+      console.log('❌ Backend connection error:', backendError);
+    }
+
+    // Try one more time without authentication to get real data
+    try {
+      console.log('🔄 Trying backend without authentication...');
+      const publicResponse = await fetch('https://demedia-backend.fly.dev/api/posts', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (publicResponse.ok) {
+        const data = await publicResponse.json();
+        console.log('✅ Public backend posts data received:', data.length, 'posts');
+        if (data[0]) {
+          console.log('✅ Public first post user data:', data[0].user);
+          console.log('✅ Public first post author data:', data[0].author);
+        }
+        return NextResponse.json(data);
+      }
+    } catch (publicError) {
+      console.log('❌ Public backend connection error:', publicError);
     }
 
     // Fallback: Return sample posts data with real user IDs from your database

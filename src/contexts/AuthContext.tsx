@@ -181,7 +181,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const res = await apiFetch(`/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber, password })
+        body: JSON.stringify({ phoneNumber, password }),
+        signal: AbortSignal.timeout(15000) // 15 second timeout for login
       });
 
       console.log('AuthContext: Login response status:', res.status);

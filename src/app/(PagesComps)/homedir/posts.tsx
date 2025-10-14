@@ -116,6 +116,10 @@ export default function Posts() {
                 console.log('📊 Number of posts:', data.length);
                 console.log('📊 First post structure:', data[0]);
                 if (data[0]) {
+                    console.log('🔍 First post user data:', data[0].user);
+                    console.log('🔍 First post author data:', data[0].author);
+                    console.log('🔍 User ID available:', !!data[0].user?.id);
+                    console.log('🔍 Author ID available:', !!data[0].author?.id);
                     console.log('📊 First post author/user data:', {
                         user: data[0].user,
                         author: data[0].author,
@@ -430,6 +434,8 @@ export default function Posts() {
                                                     userHasId: !!post.user?.id,
                                                     authorHasId: !!post.author?.id
                                                 });
+                                                
+                                                console.log('🔍 Full post object for debugging:', JSON.stringify(post, null, 2));
                                                 
                                                 if (targetUserId) {
                                                     console.log('✅ Navigating to profile with userId:', targetUserId);
