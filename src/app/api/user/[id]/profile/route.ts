@@ -28,7 +28,7 @@ export async function GET(
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/users/${userId}/profile`, {
         headers: {
           'Authorization': authHeader,
-          'user-id': currentUserId,
+          'user-id': currentUserId || '',
           'Content-Type': 'application/json',
         },
       });

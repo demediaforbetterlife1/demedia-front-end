@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId,
+          'user-id': userId || '',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body)
