@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, UserCheck, UserX, Search } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { getThemeClasses, getButtonClasses } from '@/utils/themeUtils';
+import { getThemeClasses, getButtonClasses, getModalClasses } from '@/utils/themeUtils';
 
 interface Follower {
   id: number;
