@@ -155,6 +155,26 @@ export default function ProfilePage() {
     const userId = userIdFromUrl ? userIdFromUrl : user?.id?.toString();
     const isOwnProfile = !userIdFromUrl || userIdFromUrl === user?.id?.toString();
     
+    // State variables - moved before early returns
+    const [activeTab, setActiveTab] = useState<string>("posts");
+    const [isFollowing, setIsFollowing] = useState<boolean>(false);
+    const [profile, setProfile] = useState<Profile | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const [busyFollow, setBusyFollow] = useState<boolean>(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showCreateStoryModal, setShowCreateStoryModal] = useState(false);
+    const [showCreateDeSnapModal, setShowCreateDeSnapModal] = useState(false);
+    const [showDeSnapsViewer, setShowDeSnapsViewer] = useState(false);
+    const [selectedDeSnap, setSelectedDeSnap] = useState<DeSnap | null>(null);
+    const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    
+    // Followers/Following state
+    const [showFollowersList, setShowFollowersList] = useState(false);
+    const [showFollowingList, setShowFollowingList] = useState(false);
+    const [listType, setListType] = useState<'followers' | 'following'>('followers');
+    
     // Additional validation
     if (userIdFromUrl && userIdFromUrl !== user?.id?.toString()) {
         console.log('Loading different user profile:', userIdFromUrl, 'vs current user:', user?.id);
@@ -282,20 +302,6 @@ export default function ProfilePage() {
         setShowFollowingList(true);
     };
     
-    const [activeTab, setActiveTab] = useState<string>("posts");
-    const [isFollowing, setIsFollowing] = useState<boolean>(false);
-    const [profile, setProfile] = useState<Profile | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
-    const [busyFollow, setBusyFollow] = useState<boolean>(false);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [showCreateStoryModal, setShowCreateStoryModal] = useState(false);
-    const [showCreateDeSnapModal, setShowCreateDeSnapModal] = useState(false);
-    const [showDeSnapsViewer, setShowDeSnapsViewer] = useState(false);
-    const [selectedDeSnap, setSelectedDeSnap] = useState<DeSnap | null>(null);
-    const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    
     // State for modals and features
     const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
     const [showQuickActions, setShowQuickActions] = useState(false);
@@ -320,11 +326,6 @@ export default function ProfilePage() {
     const [showMemoryLane, setShowMemoryLane] = useState(false);
     const [showCollaborationHub, setShowCollaborationHub] = useState(false);
     const [showInnovationLab, setShowInnovationLab] = useState(false);
-    
-    // Followers/Following state
-    const [showFollowersList, setShowFollowersList] = useState(false);
-    const [showFollowingList, setShowFollowingList] = useState(false);
-    const [listType, setListType] = useState<'followers' | 'following'>('followers');
     
     // Advanced UI State
     const [activeView, setActiveView] = useState('overview');
