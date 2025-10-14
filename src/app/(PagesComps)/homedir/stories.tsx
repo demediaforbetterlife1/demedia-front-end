@@ -83,6 +83,16 @@ export default function Stories() {
                     hover: 'hover:bg-gray-800',
                     gradient: 'from-cyan-400/20 to-purple-400/20'
                 };
+            case 'gold':
+                return {
+                    bg: 'bg-gradient-to-br from-yellow-900/80 to-yellow-800/80',
+                    card: 'bg-gradient-to-br from-yellow-800 to-yellow-700',
+                    text: 'text-yellow-100',
+                    textSecondary: 'text-yellow-200',
+                    border: 'border-yellow-600/50',
+                    hover: 'hover:bg-yellow-800/80 gold-shimmer',
+                    gradient: 'from-yellow-400/30 to-amber-400/30'
+                };
             default:
                 return {
                     bg: 'bg-gray-900/80',

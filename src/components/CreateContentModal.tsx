@@ -76,6 +76,14 @@ export default function CreateContentModal({ isOpen, onClose }: CreateContentMod
                     hover: 'hover:bg-gray-900',
                     shadow: 'shadow-2xl'
                 };
+            case 'gold':
+                return {
+                    bg: 'bg-gradient-to-br from-yellow-900 to-yellow-800',
+                    text: 'text-yellow-100',
+                    border: 'border-yellow-600/50',
+                    hover: 'hover:bg-yellow-800/80 gold-shimmer',
+                    shadow: 'shadow-2xl gold-glow'
+                };
             default:
                 return {
                     bg: 'bg-gray-900',

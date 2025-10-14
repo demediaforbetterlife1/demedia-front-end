@@ -121,6 +121,16 @@ export default function MessagingPage() {
                     hover: 'hover:bg-gray-800',
                     input: 'bg-gray-800 border-gray-700'
                 };
+            case 'gold':
+                return {
+                    bg: 'bg-gradient-to-br from-yellow-900 to-yellow-800',
+                    card: 'bg-gradient-to-br from-yellow-800 to-yellow-700',
+                    text: 'text-yellow-100',
+                    textSecondary: 'text-yellow-200',
+                    border: 'border-yellow-600/50',
+                    hover: 'hover:bg-yellow-800/80 gold-shimmer',
+                    input: 'bg-yellow-800/50 border-yellow-600/50 focus:border-yellow-400'
+                };
             default:
                 return {
                     bg: 'bg-gray-900',

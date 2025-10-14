@@ -106,6 +106,16 @@ export default function ReportModal({ isOpen, onClose, postId, postAuthor, onRep
                     accent: 'text-red-400',
                     accentBg: 'bg-red-900/30'
                 };
+            case 'gold':
+                return {
+                    bg: 'bg-gradient-to-br from-yellow-900 to-yellow-800',
+                    text: 'text-yellow-100',
+                    textSecondary: 'text-yellow-200',
+                    border: 'border-yellow-600/50',
+                    hover: 'hover:bg-yellow-800/80 gold-shimmer',
+                    accent: 'text-red-300',
+                    accentBg: 'bg-red-900/40'
+                };
             default:
                 return {
                     bg: 'bg-gray-800',

@@ -112,6 +112,16 @@ export default function Posts() {
                     data = await response.json();
                 }
 
+                console.log('Posts data received:', data);
+                console.log('First post structure:', data[0]);
+                if (data[0]) {
+                    console.log('First post author/user data:', {
+                        user: data[0].user,
+                        author: data[0].author,
+                        userId: data[0].user?.id,
+                        authorId: data[0].author?.id
+                    });
+                }
                 setPosts(data);
             } catch (err: unknown) {
                 if (err instanceof DOMException && err.name === "AbortError") return;
@@ -403,20 +413,25 @@ export default function Posts() {
                                             whileHover={{ scale: 1.02 }}
                                             onClick={() => {
                                                 const targetUserId = post.user?.id || post.author?.id;
-                                                console.log('Post navigation debug:', {
+                                                console.log('🔍 Post navigation debug:', {
                                                     postId: post.id,
                                                     postUser: post.user,
                                                     postAuthor: post.author,
                                                     targetUserId,
-                                                    currentUserId: user?.id
+                                                    currentUserId: user?.id,
+                                                    hasUser: !!post.user,
+                                                    hasAuthor: !!post.author,
+                                                    userHasId: !!post.user?.id,
+                                                    authorHasId: !!post.author?.id
                                                 });
+                                                
                                                 if (targetUserId) {
-                                                    console.log('Navigating to profile with userId:', targetUserId);
+                                                    console.log('✅ Navigating to profile with userId:', targetUserId);
                                                     window.location.href = `/profile?userId=${targetUserId}`;
                                                 } else {
-                                                    console.error('No user ID found for post:', post);
-                                                    // Show error message instead of redirecting to current user's profile
+                                                    console.error('❌ No user ID found for post:', post);
                                                     console.warn('⚠️ Post author profile cannot be loaded - missing user ID');
+                                                    console.log('Full post object:', JSON.stringify(post, null, 2));
                                                     // Show a more helpful error message
                                                     alert('Unable to load author profile. This might be due to:\n• Backend connection issues\n• Corrupted post data\n• Author account may have been deleted\n\nPlease try refreshing the page or contact support if the issue persists.');
                                                 }

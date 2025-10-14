@@ -96,6 +96,15 @@ export default function DeSnapsPage() {
                     border: 'border-gray-800',
                     hover: 'hover:bg-gray-800'
                 };
+            case 'gold':
+                return {
+                    bg: 'bg-gradient-to-br from-yellow-900 to-yellow-800',
+                    card: 'bg-gradient-to-br from-yellow-800 to-yellow-700',
+                    text: 'text-yellow-100',
+                    textSecondary: 'text-yellow-200',
+                    border: 'border-yellow-600/50',
+                    hover: 'hover:bg-yellow-800/80 gold-shimmer'
+                };
             default:
                 return {
                     bg: 'bg-gray-900',
