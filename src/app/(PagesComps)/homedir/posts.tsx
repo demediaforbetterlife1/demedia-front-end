@@ -417,8 +417,8 @@ export default function Posts() {
                                                     console.error('No user ID found for post:', post);
                                                     // Show error message instead of redirecting to current user's profile
                                                     console.warn('⚠️ Post author profile cannot be loaded - missing user ID');
-                                                    // You could show a toast notification here instead of alert
-                                                    alert('Unable to load author profile. The post may be corrupted or the author may have been deleted.');
+                                                    // Show a more helpful error message
+                                                    alert('Unable to load author profile. This might be due to:\n• Backend connection issues\n• Corrupted post data\n• Author account may have been deleted\n\nPlease try refreshing the page or contact support if the issue persists.');
                                                 }
                                             }}
                                             className="font-semibold theme-text-primary hover:text-cyan-400 transition-colors cursor-pointer"
@@ -441,8 +441,8 @@ export default function Posts() {
                                                 console.error('No user ID found for post:', post);
                                                 // Show error message instead of redirecting to current user's profile
                                                 console.warn('⚠️ Post author profile cannot be loaded - missing user ID');
-                                                // You could show a toast notification here instead of alert
-                                                alert('Unable to load author profile. The post may be corrupted or the author may have been deleted.');
+                                                // Show a more helpful error message
+                                                alert('Unable to load author profile. This might be due to:\n• Backend connection issues\n• Corrupted post data\n• Author account may have been deleted\n\nPlease try refreshing the page or contact support if the issue persists.');
                                             }
                                         }}
                                         className="text-sm theme-text-muted hover:text-cyan-400 transition-colors cursor-pointer"

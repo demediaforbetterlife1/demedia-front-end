@@ -33,22 +33,29 @@ export async function GET(
         },
       });
 
+      console.log('Backend response status:', backendResponse.status);
+      console.log('Backend response ok:', backendResponse.ok);
+
       if (backendResponse.ok) {
         const data = await backendResponse.json();
+        console.log('Backend profile data received:', data);
         return NextResponse.json(data);
       } else {
-        console.log('Backend profile fetch failed, using fallback');
+        const errorText = await backendResponse.text();
+        console.log('Backend profile fetch failed:', backendResponse.status, errorText);
+        console.log('Using fallback data');
       }
     } catch (backendError) {
       console.log('Backend not available for profile, using fallback');
     }
 
     // Fallback: Return sample profile data until backend is fully available
+    console.log('Using fallback profile data for userId:', userId);
     const sampleProfile = {
       id: parseInt(userId),
       name: `User ${userId}`,
       username: `user${userId}`,
-      bio: "This is a sample bio",
+      bio: "This is a sample bio - Backend connection failed",
       profilePicture: null,
       coverPhoto: null,
       followersCount: Math.floor(Math.random() * 1000),
@@ -58,6 +65,7 @@ export async function GET(
       createdAt: new Date().toISOString()
     };
 
+    console.log('Returning fallback profile:', sampleProfile);
     return NextResponse.json(sampleProfile);
   } catch (error) {
     console.error('Error fetching user profile:', error);
