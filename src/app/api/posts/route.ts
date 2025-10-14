@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         console.log('🔍 Full first post object:', JSON.stringify(data[0], null, 2));
         
         // Ensure user IDs are present in the data
-        const fixedData = data.map(post => {
+        const fixedData = data.map((post: any) => {
             // If user object exists but has no ID, try to get it from author
             if (post.user && !post.user.id && post.author && post.author.id) {
                 post.user.id = post.author.id;
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
         console.log('🔍 Full first post object (public):', JSON.stringify(data[0], null, 2));
         
         // Ensure user IDs are present in the data
-        const fixedData = data.map(post => {
+        const fixedData = data.map((post: any) => {
             // If user object exists but has no ID, try to get it from author
             if (post.user && !post.user.id && post.author && post.author.id) {
                 post.user.id = post.author.id;
