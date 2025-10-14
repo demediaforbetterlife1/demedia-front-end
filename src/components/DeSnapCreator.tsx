@@ -35,10 +35,11 @@ export default function DeSnapCreator({ isOpen, onClose, onDeSnapCreated }: DeSn
             setLoading(true);
             setError(null);
 
-            const response = await apiFetch('/api/desnaps', {
+            const response = await fetch('/api/desnaps', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'user-id': user.id.toString()
                 },
                 body: JSON.stringify({
@@ -49,12 +50,48 @@ export default function DeSnapCreator({ isOpen, onClose, onDeSnapCreated }: DeSn
                 })
             });
 
+            console.log('DeSnap creation response status:', response.status);
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to create DeSnap');
+                let errorMessage = "Failed to create DeSnap";
+                try {
+                    const errorText = await response.text();
+                    console.log('DeSnap creation error response:', errorText);
+                    
+                    // Try to parse as JSON
+                    if (errorText.trim().startsWith('{')) {
+                        const errorData = JSON.parse(errorText);
+                        errorMessage = errorData.error || errorData.message || errorMessage;
+                    } else {
+                        errorMessage = `Server error: ${response.status} - ${errorText}`;
+                    }
+                } catch (parseError) {
+                    errorMessage = `Server error: ${response.status}`;
+                }
+                throw new Error(errorMessage);
             }
 
-            const newDeSnap = await response.json();
+            // Safe JSON parsing
+            let newDeSnap;
+            try {
+                const responseText = await response.text();
+                console.log('DeSnap creation response text:', responseText);
+                
+                if (!responseText.trim()) {
+                    throw new Error('Empty response from server');
+                }
+                
+                // Check if response is HTML (error page)
+                if (responseText.trim().startsWith('<')) {
+                    throw new Error('Server returned HTML error page. Please check your connection.');
+                }
+                
+                newDeSnap = JSON.parse(responseText);
+                console.log('DeSnap created successfully:', newDeSnap);
+            } catch (jsonError) {
+                console.error('JSON parsing error:', jsonError);
+                throw new Error('Invalid response from server. Please try again.');
+            }
             onDeSnapCreated(newDeSnap);
             onClose();
             

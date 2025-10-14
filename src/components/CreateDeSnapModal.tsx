@@ -256,10 +256,12 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 userId: user?.id
             };
 
-            const response = await apiFetch("/api/desnaps", {
+            const response = await fetch("/api/desnaps", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem('token')}`,
+                    "user-id": user?.id?.toString() || ""
                 },
                 body: JSON.stringify(deSnapData)
             });
