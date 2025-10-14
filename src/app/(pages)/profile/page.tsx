@@ -176,6 +176,20 @@ export default function ProfilePage() {
             isDifferentUser: true
         });
     }
+    
+    // Ensure userId is always valid
+    if (!userId || userId === 'undefined' || userId === 'null') {
+        console.error('❌ Invalid userId detected:', userId);
+        if (user?.id) {
+            console.log('🔄 Redirecting to own profile');
+            window.location.href = '/profile';
+            return null;
+        } else {
+            console.log('🔄 Redirecting to login');
+            window.location.href = '/login';
+            return null;
+        }
+    }
 
     const getThemeClasses = () => {
         switch (theme) {
