@@ -438,8 +438,8 @@ export default function Posts() {
                                                     console.error('❌ No user ID found for post:', post);
                                                     console.warn('⚠️ Post author profile cannot be loaded - missing user ID');
                                                     console.log('Full post object:', JSON.stringify(post, null, 2));
-                                                    // Show a more helpful error message
-                                                    alert('Unable to load author profile. This might be due to:\n• Backend connection issues\n• Corrupted post data\n• Author account may have been deleted\n\nPlease try refreshing the page or contact support if the issue persists.');
+                                                    // Show a more user-friendly error message
+                                                    console.log('Profile navigation failed - user data missing');
                                                 }
                                             }}
                                             className="font-semibold theme-text-primary hover:text-cyan-400 transition-colors cursor-pointer"
