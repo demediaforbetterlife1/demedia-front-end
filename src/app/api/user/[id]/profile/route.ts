@@ -41,6 +41,15 @@ export async function GET(
       if (backendResponse.ok) {
         const data = await backendResponse.json();
         console.log('Backend profile data received:', data);
+        
+        // Fix profile picture URLs to use full backend URL
+        if (data.profilePicture && !data.profilePicture.startsWith('http')) {
+          data.profilePicture = `https://demedia-backend.fly.dev${data.profilePicture}`;
+        }
+        if (data.coverPhoto && !data.coverPhoto.startsWith('http')) {
+          data.coverPhoto = `https://demedia-backend.fly.dev${data.coverPhoto}`;
+        }
+        
         return NextResponse.json(data);
       } else {
         const errorText = await backendResponse.text();
@@ -123,6 +132,11 @@ export async function GET(
       stories: [],
       createdAt: new Date().toISOString()
     };
+
+    // Fix profile picture URLs to use full backend URL
+    if (sampleProfile.profilePicture && !sampleProfile.profilePicture.startsWith('http')) {
+      sampleProfile.profilePicture = `https://demedia-backend.fly.dev${sampleProfile.profilePicture}`;
+    }
 
     console.log('Returning fallback profile:', sampleProfile);
     return NextResponse.json(sampleProfile);

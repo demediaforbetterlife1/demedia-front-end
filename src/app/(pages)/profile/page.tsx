@@ -354,8 +354,16 @@ export default function ProfilePage() {
                 
                 if (!data) {
                     console.error('getUserProfile returned null');
-                    setError("Profile not found - User may not exist");
+                    setError("Profile not found - User may not exist or has been deleted");
                     setLoading(false);
+                    
+                    // If it's a different user's profile that doesn't exist, redirect to own profile
+                    if (!isOwnProfile && user?.id) {
+                        console.log('🔄 User profile not found, redirecting to own profile');
+                        setTimeout(() => {
+                            window.location.href = '/profile';
+                        }, 3000);
+                    }
                     return;
                 }
                 
