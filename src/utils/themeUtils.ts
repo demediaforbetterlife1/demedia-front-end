@@ -149,4 +149,3 @@ export const getCardClasses = (theme: Theme) => {
   
   return `rounded-lg ${themeClasses.bgSecondary} ${themeClasses.border} shadow-lg`;
 };
-
