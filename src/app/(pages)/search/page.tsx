@@ -12,6 +12,7 @@ interface SearchResult {
     title: string;
     description?: string;
     author?: {
+        id?: string;
         name: string;
         username: string;
         profilePicture?: string;
@@ -154,7 +155,12 @@ export default function SearchResultsPage() {
                 router.push(`/post/${result.id}`);
                 break;
             case 'story':
-                router.push(`/profile?userId=${result.author?.id}`);
+                if (result.author?.id) {
+                    router.push(`/profile?userId=${result.author.id}`);
+                } else {
+                    console.warn('Story author ID not available, cannot navigate to profile');
+                    // Could show a toast notification here
+                }
                 break;
             case 'hashtag':
                 router.push(`/hashtag/${result.title.replace('#', '')}`);
