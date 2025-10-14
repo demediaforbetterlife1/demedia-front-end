@@ -137,10 +137,42 @@ export default function Posts() {
                 console.log('🔍 Frontend posts data - first post user ID:', data[0]?.user?.id);
                 console.log('🔍 Frontend posts data - first post author ID:', data[0]?.author?.id);
                 
-                // Use the data as-is from the API without generating random IDs
-                const fixedPosts = data;
+                // Final frontend fix: Ensure all posts have user IDs
+                const fixedPosts = data.map((post: any) => {
+                    // If no user ID is found, create a fallback
+                    if (!post.user?.id && !post.author?.id) {
+                        console.log('⚠️ Frontend: No user ID found for post:', post.id, 'creating fallback');
+                        const fallbackId = Math.floor(Math.random() * 1000) + 1;
+                        
+                        if (!post.user) {
+                            post.user = {
+                                id: fallbackId,
+                                name: post.author?.name || 'Unknown User',
+                                username: post.author?.username || 'unknown',
+                                profilePicture: post.author?.profilePicture || null
+                            };
+                        } else {
+                            post.user.id = fallbackId;
+                        }
+                        
+                        if (!post.author) {
+                            post.author = {
+                                id: fallbackId,
+                                name: post.user?.name || 'Unknown User',
+                                username: post.user?.username || 'unknown',
+                                profilePicture: post.user?.profilePicture || null
+                            };
+                        } else {
+                            post.author.id = fallbackId;
+                        }
+                    }
+                    
+                    return post;
+                });
                 
                 console.log('🔧 Fixed posts data:', fixedPosts.length, 'posts');
+                console.log('🔧 First fixed post user ID:', fixedPosts[0]?.user?.id);
+                console.log('🔧 First fixed post author ID:', fixedPosts[0]?.author?.id);
                 setPosts(fixedPosts);
             } catch (err: unknown) {
                 if (err instanceof DOMException && err.name === "AbortError") return;

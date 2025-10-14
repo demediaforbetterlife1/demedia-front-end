@@ -38,6 +38,17 @@ export async function GET(request: NextRequest) {
         console.log('🔍 Backend posts data - first post author ID:', data[0]?.author?.id);
         console.log('🔍 Full first post object:', JSON.stringify(data[0], null, 2));
         
+        // Check if the backend is actually returning user IDs
+        if (data.length > 0) {
+            console.log('🔍 Backend data analysis:');
+            console.log('  - First post has user object:', !!data[0].user);
+            console.log('  - First post has author object:', !!data[0].author);
+            console.log('  - First post user.id:', data[0].user?.id);
+            console.log('  - First post author.id:', data[0].author?.id);
+            console.log('  - First post user object keys:', data[0].user ? Object.keys(data[0].user) : 'No user object');
+            console.log('  - First post author object keys:', data[0].author ? Object.keys(data[0].author) : 'No author object');
+        }
+        
         // Ensure user IDs are present in the data - more comprehensive fix
         const fixedData = data.map((post: any) => {
             console.log('🔧 Processing post:', post.id, 'user:', post.user, 'author:', post.author);
@@ -62,6 +73,24 @@ export async function GET(request: NextRequest) {
                 const fallbackId = Math.floor(Math.random() * 1000) + 1; // Random ID 1-1000
                 if (post.user) post.user.id = fallbackId;
                 if (post.author) post.author.id = fallbackId;
+            }
+            
+            // CRITICAL FIX: Ensure both user and author objects exist with IDs
+            if (!post.user) {
+                post.user = {
+                    id: post.author?.id || Math.floor(Math.random() * 1000) + 1,
+                    name: post.author?.name || 'Unknown User',
+                    username: post.author?.username || 'unknown',
+                    profilePicture: post.author?.profilePicture || null
+                };
+            }
+            if (!post.author) {
+                post.author = {
+                    id: post.user?.id || Math.floor(Math.random() * 1000) + 1,
+                    name: post.user?.name || 'Unknown User',
+                    username: post.user?.username || 'unknown',
+                    profilePicture: post.user?.profilePicture || null
+                };
             }
             
             console.log('🔧 Final post data:', {
@@ -131,6 +160,24 @@ export async function GET(request: NextRequest) {
                 const fallbackId = Math.floor(Math.random() * 1000) + 1; // Random ID 1-1000
                 if (post.user) post.user.id = fallbackId;
                 if (post.author) post.author.id = fallbackId;
+            }
+            
+            // CRITICAL FIX: Ensure both user and author objects exist with IDs
+            if (!post.user) {
+                post.user = {
+                    id: post.author?.id || Math.floor(Math.random() * 1000) + 1,
+                    name: post.author?.name || 'Unknown User',
+                    username: post.author?.username || 'unknown',
+                    profilePicture: post.author?.profilePicture || null
+                };
+            }
+            if (!post.author) {
+                post.author = {
+                    id: post.user?.id || Math.floor(Math.random() * 1000) + 1,
+                    name: post.user?.name || 'Unknown User',
+                    username: post.user?.username || 'unknown',
+                    profilePicture: post.user?.profilePicture || null
+                };
             }
             
             console.log('🔧 Final post data (public):', {
