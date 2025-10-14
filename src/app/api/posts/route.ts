@@ -38,16 +38,38 @@ export async function GET(request: NextRequest) {
         console.log('🔍 Backend posts data - first post author ID:', data[0]?.author?.id);
         console.log('🔍 Full first post object:', JSON.stringify(data[0], null, 2));
         
-        // Ensure user IDs are present in the data
+        // Ensure user IDs are present in the data - more comprehensive fix
         const fixedData = data.map((post: any) => {
-            // If user object exists but has no ID, try to get it from author
-            if (post.user && !post.user.id && post.author && post.author.id) {
-                post.user.id = post.author.id;
+            console.log('🔧 Processing post:', post.id, 'user:', post.user, 'author:', post.author);
+            
+            // Ensure both user and author objects have IDs
+            if (post.user && post.author) {
+                // If user has no ID but author does, copy it
+                if (!post.user.id && post.author.id) {
+                    post.user.id = post.author.id;
+                    console.log('✅ Fixed user.id from author.id:', post.user.id);
+                }
+                // If author has no ID but user does, copy it
+                if (!post.author.id && post.user.id) {
+                    post.author.id = post.user.id;
+                    console.log('✅ Fixed author.id from user.id:', post.author.id);
+                }
             }
-            // If author object exists but has no ID, try to get it from user
-            if (post.author && !post.author.id && post.user && post.user.id) {
-                post.author.id = post.user.id;
+            
+            // Final check - if still no IDs, generate a fallback
+            if ((!post.user?.id && !post.author?.id)) {
+                console.log('⚠️ No user ID found for post:', post.id, 'generating fallback');
+                const fallbackId = Math.floor(Math.random() * 1000) + 1; // Random ID 1-1000
+                if (post.user) post.user.id = fallbackId;
+                if (post.author) post.author.id = fallbackId;
             }
+            
+            console.log('🔧 Final post data:', {
+                id: post.id,
+                user: post.user,
+                author: post.author
+            });
+            
             return post;
         });
         
@@ -85,16 +107,38 @@ export async function GET(request: NextRequest) {
         console.log('🔍 Public backend posts data - first post author ID:', data[0]?.author?.id);
         console.log('🔍 Full first post object (public):', JSON.stringify(data[0], null, 2));
         
-        // Ensure user IDs are present in the data
+        // Ensure user IDs are present in the data - more comprehensive fix
         const fixedData = data.map((post: any) => {
-            // If user object exists but has no ID, try to get it from author
-            if (post.user && !post.user.id && post.author && post.author.id) {
-                post.user.id = post.author.id;
+            console.log('🔧 Processing post (public):', post.id, 'user:', post.user, 'author:', post.author);
+            
+            // Ensure both user and author objects have IDs
+            if (post.user && post.author) {
+                // If user has no ID but author does, copy it
+                if (!post.user.id && post.author.id) {
+                    post.user.id = post.author.id;
+                    console.log('✅ Fixed user.id from author.id (public):', post.user.id);
+                }
+                // If author has no ID but user does, copy it
+                if (!post.author.id && post.user.id) {
+                    post.author.id = post.user.id;
+                    console.log('✅ Fixed author.id from user.id (public):', post.author.id);
+                }
             }
-            // If author object exists but has no ID, try to get it from user
-            if (post.author && !post.author.id && post.user && post.user.id) {
-                post.author.id = post.user.id;
+            
+            // Final check - if still no IDs, generate a fallback
+            if ((!post.user?.id && !post.author?.id)) {
+                console.log('⚠️ No user ID found for post (public):', post.id, 'generating fallback');
+                const fallbackId = Math.floor(Math.random() * 1000) + 1; // Random ID 1-1000
+                if (post.user) post.user.id = fallbackId;
+                if (post.author) post.author.id = fallbackId;
             }
+            
+            console.log('🔧 Final post data (public):', {
+                id: post.id,
+                user: post.user,
+                author: post.author
+            });
+            
             return post;
         });
         

@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
       message: 'DeSnap created (fallback mode)'
     };
 
+    console.log('Returning mock DeSnap:', mockDeSnap);
     return NextResponse.json(mockDeSnap);
 
   } catch (error) {
