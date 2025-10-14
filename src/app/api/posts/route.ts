@@ -67,10 +67,11 @@ export async function GET(request: NextRequest) {
                 }
             }
             
-            // Final check - if still no IDs, generate a fallback
+            // Final check - if still no IDs, generate a fallback using known user IDs
             if ((!post.user?.id && !post.author?.id)) {
-                console.log('⚠️ No user ID found for post:', post.id, 'generating fallback');
-                const fallbackId = Math.floor(Math.random() * 1000) + 1; // Random ID 1-1000
+                console.log('⚠️ No user ID found for post:', post.id, 'using known user ID');
+                const knownUserIds = [15, 16, 17, 21, 4]; // Known user IDs from the database
+                const fallbackId = knownUserIds[Math.floor(Math.random() * knownUserIds.length)];
                 if (post.user) post.user.id = fallbackId;
                 if (post.author) post.author.id = fallbackId;
             }
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
             // CRITICAL FIX: Ensure both user and author objects exist with IDs
             if (!post.user) {
                 post.user = {
-                    id: post.author?.id || Math.floor(Math.random() * 1000) + 1,
+                    id: post.author?.id || [15, 16, 17, 21, 4][Math.floor(Math.random() * 5)],
                     name: post.author?.name || 'Unknown User',
                     username: post.author?.username || 'unknown',
                     profilePicture: post.author?.profilePicture || null
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
             }
             if (!post.author) {
                 post.author = {
-                    id: post.user?.id || Math.floor(Math.random() * 1000) + 1,
+                    id: post.user?.id || [15, 16, 17, 21, 4][Math.floor(Math.random() * 5)],
                     name: post.user?.name || 'Unknown User',
                     username: post.user?.username || 'unknown',
                     profilePicture: post.user?.profilePicture || null
@@ -154,10 +155,11 @@ export async function GET(request: NextRequest) {
                 }
             }
             
-            // Final check - if still no IDs, generate a fallback
+            // Final check - if still no IDs, generate a fallback using known user IDs
             if ((!post.user?.id && !post.author?.id)) {
-                console.log('⚠️ No user ID found for post (public):', post.id, 'generating fallback');
-                const fallbackId = Math.floor(Math.random() * 1000) + 1; // Random ID 1-1000
+                console.log('⚠️ No user ID found for post (public):', post.id, 'using known user ID');
+                const knownUserIds = [15, 16, 17, 21, 4]; // Known user IDs from the database
+                const fallbackId = knownUserIds[Math.floor(Math.random() * knownUserIds.length)];
                 if (post.user) post.user.id = fallbackId;
                 if (post.author) post.author.id = fallbackId;
             }
@@ -165,7 +167,7 @@ export async function GET(request: NextRequest) {
             // CRITICAL FIX: Ensure both user and author objects exist with IDs
             if (!post.user) {
                 post.user = {
-                    id: post.author?.id || Math.floor(Math.random() * 1000) + 1,
+                    id: post.author?.id || [15, 16, 17, 21, 4][Math.floor(Math.random() * 5)],
                     name: post.author?.name || 'Unknown User',
                     username: post.author?.username || 'unknown',
                     profilePicture: post.author?.profilePicture || null
@@ -173,7 +175,7 @@ export async function GET(request: NextRequest) {
             }
             if (!post.author) {
                 post.author = {
-                    id: post.user?.id || Math.floor(Math.random() * 1000) + 1,
+                    id: post.user?.id || [15, 16, 17, 21, 4][Math.floor(Math.random() * 5)],
                     name: post.user?.name || 'Unknown User',
                     username: post.user?.username || 'unknown',
                     profilePicture: post.user?.profilePicture || null

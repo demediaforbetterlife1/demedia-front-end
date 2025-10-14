@@ -37,6 +37,7 @@ export async function GET(
 
       console.log('Backend response status:', backendResponse.status);
       console.log('Backend response ok:', backendResponse.ok);
+      console.log('Backend response headers:', Object.fromEntries(backendResponse.headers.entries()));
 
       if (backendResponse.ok) {
         const data = await backendResponse.json();
@@ -55,6 +56,12 @@ export async function GET(
         const errorText = await backendResponse.text();
         console.log('Backend profile fetch failed:', backendResponse.status, errorText);
         console.log('Error details:', errorText);
+        console.log('Backend error response headers:', Object.fromEntries(backendResponse.headers.entries()));
+        
+        // If it's a 404, the user doesn't exist in the backend
+        if (backendResponse.status === 404) {
+          console.log('User not found in backend, using fallback data');
+        }
       }
     } catch (backendError) {
       console.log('Backend connection error for profile:', backendError);

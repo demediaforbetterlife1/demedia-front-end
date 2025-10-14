@@ -179,6 +179,13 @@ export async function getUserProfile(userId: string | number): Promise<UserProfi
         const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
         const currentUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
         
+        console.log('getUserProfile auth check:', {
+            hasToken: !!token,
+            currentUserId,
+            targetUserId: userId,
+            tokenPreview: token ? token.substring(0, 20) + '...' : 'No token'
+        });
+        
         console.log('Auth data:', { 
             hasToken: !!token, 
             currentUserId, 

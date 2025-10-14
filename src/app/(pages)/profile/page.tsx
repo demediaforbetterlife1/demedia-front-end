@@ -373,6 +373,10 @@ export default function ProfilePage() {
                 
                 if (!data) {
                     console.error('getUserProfile returned null');
+                    console.log('Profile fetch failed for userId:', userId);
+                    console.log('Is own profile:', isOwnProfile);
+                    console.log('Current user ID:', user?.id);
+                    
                     setError("Profile not found - User may not exist or has been deleted");
                     setLoading(false);
                     
