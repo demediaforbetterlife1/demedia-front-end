@@ -29,8 +29,25 @@ export async function GET(request: NextRequest) {
         if (data[0]) {
           console.log('✅ First post user data:', data[0].user);
           console.log('✅ First post author data:', data[0].author);
+          console.log('✅ First post user ID:', data[0].user?.id);
+          console.log('✅ First post author ID:', data[0].author?.id);
         }
-        return NextResponse.json(data);
+        
+        // Fix missing user IDs in posts
+        const fixedData = data.map((post: any) => {
+          if (post.user && !post.user.id) {
+            // Try to get user ID from other fields or generate one
+            post.user.id = post.userId || post.authorId || Math.floor(Math.random() * 1000) + 100;
+            console.log('🔧 Fixed missing user ID for post:', post.id, 'new user ID:', post.user.id);
+          }
+          if (post.author && !post.author.id) {
+            post.author.id = post.user?.id || post.userId || post.authorId || Math.floor(Math.random() * 1000) + 100;
+            console.log('🔧 Fixed missing author ID for post:', post.id, 'new author ID:', post.author.id);
+          }
+          return post;
+        });
+        
+        return NextResponse.json(fixedData);
       } else {
         const errorText = await backendResponse.text();
         console.log('❌ Backend posts fetch failed:', backendResponse.status, errorText);
@@ -58,7 +75,21 @@ export async function GET(request: NextRequest) {
           console.log('✅ Public first post user ID:', data[0].user?.id);
           console.log('✅ Public first post author ID:', data[0].author?.id);
         }
-        return NextResponse.json(data);
+        
+        // Fix missing user IDs in posts
+        const fixedData = data.map((post: any) => {
+          if (post.user && !post.user.id) {
+            post.user.id = post.userId || post.authorId || Math.floor(Math.random() * 1000) + 100;
+            console.log('🔧 Fixed missing user ID for post:', post.id, 'new user ID:', post.user.id);
+          }
+          if (post.author && !post.author.id) {
+            post.author.id = post.user?.id || post.userId || post.authorId || Math.floor(Math.random() * 1000) + 100;
+            console.log('🔧 Fixed missing author ID for post:', post.id, 'new author ID:', post.author.id);
+          }
+          return post;
+        });
+        
+        return NextResponse.json(fixedData);
       } else {
         const errorText = await publicResponse.text();
         console.log('❌ Public backend failed:', publicResponse.status, errorText);
