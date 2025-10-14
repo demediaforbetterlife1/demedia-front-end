@@ -80,6 +80,27 @@ export async function GET(request: NextRequest) {
           profilePicture: null
         },
         createdAt: new Date().toISOString()
+      },
+      {
+        id: 3,
+        content: "This is a third sample post for testing",
+        title: "Third Post",
+        likes: Math.floor(Math.random() * 150),
+        comments: Math.floor(Math.random() * 25),
+        liked: false,
+        user: {
+          id: 3,
+          name: "Demo User",
+          username: "demouser",
+          profilePicture: null
+        },
+        author: {
+          id: 3,
+          name: "Demo User",
+          username: "demouser",
+          profilePicture: null
+        },
+        createdAt: new Date().toISOString()
       }
     ];
 

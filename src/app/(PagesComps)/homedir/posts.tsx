@@ -112,15 +112,21 @@ export default function Posts() {
                     data = await response.json();
                 }
 
-                console.log('Posts data received:', data);
-                console.log('First post structure:', data[0]);
+                console.log('📊 Posts data received:', data);
+                console.log('📊 Number of posts:', data.length);
+                console.log('📊 First post structure:', data[0]);
                 if (data[0]) {
-                    console.log('First post author/user data:', {
+                    console.log('📊 First post author/user data:', {
                         user: data[0].user,
                         author: data[0].author,
                         userId: data[0].user?.id,
-                        authorId: data[0].author?.id
+                        authorId: data[0].author?.id,
+                        hasUser: !!data[0].user,
+                        hasAuthor: !!data[0].author,
+                        userHasId: !!data[0].user?.id,
+                        authorHasId: !!data[0].author?.id
                     });
+                    console.log('📊 Full first post object:', JSON.stringify(data[0], null, 2));
                 }
                 setPosts(data);
             } catch (err: unknown) {

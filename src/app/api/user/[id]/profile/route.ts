@@ -55,13 +55,19 @@ export async function GET(
       id: parseInt(userId),
       name: `User ${userId}`,
       username: `user${userId}`,
-      bio: "This is a sample bio - Backend connection failed",
+      bio: "This is a sample bio - Backend connection failed. This profile is using fallback data.",
       profilePicture: null,
       coverPhoto: null,
       followersCount: Math.floor(Math.random() * 1000),
       followingCount: Math.floor(Math.random() * 500),
       likesCount: Math.floor(Math.random() * 5000),
-      stories: [],
+      stories: [
+        {
+          id: 1,
+          content: "This is a sample story",
+          createdAt: new Date().toISOString()
+        }
+      ],
       createdAt: new Date().toISOString()
     };
 

@@ -62,6 +62,27 @@ export async function POST(request: NextRequest) {
           profilePicture: null
         },
         createdAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        content: "Another personalized post based on your interests",
+        title: "Interest-Based Post",
+        likes: Math.floor(Math.random() * 200),
+        comments: Math.floor(Math.random() * 35),
+        liked: false,
+        user: {
+          id: 2,
+          name: "Interest User",
+          username: "interestuser",
+          profilePicture: null
+        },
+        author: {
+          id: 2,
+          name: "Interest User",
+          username: "interestuser",
+          profilePicture: null
+        },
+        createdAt: new Date().toISOString()
       }
     ];
 
