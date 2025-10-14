@@ -19,6 +19,10 @@ export const getThemeClasses = (theme: Theme) => {
     // Hover classes
     hover: 'hover:bg-gray-700 dark:hover:bg-gray-700',
     hoverLight: 'hover:bg-gray-600 dark:hover:bg-gray-600',
+    
+    // Accent classes
+    accent: 'text-blue-400',
+    accentBg: 'bg-blue-500',
   };
 
   switch (theme) {
@@ -144,17 +148,5 @@ export const getCardClasses = (theme: Theme) => {
   const themeClasses = getThemeClasses(theme);
   
   return `rounded-lg ${themeClasses.bgSecondary} ${themeClasses.border} shadow-lg`;
-};
-
-export const getModalClasses = (theme: Theme) => {
-  const themeClasses = getThemeClasses(theme);
-  
-  return {
-    overlay: `fixed inset-0 z-50 flex items-center justify-center ${themeClasses.bgPrimary} bg-opacity-50`,
-    content: `relative max-w-md w-full mx-4 rounded-lg shadow-xl ${themeClasses.bgSecondary} ${themeClasses.border}`,
-    header: `px-6 py-4 border-b ${themeClasses.border}`,
-    body: 'px-6 py-4',
-    footer: `px-6 py-4 border-t ${themeClasses.border}`,
-  };
 };
 
