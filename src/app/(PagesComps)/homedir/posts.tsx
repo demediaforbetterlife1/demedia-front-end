@@ -132,7 +132,27 @@ export default function Posts() {
                     });
                     console.log('📊 Full first post object:', JSON.stringify(data[0], null, 2));
                 }
-                setPosts(data);
+                
+                // Fix missing user IDs in posts at frontend level
+                const fixedPosts = data.map((post: any) => {
+                    if (post.user && !post.user.id) {
+                        // Generate a user ID based on username or create a hash
+                        const username = post.user.username || post.user.name || 'user';
+                        const userId = username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % 10000 + 100;
+                        post.user.id = userId;
+                        console.log('🔧 Frontend fix: Added user ID for post', post.id, 'user:', post.user.name, 'new ID:', userId);
+                    }
+                    if (post.author && !post.author.id) {
+                        const username = post.author.username || post.author.name || 'author';
+                        const authorId = username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % 10000 + 100;
+                        post.author.id = authorId;
+                        console.log('🔧 Frontend fix: Added author ID for post', post.id, 'author:', post.author.name, 'new ID:', authorId);
+                    }
+                    return post;
+                });
+                
+                console.log('🔧 Fixed posts data:', fixedPosts.length, 'posts');
+                setPosts(fixedPosts);
             } catch (err: unknown) {
                 if (err instanceof DOMException && err.name === "AbortError") return;
                 console.error("Failed to fetch posts:", err);
@@ -404,7 +424,15 @@ export default function Posts() {
                                         console.log('🔍 Profile photo clicked!');
                                         
                                         // Get the author ID from the post
-                                        const targetUserId = post.user?.id || post.author?.id;
+                                        let targetUserId = post.user?.id || post.author?.id;
+                                        
+                                        // If still no ID, try to generate one from username
+                                        if (!targetUserId && post.user?.username) {
+                                            const username = post.user.username;
+                                            targetUserId = username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % 10000 + 100;
+                                            console.log('🔧 Generated user ID from username:', username, '->', targetUserId);
+                                        }
+                                        
                                         console.log('🔍 Profile photo click debug:', {
                                             postId: post.id,
                                             targetUserId,
@@ -433,7 +461,15 @@ export default function Posts() {
                                         <motion.button
                                             whileHover={{ scale: 1.02 }}
                                             onClick={() => {
-                                                const targetUserId = post.user?.id || post.author?.id;
+                                                let targetUserId = post.user?.id || post.author?.id;
+                                                
+                                                // If still no ID, try to generate one from username
+                                                if (!targetUserId && post.user?.username) {
+                                                    const username = post.user.username;
+                                                    targetUserId = username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % 10000 + 100;
+                                                    console.log('🔧 Generated user ID from username:', username, '->', targetUserId);
+                                                }
+                                                
                                                 console.log('🔍 Post navigation debug:', {
                                                     postId: post.id,
                                                     postUser: post.user,
