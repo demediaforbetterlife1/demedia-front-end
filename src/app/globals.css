@@ -12,6 +12,96 @@
     -ms-overflow-style: none;   /* IE/Edge */
 }
 
+/* Theme Variables */
+:root {
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #2a2a2a;
+  --text-primary: #ffffff;
+  --text-secondary: #b3b3b3;
+  --text-tertiary: #808080;
+  --border-color: #333333;
+  --accent-color: #3b82f6;
+  --hover-bg: #2a2a2a;
+}
+
+/* Dark Theme */
+.dark {
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #2a2a2a;
+  --text-primary: #ffffff;
+  --text-secondary: #b3b3b3;
+  --text-tertiary: #808080;
+  --border-color: #333333;
+  --accent-color: #3b82f6;
+  --hover-bg: #2a2a2a;
+}
+
+/* Super Dark Theme */
+.super-dark {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #1a1a1a;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --text-tertiary: #666666;
+  --border-color: #1a1a1a;
+  --accent-color: #8b5cf6;
+  --hover-bg: #1a1a1a;
+}
+
+/* Light Theme */
+.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #000000;
+  --text-secondary: #495057;
+  --text-tertiary: #6c757d;
+  --border-color: #dee2e6;
+  --accent-color: #007bff;
+  --hover-bg: #f8f9fa;
+}
+
+/* Super Light Theme */
+.super-light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f5f5f5;
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --text-tertiary: #666666;
+  --border-color: #e0e0e0;
+  --accent-color: #0066cc;
+  --hover-bg: #fafafa;
+}
+
+/* Gold Theme */
+.gold {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3a3a3a;
+  --text-primary: #ffd700;
+  --text-secondary: #ffed4e;
+  --text-tertiary: #b8860b;
+  --border-color: #4a4a4a;
+  --accent-color: #ffd700;
+  --hover-bg: #2d2d2d;
+}
+
+/* Theme-aware utility classes */
+.bg-primary { background-color: var(--bg-primary); }
+.bg-secondary { background-color: var(--bg-secondary); }
+.bg-tertiary { background-color: var(--bg-tertiary); }
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+.border-theme { border-color: var(--border-color); }
+.text-accent { color: var(--accent-color); }
+.bg-accent { background-color: var(--accent-color); }
+.hover-bg { background-color: var(--hover-bg); }
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

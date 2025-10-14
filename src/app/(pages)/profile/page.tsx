@@ -94,10 +94,12 @@ import AnonymousInsights from "@/components/AnonymousInsights";
 import CommentModal from "@/components/CommentModal";
 import EditPostModal from "@/components/EditPostModal";
 import FollowersModal from "@/components/FollowersModal";
+import FollowersList from "@/components/FollowersList";
 import ProfileAnalytics from "@/components/ProfileAnalytics";
 import ProfileCustomization from "@/components/ProfileCustomization";
 import PremiumUserIndicator from "@/components/PremiumUserIndicator";
 import { apiFetch } from "@/lib/api";
+import { getThemeClasses, getButtonClasses, getCardClasses } from "@/utils/themeUtils";
 
 interface Story {
     id: number;
@@ -269,6 +271,17 @@ export default function ProfilePage() {
     };
 
     const themeClasses = getThemeClasses();
+    
+    const handleFollowersClick = () => {
+        setListType('followers');
+        setShowFollowersList(true);
+    };
+    
+    const handleFollowingClick = () => {
+        setListType('following');
+        setShowFollowingList(true);
+    };
+    
     const [activeTab, setActiveTab] = useState<string>("posts");
     const [isFollowing, setIsFollowing] = useState<boolean>(false);
     const [profile, setProfile] = useState<Profile | null>(null);
@@ -307,6 +320,11 @@ export default function ProfilePage() {
     const [showMemoryLane, setShowMemoryLane] = useState(false);
     const [showCollaborationHub, setShowCollaborationHub] = useState(false);
     const [showInnovationLab, setShowInnovationLab] = useState(false);
+    
+    // Followers/Following state
+    const [showFollowersList, setShowFollowersList] = useState(false);
+    const [showFollowingList, setShowFollowingList] = useState(false);
+    const [listType, setListType] = useState<'followers' | 'following'>('followers');
     
     // Advanced UI State
     const [activeView, setActiveView] = useState('overview');
@@ -913,10 +931,7 @@ export default function ProfilePage() {
                                 <motion.div 
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => {
-                                        setFollowersModalType('followers');
-                                        setShowFollowersModal(true);
-                                    }}
+                                    onClick={handleFollowersClick}
                                     className={`text-center p-6 rounded-2xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-xl transition-all duration-300 backdrop-blur-sm flex-1`}
                                 >
                                     <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>{followersCount}</div>
@@ -929,10 +944,7 @@ export default function ProfilePage() {
                                 <motion.div 
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => {
-                                        setFollowersModalType('following');
-                                        setShowFollowersModal(true);
-                                    }}
+                                    onClick={handleFollowingClick}
                                     className={`text-center p-6 rounded-2xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-xl transition-all duration-300 backdrop-blur-sm flex-1`}
                                 >
                                     <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>{followingCount}</div>
@@ -1925,6 +1937,22 @@ const UserPosts = ({
                     </motion.div>
                 </div>
             )}
+
+            {/* Followers List Modal */}
+            <FollowersList
+                isOpen={showFollowersList}
+                onClose={() => setShowFollowersList(false)}
+                userId={parseInt(userId)}
+                type={listType}
+            />
+
+            {/* Following List Modal */}
+            <FollowersList
+                isOpen={showFollowingList}
+                onClose={() => setShowFollowingList(false)}
+                userId={parseInt(userId)}
+                type="following"
+            />
 
         </div>
     );
