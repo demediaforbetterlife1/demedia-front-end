@@ -176,10 +176,43 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
             });
 
             if (!response.ok) {
-                throw new Error("Failed to create story");
+                let errorMessage = "Failed to create story";
+                try {
+                    const errorText = await response.text();
+                    console.log('Story creation error response:', errorText);
+                    
+                    if (errorText.trim().startsWith('{')) {
+                        const errorData = JSON.parse(errorText);
+                        errorMessage = errorData.error || errorData.message || errorMessage;
+                    } else {
+                        errorMessage = `Server error: ${response.status} - ${errorText}`;
+                    }
+                } catch (parseError) {
+                    errorMessage = `Server error: ${response.status}`;
+                }
+                throw new Error(errorMessage);
             }
 
-            const newStory = await response.json();
+            // Safe JSON parsing for success response
+            let newStory;
+            try {
+                const responseText = await response.text();
+                console.log('Story creation response text:', responseText);
+                
+                if (!responseText.trim()) {
+                    throw new Error('Empty response from server');
+                }
+                
+                if (responseText.trim().startsWith('<')) {
+                    throw new Error('Server returned HTML error page. Please check your connection.');
+                }
+                
+                newStory = JSON.parse(responseText);
+                console.log('Story created successfully:', newStory);
+            } catch (jsonError) {
+                console.error('JSON parsing error:', jsonError);
+                throw new Error('Invalid response from server. Please try again.');
+            }
             
             if (onStoryCreated) {
                 onStoryCreated(newStory);

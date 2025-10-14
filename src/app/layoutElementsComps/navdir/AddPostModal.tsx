@@ -264,8 +264,42 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
             });
 
             if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.error || "Failed to create post");
+                let errorMessage = "Failed to create post";
+                try {
+                    const errorText = await res.text();
+                    console.log('Post creation error response:', errorText);
+                    
+                    if (errorText.trim().startsWith('{')) {
+                        const errorData = JSON.parse(errorText);
+                        errorMessage = errorData.error || errorData.message || errorMessage;
+                    } else {
+                        errorMessage = `Server error: ${res.status} - ${errorText}`;
+                    }
+                } catch (parseError) {
+                    errorMessage = `Server error: ${res.status}`;
+                }
+                throw new Error(errorMessage);
+            }
+
+            // Safe JSON parsing for success response
+            let newPost;
+            try {
+                const responseText = await res.text();
+                console.log('Post creation response text:', responseText);
+                
+                if (!responseText.trim()) {
+                    throw new Error('Empty response from server');
+                }
+                
+                if (responseText.trim().startsWith('<')) {
+                    throw new Error('Server returned HTML error page. Please check your connection.');
+                }
+                
+                newPost = JSON.parse(responseText);
+                console.log('Post created successfully:', newPost);
+            } catch (jsonError) {
+                console.error('JSON parsing error:', jsonError);
+                throw new Error('Invalid response from server. Please try again.');
             }
 
             // Reset form
