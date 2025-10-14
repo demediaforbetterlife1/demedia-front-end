@@ -55,7 +55,7 @@ export async function GET(
     console.log('Using fallback profile data for userId:', userId);
     
     // Create profile data based on known users
-    const userProfiles = {
+    const userProfiles: { [key: number]: any } = {
       15: {
         id: 15,
         name: "DeMedia",
