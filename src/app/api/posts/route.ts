@@ -33,23 +33,12 @@ export async function GET(request: NextRequest) {
           console.log('✅ First post author ID:', data[0].author?.id);
         }
         
-        // Fix missing user IDs in posts using real database IDs
-        const fixedData = data.map((post: any) => {
-          if (post.user && !post.user.id) {
-            // Use real user IDs from your database (15, 16, 17, 21)
-            const realUserIds = [15, 16, 17, 21];
-            const randomId = realUserIds[Math.floor(Math.random() * realUserIds.length)];
-            post.user.id = randomId;
-            console.log('🔧 Fixed missing user ID for post:', post.id, 'new user ID:', post.user.id);
-          }
-          if (post.author && !post.author.id) {
-            const realUserIds = [15, 16, 17, 21];
-            const randomId = realUserIds[Math.floor(Math.random() * realUserIds.length)];
-            post.author.id = randomId;
-            console.log('🔧 Fixed missing author ID for post:', post.id, 'new author ID:', post.author.id);
-          }
-          return post;
-        });
+        // Log the actual user IDs from the database
+        console.log('🔍 Backend posts data - first post user ID:', data[0]?.user?.id);
+        console.log('🔍 Backend posts data - first post author ID:', data[0]?.author?.id);
+        
+        // Return the data as-is from the backend without generating random IDs
+        const fixedData = data;
         
         return NextResponse.json(fixedData);
       } else {
@@ -80,22 +69,12 @@ export async function GET(request: NextRequest) {
           console.log('✅ Public first post author ID:', data[0].author?.id);
         }
         
-        // Fix missing user IDs in posts using real database IDs
-        const fixedData = data.map((post: any) => {
-          if (post.user && !post.user.id) {
-            const realUserIds = [15, 16, 17, 21];
-            const randomId = realUserIds[Math.floor(Math.random() * realUserIds.length)];
-            post.user.id = randomId;
-            console.log('🔧 Fixed missing user ID for post:', post.id, 'new user ID:', post.user.id);
-          }
-          if (post.author && !post.author.id) {
-            const realUserIds = [15, 16, 17, 21];
-            const randomId = realUserIds[Math.floor(Math.random() * realUserIds.length)];
-            post.author.id = randomId;
-            console.log('🔧 Fixed missing author ID for post:', post.id, 'new author ID:', post.author.id);
-          }
-          return post;
-        });
+        // Log the actual user IDs from the public backend
+        console.log('🔍 Public backend posts data - first post user ID:', data[0]?.user?.id);
+        console.log('🔍 Public backend posts data - first post author ID:', data[0]?.author?.id);
+        
+        // Return the data as-is from the backend without generating random IDs
+        const fixedData = data;
         
         return NextResponse.json(fixedData);
       } else {
