@@ -1545,6 +1545,22 @@ export default function ProfilePage() {
                     setShowEditModal(false);
                 }}
             />
+
+            {/* Followers List Modal */}
+            <FollowersList
+                isOpen={showFollowersList}
+                onClose={() => setShowFollowersList(false)}
+                userId={parseInt(userId)}
+                type={listType}
+            />
+
+            {/* Following List Modal */}
+            <FollowersList
+                isOpen={showFollowingList}
+                onClose={() => setShowFollowingList(false)}
+                userId={parseInt(userId)}
+                type="following"
+            />
         </div>
     );
 }
@@ -1938,22 +1954,6 @@ const UserPosts = ({
                     </motion.div>
                 </div>
             )}
-
-            {/* Followers List Modal */}
-            <FollowersList
-                isOpen={showFollowersList}
-                onClose={() => setShowFollowersList(false)}
-                userId={parseInt(userId)}
-                type={listType}
-            />
-
-            {/* Following List Modal */}
-            <FollowersList
-                isOpen={showFollowingList}
-                onClose={() => setShowFollowingList(false)}
-                userId={parseInt(userId)}
-                type="following"
-            />
 
         </div>
     );
