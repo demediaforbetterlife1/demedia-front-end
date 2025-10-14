@@ -43,12 +43,26 @@ export async function POST(request: NextRequest) {
     const mockPost = {
       id: `post_${userId}_${Date.now()}`,
       title: body.title || '',
-      content: body.content || 'New Post',
+      content: body.content || '',
       authorId: parseInt(userId),
       likes: 0,
       comments: 0,
+      imageUrl: body.imageUrl || null,
+      imageUrls: body.imageUrls || [],
       createdAt: new Date().toISOString(),
-      message: 'Post created (fallback mode)'
+      message: 'Post created (fallback mode)',
+      author: {
+        id: parseInt(userId),
+        name: 'Current User',
+        username: 'currentuser',
+        profilePicture: null
+      },
+      user: {
+        id: parseInt(userId),
+        name: 'Current User',
+        username: 'currentuser',
+        profilePicture: null
+      }
     };
 
     console.log('Returning mock post:', mockPost);
@@ -113,19 +127,29 @@ export async function GET(request: NextRequest) {
         const fixedData = data.map((post: any) => {
             console.log('🔧 Processing post:', post.id, 'user:', post.user, 'author:', post.author);
             
-            // If we have user data but no ID, try to preserve the name/username and assign a known ID
+            // If we have user data but no ID, try to preserve the name/username and assign a consistent ID
             if (post.user && !post.user.id && (post.user.name || post.user.username)) {
                 console.log('🔧 Post has user data but no ID, preserving user info');
-                const knownUserIds = [15, 16, 17, 21, 4];
-                post.user.id = knownUserIds[Math.floor(Math.random() * knownUserIds.length)];
-                console.log('✅ Assigned user ID:', post.user.id, 'for user:', post.user.name);
+                // Use a hash of the username to get a consistent ID
+                const username = post.user.username || post.user.name || 'unknown';
+                const hash = username.split('').reduce((a: number, b: string) => {
+                    a = ((a << 5) - a) + b.charCodeAt(0);
+                    return a & a;
+                }, 0);
+                post.user.id = Math.abs(hash) % 1000 + 1; // Generate ID between 1-1000
+                console.log('✅ Assigned consistent user ID:', post.user.id, 'for user:', post.user.name);
             }
             
             if (post.author && !post.author.id && (post.author.name || post.author.username)) {
                 console.log('🔧 Post has author data but no ID, preserving author info');
-                const knownUserIds = [15, 16, 17, 21, 4];
-                post.author.id = knownUserIds[Math.floor(Math.random() * knownUserIds.length)];
-                console.log('✅ Assigned author ID:', post.author.id, 'for author:', post.author.name);
+                // Use a hash of the username to get a consistent ID
+                const username = post.author.username || post.author.name || 'unknown';
+                const hash = username.split('').reduce((a: number, b: string) => {
+                    a = ((a << 5) - a) + b.charCodeAt(0);
+                    return a & a;
+                }, 0);
+                post.author.id = Math.abs(hash) % 1000 + 1; // Generate ID between 1-1000
+                console.log('✅ Assigned consistent author ID:', post.author.id, 'for author:', post.author.name);
             }
             
             // Ensure both user and author objects have the same ID if one exists
@@ -206,19 +230,29 @@ export async function GET(request: NextRequest) {
         const fixedData = data.map((post: any) => {
             console.log('🔧 Processing post (public):', post.id, 'user:', post.user, 'author:', post.author);
             
-            // If we have user data but no ID, try to preserve the name/username and assign a known ID
+            // If we have user data but no ID, try to preserve the name/username and assign a consistent ID
             if (post.user && !post.user.id && (post.user.name || post.user.username)) {
                 console.log('🔧 Post has user data but no ID (public), preserving user info');
-                const knownUserIds = [15, 16, 17, 21, 4];
-                post.user.id = knownUserIds[Math.floor(Math.random() * knownUserIds.length)];
-                console.log('✅ Assigned user ID (public):', post.user.id, 'for user:', post.user.name);
+                // Use a hash of the username to get a consistent ID
+                const username = post.user.username || post.user.name || 'unknown';
+                const hash = username.split('').reduce((a: number, b: string) => {
+                    a = ((a << 5) - a) + b.charCodeAt(0);
+                    return a & a;
+                }, 0);
+                post.user.id = Math.abs(hash) % 1000 + 1; // Generate ID between 1-1000
+                console.log('✅ Assigned consistent user ID (public):', post.user.id, 'for user:', post.user.name);
             }
             
             if (post.author && !post.author.id && (post.author.name || post.author.username)) {
                 console.log('🔧 Post has author data but no ID (public), preserving author info');
-                const knownUserIds = [15, 16, 17, 21, 4];
-                post.author.id = knownUserIds[Math.floor(Math.random() * knownUserIds.length)];
-                console.log('✅ Assigned author ID (public):', post.author.id, 'for author:', post.author.name);
+                // Use a hash of the username to get a consistent ID
+                const username = post.author.username || post.author.name || 'unknown';
+                const hash = username.split('').reduce((a: number, b: string) => {
+                    a = ((a << 5) - a) + b.charCodeAt(0);
+                    return a & a;
+                }, 0);
+                post.author.id = Math.abs(hash) % 1000 + 1; // Generate ID between 1-1000
+                console.log('✅ Assigned consistent author ID (public):', post.author.id, 'for author:', post.author.name);
             }
             
             // Ensure both user and author objects have the same ID if one exists

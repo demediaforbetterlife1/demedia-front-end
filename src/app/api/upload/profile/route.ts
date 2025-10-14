@@ -46,13 +46,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Fallback: Simulate successful upload
-    const file = formData.get('profilePhoto') as File;
+    const file = formData.get('file') as File;
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
     // Generate a mock URL
-    const mockUrl = `/uploads/profiles/mock-${Date.now()}-${file.name}`;
+    const mockUrl = `https://demedia-backend.fly.dev/uploads/profiles/mock-${Date.now()}-${file.name}`;
     
     return NextResponse.json({
       success: true,

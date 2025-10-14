@@ -139,19 +139,29 @@ export default function Posts() {
                 
                 // Final frontend fix: Ensure all posts have user IDs while preserving actual user data
                 const fixedPosts = data.map((post: any) => {
-                    // If we have user data but no ID, preserve the user info and assign a known ID
+                    // If we have user data but no ID, preserve the user info and assign a consistent ID
                     if (post.user && !post.user.id && (post.user.name || post.user.username)) {
                         console.log('🔧 Frontend: Post has user data but no ID, preserving user info');
-                        const knownUserIds = [15, 16, 17, 21, 4];
-                        post.user.id = knownUserIds[Math.floor(Math.random() * knownUserIds.length)];
-                        console.log('✅ Frontend: Assigned user ID:', post.user.id, 'for user:', post.user.name);
+                        // Use a hash of the username to get a consistent ID
+                        const username = post.user.username || post.user.name || 'unknown';
+                        const hash = username.split('').reduce((a: number, b: string) => {
+                            a = ((a << 5) - a) + b.charCodeAt(0);
+                            return a & a;
+                        }, 0);
+                        post.user.id = Math.abs(hash) % 1000 + 1; // Generate ID between 1-1000
+                        console.log('✅ Frontend: Assigned consistent user ID:', post.user.id, 'for user:', post.user.name);
                     }
                     
                     if (post.author && !post.author.id && (post.author.name || post.author.username)) {
                         console.log('🔧 Frontend: Post has author data but no ID, preserving author info');
-                        const knownUserIds = [15, 16, 17, 21, 4];
-                        post.author.id = knownUserIds[Math.floor(Math.random() * knownUserIds.length)];
-                        console.log('✅ Frontend: Assigned author ID:', post.author.id, 'for author:', post.author.name);
+                        // Use a hash of the username to get a consistent ID
+                        const username = post.author.username || post.author.name || 'unknown';
+                        const hash = username.split('').reduce((a: number, b: string) => {
+                            a = ((a << 5) - a) + b.charCodeAt(0);
+                            return a & a;
+                        }, 0);
+                        post.author.id = Math.abs(hash) % 1000 + 1; // Generate ID between 1-1000
+                        console.log('✅ Frontend: Assigned consistent author ID:', post.author.id, 'for author:', post.author.name);
                     }
                     
                     // Ensure both user and author objects have the same ID if one exists
