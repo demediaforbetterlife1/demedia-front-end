@@ -39,16 +39,14 @@ const pricingTiers: PricingTier[] = [
         id: "monthly",
         name: "Premium",
         duration: "1 Month",
-        originalPrice: "$9.99",
-        currentPrice: "$9.99",
-        discount: "Special sign beside your name",
+        originalPrice: "",
+        currentPrice: "Coming Soon",
+        discount: "",
         features: [
             "Special sign beside your name in profile and posts",
             "Highlighted comments with special background",
-            "Unlimited posts and stories",
-            "Basic analytics",
-            "Standard support",
-            "Custom themes"
+            "Your reach will increase by 15%",
+            "Gold theme unlocked"
         ],
         popular: false,
         icon: Star,
@@ -60,20 +58,18 @@ const pricingTiers: PricingTier[] = [
         id: "quarterly",
         name: "Pro",
         duration: "3 Months",
-        originalPrice: "$24.99",
-        currentPrice: "$24.99",
-        discount: "Save 17%",
+        originalPrice: "",
+        currentPrice: "Coming Soon",
+        discount: "",
         features: [
-            "Different special sign beside your name",
+            "Special sign beside your name in profile and posts",
             "Highlighted comments with special background",
-            "More features coming soon",
-            "Everything in Premium",
-            "Advanced analytics",
-            "Priority support",
-            "Premium themes",
-            "Advanced AI features"
+            "Your reach will increase by 15%",
+            "Gold theme unlocked",
+            "Auto delete a message when it readed",
+            "Auto post (schedule posts)"
         ],
-        popular: true,
+        popular: false,
         icon: Crown,
         color: "text-purple-500",
         bgGradient: "from-purple-500/10 to-pink-500/10",
@@ -83,17 +79,11 @@ const pricingTiers: PricingTier[] = [
         id: "semiannual",
         name: "Elite",
         duration: "6 Months",
-        originalPrice: "$44.99",
-        currentPrice: "$44.99",
-        discount: "Save 25%",
+        originalPrice: "",
+        currentPrice: "Coming Soon",
+        discount: "",
         features: [
-            "We are thinking of the best features for you",
-            "Everything in Pro",
-            "Advanced features",
-            "Priority support",
-            "Custom integrations",
-            "Team management",
-            "24/7 support"
+            "We are working on the best features for you"
         ],
         popular: false,
         icon: Trophy,
@@ -179,6 +169,20 @@ export default function PricingPage() {
                     accentBg: 'bg-gradient-to-r from-cyan-900/40 to-purple-900/40',
                     button: 'bg-gradient-to-r from-cyan-400 to-purple-500 hover:from-cyan-300 hover:to-purple-400 text-black shadow-xl hover:shadow-2xl',
                     buttonSecondary: 'bg-gray-800/90 hover:bg-gray-700 text-gray-300 border border-gray-700/50 shadow-lg hover:shadow-xl'
+                };
+            case 'gold':
+                return {
+                    bg: 'bg-gradient-to-br from-gray-900 via-yellow-900/20 to-amber-900/20',
+                    card: 'bg-gradient-to-br from-gray-800/95 to-gray-700/95 backdrop-blur-sm shadow-2xl border border-yellow-500/30 gold-glow',
+                    text: 'text-white',
+                    textSecondary: 'text-yellow-100',
+                    border: 'border-yellow-500/30',
+                    hover: 'hover:bg-gradient-to-br hover:from-gray-700/90 hover:to-gray-600/90 hover:shadow-2xl transition-all duration-300 gold-shimmer',
+                    gradient: 'from-yellow-500/20 via-amber-500/20 to-orange-500/20',
+                    accent: 'text-yellow-400',
+                    accentBg: 'bg-gradient-to-r from-yellow-900/40 to-amber-900/40 gold-shimmer',
+                    button: 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-black shadow-xl hover:shadow-2xl gold-glow',
+                    buttonSecondary: 'bg-gradient-to-br from-gray-700/90 to-gray-600/90 hover:from-gray-600 hover:to-gray-500 text-yellow-200 border border-yellow-500/50 shadow-lg hover:shadow-xl gold-shimmer'
                 };
             default:
                 return {
@@ -276,18 +280,8 @@ export default function PricingPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                                className={`relative ${themeClasses.card} rounded-3xl p-8 border ${tier.borderColor} ${
-                                    tier.popular ? 'ring-2 ring-purple-500/50 scale-105' : ''
-                                } transition-all duration-300 hover:scale-105`}
+                                className={`relative ${themeClasses.card} rounded-3xl p-8 border ${tier.borderColor} transition-all duration-300 hover:scale-105`}
                             >
-                                {tier.popular && (
-                                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                                        <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
-                                            <Star className="w-4 h-4" />
-                                            <span>Most Popular</span>
-                                        </div>
-                                    </div>
-                                )}
 
                                 <div className="text-center mb-8">
                                     <div className={`w-16 h-16 ${tier.bgGradient} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
@@ -302,12 +296,6 @@ export default function PricingPage() {
                                     <div className="mb-4">
                                         <div className={`text-4xl font-bold ${themeClasses.text} mb-2`}>
                                             {tier.currentPrice}
-                                        </div>
-                                        <div className={`text-sm ${themeClasses.textSecondary} line-through`}>
-                                            {tier.originalPrice}
-                                        </div>
-                                        <div className={`text-sm font-medium ${tier.color}`}>
-                                            {tier.discount}
                                         </div>
                                     </div>
                                 </div>
@@ -335,11 +323,7 @@ export default function PricingPage() {
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={() => handleSubscribe(tier)}
-                                    className={`w-full py-4 rounded-xl font-semibold transition-all duration-300 ${
-                                        tier.popular
-                                            ? `${themeClasses.button} shadow-xl`
-                                            : `${themeClasses.buttonSecondary}`
-                                    }`}
+                                    className={`w-full py-4 rounded-xl font-semibold transition-all duration-300 ${themeClasses.buttonSecondary}`}
                                 >
                                     {tier.currentPrice === "Coming Soon" ? "Coming Soon" : "Get Started"}
                                 </motion.button>
@@ -390,53 +374,6 @@ export default function PricingPage() {
                     </div>
                 </motion.div>
 
-                {/* FAQ Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.6 }}
-                    className="mt-16"
-                >
-                    <h2 className={`text-3xl font-bold ${themeClasses.text} text-center mb-8`}>
-                        Frequently Asked Questions
-                    </h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {[
-                            {
-                                question: "Can I change my plan anytime?",
-                                answer: "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately."
-                            },
-                            {
-                                question: "Is there a free trial?",
-                                answer: "Yes! All plans come with a 7-day free trial. No credit card required."
-                            },
-                            {
-                                question: "What payment methods do you accept?",
-                                answer: "We accept all major credit cards, PayPal, and cryptocurrency payments."
-                            },
-                            {
-                                question: "Can I cancel anytime?",
-                                answer: "Absolutely! You can cancel your subscription at any time with no cancellation fees."
-                            }
-                        ].map((faq, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: index * 0.1 }}
-                                className={`${themeClasses.card} rounded-xl p-6`}
-                            >
-                                <h3 className={`text-lg font-semibold ${themeClasses.text} mb-2`}>
-                                    {faq.question}
-                                </h3>
-                                <p className={`${themeClasses.textSecondary}`}>
-                                    {faq.answer}
-                                </p>
-                            </motion.div>
-                        ))}
-                    </div>
-                </motion.div>
             </div>
         </div>
     );

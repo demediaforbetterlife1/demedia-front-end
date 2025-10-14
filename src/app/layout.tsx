@@ -11,6 +11,7 @@ import { AnimatedStars } from "@/components/AnimatedStars";
 import { I18nProvider } from "@/contexts/I18nContext";
 import NotificationProvider from "@/components/NotificationProvider";
 import GlowingPlanets from "@/components/GlowingPlanets";
+import GoldParticles from "@/components/GoldParticles";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import WebGLErrorHandler from "@/components/WebGLErrorHandler";
 import "@/utils/errorHandler";
@@ -75,6 +76,7 @@ export default function RootLayout({
                     <WebGLErrorHandler />
                     <AnimatedStars />
                     <GlowingPlanets />
+                    <GoldParticles />
                     <NavbarClient />
                     {children}
                   </AuthGuard>

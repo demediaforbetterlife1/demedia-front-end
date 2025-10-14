@@ -37,6 +37,13 @@ const themes = [
     description: 'Ultra light and minimal',
     preview: 'bg-gradient-to-br from-gray-50 to-gray-100',
     icon: '☁️'
+  },
+  {
+    id: 'gold' as const,
+    name: 'Gold',
+    description: 'Luxurious gold theme with shimmer effects',
+    preview: 'bg-gradient-to-br from-yellow-900 to-yellow-800 relative overflow-hidden',
+    icon: '✨'
   }
 ];
 
@@ -109,6 +116,14 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
                           <div className="absolute top-1 left-1 w-1 h-1 bg-white rounded-full opacity-60"></div>
                           <div className="absolute top-2 right-2 w-0.5 h-0.5 bg-white rounded-full opacity-40"></div>
                           <div className="absolute bottom-2 left-2 w-1 h-1 bg-white rounded-full opacity-50"></div>
+                        </div>
+                      )}
+                      {themeOption.id === 'gold' && (
+                        <div className="w-full h-full relative">
+                          <div className="absolute top-1 left-1 w-1 h-1 bg-yellow-300 rounded-full opacity-80 animate-pulse"></div>
+                          <div className="absolute top-2 right-2 w-0.5 h-0.5 bg-yellow-400 rounded-full opacity-60 animate-pulse"></div>
+                          <div className="absolute bottom-2 left-2 w-1 h-1 bg-yellow-200 rounded-full opacity-70 animate-pulse"></div>
+                          <div className="absolute top-1/2 left-1/2 w-0.5 h-0.5 bg-yellow-500 rounded-full opacity-90 animate-ping"></div>
                         </div>
                       )}
                     </div>

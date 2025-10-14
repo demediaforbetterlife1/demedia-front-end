@@ -143,6 +143,17 @@ export default function MobileBottomNav() {
                     hover: 'hover:bg-gray-900/30',
                     active: 'bg-gray-900/50'
                 };
+            case 'gold':
+                return {
+                    bg: 'bg-gradient-to-r from-gray-900/95 to-gray-800/95',
+                    border: 'border-yellow-500/30',
+                    text: 'text-yellow-200',
+                    textSecondary: 'text-yellow-300',
+                    activeText: 'text-yellow-100',
+                    backdrop: 'backdrop-blur-xl',
+                    hover: 'hover:bg-yellow-900/30 gold-shimmer',
+                    active: 'bg-yellow-900/50 gold-glow'
+                };
             default:
                 return {
                     bg: 'bg-gray-900/95',

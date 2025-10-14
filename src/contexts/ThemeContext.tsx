@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Theme = 'dark' | 'light' | 'super-dark' | 'super-light';
+export type Theme = 'dark' | 'light' | 'super-dark' | 'super-light' | 'gold';
 
 interface ThemeContextType {
   theme: Theme;
@@ -31,7 +31,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   // Load theme from localStorage on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as Theme;
-    if (savedTheme && ['dark', 'light', 'super-dark', 'super-light'].includes(savedTheme)) {
+    if (savedTheme && ['dark', 'light', 'super-dark', 'super-light', 'gold'].includes(savedTheme)) {
       setThemeState(savedTheme);
     }
   }, []);
@@ -60,7 +60,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   }, [theme]);
 
   const toggleTheme = () => {
-    const themes: Theme[] = ['dark', 'light', 'super-dark', 'super-light'];
+    const themes: Theme[] = ['dark', 'light', 'super-dark', 'super-light', 'gold'];
     const currentIndex = themes.indexOf(theme);
     const nextIndex = (currentIndex + 1) % themes.length;
     setTheme(themes[nextIndex]);

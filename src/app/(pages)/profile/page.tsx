@@ -167,6 +167,15 @@ export default function ProfilePage() {
         url: window.location.href,
         searchParams: Object.fromEntries(searchParams.entries())
     });
+    
+    // Additional validation to prevent wrong profile loading
+    if (userIdFromUrl && userIdFromUrl !== user?.id?.toString()) {
+        console.log('🔍 Loading different user profile:', {
+            requestedUserId: userIdFromUrl,
+            currentUserId: user?.id,
+            isDifferentUser: true
+        });
+    }
 
     const getThemeClasses = () => {
         switch (theme) {

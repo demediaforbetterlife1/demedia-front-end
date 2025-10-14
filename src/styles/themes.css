@@ -64,6 +64,24 @@
   --planet-glow: rgba(245, 158, 11, 0.2);
 }
 
+[data-theme="gold"] {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3d3d3d;
+  --text-primary: #ffffff;
+  --text-secondary: #f5f5f5;
+  --text-muted: #cccccc;
+  --accent-primary: #ffd700;
+  --accent-secondary: #ffed4e;
+  --border-color: #4a4a4a;
+  --shadow-color: rgba(255, 215, 0, 0.3);
+  --gradient-primary: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+  --gradient-accent: linear-gradient(135deg, #ffd700, #ffed4e);
+  --gold-shimmer: linear-gradient(45deg, #ffd700, #ffed4e, #ffd700, #ffed4e);
+  --gold-glow: rgba(255, 215, 0, 0.4);
+  --gold-sparkle: rgba(255, 255, 255, 0.8);
+}
+
 /* Global Theme Styles */
 body {
   background-color: var(--bg-primary);
@@ -322,6 +340,145 @@ body {
   animation: planet-glow 10s ease-in-out infinite alternate;
   pointer-events: none;
   z-index: -1;
+}
+
+/* Gold Theme Specific Styles */
+[data-theme="gold"] body {
+  background: var(--gradient-primary);
+  position: relative;
+  overflow-x: hidden;
+}
+
+[data-theme="gold"] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(ellipse at 20% 20%, var(--gold-glow) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 60%, rgba(255, 237, 78, 0.1) 0%, transparent 40%),
+    radial-gradient(ellipse at 70% 30%, rgba(255, 215, 0, 0.1) 0%, transparent 30%),
+    radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.2) 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+[data-theme="gold"] body::after {
+  content: '';
+  position: fixed;
+  top: 10%;
+  right: 15%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, var(--accent-primary) 0%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: gold-glow 8s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Gold shimmer effects */
+[data-theme="gold"] .gold-shimmer {
+  background: var(--gold-shimmer);
+  background-size: 200% 200%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+[data-theme="gold"] .gold-glow {
+  box-shadow: 0 0 20px var(--gold-glow), 0 0 40px var(--gold-glow), 0 0 60px var(--gold-glow);
+  animation: gold-pulse 2s ease-in-out infinite alternate;
+}
+
+[data-theme="gold"] .gold-sparkle {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="gold"] .gold-sparkle::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, var(--gold-sparkle), transparent);
+  animation: sparkle 4s linear infinite;
+  pointer-events: none;
+}
+
+/* Gold theme animations */
+@keyframes gold-glow {
+  0% { 
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+  100% { 
+    opacity: 0.3;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes gold-pulse {
+  0% { 
+    box-shadow: 0 0 20px var(--gold-glow), 0 0 40px var(--gold-glow), 0 0 60px var(--gold-glow);
+  }
+  100% { 
+    box-shadow: 0 0 30px var(--gold-glow), 0 0 60px var(--gold-glow), 0 0 90px var(--gold-glow);
+  }
+}
+
+@keyframes sparkle {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+/* Gold theme floating particles */
+[data-theme="gold"] .gold-particle {
+  position: fixed;
+  width: 4px;
+  height: 4px;
+  background: var(--accent-primary);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  animation: gold-float 6s linear infinite;
+}
+
+[data-theme="gold"] .gold-particle:nth-child(odd) {
+  animation-delay: 0.5s;
+  animation-duration: 8s;
+}
+
+[data-theme="gold"] .gold-particle:nth-child(3n) {
+  animation-delay: 1s;
+  animation-duration: 10s;
+}
+
+@keyframes gold-float {
+  0% { 
+    transform: translateY(100vh) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { 
+    transform: translateY(-100px) translateX(50px) rotate(360deg);
+    opacity: 0;
+  }
 }
 
 /* Theme Transition Animations */

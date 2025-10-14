@@ -154,7 +154,7 @@ export default function SearchResultsPage() {
                 router.push(`/post/${result.id}`);
                 break;
             case 'story':
-                router.push(`/profile?userId=${result.author?.username}`);
+                router.push(`/profile?userId=${result.author?.id}`);
                 break;
             case 'hashtag':
                 router.push(`/hashtag/${result.title.replace('#', '')}`);
