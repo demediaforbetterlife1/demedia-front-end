@@ -400,14 +400,19 @@ export default function Posts() {
                                     onClick={() => {
                                         // Get the author ID from the post
                                         const targetUserId = post.user?.id || post.author?.id;
+                                        console.log('🔍 Profile photo click debug:', {
+                                            postId: post.id,
+                                            targetUserId,
+                                            postUser: post.user,
+                                            postAuthor: post.author
+                                        });
+                                        
                                         if (targetUserId) {
+                                            console.log('✅ Navigating to profile with userId:', targetUserId);
                                             window.location.href = `/profile?userId=${targetUserId}`;
                                         } else {
-                                            console.error('No user ID found for post:', post);
-                                            // Fallback to current user's profile if no author ID
-                                            if (user?.id) {
-                                                window.location.href = `/profile`;
-                                            }
+                                            console.error('❌ No user ID found for post:', post);
+                                            console.log('Full post object:', JSON.stringify(post, null, 2));
                                         }
                                     }}
                                     className="w-10 h-10 rounded-full theme-bg-tertiary flex items-center justify-center theme-text-secondary font-bold hover:shadow-lg transition-all duration-300 cursor-pointer"
