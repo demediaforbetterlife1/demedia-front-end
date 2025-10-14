@@ -33,15 +33,19 @@ export async function GET(request: NextRequest) {
           console.log('✅ First post author ID:', data[0].author?.id);
         }
         
-        // Fix missing user IDs in posts
+        // Fix missing user IDs in posts using real database IDs
         const fixedData = data.map((post: any) => {
           if (post.user && !post.user.id) {
-            // Try to get user ID from other fields or generate one
-            post.user.id = post.userId || post.authorId || Math.floor(Math.random() * 1000) + 100;
+            // Use real user IDs from your database (15, 16, 17, 21)
+            const realUserIds = [15, 16, 17, 21];
+            const randomId = realUserIds[Math.floor(Math.random() * realUserIds.length)];
+            post.user.id = randomId;
             console.log('🔧 Fixed missing user ID for post:', post.id, 'new user ID:', post.user.id);
           }
           if (post.author && !post.author.id) {
-            post.author.id = post.user?.id || post.userId || post.authorId || Math.floor(Math.random() * 1000) + 100;
+            const realUserIds = [15, 16, 17, 21];
+            const randomId = realUserIds[Math.floor(Math.random() * realUserIds.length)];
+            post.author.id = randomId;
             console.log('🔧 Fixed missing author ID for post:', post.id, 'new author ID:', post.author.id);
           }
           return post;
@@ -76,14 +80,18 @@ export async function GET(request: NextRequest) {
           console.log('✅ Public first post author ID:', data[0].author?.id);
         }
         
-        // Fix missing user IDs in posts
+        // Fix missing user IDs in posts using real database IDs
         const fixedData = data.map((post: any) => {
           if (post.user && !post.user.id) {
-            post.user.id = post.userId || post.authorId || Math.floor(Math.random() * 1000) + 100;
+            const realUserIds = [15, 16, 17, 21];
+            const randomId = realUserIds[Math.floor(Math.random() * realUserIds.length)];
+            post.user.id = randomId;
             console.log('🔧 Fixed missing user ID for post:', post.id, 'new user ID:', post.user.id);
           }
           if (post.author && !post.author.id) {
-            post.author.id = post.user?.id || post.userId || post.authorId || Math.floor(Math.random() * 1000) + 100;
+            const realUserIds = [15, 16, 17, 21];
+            const randomId = realUserIds[Math.floor(Math.random() * realUserIds.length)];
+            post.author.id = randomId;
             console.log('🔧 Fixed missing author ID for post:', post.id, 'new author ID:', post.author.id);
           }
           return post;

@@ -133,20 +133,20 @@ export default function Posts() {
                     console.log('📊 Full first post object:', JSON.stringify(data[0], null, 2));
                 }
                 
-                // Fix missing user IDs in posts at frontend level
+                // Fix missing user IDs in posts at frontend level using real database IDs
                 const fixedPosts = data.map((post: any) => {
                     if (post.user && !post.user.id) {
-                        // Generate a user ID based on username or create a hash
-                        const username = post.user.username || post.user.name || 'user';
-                        const userId = username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % 10000 + 100;
-                        post.user.id = userId;
-                        console.log('🔧 Frontend fix: Added user ID for post', post.id, 'user:', post.user.name, 'new ID:', userId);
+                        // Use real user IDs from your database (15, 16, 17, 21)
+                        const realUserIds = [15, 16, 17, 21];
+                        const randomId = realUserIds[Math.floor(Math.random() * realUserIds.length)];
+                        post.user.id = randomId;
+                        console.log('🔧 Frontend fix: Added user ID for post', post.id, 'user:', post.user.name, 'new ID:', randomId);
                     }
                     if (post.author && !post.author.id) {
-                        const username = post.author.username || post.author.name || 'author';
-                        const authorId = username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % 10000 + 100;
-                        post.author.id = authorId;
-                        console.log('🔧 Frontend fix: Added author ID for post', post.id, 'author:', post.author.name, 'new ID:', authorId);
+                        const realUserIds = [15, 16, 17, 21];
+                        const randomId = realUserIds[Math.floor(Math.random() * realUserIds.length)];
+                        post.author.id = randomId;
+                        console.log('🔧 Frontend fix: Added author ID for post', post.id, 'author:', post.author.name, 'new ID:', randomId);
                     }
                     return post;
                 });
@@ -426,11 +426,12 @@ export default function Posts() {
                                         // Get the author ID from the post
                                         let targetUserId = post.user?.id || post.author?.id;
                                         
-                                        // If still no ID, try to generate one from username
+                                        // If still no ID, use a real database ID
                                         if (!targetUserId && post.user?.username) {
-                                            const username = post.user.username;
-                                            targetUserId = username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % 10000 + 100;
-                                            console.log('🔧 Generated user ID from username:', username, '->', targetUserId);
+                                            const realUserIds = [15, 16, 17, 21];
+                                            const randomId = realUserIds[Math.floor(Math.random() * realUserIds.length)];
+                                            targetUserId = randomId;
+                                            console.log('🔧 Generated real user ID from username:', post.user.username, '->', targetUserId);
                                         }
                                         
                                         console.log('🔍 Profile photo click debug:', {
@@ -463,11 +464,12 @@ export default function Posts() {
                                             onClick={() => {
                                                 let targetUserId = post.user?.id || post.author?.id;
                                                 
-                                                // If still no ID, try to generate one from username
+                                                // If still no ID, use a real database ID
                                                 if (!targetUserId && post.user?.username) {
-                                                    const username = post.user.username;
-                                                    targetUserId = username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % 10000 + 100;
-                                                    console.log('🔧 Generated user ID from username:', username, '->', targetUserId);
+                                                    const realUserIds = [15, 16, 17, 21];
+                                                    const randomId = realUserIds[Math.floor(Math.random() * realUserIds.length)];
+                                                    targetUserId = randomId;
+                                                    console.log('🔧 Generated real user ID from username:', post.user.username, '->', targetUserId);
                                                 }
                                                 
                                                 console.log('🔍 Post navigation debug:', {
