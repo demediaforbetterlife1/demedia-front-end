@@ -55,8 +55,13 @@ export async function GET(request: NextRequest) {
         if (data[0]) {
           console.log('✅ Public first post user data:', data[0].user);
           console.log('✅ Public first post author data:', data[0].author);
+          console.log('✅ Public first post user ID:', data[0].user?.id);
+          console.log('✅ Public first post author ID:', data[0].author?.id);
         }
         return NextResponse.json(data);
+      } else {
+        const errorText = await publicResponse.text();
+        console.log('❌ Public backend failed:', publicResponse.status, errorText);
       }
     } catch (publicError) {
       console.log('❌ Public backend connection error:', publicError);

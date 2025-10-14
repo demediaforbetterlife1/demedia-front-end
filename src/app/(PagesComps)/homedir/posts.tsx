@@ -397,14 +397,20 @@ export default function Posts() {
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        
+                                        console.log('🔍 Profile photo clicked!');
+                                        
                                         // Get the author ID from the post
                                         const targetUserId = post.user?.id || post.author?.id;
                                         console.log('🔍 Profile photo click debug:', {
                                             postId: post.id,
                                             targetUserId,
                                             postUser: post.user,
-                                            postAuthor: post.author
+                                            postAuthor: post.author,
+                                            event: e
                                         });
                                         
                                         if (targetUserId) {

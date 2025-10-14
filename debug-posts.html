@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Posts Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .post { border: 1px solid #ccc; margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .user-info { background-color: #f0f0f0; padding: 5px; margin: 5px 0; border-radius: 3px; }
+        .error { background-color: #ffebee; border: 1px solid #f44336; }
+        .success { background-color: #e8f5e8; border: 1px solid #4caf50; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; background-color: #2196f3; color: white; border: none; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Debug Posts Data</h1>
+    
+    <button onclick="loadPosts()">Load Posts</button>
+    <button onclick="testProfileClick()">Test Profile Click</button>
+    
+    <div id="posts-container"></div>
+    
+    <script>
+        let postsData = [];
+        
+        async function loadPosts() {
+            const container = document.getElementById('posts-container');
+            container.innerHTML = '<p>Loading posts...</p>';
+            
+            try {
+                const response = await fetch('/api/posts', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || 'test-token'),
+                        'user-id': localStorage.getItem('userId') || '1'
+                    }
+                });
+                
+                if (response.ok) {
+                    postsData = await response.json();
+                    displayPosts(postsData);
+                } else {
+                    container.innerHTML = `<div class="error">Error: ${response.status}</div>`;
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">Network Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayPosts(posts) {
+            const container = document.getElementById('posts-container');
+            container.innerHTML = '';
+            
+            posts.forEach((post, index) => {
+                const postDiv = document.createElement('div');
+                postDiv.className = 'post';
+                
+                const hasUserData = !!(post.user?.id || post.author?.id);
+                postDiv.className += hasUserData ? ' success' : ' error';
+                
+                postDiv.innerHTML = `
+                    <h3>Post ${index + 1} (ID: ${post.id})</h3>
+                    <div class="user-info">
+                        <strong>User Data:</strong> ${JSON.stringify(post.user, null, 2)}
+                    </div>
+                    <div class="user-info">
+                        <strong>Author Data:</strong> ${JSON.stringify(post.author, null, 2)}
+                    </div>
+                    <div class="user-info">
+                        <strong>Has User ID:</strong> ${!!post.user?.id} (${post.user?.id || 'null'})
+                    </div>
+                    <div class="user-info">
+                        <strong>Has Author ID:</strong> ${!!post.author?.id} (${post.author?.id || 'null'})
+                    </div>
+                    <div class="user-info">
+                        <strong>Target User ID:</strong> ${post.user?.id || post.author?.id || 'NONE'}
+                    </div>
+                    <button onclick="testProfileClick(${index})">Test Profile Click</button>
+                `;
+                
+                container.appendChild(postDiv);
+            });
+        }
+        
+        function testProfileClick(index = 0) {
+            if (postsData.length === 0) {
+                alert('No posts loaded. Click "Load Posts" first.');
+                return;
+            }
+            
+            const post = postsData[index];
+            const targetUserId = post.user?.id || post.author?.id;
+            
+            console.log('Testing profile click for post:', post);
+            console.log('Target user ID:', targetUserId);
+            
+            if (targetUserId) {
+                alert(`Would navigate to profile with userId: ${targetUserId}`);
+                // Uncomment the next line to actually navigate
+                // window.location.href = `/profile?userId=${targetUserId}`;
+            } else {
+                alert('No user ID found for this post!');
+            }
+        }
+        
+        // Auto-load posts on page load
+        window.onload = function() {
+            loadPosts();
+        };
+    </script>
+</body>
+</html>
