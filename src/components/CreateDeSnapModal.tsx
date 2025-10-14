@@ -292,11 +292,17 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                     throw new Error('Server returned HTML error page. Please check your connection.');
                 }
                 
+                // Check if response starts with valid JSON
+                if (!responseText.trim().startsWith('{') && !responseText.trim().startsWith('[')) {
+                    throw new Error('Server returned non-JSON response. Please try again.');
+                }
+                
                 newDeSnap = JSON.parse(responseText);
             } catch (jsonError) {
                 console.error('JSON parsing error:', jsonError);
-                const responseText = await response.text();
-                console.error('Response text:', responseText);
+                if (jsonError instanceof SyntaxError) {
+                    throw new Error('Server returned invalid JSON. Please try again.');
+                }
                 throw new Error('Invalid response from server. Please try again.');
             }
             

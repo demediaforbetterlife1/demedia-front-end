@@ -86,10 +86,18 @@ export default function DeSnapCreator({ isOpen, onClose, onDeSnapCreated }: DeSn
                     throw new Error('Server returned HTML error page. Please check your connection.');
                 }
                 
+                // Check if response starts with valid JSON
+                if (!responseText.trim().startsWith('{') && !responseText.trim().startsWith('[')) {
+                    throw new Error('Server returned non-JSON response. Please try again.');
+                }
+                
                 newDeSnap = JSON.parse(responseText);
                 console.log('DeSnap created successfully:', newDeSnap);
             } catch (jsonError) {
                 console.error('JSON parsing error:', jsonError);
+                if (jsonError instanceof SyntaxError) {
+                    throw new Error('Server returned invalid JSON. Please try again.');
+                }
                 throw new Error('Invalid response from server. Please try again.');
             }
             onDeSnapCreated(newDeSnap);

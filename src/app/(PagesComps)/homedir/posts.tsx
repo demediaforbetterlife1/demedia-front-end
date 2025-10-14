@@ -412,7 +412,7 @@ export default function Posts() {
                                         
                                         console.log('🔍 Profile photo clicked!');
                                         
-                                        // Get the author ID from the post
+                                        // Get the author ID from the post - check both user and author fields
                                         let targetUserId = post.user?.id || post.author?.id;
                                         
                                         console.log('🔍 Profile photo click debug:', {
@@ -421,7 +421,9 @@ export default function Posts() {
                                             postUser: post.user,
                                             postAuthor: post.author,
                                             hasUserId: !!post.user?.id,
-                                            hasAuthorId: !!post.author?.id
+                                            hasAuthorId: !!post.author?.id,
+                                            userObject: JSON.stringify(post.user),
+                                            authorObject: JSON.stringify(post.author)
                                         });
                                         
                                         if (targetUserId) {
@@ -443,17 +445,19 @@ export default function Posts() {
                                     <div className="flex items-center gap-2">
                                         <motion.button
                                             whileHover={{ scale: 1.02 }}
-                                            onClick={() => {
-                                                let targetUserId = post.user?.id || post.author?.id;
-                                                
-                                                console.log('🔍 Username click debug:', {
-                                                    postId: post.id,
-                                                    targetUserId,
-                                                    postUser: post.user,
-                                                    postAuthor: post.author,
-                                                    hasUserId: !!post.user?.id,
-                                                    hasAuthorId: !!post.author?.id
-                                                });
+                                    onClick={() => {
+                                        let targetUserId = post.user?.id || post.author?.id;
+                                        
+                                        console.log('🔍 Username click debug:', {
+                                            postId: post.id,
+                                            targetUserId,
+                                            postUser: post.user,
+                                            postAuthor: post.author,
+                                            hasUserId: !!post.user?.id,
+                                            hasAuthorId: !!post.author?.id,
+                                            userObject: JSON.stringify(post.user),
+                                            authorObject: JSON.stringify(post.author)
+                                        });
                                                 
                                                 console.log('🔍 Post navigation debug:', {
                                                     postId: post.id,

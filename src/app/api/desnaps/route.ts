@@ -33,28 +33,39 @@ export async function POST(request: NextRequest) {
     console.log('DeSnap creation request:', body);
 
     // Try to connect to the actual backend first
-    try {
-      const backendResponse = await fetch('https://demedia-backend.fly.dev/api/desnaps', {
-        method: 'POST',
-        headers: {
-          'Authorization': authHeader,
-          'user-id': userId,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body)
-      });
+        try {
+          const backendResponse = await fetch('https://demedia-backend.fly.dev/api/desnaps', {
+            method: 'POST',
+            headers: {
+              'Authorization': authHeader,
+              'user-id': userId,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body)
+          });
 
-      if (backendResponse.ok) {
-        const data = await backendResponse.json();
-        console.log('Backend DeSnap created:', data);
-        return NextResponse.json(data);
-      } else {
-        const errorText = await backendResponse.text();
-        console.log('Backend DeSnap creation failed:', backendResponse.status, errorText);
-      }
-    } catch (backendError) {
-      console.log('Backend DeSnap connection error:', backendError);
-    }
+          console.log('Backend DeSnap response status:', backendResponse.status);
+          console.log('Backend DeSnap response headers:', Object.fromEntries(backendResponse.headers.entries()));
+
+          if (backendResponse.ok) {
+            const responseText = await backendResponse.text();
+            console.log('Backend DeSnap raw response:', responseText);
+            
+            // Check if response is valid JSON
+            if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
+              const data = JSON.parse(responseText);
+              console.log('Backend DeSnap created:', data);
+              return NextResponse.json(data);
+            } else {
+              console.log('Backend returned non-JSON response:', responseText);
+            }
+          } else {
+            const errorText = await backendResponse.text();
+            console.log('Backend DeSnap creation failed:', backendResponse.status, errorText);
+          }
+        } catch (backendError) {
+          console.log('Backend DeSnap connection error:', backendError);
+        }
 
     // Fallback: Create a mock DeSnap
     console.log('Using fallback DeSnap creation');

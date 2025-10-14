@@ -36,9 +36,20 @@ export async function GET(request: NextRequest) {
         // Log the actual user IDs from the database
         console.log('🔍 Backend posts data - first post user ID:', data[0]?.user?.id);
         console.log('🔍 Backend posts data - first post author ID:', data[0]?.author?.id);
+        console.log('🔍 Full first post object:', JSON.stringify(data[0], null, 2));
         
-        // Return the data as-is from the backend without generating random IDs
-        const fixedData = data;
+        // Ensure user IDs are present in the data
+        const fixedData = data.map(post => {
+            // If user object exists but has no ID, try to get it from author
+            if (post.user && !post.user.id && post.author && post.author.id) {
+                post.user.id = post.author.id;
+            }
+            // If author object exists but has no ID, try to get it from user
+            if (post.author && !post.author.id && post.user && post.user.id) {
+                post.author.id = post.user.id;
+            }
+            return post;
+        });
         
         return NextResponse.json(fixedData);
       } else {
@@ -72,9 +83,20 @@ export async function GET(request: NextRequest) {
         // Log the actual user IDs from the public backend
         console.log('🔍 Public backend posts data - first post user ID:', data[0]?.user?.id);
         console.log('🔍 Public backend posts data - first post author ID:', data[0]?.author?.id);
+        console.log('🔍 Full first post object (public):', JSON.stringify(data[0], null, 2));
         
-        // Return the data as-is from the backend without generating random IDs
-        const fixedData = data;
+        // Ensure user IDs are present in the data
+        const fixedData = data.map(post => {
+            // If user object exists but has no ID, try to get it from author
+            if (post.user && !post.user.id && post.author && post.author.id) {
+                post.user.id = post.author.id;
+            }
+            // If author object exists but has no ID, try to get it from user
+            if (post.author && !post.author.id && post.user && post.user.id) {
+                post.author.id = post.user.id;
+            }
+            return post;
+        });
         
         return NextResponse.json(fixedData);
       } else {
