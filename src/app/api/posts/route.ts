@@ -99,18 +99,40 @@ export async function GET(request: NextRequest) {
     // Try to fetch from database first (like Facebook/Instagram/Twitter)
     try {
       console.log('🔄 Attempting to fetch from database...');
-      const databaseResponse = await fetch('/api/posts/database', {
-        headers: {
-          'Authorization': authHeader || '',
-          'user-id': userId || '',
-          'Content-Type': 'application/json',
+      
+      // Import Prisma and fetch directly from database
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
+      
+      // Fetch posts with complete user data from PostgreSQL database
+      const data = await prisma.post.findMany({
+        include: {
+          user: {
+            select: {
+              id: true,           // REAL user ID from database
+              name: true,         // User's display name from database
+              username: true,     // User's username from database
+              profilePicture: true, // User's profile picture URL from database
+              coverPhoto: true,   // User's cover photo URL from database
+              bio: true,         // User's bio from database
+              location: true,     // User's location from database
+              followersCount: true, // User's followers count from database
+              followingCount: true, // User's following count from database
+              likesCount: true,  // User's likes count from database
+              subscriptionTier: true, // User's subscription tier from database
+              isVerified: true,  // User's verification status from database
+              createdAt: true,   // User's creation date from database
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
       });
 
-      console.log('Database posts response status:', databaseResponse.status);
+      await prisma.$disconnect();
 
-      if (databaseResponse.ok) {
-        const data = await databaseResponse.json();
+      if (data && data.length > 0) {
         console.log('✅ Backend posts data received:', data.length, 'posts');
         console.log('✅ First post structure:', data[0]);
         if (data[0]) {
@@ -159,9 +181,7 @@ export async function GET(request: NextRequest) {
         
         return NextResponse.json(fixedData);
       } else {
-        const errorText = await databaseResponse.text();
-        console.log('❌ Database posts fetch failed:', databaseResponse.status, errorText);
-        console.log('❌ Error details:', errorText);
+        console.log('❌ No posts found in database');
       }
     } catch (databaseError) {
       console.log('❌ Database connection error:', databaseError);

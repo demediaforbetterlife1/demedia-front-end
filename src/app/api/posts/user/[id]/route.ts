@@ -15,29 +15,48 @@ export async function GET(
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
     }
 
-    // Try to connect to the actual backend first
+    // Fetch user's posts directly from PostgreSQL database
     try {
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/posts/user/${userId}`, {
-        headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/json',
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
+      
+      // Fetch user's posts with complete user data from PostgreSQL database
+      const posts = await prisma.post.findMany({
+        where: {
+          userId: parseInt(userId), // Filter by user ID
+        },
+        include: {
+          user: {
+            select: {
+              id: true,           // REAL user ID from database
+              name: true,         // User's display name from database
+              username: true,     // User's username from database
+              profilePicture: true, // User's profile picture URL from database
+              coverPhoto: true,   // User's cover photo URL from database
+              bio: true,         // User's bio from database
+              location: true,     // User's location from database
+              followersCount: true, // User's followers count from database
+              followingCount: true, // User's following count from database
+              likesCount: true,  // User's likes count from database
+              subscriptionTier: true, // User's subscription tier from database
+              isVerified: true,  // User's verification status from database
+              createdAt: true,   // User's creation date from database
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
       });
 
-      if (backendResponse.ok) {
-        const data = await backendResponse.json();
-        console.log('Backend user posts data received:', data);
-        return NextResponse.json(data);
-      } else {
-        console.log('Backend user posts fetch failed, using fallback');
-      }
-    } catch (backendError) {
-      console.log('Backend not available for user posts, using fallback');
+      await prisma.$disconnect();
+      
+      console.log('✅ Fetched user posts from database:', posts.length, 'posts for user:', userId);
+      return NextResponse.json({ posts });
+    } catch (databaseError) {
+      console.log('❌ Database connection error:', databaseError);
+      return NextResponse.json({ posts: [] });
     }
-
-    // Fallback: Return empty array if backend is not available
-    console.log('Backend not available for user posts, returning empty array');
-    return NextResponse.json({ posts: [] });
   } catch (error) {
     console.error('Error fetching user posts:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
