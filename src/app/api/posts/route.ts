@@ -3,15 +3,31 @@ import { NextRequest, NextResponse } from "next/server";
 // Helper function to get user ID from backend by username
 async function getUserByIdFromBackend(username: string, authHeader: string): Promise<number | null> {
   try {
-    const response = await fetch(`https://demedia-backend.fly.dev/api/users/username/${username}`, {
+    // First try the backend directly
+    const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/users/username/${username}`, {
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',
       },
     });
     
-    if (response.ok) {
-      const userData = await response.json();
+    if (backendResponse.ok) {
+      const userData = await backendResponse.json();
+      console.log('✅ Got user ID from backend:', userData.id, 'for username:', username);
+      return userData.id;
+    }
+    
+    // If backend fails, try our internal API
+    const internalResponse = await fetch(`/api/users/username/${username}`, {
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (internalResponse.ok) {
+      const userData = await internalResponse.json();
+      console.log('✅ Got user ID from internal API:', userData.id, 'for username:', username);
       return userData.id;
     }
   } catch (error) {
@@ -103,6 +119,22 @@ export async function GET(request: NextRequest) {
           console.log('✅ First post user ID:', data[0].user?.id);
           console.log('✅ First post author ID:', data[0].author?.id);
           console.log('🔍 Full first post object from backend:', JSON.stringify(data[0], null, 2));
+        
+        // Check if backend is returning user IDs properly
+        console.log('🔍 Backend data analysis:');
+        data.forEach((post: any, index: number) => {
+          console.log(`Post ${index + 1}:`, {
+            id: post.id,
+            hasUser: !!post.user,
+            hasAuthor: !!post.author,
+            userId: post.user?.id,
+            authorId: post.author?.id,
+            userName: post.user?.name,
+            authorName: post.author?.name,
+            userUsername: post.user?.username,
+            authorUsername: post.author?.username
+          });
+        });
         }
         
         // Log the actual user IDs from the database

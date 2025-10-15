@@ -166,21 +166,10 @@ export default function Posts() {
                         post.user.profilePicture = post.user.profilePicture || post.author.profilePicture;
                     }
                     
-                    // Only create fallback if absolutely no user data exists
+                    // If no user data exists, don't create fake data - let the backend handle this
                     if ((!post.user?.id && !post.author?.id) && (!post.user?.name && !post.author?.name)) {
-                        console.log('⚠️ Frontend: No user data at all for post:', post.id, 'creating fallback');
-                        const knownUserIds = [15, 16, 17, 21, 4];
-                        const fallbackId = knownUserIds[Math.floor(Math.random() * knownUserIds.length)];
-                        
-                        if (!post.user) post.user = {};
-                        if (!post.author) post.author = {};
-                        
-                        post.user.id = fallbackId;
-                        post.author.id = fallbackId;
-                        post.user.name = post.user.name || 'Unknown User';
-                        post.author.name = post.author.name || 'Unknown User';
-                        post.user.username = post.user.username || 'unknown';
-                        post.author.username = post.author.username || 'unknown';
+                        console.log('⚠️ Frontend: No user data at all for post:', post.id, '- this should be handled by backend');
+                        // Don't create fake user data - let the backend provide real data
                     }
                     
                     return post;
@@ -479,7 +468,10 @@ export default function Posts() {
                                             window.location.href = `/profile?userId=${targetUserId}`;
                                         } else {
                                             console.error('❌ No user ID found for post:', post);
+                                            console.log('⚠️ Post author profile cannot be loaded - missing user ID');
                                             console.log('Full post object:', JSON.stringify(post, null, 2));
+                                            // Show user-friendly error message
+                                            alert('Unable to load user profile - user ID not available');
                                         }
                                     }}
                                     className="w-10 h-10 rounded-full theme-bg-tertiary flex items-center justify-center theme-text-secondary font-bold hover:shadow-lg transition-all duration-300 cursor-pointer"
