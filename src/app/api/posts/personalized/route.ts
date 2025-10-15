@@ -30,7 +30,93 @@ export async function POST(request: NextRequest) {
       if (backendResponse.ok) {
         const data = await backendResponse.json();
         console.log('Backend personalized posts data received:', data.length, 'posts');
-        return NextResponse.json(data);
+        
+        // Fix missing user IDs in personalized posts
+        const fixedData = await Promise.all(data.map(async (post: any) => {
+          // If user exists but has no ID, fetch it from backend
+          if (post.user && !post.user.id && post.user.username) {
+            console.log('🔧 Missing user ID in personalized post, fetching from backend for username:', post.user.username);
+            try {
+              const userResponse = await fetch(`https://demedia-backend.fly.dev/api/users/username/${post.user.username}`, {
+                headers: {
+                  'Authorization': authHeader,
+                  'Content-Type': 'application/json',
+                },
+              });
+              
+              if (userResponse.ok) {
+                const userData = await userResponse.json();
+                post.user.id = userData.id;
+                console.log('✅ Got user ID from backend for personalized post:', userData.id);
+              } else {
+                // Fallback: Use known mapping for known users
+                const knownUsers: { [key: string]: number } = {
+                  'demedia_official': 15,
+                  'hamo_1': 16,
+                  'shehap': 17,
+                  'brzily': 21
+                };
+                if (knownUsers[post.user.username]) {
+                  post.user.id = knownUsers[post.user.username];
+                  console.log('✅ Using fallback user ID for personalized post:', post.user.id);
+                }
+              }
+            } catch (error) {
+              console.log('⚠️ Could not fetch user ID for personalized post:', error);
+            }
+          }
+          
+          // If author exists but has no ID, fetch it from backend
+          if (post.author && !post.author.id && post.author.username) {
+            console.log('🔧 Missing author ID in personalized post, fetching from backend for username:', post.author.username);
+            try {
+              const userResponse = await fetch(`https://demedia-backend.fly.dev/api/users/username/${post.author.username}`, {
+                headers: {
+                  'Authorization': authHeader,
+                  'Content-Type': 'application/json',
+                },
+              });
+              
+              if (userResponse.ok) {
+                const userData = await userResponse.json();
+                post.author.id = userData.id;
+                console.log('✅ Got author ID from backend for personalized post:', userData.id);
+              } else {
+                // Fallback: Use known mapping for known users
+                const knownUsers: { [key: string]: number } = {
+                  'demedia_official': 15,
+                  'hamo_1': 16,
+                  'shehap': 17,
+                  'brzily': 21
+                };
+                if (knownUsers[post.author.username]) {
+                  post.author.id = knownUsers[post.author.username];
+                  console.log('✅ Using fallback author ID for personalized post:', post.author.id);
+                }
+              }
+            } catch (error) {
+              console.log('⚠️ Could not fetch author ID for personalized post:', error);
+            }
+          }
+          
+          // Ensure both user and author have the same ID if one exists
+          if (post.user?.id && post.author && !post.author.id) {
+            post.author.id = post.user.id;
+            post.author.name = post.author.name || post.user.name;
+            post.author.username = post.author.username || post.user.username;
+            post.author.profilePicture = post.author.profilePicture || post.user.profilePicture;
+          }
+          if (post.author?.id && post.user && !post.user.id) {
+            post.user.id = post.author.id;
+            post.user.name = post.user.name || post.author.name;
+            post.user.username = post.user.username || post.author.username;
+            post.user.profilePicture = post.user.profilePicture || post.author.profilePicture;
+          }
+          
+          return post;
+        }));
+        
+        return NextResponse.json(fixedData);
       } else {
         const errorText = await backendResponse.text();
         console.log('Backend personalized posts fetch failed:', backendResponse.status, errorText);

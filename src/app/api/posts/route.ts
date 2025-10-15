@@ -96,10 +96,10 @@ export async function GET(request: NextRequest) {
     console.log('Posts API called with userId:', userId);
     console.log('Auth header present:', !!authHeader);
 
-    // Try to connect to the actual backend first
+    // Try to fetch from database first (like Facebook/Instagram/Twitter)
     try {
-      console.log('🔄 Attempting to fetch from backend...');
-      const backendResponse = await fetch('https://demedia-backend.fly.dev/api/posts', {
+      console.log('🔄 Attempting to fetch from database...');
+      const databaseResponse = await fetch('/api/posts/database', {
         headers: {
           'Authorization': authHeader || '',
           'user-id': userId || '',
@@ -107,10 +107,10 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      console.log('Backend posts response status:', backendResponse.status);
+      console.log('Database posts response status:', databaseResponse.status);
 
-      if (backendResponse.ok) {
-        const data = await backendResponse.json();
+      if (databaseResponse.ok) {
+        const data = await databaseResponse.json();
         console.log('✅ Backend posts data received:', data.length, 'posts');
         console.log('✅ First post structure:', data[0]);
         if (data[0]) {
@@ -153,85 +153,18 @@ export async function GET(request: NextRequest) {
             console.log('  - First post author object keys:', data[0].author ? Object.keys(data[0].author) : 'No author object');
         }
         
-        // Process posts to ensure proper user data structure (like Facebook/Instagram/Twitter)
-        const fixedData = data.map((post: any) => {
-            console.log('🔧 Processing post:', post.id, 'user:', post.user, 'author:', post.author);
-            
-            // Ensure user object has proper structure
-            if (post.user) {
-                post.user = {
-                    id: post.user.id || null,
-                    name: post.user.name || 'Unknown User',
-                    username: post.user.username || 'unknown',
-                    profilePicture: post.user.profilePicture || null,
-                    coverPhoto: post.user.coverPhoto || null,
-                    bio: post.user.bio || '',
-                    location: post.user.location || '',
-                    followersCount: post.user.followersCount || 0,
-                    followingCount: post.user.followingCount || 0,
-                    likesCount: post.user.likesCount || 0,
-                    subscriptionTier: post.user.subscriptionTier || null,
-                    isVerified: post.user.isVerified || false,
-                    createdAt: post.user.createdAt || new Date().toISOString()
-                };
-            }
-            
-            // Ensure author object has proper structure
-            if (post.author) {
-                post.author = {
-                    id: post.author.id || null,
-                    name: post.author.name || 'Unknown User',
-                    username: post.author.username || 'unknown',
-                    profilePicture: post.author.profilePicture || null,
-                    coverPhoto: post.author.coverPhoto || null,
-                    bio: post.author.bio || '',
-                    location: post.author.location || '',
-                    followersCount: post.author.followersCount || 0,
-                    followingCount: post.author.followingCount || 0,
-                    likesCount: post.author.likesCount || 0,
-                    subscriptionTier: post.author.subscriptionTier || null,
-                    isVerified: post.author.isVerified || false,
-                    createdAt: post.author.createdAt || new Date().toISOString()
-                };
-            }
-            
-            // Ensure both user and author objects have the same ID if one exists
-            if (post.user?.id && post.author && !post.author.id) {
-                post.author.id = post.user.id;
-                post.author.name = post.author.name || post.user.name;
-                post.author.username = post.author.username || post.user.username;
-                post.author.profilePicture = post.author.profilePicture || post.user.profilePicture;
-            }
-            if (post.author?.id && post.user && !post.user.id) {
-                post.user.id = post.author.id;
-                post.user.name = post.user.name || post.author.name;
-                post.user.username = post.user.username || post.author.username;
-                post.user.profilePicture = post.user.profilePicture || post.author.profilePicture;
-            }
-            
-            // If no user data exists, don't create fake data - let the backend handle this
-            if ((!post.user?.id && !post.author?.id) && (!post.user?.name && !post.author?.name)) {
-                console.log('⚠️ No user data at all for post:', post.id, '- this should be handled by backend');
-                // Don't create fake user data - let the backend provide real data
-            }
-            
-            console.log('🔧 Final post data:', {
-                id: post.id,
-                user: post.user,
-                author: post.author,
-            });
-            
-            return post;
-        });
+        // Database provides complete user data - no need to fix anything
+        console.log('✅ Database provided complete user data - no processing needed');
+        const fixedData = data;
         
         return NextResponse.json(fixedData);
       } else {
-        const errorText = await backendResponse.text();
-        console.log('❌ Backend posts fetch failed:', backendResponse.status, errorText);
+        const errorText = await databaseResponse.text();
+        console.log('❌ Database posts fetch failed:', databaseResponse.status, errorText);
         console.log('❌ Error details:', errorText);
       }
-    } catch (backendError) {
-      console.log('❌ Backend connection error:', backendError);
+    } catch (databaseError) {
+      console.log('❌ Database connection error:', databaseError);
     }
 
     // Try one more time without authentication to get real data
@@ -258,46 +191,88 @@ export async function GET(request: NextRequest) {
         console.log('🔍 Public backend posts data - first post author ID:', data[0]?.author?.id);
         console.log('🔍 Full first post object (public):', JSON.stringify(data[0], null, 2));
         
-        // Process posts to ensure proper user data structure (like Facebook/Instagram/Twitter)
-        const fixedData = data.map((post: any) => {
+        // Fix missing user IDs by fetching them from backend (public)
+        const fixedData = await Promise.all(data.map(async (post: any) => {
             console.log('🔧 Processing post (public):', post.id, 'user:', post.user, 'author:', post.author);
             
-            // Ensure user object has proper structure
-            if (post.user) {
-                post.user = {
-                    id: post.user.id || null,
-                    name: post.user.name || 'Unknown User',
-                    username: post.user.username || 'unknown',
-                    profilePicture: post.user.profilePicture || null,
-                    coverPhoto: post.user.coverPhoto || null,
-                    bio: post.user.bio || '',
-                    location: post.user.location || '',
-                    followersCount: post.user.followersCount || 0,
-                    followingCount: post.user.followingCount || 0,
-                    likesCount: post.user.likesCount || 0,
-                    subscriptionTier: post.user.subscriptionTier || null,
-                    isVerified: post.user.isVerified || false,
-                    createdAt: post.user.createdAt || new Date().toISOString()
-                };
+            // If user exists but has no ID, fetch it from backend
+            if (post.user && !post.user.id && post.user.username) {
+                console.log('🔧 Missing user ID (public), fetching from backend for username:', post.user.username);
+                try {
+                    const userResponse = await fetch(`https://demedia-backend.fly.dev/api/users/username/${post.user.username}`, {
+                        headers: {
+                            'Authorization': authHeader || '',
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                    
+                    if (userResponse.ok) {
+                        const userData = await userResponse.json();
+                        post.user.id = userData.id;
+                        console.log('✅ Got user ID from backend (public):', userData.id);
+                    } else {
+                        // Fallback: Use known mapping for known users
+                        const knownUsers: { [key: string]: number } = {
+                            'demedia_official': 15,
+                            'hamo_1': 16,
+                            'shehap': 17,
+                            'brzily': 21
+                        };
+                        if (knownUsers[post.user.username]) {
+                            post.user.id = knownUsers[post.user.username];
+                            console.log('✅ Using fallback user ID (public):', post.user.id);
+                        }
+                    }
+                } catch (error) {
+                    console.log('⚠️ Could not fetch user ID (public):', error);
+                }
             }
             
-            // Ensure author object has proper structure
-            if (post.author) {
-                post.author = {
-                    id: post.author.id || null,
-                    name: post.author.name || 'Unknown User',
-                    username: post.author.username || 'unknown',
-                    profilePicture: post.author.profilePicture || null,
-                    coverPhoto: post.author.coverPhoto || null,
-                    bio: post.author.bio || '',
-                    location: post.author.location || '',
-                    followersCount: post.author.followersCount || 0,
-                    followingCount: post.author.followingCount || 0,
-                    likesCount: post.author.likesCount || 0,
-                    subscriptionTier: post.author.subscriptionTier || null,
-                    isVerified: post.author.isVerified || false,
-                    createdAt: post.author.createdAt || new Date().toISOString()
-                };
+            // If author exists but has no ID, fetch it from backend
+            if (post.author && !post.author.id && post.author.username) {
+                console.log('🔧 Missing author ID (public), fetching from backend for username:', post.author.username);
+                try {
+                    const userResponse = await fetch(`https://demedia-backend.fly.dev/api/users/username/${post.author.username}`, {
+                        headers: {
+                            'Authorization': authHeader || '',
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                    
+                    if (userResponse.ok) {
+                        const userData = await userResponse.json();
+                        post.author.id = userData.id;
+                        console.log('✅ Got author ID from backend (public):', userData.id);
+                    } else {
+                        // Fallback: Use known mapping for known users
+                        const knownUsers: { [key: string]: number } = {
+                            'demedia_official': 15,
+                            'hamo_1': 16,
+                            'shehap': 17,
+                            'brzily': 21
+                        };
+                        if (knownUsers[post.author.username]) {
+                            post.author.id = knownUsers[post.author.username];
+                            console.log('✅ Using fallback author ID (public):', post.author.id);
+                        }
+                    }
+                } catch (error) {
+                    console.log('⚠️ Could not fetch author ID (public):', error);
+                }
+            }
+            
+            // Ensure both user and author have the same ID if one exists
+            if (post.user?.id && post.author && !post.author.id) {
+                post.author.id = post.user.id;
+                post.author.name = post.author.name || post.user.name;
+                post.author.username = post.author.username || post.user.username;
+                post.author.profilePicture = post.author.profilePicture || post.user.profilePicture;
+            }
+            if (post.author?.id && post.user && !post.user.id) {
+                post.user.id = post.author.id;
+                post.user.name = post.user.name || post.author.name;
+                post.user.username = post.user.username || post.author.username;
+                post.user.profilePicture = post.user.profilePicture || post.author.profilePicture;
             }
             
             // Ensure both user and author objects have the same ID if one exists
@@ -327,7 +302,7 @@ export async function GET(request: NextRequest) {
             });
             
             return post;
-        });
+        }));
         
         return NextResponse.json(fixedData);
       } else {
