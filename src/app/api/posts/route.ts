@@ -22,6 +22,22 @@ export async function POST(request: NextRequest) {
     console.log('🔄 Connecting to backend for post creation:', backendUrl);
     
     try {
+      // Prepare the request body for the backend
+      const backendBody = {
+        title: body.title,
+        content: body.content,
+        authorId: parseInt(userId || '0'), // Backend expects authorId
+        imageUrl: body.imageUrl,
+        videoUrl: body.videoUrl,
+        hashtags: body.hashtags || [],
+        mentions: body.mentions || [],
+        location: body.location || null,
+        privacySettings: body.privacySettings || 'public',
+        imageUrls: body.imageUrls || []
+      };
+
+      console.log('🔄 Sending to backend:', backendBody);
+
       const response = await fetch(`${backendUrl}/api/posts`, {
         method: 'POST',
         headers: {
@@ -29,8 +45,10 @@ export async function POST(request: NextRequest) {
           'Authorization': authHeader,
           'user-id': userId || '',
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(backendBody),
       });
+
+      console.log('🔄 Backend response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -44,32 +62,12 @@ export async function POST(request: NextRequest) {
     } catch (backendError) {
       console.error('❌ Backend connection failed for post creation:', backendError);
       
-      // Fallback: Return a mock successful response
-      console.log('🔄 Using fallback: returning mock post creation response');
-      return NextResponse.json({
-        id: Date.now(),
-        content: body.content,
-        title: body.title,
-        userId: parseInt(userId || '0'),
-        imageUrl: body.imageUrl,
-        videoUrl: body.videoUrl,
-        user: {
-          id: parseInt(userId || '0'),
-          name: 'User',
-          username: 'user',
-          profilePicture: null,
-        },
-        author: {
-          id: parseInt(userId || '0'),
-          name: 'User',
-          username: 'user',
-          profilePicture: null,
-        },
-        createdAt: new Date().toISOString(),
-        likes: 0,
-        comments: 0,
-        liked: false,
-      });
+      // Don't use fallback - return error instead
+      console.log('❌ Post creation failed - backend unavailable');
+      return NextResponse.json({ 
+        error: 'Backend unavailable - post not saved',
+        message: 'Please try again later'
+      }, { status: 503 });
     }
   } catch (error) {
     console.error('❌ Error creating post:', error);
@@ -101,6 +99,8 @@ export async function GET(request: NextRequest) {
         },
       });
 
+      console.log('🔄 Backend response status:', response.status);
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Backend error:', response.status, errorText);
@@ -109,12 +109,13 @@ export async function GET(request: NextRequest) {
 
       const data = await response.json();
       console.log('✅ Fetched posts via backend:', data.length, 'posts');
+      console.log('✅ First post from backend:', data[0]);
       return NextResponse.json(data);
     } catch (backendError) {
       console.error('❌ Backend connection failed:', backendError);
       
-      // Fallback: Return empty array if backend is unavailable
-      console.log('🔄 Using fallback: returning empty posts array');
+      // Return empty array if backend is unavailable
+      console.log('🔄 Backend unavailable: returning empty posts array');
       return NextResponse.json([]);
     }
   } catch (error) {
