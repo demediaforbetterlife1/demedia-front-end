@@ -18,6 +18,8 @@ export async function PUT(
 
     // Try to connect to the actual backend first
     try {
+      console.log('🔄 Updating user profile via backend:', userId);
+
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/user/${userId}`, {
         method: 'PUT',
         headers: {
@@ -27,16 +29,20 @@ export async function PUT(
         body: JSON.stringify(body),
       });
 
+      console.log('🔄 Backend response status:', backendResponse.status);
+
       if (backendResponse.ok) {
         const data = await backendResponse.json();
-        console.log('Backend profile update successful:', data);
+        console.log('✅ Profile updated via backend:', data);
         return NextResponse.json(data);
       } else {
         const errorText = await backendResponse.text();
-        console.log('Backend profile update failed:', backendResponse.status, errorText);
+        console.error('❌ Backend profile update failed:', backendResponse.status, errorText);
+        throw new Error(`Backend responded with ${backendResponse.status}: ${errorText}`);
       }
     } catch (backendError) {
-      console.log('Backend not available for profile update, using fallback');
+      console.error('❌ Backend connection failed for profile update:', backendError);
+      console.log('🔄 Using fallback for profile update');
     }
 
     // Fallback: Simulate successful profile update for development

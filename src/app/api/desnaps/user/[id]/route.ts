@@ -18,6 +18,8 @@ export async function GET(
 
     // Try to connect to the actual backend first
     try {
+      console.log('🔄 Fetching DeSnaps via backend for user:', userId, 'viewer:', viewerId);
+
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/desnaps/user/${userId}?viewerId=${viewerId}`, {
         headers: {
           'Authorization': authHeader,
@@ -25,15 +27,20 @@ export async function GET(
         },
       });
 
+      console.log('🔄 Backend response status:', backendResponse.status);
+
       if (backendResponse.ok) {
         const data = await backendResponse.json();
-        console.log('Backend DeSnaps data received:', data);
+        console.log('✅ DeSnaps fetched via backend:', data.length, 'items');
         return NextResponse.json(data);
       } else {
-        console.log('Backend DeSnaps fetch failed, using fallback');
+        const errorText = await backendResponse.text();
+        console.error('❌ Backend DeSnaps fetch failed:', backendResponse.status, errorText);
+        throw new Error(`Backend responded with ${backendResponse.status}: ${errorText}`);
       }
     } catch (backendError) {
-      console.log('Backend not available for DeSnaps, using fallback');
+      console.error('❌ Backend connection failed for DeSnaps:', backendError);
+      console.log('🔄 Using fallback for DeSnaps');
     }
 
     // Fallback: Return empty array if backend is not available

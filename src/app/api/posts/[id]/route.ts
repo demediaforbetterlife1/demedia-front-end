@@ -28,6 +28,8 @@ export async function PUT(
         console.log('Could not extract user ID from token');
       }
 
+      console.log('🔄 Updating post via backend:', postId, 'userId:', userId);
+
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/posts/${postId}`, {
         method: 'PUT',
         headers: {
@@ -38,14 +40,20 @@ export async function PUT(
         body: JSON.stringify(body),
       });
 
+      console.log('🔄 Backend response status:', backendResponse.status);
+
       if (backendResponse.ok) {
         const data = await backendResponse.json();
+        console.log('✅ Post updated via backend:', data);
         return NextResponse.json(data);
       } else {
-        console.log('Backend update failed, using fallback');
+        const errorText = await backendResponse.text();
+        console.error('❌ Backend update failed:', backendResponse.status, errorText);
+        throw new Error(`Backend responded with ${backendResponse.status}: ${errorText}`);
       }
     } catch (backendError) {
-      console.log('Backend not available for update, using fallback');
+      console.error('❌ Backend connection failed for post update:', backendError);
+      console.log('🔄 Using fallback for post update');
     }
 
     // Fallback: Simulate successful post update for development
