@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     // Try to connect to the actual backend first
     try {
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/upload/profile`, {
+      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/upload/video`, {
         method: 'POST',
         headers: {
           'Authorization': authHeader,
@@ -31,34 +31,40 @@ export async function POST(request: NextRequest) {
         const data = await backendResponse.json();
         return NextResponse.json(data);
       } else {
-        console.log('Backend upload failed, using fallback');
+        console.log('Backend video upload failed, using fallback');
       }
     } catch (backendError) {
-      console.log('Backend not available for upload, using fallback');
+      console.log('Backend not available for video upload, using fallback');
     }
 
-    // Fallback: Try to simulate upload for development
-    const file = formData.get('file') as File;
-    if (!file) {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+    // Fallback: Try to simulate video upload for development
+    const videoFile = formData.get('video') as File;
+    if (!videoFile) {
+      return NextResponse.json({ error: 'No video file uploaded' }, { status: 400 });
     }
 
     // Generate a temporary URL for development
-    const tempUrl = `https://demedia-backend.fly.dev/uploads/profiles/temp-${Date.now()}-${file.name}`;
+    const videoUrl = `https://demedia-backend.fly.dev/uploads/videos/temp-${Date.now()}-${videoFile.name}`;
+    const thumbnailUrl = `https://demedia-backend.fly.dev/uploads/thumbnails/temp-${Date.now()}-${videoFile.name}.jpg`;
     
-    console.log('Profile photo upload fallback (development):', { 
-      fileName: file.name, 
-      fileSize: file.size, 
-      tempUrl 
+    console.log('Video upload fallback (development):', { 
+      fileName: videoFile.name, 
+      fileSize: videoFile.size, 
+      videoUrl,
+      thumbnailUrl
     });
     
     return NextResponse.json({
       success: true,
-      url: tempUrl,
-      message: 'Profile photo uploaded successfully (development mode)'
+      videoUrl: videoUrl,
+      thumbnailUrl: thumbnailUrl,
+      filename: `temp-${Date.now()}-${videoFile.name}`,
+      size: videoFile.size,
+      duration: 0,
+      message: 'Video uploaded successfully (development mode)'
     });
   } catch (error) {
-    console.error('Error uploading profile photo:', error);
+    console.error('Error uploading video:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

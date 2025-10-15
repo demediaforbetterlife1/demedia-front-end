@@ -1,93 +1,115 @@
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * DeSnaps API - Proxies requests to backend
+ * Handles story creation and management
+ */
+
+export async function POST(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization');
+    const userId = request.headers.get('user-id');
+
+    if (!authHeader || !userId) {
+      return NextResponse.json({ error: 'No authorization header or user ID' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    console.log('Creating new DeSnap via backend:', body);
+
+    // Forward request to backend
+    const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
+    console.log('🔄 Connecting to backend for DeSnap creation:', backendUrl);
+    
+    try {
+      const response = await fetch(`${backendUrl}/api/desnaps`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader,
+          'user-id': userId,
+        },
+        body: JSON.stringify(body),
+      });
+
+      console.log('🔄 Backend response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Backend error:', response.status, errorText);
+        throw new Error(`Backend responded with ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ DeSnap created via backend:', data.id);
+      return NextResponse.json(data);
+    } catch (backendError) {
+      console.error('❌ Backend connection failed for DeSnap creation:', backendError);
+      
+      // Fallback: Return mock DeSnap creation
+      console.log('🔄 Using fallback: returning mock DeSnap creation');
+      return NextResponse.json({
+        id: Date.now(),
+        content: body.content,
+        imageUrl: body.imageUrl,
+        videoUrl: body.videoUrl,
+        userId: parseInt(userId),
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+        message: 'DeSnap created successfully (development mode)'
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error creating DeSnap:', error);
+    return NextResponse.json({ error: 'Failed to create DeSnap' }, { status: 500 });
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
-    // Get the authorization token
     const authHeader = request.headers.get('authorization');
+    const userId = request.headers.get('user-id');
+    
+    console.log('Fetching DeSnaps via backend, userId:', userId);
+
     if (!authHeader) {
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
     }
 
-    // Since the backend doesn't have desnaps endpoint, return empty array
-    // This is a workaround until the backend implements desnaps functionality
-    const desnaps: any[] = [];
+    // Forward request to backend
+    const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
+    console.log('🔄 Connecting to backend:', backendUrl);
     
-    return NextResponse.json(desnaps);
-  } catch (error) {
-    console.error('Error fetching desnaps:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
+    try {
+      const response = await fetch(`${backendUrl}/api/desnaps`, {
+        method: 'GET',
+        headers: {
+          'Authorization': authHeader,
+          'user-id': userId || '',
+          'Content-Type': 'application/json',
+        },
+      });
 
-export async function POST(request: NextRequest) {
-  try {
-    // Get the authorization token
-    const authHeader = request.headers.get('authorization');
-    const userId = request.headers.get('user-id');
-    
-    if (!authHeader || !userId) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      console.log('🔄 Backend response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Backend error:', response.status, errorText);
+        throw new Error(`Backend responded with ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Fetched DeSnaps via backend:', data.length, 'DeSnaps');
+      return NextResponse.json(data);
+    } catch (backendError) {
+      console.error('❌ Backend connection failed:', backendError);
+      
+      // Return empty array if backend is unavailable
+      console.log('🔄 Backend unavailable: returning empty DeSnaps array');
+      return NextResponse.json([]);
     }
-
-    const body = await request.json();
-    console.log('DeSnap creation request:', body);
-
-    // Try to connect to the actual backend first
-        try {
-          const backendResponse = await fetch('https://demedia-backend.fly.dev/api/desnaps', {
-            method: 'POST',
-            headers: {
-              'Authorization': authHeader,
-              'user-id': userId,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body)
-          });
-
-          console.log('Backend DeSnap response status:', backendResponse.status);
-          console.log('Backend DeSnap response headers:', Object.fromEntries(backendResponse.headers.entries()));
-
-          if (backendResponse.ok) {
-            const responseText = await backendResponse.text();
-            console.log('Backend DeSnap raw response:', responseText);
-            
-            // Check if response is valid JSON
-            if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
-              const data = JSON.parse(responseText);
-              console.log('Backend DeSnap created:', data);
-              return NextResponse.json(data);
-            } else {
-              console.log('Backend returned non-JSON response:', responseText);
-            }
-          } else {
-            const errorText = await backendResponse.text();
-            console.log('Backend DeSnap creation failed:', backendResponse.status, errorText);
-          }
-        } catch (backendError) {
-          console.log('Backend DeSnap connection error:', backendError);
-        }
-
-    // Fallback: Create a mock DeSnap
-    console.log('Using fallback DeSnap creation');
-    const mockDeSnap = {
-      id: `desnap_${userId}_${Date.now()}`,
-      content: body.content || 'New DeSnap',
-      thumbnail: body.thumbnail || null,
-      duration: body.duration || 0,
-      visibility: body.visibility || 'public',
-      views: 0,
-      likes: 0,
-      comments: 0,
-      userId: parseInt(userId),
-      createdAt: new Date().toISOString(),
-      message: 'DeSnap created (fallback mode)'
-    };
-
-    console.log('Returning mock DeSnap:', mockDeSnap);
-    return NextResponse.json(mockDeSnap);
-
   } catch (error) {
-    console.error('Error creating DeSnap:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('❌ Error fetching DeSnaps:', error);
+    return NextResponse.json({ error: 'Failed to fetch DeSnaps' }, { status: 500 });
   }
 }

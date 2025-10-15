@@ -8,26 +8,22 @@ export async function PUT(
     const { id: postId } = await params;
     const body = await request.json();
     
-    // Get the authorization token
+    // Get the authorization token and user ID
     const authHeader = request.headers.get('authorization');
+    const userId = request.headers.get('user-id');
+    
     if (!authHeader) {
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
     }
 
-    console.log('Post update request:', { postId, body });
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID required' }, { status: 401 });
+    }
+
+    console.log('Post update request:', { postId, body, userId });
 
     // Try to connect to the actual backend first
     try {
-      // Extract user ID from token for backend
-      const token = authHeader.replace('Bearer ', '');
-      let userId = null;
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        userId = payload.sub || payload.userId || payload.id;
-      } catch (e) {
-        console.log('Could not extract user ID from token');
-      }
-
       console.log('🔄 Updating post via backend:', postId, 'userId:', userId);
 
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/posts/${postId}`, {
@@ -83,25 +79,22 @@ export async function DELETE(
   try {
     const { id: postId } = await params;
     
-    // Get the authorization token
+    // Get the authorization token and user ID
     const authHeader = request.headers.get('authorization');
+    const userId = request.headers.get('user-id');
+    
     if (!authHeader) {
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
     }
 
-    console.log('Post delete request:', { postId });
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID required' }, { status: 401 });
+    }
+
+    console.log('Post delete request:', { postId, userId });
 
     // Try to connect to the actual backend first
     try {
-      // Extract user ID from token for backend
-      const token = authHeader.replace('Bearer ', '');
-      let userId = null;
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        userId = payload.sub || payload.userId || payload.id;
-      } catch (e) {
-        console.log('Could not extract user ID from token');
-      }
 
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/posts/${postId}`, {
         method: 'DELETE',

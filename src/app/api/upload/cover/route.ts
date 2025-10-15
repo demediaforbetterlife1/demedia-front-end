@@ -4,20 +4,12 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     
-    // Get the authorization token
+    // Get the authorization token and user ID
     const authHeader = request.headers.get('authorization');
+    const userId = request.headers.get('user-id');
+    
     if (!authHeader) {
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
-    }
-
-    // Extract user ID from token
-    const token = authHeader.replace('Bearer ', '');
-    let userId = null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      userId = payload.sub || payload.userId || payload.id;
-    } catch (e) {
-      console.log('Could not extract user ID from token');
     }
 
     if (!userId) {
