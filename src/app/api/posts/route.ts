@@ -127,29 +127,35 @@ export async function GET(request: NextRequest) {
         const fixedData = data.map((post: any) => {
             console.log('🔧 Processing post:', post.id, 'user:', post.user, 'author:', post.author);
             
-            // If we have user data but no ID, try to preserve the name/username and assign a consistent ID
+            // If we have user data but no ID, try to preserve the name/username and assign a real ID
             if (post.user && !post.user.id && (post.user.name || post.user.username)) {
                 console.log('🔧 Post has user data but no ID, preserving user info');
-                // Use a hash of the username to get a consistent ID
+                // Map usernames to real user IDs from database
+                const usernameToIdMap: { [key: string]: number } = {
+                    'demedia_official': 15,
+                    'hamo_1': 16,
+                    'shehap': 17,
+                    'brzily': 21
+                };
+                
                 const username = post.user.username || post.user.name || 'unknown';
-                const hash = username.split('').reduce((a: number, b: string) => {
-                    a = ((a << 5) - a) + b.charCodeAt(0);
-                    return a & a;
-                }, 0);
-                post.user.id = Math.abs(hash) % 1000 + 1; // Generate ID between 1-1000
-                console.log('✅ Assigned consistent user ID:', post.user.id, 'for user:', post.user.name);
+                post.user.id = usernameToIdMap[username] || 15; // Default to DeMedia if not found
+                console.log('✅ Assigned real user ID:', post.user.id, 'for user:', post.user.name);
             }
             
             if (post.author && !post.author.id && (post.author.name || post.author.username)) {
                 console.log('🔧 Post has author data but no ID, preserving author info');
-                // Use a hash of the username to get a consistent ID
+                // Map usernames to real user IDs from database
+                const usernameToIdMap: { [key: string]: number } = {
+                    'demedia_official': 15,
+                    'hamo_1': 16,
+                    'shehap': 17,
+                    'brzily': 21
+                };
+                
                 const username = post.author.username || post.author.name || 'unknown';
-                const hash = username.split('').reduce((a: number, b: string) => {
-                    a = ((a << 5) - a) + b.charCodeAt(0);
-                    return a & a;
-                }, 0);
-                post.author.id = Math.abs(hash) % 1000 + 1; // Generate ID between 1-1000
-                console.log('✅ Assigned consistent author ID:', post.author.id, 'for author:', post.author.name);
+                post.author.id = usernameToIdMap[username] || 15; // Default to DeMedia if not found
+                console.log('✅ Assigned real author ID:', post.author.id, 'for author:', post.author.name);
             }
             
             // Ensure both user and author objects have the same ID if one exists
@@ -230,29 +236,35 @@ export async function GET(request: NextRequest) {
         const fixedData = data.map((post: any) => {
             console.log('🔧 Processing post (public):', post.id, 'user:', post.user, 'author:', post.author);
             
-            // If we have user data but no ID, try to preserve the name/username and assign a consistent ID
+            // If we have user data but no ID, try to preserve the name/username and assign a real ID
             if (post.user && !post.user.id && (post.user.name || post.user.username)) {
                 console.log('🔧 Post has user data but no ID (public), preserving user info');
-                // Use a hash of the username to get a consistent ID
+                // Map usernames to real user IDs from database
+                const usernameToIdMap: { [key: string]: number } = {
+                    'demedia_official': 15,
+                    'hamo_1': 16,
+                    'shehap': 17,
+                    'brzily': 21
+                };
+                
                 const username = post.user.username || post.user.name || 'unknown';
-                const hash = username.split('').reduce((a: number, b: string) => {
-                    a = ((a << 5) - a) + b.charCodeAt(0);
-                    return a & a;
-                }, 0);
-                post.user.id = Math.abs(hash) % 1000 + 1; // Generate ID between 1-1000
-                console.log('✅ Assigned consistent user ID (public):', post.user.id, 'for user:', post.user.name);
+                post.user.id = usernameToIdMap[username] || 15; // Default to DeMedia if not found
+                console.log('✅ Assigned real user ID (public):', post.user.id, 'for user:', post.user.name);
             }
             
             if (post.author && !post.author.id && (post.author.name || post.author.username)) {
                 console.log('🔧 Post has author data but no ID (public), preserving author info');
-                // Use a hash of the username to get a consistent ID
+                // Map usernames to real user IDs from database
+                const usernameToIdMap: { [key: string]: number } = {
+                    'demedia_official': 15,
+                    'hamo_1': 16,
+                    'shehap': 17,
+                    'brzily': 21
+                };
+                
                 const username = post.author.username || post.author.name || 'unknown';
-                const hash = username.split('').reduce((a: number, b: string) => {
-                    a = ((a << 5) - a) + b.charCodeAt(0);
-                    return a & a;
-                }, 0);
-                post.author.id = Math.abs(hash) % 1000 + 1; // Generate ID between 1-1000
-                console.log('✅ Assigned consistent author ID (public):', post.author.id, 'for author:', post.author.name);
+                post.author.id = usernameToIdMap[username] || 15; // Default to DeMedia if not found
+                console.log('✅ Assigned real author ID (public):', post.author.id, 'for author:', post.author.name);
             }
             
             // Ensure both user and author objects have the same ID if one exists

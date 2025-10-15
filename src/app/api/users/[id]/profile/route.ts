@@ -121,34 +121,15 @@ export async function GET(
         stories: [],
         createdAt: "2025-10-13T06:54:07.000Z"
       },
-      936: {
-        id: 936,
-        name: "Test User 936",
-        username: "testuser936",
-        bio: "This is a test user profile",
-        profilePicture: null,
-        coverPhoto: null,
-        followersCount: 5,
-        followingCount: 2,
-        likesCount: 15,
-        stories: [],
-        createdAt: "2025-01-15T10:00:00.000Z"
-      }
     };
 
-    const sampleProfile = userProfiles[parseInt(userId)] || {
-      id: parseInt(userId),
-      name: `User ${userId}`,
-      username: `user${userId}`,
-      bio: "Welcome to my profile!",
-      profilePicture: null,
-      coverPhoto: null,
-      followersCount: 0,
-      followingCount: 0,
-      likesCount: 0,
-      stories: [],
-      createdAt: new Date().toISOString()
-    };
+    const sampleProfile = userProfiles[parseInt(userId)];
+    
+    // If user doesn't exist in our known users, return 404
+    if (!sampleProfile) {
+      console.log('User not found in fallback data:', userId);
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
     // Fix profile picture URLs to use full backend URL
     if (sampleProfile.profilePicture && !sampleProfile.profilePicture.startsWith('http')) {
