@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
     console.log('Fetching user suggestions via backend, userId:', userId);
 
     if (!authHeader || !userId) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      console.log('⚠️ No authentication provided, returning empty suggestions');
+      return NextResponse.json([]);
     }
 
     // Forward request to backend

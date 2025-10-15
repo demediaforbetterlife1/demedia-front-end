@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       const backendBody = {
         title: body.title,
         content: body.content,
-        authorId: parseInt(userId || '0'), // Backend expects authorId
+        userId: parseInt(userId || '0'), // Backend expects userId
         imageUrl: body.imageUrl,
         videoUrl: body.videoUrl,
         hashtags: body.hashtags || [],
