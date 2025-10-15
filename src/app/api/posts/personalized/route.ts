@@ -19,25 +19,37 @@ export async function POST(request: NextRequest) {
 
     // Forward request to backend
     const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
-    const response = await fetch(`${backendUrl}/api/posts/personalized`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authHeader,
-        'user-id': userId,
-      },
-      body: JSON.stringify(body),
-    });
+    console.log('🔄 Connecting to backend for personalized posts:', backendUrl);
+    
+    try {
+      const response = await fetch(`${backendUrl}/api/posts/personalized`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader,
+          'user-id': userId,
+        },
+        body: JSON.stringify(body),
+      });
 
-    if (!response.ok) {
-      throw new Error(`Backend responded with ${response.status}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Backend error:', response.status, errorText);
+        throw new Error(`Backend responded with ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Fetched personalized posts via backend:', data.length, 'posts');
+      return NextResponse.json(data);
+    } catch (backendError) {
+      console.error('❌ Backend connection failed for personalized posts:', backendError);
+      
+      // Fallback: Return empty array if backend is unavailable
+      console.log('🔄 Using fallback: returning empty personalized posts array');
+      return NextResponse.json([]);
     }
-
-    const data = await response.json();
-    console.log('✅ Fetched personalized posts via backend:', data.length, 'posts');
-    return NextResponse.json(data);
   } catch (error) {
-    console.error('❌ Error fetching personalized posts via backend:', error);
+    console.error('❌ Error fetching personalized posts:', error);
     return NextResponse.json({ error: 'Failed to fetch personalized posts' }, { status: 500 });
   }
 }
