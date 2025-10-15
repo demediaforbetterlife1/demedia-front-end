@@ -42,23 +42,6 @@ export async function GET(request: NextRequest) {
             createdAt: true,   // User's creation date from database
           },
         },
-        author: {
-          select: {
-            id: true,           // This is the REAL author ID from database
-            name: true,         // Author's display name from database
-            username: true,     // Author's username from database
-            profilePicture: true, // Author's profile picture URL from database
-            coverPhoto: true,   // Author's cover photo URL from database
-            bio: true,         // Author's bio from database
-            location: true,     // Author's location from database
-            followersCount: true, // Author's followers count from database
-            followingCount: true, // Author's following count from database
-            likesCount: true,  // Author's likes count from database
-            subscriptionTier: true, // Author's subscription tier from database
-            isVerified: true,  // Author's verification status from database
-            createdAt: true,   // Author's creation date from database
-          },
-        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -67,16 +50,15 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ Fetched posts from database:', posts.length, 'posts');
     console.log('✅ First post user ID from database:', posts[0]?.user?.id);
-    console.log('✅ First post author ID from database:', posts[0]?.author?.id);
     
-    // Ensure both user and author have the same data if they're the same person
+    // Process posts to ensure both user and author fields are populated
     const processedPosts = posts.map((post: any) => {
-      // If user and author are the same person, ensure they have the same data
-      if (post.user?.id && post.author?.id && post.user.id === post.author.id) {
-        post.author = { ...post.user };
-      }
-      
-      return post;
+      // Both user and author should reference the same user data
+      return {
+        ...post,
+        author: post.user, // Set author to same as user
+        user: post.user,   // Keep user field
+      };
     });
 
     return NextResponse.json(processedPosts);
