@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 /**
  * Posts API - Fetches posts with complete user data from PostgreSQL database
  * This works exactly like Facebook/Instagram/Twitter - all data comes from database
+ * Uses the backend's Prisma schema
  */
 
 export async function POST(request: NextRequest) {
@@ -76,13 +77,13 @@ export async function GET(request: NextRequest) {
         include: {
           user: {
             select: {
-              id: true,           // REAL user ID from database
-              name: true,         // User's display name from database
-              username: true,     // User's username from database
+              id: true,         
+              name: true,        
+              username: true,    
               profilePicture: true, // User's profile picture URL from database
               coverPhoto: true,   // User's cover photo URL from database
               bio: true,         // User's bio from database
-              location: true,     // User's location from database
+              location: true,   
               followersCount: true, // User's followers count from database
               followingCount: true, // User's following count from database
               likesCount: true,  // User's likes count from database
