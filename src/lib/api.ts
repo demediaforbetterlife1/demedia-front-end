@@ -49,7 +49,8 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   if (userId) {
     headers["user-id"] = userId;
   }
-  if (!(headers as any)["Content-Type"] && options.body) {
+  // Only set Content-Type to application/json if body is not FormData
+  if (!(headers as any)["Content-Type"] && options.body && !(options.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
 

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Share2, Bookmark, BookmarkCheck, Flag, MoreHorizontal, Eye, EyeOff, Zap, Star, TrendingUp, Award, Crown, Flame, Diamond, Target, Sparkles, Gift, Edit, Trash2 } from "lucide-react";
 import Trending from "@/app/(PagesComps)/homedir/trending";
 import Suggestions from "@/app/(PagesComps)/homedir/suggestions";
 import { contentService } from "@/services/contentService";
@@ -12,6 +11,7 @@ import { useNotifications } from "@/components/NotificationProvider";
 import CommentModal from "@/components/CommentModal";
 import ReportModal from "@/components/ReportModal";
 import EditPostModal from "@/components/EditPostModal";
+import PostWithYouTubeComments from "@/components/PostWithYouTubeComments";
 import { apiFetch } from "@/lib/api";
 import PremiumUserIndicator from "@/components/PremiumUserIndicator";
 
@@ -31,14 +31,13 @@ type PostType = {
         profilePicture?: string;
         subscriptionTier?: 'monthly' | 'quarterly' | 'semiannual' | null;
     };
-    author?: {
-        id?: number;
-        name?: string;
-        username?: string;
+    author: {
+        id: number;
+        name: string;
+        username: string;
         profilePicture?: string;
-        subscriptionTier?: 'monthly' | 'quarterly' | 'semiannual' | null;
     };
-    createdAt?: string;
+    createdAt: string;
     imageUrl?: string;
     videoUrl?: string;
     images?: string[];
@@ -63,21 +62,15 @@ export default function Posts() {
     const { t } = useI18n();
     const { showSuccess, showError } = useNotifications();
 
-    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (showDropdown !== null) {
+            if (showDropdown && !(event.target as Element).closest('.dropdown')) {
                 setShowDropdown(null);
             }
         };
 
-        if (showDropdown !== null) {
-            document.addEventListener('click', handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener('click', handleClickOutside);
-        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showDropdown]);
 
     useEffect(() => {
@@ -117,129 +110,38 @@ export default function Posts() {
                 console.log('📊 Is array:', Array.isArray(data));
                 
                 // Ensure data is an array
-                let postsArray = data;
+                let postsArray: any[] = data;
                 if (!Array.isArray(data)) {
-                    console.log('⚠️ Data is not an array, attempting to extract posts');
-                    if (data && typeof data === 'object') {
-                        // Check if it's wrapped in a posts property
-                        if (data.posts && Array.isArray(data.posts)) {
-                            postsArray = data.posts;
-                        } else if (data.error) {
-                            console.error('❌ API returned error:', data.error);
-                            setPosts([]);
-                            return;
-                        } else {
-                            console.error('❌ Unknown data format:', data);
-                            setPosts([]);
-                            return;
-                        }
+                    console.log('📊 Data is not array, checking for posts property...');
+                    if (data && Array.isArray(data.posts)) {
+                        postsArray = data.posts;
+                    } else if (data && Array.isArray(data.data)) {
+                        postsArray = data.data;
                     } else {
-                        console.error('❌ Invalid data format:', data);
-                        setPosts([]);
-                        return;
+                        console.log('📊 No posts array found, using empty array');
+                        postsArray = [];
                     }
                 }
+
+                console.log('📊 Final posts array:', postsArray);
+                console.log('📊 Posts count:', postsArray.length);
                 
-                console.log('📊 Number of posts:', postsArray.length);
-                console.log('📊 First post structure:', postsArray[0]);
-                if (postsArray[0]) {
-                    console.log('🔍 First post user data:', postsArray[0].user);
-                    console.log('🔍 First post author data:', postsArray[0].author);
-                    console.log('🔍 User ID available:', !!postsArray[0].user?.id);
-                    console.log('🔍 Author ID available:', !!postsArray[0].author?.id);
-                    console.log('📊 First post author/user data:', {
-                        user: postsArray[0].user,
-                        author: postsArray[0].author,
-                        userId: postsArray[0].user?.id,
-                        authorId: postsArray[0].author?.id,
-                        hasUser: !!postsArray[0].user,
-                        hasAuthor: !!postsArray[0].author,
-                        userHasId: !!postsArray[0].user?.id,
-                        authorHasId: !!postsArray[0].author?.id
-                    });
-                    console.log('📊 Full first post object:', JSON.stringify(postsArray[0], null, 2));
-                }
+                // Ensure all posts have required fields
+                const processedPosts = postsArray.map((post: any) => ({
+                    ...post,
+                    createdAt: post.createdAt || new Date().toISOString(),
+                    author: {
+                        id: post.author?.id || post.user?.id || 0,
+                        name: post.author?.name || post.user?.name || 'Unknown User',
+                        username: post.author?.username || post.user?.username || 'unknown',
+                        profilePicture: post.author?.profilePicture || post.user?.profilePicture
+                    }
+                }));
                 
-                // Log the actual user IDs from the API
-                console.log('🔍 Frontend posts data - first post user ID:', postsArray[0]?.user?.id);
-                console.log('🔍 Frontend posts data - first post author ID:', postsArray[0]?.author?.id);
-                
-                // Final frontend fix: Ensure all posts have user IDs while preserving actual user data
-                const fixedPosts = postsArray.map((post: any) => {
-                    // If we have user data but no ID, preserve the user info without assigning fake IDs
-                    if (post.user && !post.user.id && (post.user.name || post.user.username)) {
-                        console.log('🔧 Frontend: Post has user data but no ID, preserving user info');
-                        // Don't assign fake IDs - let the backend handle this
-                        console.log('⚠️ Frontend: User data exists but no ID - this should be handled by backend');
-                    }
-                    
-                    if (post.author && !post.author.id && (post.author.name || post.author.username)) {
-                        console.log('🔧 Frontend: Post has author data but no ID, preserving author info');
-                        // Don't assign fake IDs - let the backend handle this
-                        console.log('⚠️ Frontend: Author data exists but no ID - this should be handled by backend');
-                    }
-                    
-                    // Ensure both user and author objects have the same ID if one exists
-                    if (post.user?.id && post.author && !post.author.id) {
-                        post.author.id = post.user.id;
-                        post.author.name = post.author.name || post.user.name;
-                        post.author.username = post.author.username || post.user.username;
-                        post.author.profilePicture = post.author.profilePicture || post.user.profilePicture;
-                    }
-                    if (post.author?.id && post.user && !post.user.id) {
-                        post.user.id = post.author.id;
-                        post.user.name = post.user.name || post.author.name;
-                        post.user.username = post.user.username || post.author.username;
-                        post.user.profilePicture = post.user.profilePicture || post.author.profilePicture;
-                    }
-                    
-                    // If no user data exists, don't create fake data - let the backend handle this
-                    if ((!post.user?.id && !post.author?.id) && (!post.user?.name && !post.author?.name)) {
-                        console.log('⚠️ Frontend: No user data at all for post:', post.id, '- this should be handled by backend');
-                        // Don't create fake user data - let the backend provide real data
-                    }
-                    
-                    return post;
-                });
-                
-                console.log('🔧 Fixed posts data:', fixedPosts.length, 'posts');
-                console.log('🔧 First fixed post user ID:', fixedPosts[0]?.user?.id);
-                console.log('🔧 First fixed post author ID:', fixedPosts[0]?.author?.id);
-                setPosts(fixedPosts);
-            } catch (err: unknown) {
-                if (err instanceof DOMException && err.name === "AbortError") return;
-                console.error("Failed to fetch posts:", err);
-                console.error("Error details:", {
-                    message: err instanceof Error ? err.message : 'Unknown error',
-                    stack: err instanceof Error ? err.stack : undefined
-                });
-                
-                // Retry logic for network errors
-                if (retryCount < maxRetries && err instanceof Error && 
-                    (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
-                    retryCount++;
-                    console.log(`Retrying fetch posts, attempt ${retryCount}/${maxRetries}`);
-                    setTimeout(() => {
-                        if (!abort.signal.aborted) {
-                            fetchPosts();
-                        }
-                    }, 1000 * retryCount);
-                    return;
-                }
-                
-                let message = 'Failed to fetch posts';
-                if (err instanceof Error) {
-                    if (err.message.includes('Failed to fetch')) {
-                        message = 'Network error. Please check your connection and try again.';
-                    } else if (err.message.includes('401')) {
-                        message = 'Authentication error. Please log in again.';
-                    } else if (err.message.includes('500')) {
-                        message = 'Server error. Please try again later.';
-                    } else {
-                        message = err.message;
-                    }
-                }
-                setError(message);
+                setPosts(processedPosts);
+            } catch (err) {
+                console.error('Error fetching posts:', err);
+                setError('Failed to load posts');
             } finally {
                 setLoading(false);
             }
@@ -254,122 +156,45 @@ export default function Posts() {
 
     const handleLike = async (postId: number) => {
         try {
-            const post = posts.find(p => p.id === postId);
-            if (!post) return;
-
-            const isCurrentlyLiked = post.liked;
-            
-            // Optimistic update
-            setPosts(prev => prev.map(p => 
-                p.id === postId 
-                    ? { 
-                        ...p, 
-                        likes: isCurrentlyLiked ? p.likes - 1 : p.likes + 1,
-                        liked: !isCurrentlyLiked
-                    }
-                    : p
-            ));
-
-            // Call API to toggle like
             const response = await apiFetch(`/api/posts/${postId}/like`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
             });
-            
-            // Update with actual response
-            const responseData = await response.json();
-            setPosts(prev => prev.map(p => 
-                p.id === postId 
-                    ? { 
-                        ...p, 
-                        likes: responseData.likes,
-                        liked: responseData.liked
-                    }
-                    : p
-            ));
 
-            // Send notification if user liked the post (not their own)
-            if (!isCurrentlyLiked && (post.user?.id || post.author?.id) && (post.user?.id || post.author?.id) !== Number(user?.id)) {
-                try {
-                    await fetch('/api/notifications', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        },
-                        body: JSON.stringify({
-                            userId: post.user?.id || post.author?.id,
-                            type: 'like',
-                            message: `${user?.name || 'Someone'} liked your post`,
-                            data: {
-                                postId: postId,
-                                likerId: user?.id,
-                                likerName: user?.name
-                            }
-                        })
-                    });
-                } catch (notificationError) {
-                    console.warn('Failed to send like notification:', notificationError);
-                }
+            if (response.ok) {
+                const data = await response.json();
+                setPosts(prev => prev.map(p => 
+                    p.id === postId 
+                        ? { ...p, liked: data.liked, likes: data.likes }
+                        : p
+                ));
             }
-        } catch (error: unknown) {
+        } catch (error) {
             console.error('Error liking post:', error);
-            // Revert optimistic update on error
-            setPosts(prev => prev.map(p => 
-                p.id === postId 
-                    ? { 
-                        ...p, 
-                        likes: p.liked ? p.likes + 1 : p.likes - 1,
-                        liked: !p.liked
-                    }
-                    : p
-            ));
-        }
-    };
-
-    const handleComment = async (postId: number) => {
-        const post = posts.find(p => p.id === postId);
-        if (post) {
-            setSelectedPost(post);
-            setShowCommentModal(true);
         }
     };
 
     const handleBookmark = async (postId: number) => {
         try {
-            const post = posts.find(p => p.id === postId);
-            if (!post) return;
-
-            const wasBookmarked = post.bookmarked;
-
-            // Optimistic update
-            setPosts(prev => prev.map(p => 
-                p.id === postId 
-                    ? { ...p, bookmarked: !wasBookmarked }
-                    : p
-            ));
-
-            // Call API to bookmark/unbookmark the post
-            await apiFetch(`/api/posts/${postId}/bookmark`, {
+            const response = await apiFetch(`/api/posts/${postId}/bookmark`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
             });
-            
-            if (wasBookmarked) {
-                showSuccess('Bookmark Removed', 'Post removed from bookmarks');
-            } else {
-                showSuccess('Post Bookmarked', 'Post saved to your bookmarks');
+
+            if (response.ok) {
+                const data = await response.json();
+                setPosts(prev => prev.map(p => 
+                    p.id === postId 
+                        ? { ...p, bookmarked: data.bookmarked }
+                        : p
+                ));
             }
-        } catch (error: unknown) {
+        } catch (error) {
             console.error('Error bookmarking post:', error);
-            // Revert optimistic update on error
-            setPosts(prev => prev.map(p => 
-                p.id === postId 
-                    ? { ...p, bookmarked: !p.bookmarked }
-                    : p
-            ));
-            showError('Bookmark Failed', 'Failed to bookmark post');
         }
+    };
+
+    const handleComment = (post: PostType) => {
+        setSelectedPost(post);
+        setShowCommentModal(true);
     };
 
     const handleReport = (post: PostType) => {
@@ -377,24 +202,21 @@ export default function Posts() {
         setShowReportModal(true);
     };
 
-    const handleReportSubmitted = async (reason: string, details: string) => {
-        if (!selectedPost) return;
+    const handleDelete = async (postId: number) => {
+        if (!confirm('Are you sure you want to delete this post?')) return;
 
         try {
-            // Call API to report the post with reason and details
-            await apiFetch(`/api/posts/${selectedPost.id}/report`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    reason,
-                    details,
-                    postId: selectedPost.id
-                })
+            const response = await apiFetch(`/api/posts/${postId}`, {
+                method: 'DELETE',
             });
-            showSuccess('Post Reported', 'Thank you for your report. We will review it shortly.');
-        } catch (error: unknown) {
-            console.error('Error reporting post:', error);
-            showError('Report Failed', 'Failed to submit report. Please try again.');
+
+            if (response.ok) {
+                setPosts(prev => prev.filter(p => p.id !== postId));
+                showSuccess('Post Deleted', 'Your post has been deleted successfully');
+            }
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            showError('Error', 'Failed to delete post');
         }
     };
 
@@ -410,6 +232,12 @@ export default function Posts() {
         setShowEditModal(false);
         setSelectedPost(null);
         showSuccess('Post Updated', 'Your post has been updated successfully');
+    };
+
+    const handleReportSubmitted = () => {
+        setShowReportModal(false);
+        setSelectedPost(null);
+        showSuccess('Report Submitted', 'Thank you for your report');
     };
 
     const formatTimeAgo = (dateString: string) => {
@@ -445,8 +273,6 @@ export default function Posts() {
         }
     };
 
-
-
     if (loading) return <p className="text-center theme-text-muted mt-10">{t('posts.loading','Loading posts...')}</p>;
     if (error) return <p className="text-center text-red-400 mt-10">{t('posts.error','Error')}: {error}</p>;
     if (!posts.length) return <p className="text-center theme-text-muted mt-10">{t('posts.none','No posts yet.')}</p>;
@@ -456,387 +282,15 @@ export default function Posts() {
             {/* Feed Section */}
             <div className="flex-1 md:w-2/3 max-w-2xl mx-auto space-y-4">
                 {posts.map((post) => (
-                    <motion.div
+                    <PostWithYouTubeComments
                         key={post.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                        className="theme-bg-secondary rounded-2xl theme-shadow p-4"
-                    >
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center space-x-3">
-                                <div className="relative">
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        
-                                        console.log('🔍 Profile photo clicked!');
-                                        
-                                        // Get the author ID from the post - check both user and author fields
-                                        let targetUserId = post.user?.id || post.author?.id;
-                                        
-                                        console.log('🔍 Profile photo click debug:', {
-                                            postId: post.id,
-                                            targetUserId,
-                                            postUser: post.user,
-                                            postAuthor: post.author,
-                                            hasUserId: !!post.user?.id,
-                                            hasAuthorId: !!post.author?.id,
-                                            userObject: JSON.stringify(post.user),
-                                            authorObject: JSON.stringify(post.author)
-                                        });
-                                        
-                                        if (targetUserId) {
-                                            console.log('✅ Navigating to profile with userId:', targetUserId);
-                                            window.location.href = `/profile?userId=${targetUserId}`;
-                                        } else {
-                                            console.error('❌ No user ID found for post:', post);
-                                            console.log('⚠️ Post author profile cannot be loaded - missing user ID');
-                                            console.log('Full post object:', JSON.stringify(post, null, 2));
-                                            // Show user-friendly error message
-                                            alert('Unable to load user profile - user ID not available');
-                                        }
-                                    }}
-                                    className="w-10 h-10 rounded-full theme-bg-tertiary flex items-center justify-center theme-text-secondary font-bold hover:shadow-lg transition-all duration-300 cursor-pointer"
-                                >
-                                    {(post.user?.name || post.author?.name)?.charAt(0) ?? "U"}
-                                </motion.button>
-                                    {/* Online Status Indicator */}
-                                    <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <motion.button
-                                            whileHover={{ scale: 1.02 }}
-                                    onClick={() => {
-                                        let targetUserId = post.user?.id || post.author?.id;
-                                        
-                                        console.log('🔍 Username click debug:', {
-                                            postId: post.id,
-                                            targetUserId,
-                                            postUser: post.user,
-                                            postAuthor: post.author,
-                                            hasUserId: !!post.user?.id,
-                                            hasAuthorId: !!post.author?.id,
-                                            userObject: JSON.stringify(post.user),
-                                            authorObject: JSON.stringify(post.author)
-                                        });
-                                                
-                                                console.log('🔍 Post navigation debug:', {
-                                                    postId: post.id,
-                                                    postUser: post.user,
-                                                    postAuthor: post.author,
-                                                    targetUserId,
-                                                    currentUserId: user?.id,
-                                                    hasUser: !!post.user,
-                                                    hasAuthor: !!post.author,
-                                                    userHasId: !!post.user?.id,
-                                                    authorHasId: !!post.author?.id
-                                                });
-                                                
-                                                console.log('🔍 Full post object for debugging:', JSON.stringify(post, null, 2));
-                                                
-                                                if (targetUserId) {
-                                                    console.log('✅ Navigating to profile with userId:', targetUserId);
-                                                    window.location.href = `/profile?userId=${targetUserId}`;
-                                                } else {
-                                                    console.error('❌ No user ID found for post:', post);
-                                                    console.warn('⚠️ Post author profile cannot be loaded - missing user ID');
-                                                    console.log('Full post object:', JSON.stringify(post, null, 2));
-                                                    // Show a more user-friendly error message
-                                                    console.log('Profile navigation failed - user data missing');
-                                                }
-                                            }}
-                                            className="font-semibold theme-text-primary hover:text-cyan-400 transition-colors cursor-pointer"
-                                        >
-                                            {post.user?.name || post.author?.name || 'Unknown User'}
-                                        </motion.button>
-                                        {/* Premium Indicator */}
-                                        <PremiumUserIndicator 
-                                            subscriptionTier={post.user?.subscriptionTier || post.author?.subscriptionTier}
-                                            size="sm"
-                                        />
-                                    </div>
-                                    <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        onClick={() => {
-                                            const targetUserId = post.user?.id || post.author?.id;
-                                            if (targetUserId) {
-                                                window.location.href = `/profile?userId=${targetUserId}`;
-                                            } else {
-                                                console.error('No user ID found for post:', post);
-                                                // Show error message instead of redirecting to current user's profile
-                                                console.warn('⚠️ Post author profile cannot be loaded - missing user ID');
-                                                // Show a more helpful error message
-                                                alert('Unable to load author profile. This might be due to:\n• Backend connection issues\n• Corrupted post data\n• Author account may have been deleted\n\nPlease try refreshing the page or contact support if the issue persists.');
-                                            }
-                                        }}
-                                        className="text-sm theme-text-muted hover:text-cyan-400 transition-colors cursor-pointer"
-                                    >
-                                        @{post.user?.username || post.author?.username || 'unknown'}
-                                    </motion.button>
-                                </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                {post.createdAt && (
-                                    <span className="text-sm theme-text-muted">{formatTimeAgo(post.createdAt)}</span>
-                                )}
-                                <div className="relative">
-                                    <button 
-                                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                        onClick={() => setShowDropdown(showDropdown === post.id ? null : post.id)}
-                                    >
-                                        <MoreHorizontal size={16} className="theme-text-muted" />
-                                    </button>
-                                    
-                                    {showDropdown === post.id && (
-                                        <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
-                                            {(post.user?.id || post.author?.id) === Number(user?.id) ? (
-                                                // Author options
-                                                <>
-                                                    <button
-                                                        onClick={() => {
-                                                            handleEdit(post);
-                                                            setShowDropdown(null);
-                                                        }}
-                                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                                    >
-                                                        <Edit size={16} />
-                                                        Edit Post
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            // Handle delete
-                                                            setShowDropdown(null);
-                                                        }}
-                                                        className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                        Delete Post
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                // Non-author options
-                                                <button
-                                                    onClick={() => {
-                                                        handleReport(post);
-                                                        setShowDropdown(null);
-                                                    }}
-                                                    className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                                >
-                                                    <Flag size={16} />
-                                                    Report Post
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Content */}
-                        <div className="mb-3">
-                            {post.title && (
-                                <h3 className="text-lg font-semibold theme-text-primary mb-2">{post.title}</h3>
-                            )}
-                            <p className="theme-text-secondary">{post.content}</p>
-                            {/* Engagement Indicators */}
-                            <div className="flex items-center gap-2 mt-2">
-                                {post.likes > 50 && (
-                                    <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-pink-500/20 to-red-500/20 rounded-full">
-                                        <TrendingUp size={12} className="text-pink-400" />
-                                        <span className="text-xs text-pink-400 font-medium">Trending</span>
-                                    </div>
-                                )}
-                                {post.comments > 20 && (
-                                    <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full">
-                                        <MessageCircle size={12} className="text-blue-400" />
-                                        <span className="text-xs text-blue-400 font-medium">Hot Discussion</span>
-                                    </div>
-                                )}
-                                {post.views && post.views > 1000 && (
-                                    <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-full">
-                                        <Eye size={12} className="text-green-400" />
-                                        <span className="text-xs text-green-400 font-medium">Viral</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Post Media - Enhanced media display */}
-                        {(post.imageUrl || post.images?.length || post.media?.length) && (
-                            <div className="mb-3">
-                                {/* Single image */}
-                                {post.imageUrl && (
-                                    <img 
-                                        src={post.imageUrl} 
-                                        alt="Post content" 
-                                        className="w-full rounded-xl object-cover max-h-96"
-                                        onError={(e) => {
-                                            console.log('Image failed to load:', post.imageUrl);
-                                            e.currentTarget.style.display = 'none';
-                                        }}
-                                        onLoad={() => console.log('Image loaded successfully:', post.imageUrl)}
-                                    />
-                                )}
-                                
-                                {/* Multiple images */}
-                                {post.images && post.images.length > 0 && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                        {post.images.map((imageUrl, index) => (
-                                            <img 
-                                                key={index}
-                                                src={imageUrl} 
-                                                alt={`Post content ${index + 1}`} 
-                                                className="w-full rounded-xl object-cover max-h-96"
-                                                onError={(e) => {
-                                                    console.log('Image failed to load:', imageUrl);
-                                                    e.currentTarget.style.display = 'none';
-                                                }}
-                                                onLoad={() => console.log('Image loaded successfully:', imageUrl)}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                                
-                                {/* Media array */}
-                                {post.media && post.media.length > 0 && (
-                                    <div className="space-y-2">
-                                        {post.media.map((media, index) => (
-                                            <div key={index}>
-                                                {media.type === 'image' ? (
-                                                    <img 
-                                                        src={media.url} 
-                                                        alt={`Post content ${index + 1}`} 
-                                                        className="w-full rounded-xl object-cover max-h-96"
-                                                        onError={(e) => {
-                                                            console.log('Media image failed to load:', media.url);
-                                                            e.currentTarget.style.display = 'none';
-                                                        }}
-                                                        onLoad={() => console.log('Media image loaded successfully:', media.url)}
-                                                    />
-                                                ) : (
-                                                    <video 
-                                                        src={media.url} 
-                                                        controls 
-                                                        className="w-full rounded-xl max-h-96"
-                                                        poster={media.thumbnail}
-                                                    />
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        
-                        {/* Single video */}
-                        {post.videoUrl && (
-                            <div className="mb-3">
-                                <video 
-                                    src={post.videoUrl} 
-                                    controls 
-                                    className="w-full rounded-xl max-h-96"
-                                />
-                            </div>
-                        )}
-                        
-                        {/* Multiple videos */}
-                        {post.videos && post.videos.length > 0 && (
-                            <div className="mb-3 space-y-2">
-                                {post.videos.map((videoUrl, index) => (
-                                    <video 
-                                        key={index}
-                                        src={videoUrl} 
-                                        controls 
-                                        className="w-full rounded-xl max-h-96"
-                                    />
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Enhanced Actions */}
-                        <div className="flex items-center justify-between mt-3 theme-text-muted">
-                            <div className="flex items-center gap-6">
-                                <button 
-                                    className={`flex items-center gap-1 cursor-pointer transition-all duration-200 hover:scale-105 ${
-                                        post.liked 
-                                            ? 'text-pink-500 hover:text-pink-400' 
-                                            : 'hover:text-pink-500'
-                                    }`}
-                                    onClick={() => handleLike(post.id)}
-                                >
-                                    <Heart 
-                                        size={18} 
-                                        fill={post.liked ? 'currentColor' : 'none'}
-                                    /> 
-                                    <span className="text-sm">{post.likes}</span>
-                                    {post.likes > 100 && (
-                                        <div className="w-4 h-4 bg-gradient-to-r from-pink-500 to-red-500 rounded-full flex items-center justify-center">
-                                            <Flame size={10} className="text-white" />
-                                        </div>
-                                    )}
-                                </button>
-                                <button 
-                                    className="flex items-center gap-1 hover:text-blue-400 cursor-pointer transition-all duration-200 hover:scale-105"
-                                    onClick={() => handleComment(post.id)}
-                                >
-                                    <MessageCircle size={18} /> 
-                                    <span className="text-sm">{post.comments}</span>
-                                    {post.comments > 50 && (
-                                        <div className="w-4 h-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-                                            <Zap size={10} className="text-white" />
-                                        </div>
-                                    )}
-                                </button>
-                                <button 
-                                    className="flex items-center gap-1 hover:text-green-400 cursor-pointer transition-all duration-200 hover:scale-105"
-                                    onClick={() => handleShare(post.id)}
-                                >
-                                    <Share2 size={18} />
-                                </button>
-                                {/* New Special Actions */}
-                                <button className="flex items-center gap-1 hover:text-purple-400 cursor-pointer transition-all duration-200 hover:scale-105">
-                                    <Sparkles size={18} />
-                                </button>
-                                <button className="flex items-center gap-1 hover:text-yellow-400 cursor-pointer transition-all duration-200 hover:scale-105">
-                                    <Star size={18} />
-                                </button>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                {post.views && (
-                                    <div className="flex items-center gap-1 text-sm theme-text-muted">
-                                        <Eye size={16} />
-                                        <span>{post.views}</span>
-                                    </div>
-                                )}
-                                <button 
-                                    className={`flex items-center gap-1 cursor-pointer transition-colors ${
-                                        post.bookmarked 
-                                            ? 'text-yellow-500 hover:text-yellow-400' 
-                                            : 'hover:text-yellow-500'
-                                    }`}
-                                    onClick={() => handleBookmark(post.id)}
-                                >
-                                    {post.bookmarked ? (
-                                        <BookmarkCheck size={18} fill="currentColor" />
-                                    ) : (
-                                        <Bookmark size={18} />
-                                    )}
-                                </button>
-                                <button 
-                                    className="flex items-center gap-1 hover:text-red-500 cursor-pointer transition-colors"
-                                    onClick={() => handleReport(post)}
-                                >
-                                    <Flag size={18} />
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
+                        post={post}
+                        onPostUpdated={handlePostUpdated}
+                        onPostDeleted={(postId) => {
+                            setPosts(prev => prev.filter(p => p.id !== postId));
+                            showSuccess('Post Deleted', 'Your post has been deleted successfully');
+                        }}
+                    />
                 ))}
             </div>
 
@@ -863,30 +317,31 @@ export default function Posts() {
             )}
 
             {/* Report Modal */}
-        {selectedPost && (
-            <ReportModal
-                isOpen={showReportModal}
-                onClose={() => {
-                    setShowReportModal(false);
-                    setSelectedPost(null);
-                }}
-                postId={selectedPost.id}
-                postAuthor={selectedPost.user?.name || 'Unknown'}
-                onReportSubmitted={handleReportSubmitted}
-            />
-        )}
+            {selectedPost && (
+                <ReportModal
+                    isOpen={showReportModal}
+                    onClose={() => {
+                        setShowReportModal(false);
+                        setSelectedPost(null);
+                    }}
+                    postId={selectedPost.id}
+                    postAuthor={selectedPost.user?.name || 'Unknown'}
+                    onReportSubmitted={handleReportSubmitted}
+                />
+            )}
 
-        {selectedPost && (
-            <EditPostModal
-                isOpen={showEditModal}
-                onClose={() => {
-                    setShowEditModal(false);
-                    setSelectedPost(null);
-                }}
-                post={selectedPost}
-                onPostUpdated={handlePostUpdated}
-            />
-        )}
+            {/* Edit Post Modal */}
+            {selectedPost && (
+                <EditPostModal
+                    isOpen={showEditModal}
+                    onClose={() => {
+                        setShowEditModal(false);
+                        setSelectedPost(null);
+                    }}
+                    post={selectedPost}
+                    onPostUpdated={handlePostUpdated}
+                />
+            )}
         </div>
     );
 }

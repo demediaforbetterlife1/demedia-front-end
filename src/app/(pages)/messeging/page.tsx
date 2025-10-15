@@ -32,6 +32,7 @@ import {
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiFetch } from '@/lib/api';
+import ChatSettingsModal from '@/components/ChatSettingsModal';
 
 interface Message {
     id: number;
@@ -78,6 +79,8 @@ export default function MessagingPage() {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showCallModal, setShowCallModal] = useState(false);
     const [isInCall, setIsInCall] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
+    const [showArchive, setShowArchive] = useState(false);
 
     const getThemeClasses = () => {
         switch (theme) {
@@ -360,10 +363,18 @@ export default function MessagingPage() {
                     </div>
                     
                     <div className="flex items-center space-x-2">
-                        <button className={`p-2 rounded-lg ${themeClasses.hover} transition-colors`}>
+                        <button 
+                            onClick={() => setShowSettings(true)}
+                            className={`p-2 rounded-lg ${themeClasses.hover} transition-colors`}
+                            title="Settings"
+                        >
                             <Settings className="w-5 h-5" />
                         </button>
-                        <button className={`p-2 rounded-lg ${themeClasses.hover} transition-colors`}>
+                        <button 
+                            onClick={() => setShowArchive(true)}
+                            className={`p-2 rounded-lg ${themeClasses.hover} transition-colors`}
+                            title="Archived Chats"
+                        >
                             <Archive className="w-5 h-5" />
                         </button>
                     </div>
@@ -575,6 +586,37 @@ export default function MessagingPage() {
                     </div>
                 )}
             </div>
+
+            {/* Settings Modal */}
+            <ChatSettingsModal
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
+                onSettingsChange={(settings) => {
+                    console.log('Chat settings updated:', settings);
+                }}
+            />
+
+            {/* Archive Modal */}
+            {showArchive && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className={`${themeClasses.card} rounded-2xl p-6 max-w-md w-full ${themeClasses.shadow} border ${themeClasses.border}`}>
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className={`text-xl font-bold ${themeClasses.text}`}>Archived Chats</h2>
+                            <button
+                                onClick={() => setShowArchive(false)}
+                                className="text-2xl hover:opacity-70 transition-opacity"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className="text-center py-8">
+                            <Archive className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                            <p className={`${themeClasses.textSecondary} mb-4`}>No archived chats</p>
+                            <p className="text-sm text-gray-500">Chats you archive will appear here</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
       );
 }
