@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * Personalized Posts API - Fetches personalized posts with complete user data from PostgreSQL database
+ * This works exactly like Facebook/Instagram/Twitter - all data comes from database
+ */
+
 export async function POST(request: NextRequest) {
   try {
-    // Get the authorization token
     const authHeader = request.headers.get('authorization');
     const userId = request.headers.get('user-id');
     
-    if (!authHeader) {
-      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+    if (!authHeader || !userId) {
+      return NextResponse.json({ error: 'No authorization header or user ID' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -55,62 +59,14 @@ export async function POST(request: NextRequest) {
       await prisma.$disconnect();
       
       console.log('✅ Fetched personalized posts from database:', data.length, 'posts');
+      console.log('✅ First post user ID from database:', data[0]?.user?.id);
       return NextResponse.json(data);
     } catch (databaseError) {
       console.log('❌ Database connection error:', databaseError);
+      return NextResponse.json([]);
     }
-
-    // Fallback: Return sample personalized posts data
-    console.log('Using fallback personalized posts data');
-    const samplePosts = [
-      {
-        id: 1,
-        content: "This is a personalized sample post",
-        title: "Personalized Post",
-        likes: Math.floor(Math.random() * 150),
-        comments: Math.floor(Math.random() * 40),
-        liked: false,
-        user: {
-          id: 1,
-          name: "Personalized User",
-          username: "personalizeduser",
-          profilePicture: null
-        },
-        author: {
-          id: 1,
-          name: "Personalized User",
-          username: "personalizeduser",
-          profilePicture: null
-        },
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 2,
-        content: "Another personalized post based on your interests",
-        title: "Interest-Based Post",
-        likes: Math.floor(Math.random() * 200),
-        comments: Math.floor(Math.random() * 35),
-        liked: false,
-        user: {
-          id: 2,
-          name: "Interest User",
-          username: "interestuser",
-          profilePicture: null
-        },
-        author: {
-          id: 2,
-          name: "Interest User",
-          username: "interestuser",
-          profilePicture: null
-        },
-        createdAt: new Date().toISOString()
-      }
-    ];
-
-    console.log('Returning fallback personalized posts:', samplePosts.length, 'posts');
-    return NextResponse.json(samplePosts);
   } catch (error) {
-    console.error('Error fetching personalized posts:', error);
+    console.error('❌ Error fetching personalized posts:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

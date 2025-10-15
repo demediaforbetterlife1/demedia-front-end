@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * User Posts API - Fetches user's posts with complete user data from PostgreSQL database
+ * This works exactly like Facebook/Instagram/Twitter - all data comes from database
+ */
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id: userId } = await params;
-
-    console.log('User posts API called for user:', userId);
-
-    // Get the authorization token
     const authHeader = request.headers.get('authorization');
+    
+    console.log('User posts API called for user:', userId);
+    
     if (!authHeader) {
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
     }
@@ -52,13 +56,14 @@ export async function GET(
       await prisma.$disconnect();
       
       console.log('✅ Fetched user posts from database:', posts.length, 'posts for user:', userId);
+      console.log('✅ First post user ID from database:', posts[0]?.user?.id);
       return NextResponse.json({ posts });
     } catch (databaseError) {
       console.log('❌ Database connection error:', databaseError);
       return NextResponse.json({ posts: [] });
     }
   } catch (error) {
-    console.error('Error fetching user posts:', error);
+    console.error('❌ Error fetching user posts:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
