@@ -6,15 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "node index.js",
-    "lint": "eslint",
-    "db:setup": "node scripts/setup-database.js",
-    "db:verify": "node scripts/verify-database.js",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev"
+    "lint": "eslint"
   },
   "dependencies": {
-    "@prisma/client": "^6.16.1",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-label": "^2.1.7",
@@ -32,7 +26,6 @@
     "lucide-react": "^0.542.0",
     "next": "15.5.0",
     "next-themes": "^0.4.6",
-    "prisma": "^6.16.1",
     "react": "19.1.0",
     "react-day-picker": "^9.9.0",
     "react-dom": "19.1.0",
