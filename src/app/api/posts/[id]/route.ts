@@ -50,11 +50,13 @@ export async function PUT(
 
     // Fallback: Simulate successful update
     const updatedPost = {
-      id: postId,
+      id: parseInt(postId),
       ...body,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      message: 'Post updated successfully (fallback mode)'
     };
     
+    console.log('Returning fallback updated post:', updatedPost);
     return NextResponse.json(updatedPost);
   } catch (error) {
     console.error('Error updating post:', error);

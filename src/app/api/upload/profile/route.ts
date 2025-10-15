@@ -54,10 +54,12 @@ export async function POST(request: NextRequest) {
     // Generate a mock URL
     const mockUrl = `https://demedia-backend.fly.dev/uploads/profiles/mock-${Date.now()}-${file.name}`;
     
+    console.log('Profile photo upload fallback:', { fileName: file.name, fileSize: file.size, mockUrl });
+    
     return NextResponse.json({
       success: true,
       url: mockUrl,
-      message: 'Profile photo uploaded successfully (mock)'
+      message: 'Profile photo uploaded successfully (fallback mode)'
     });
   } catch (error) {
     console.error('Error uploading profile photo:', error);

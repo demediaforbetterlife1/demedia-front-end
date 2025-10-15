@@ -32,38 +32,42 @@ export async function GET(
       console.log('Backend not available for followers, using fallback');
     }
 
-    // Fallback: Create sample followers data
+    // Fallback: Create sample followers data based on real users
     const followers = [
       {
-        id: 1,
-        name: 'Alice Johnson',
-        username: 'alice_j',
-        profilePicture: null,
-        bio: 'Digital creator and tech enthusiast',
-        location: 'San Francisco, CA',
-        followedAt: '2024-01-15T10:30:00Z'
+        id: 15,
+        name: 'DeMedia',
+        username: 'demedia_official',
+        profilePicture: 'https://demedia-backend.fly.dev/uploads/profiles/file-1760292243693-835944557.jpg',
+        bio: 'Official DeMedia account - The Future Social Media Platform',
+        location: 'Global',
+        followedAt: '2024-01-15T10:30:00Z',
+        isFollowing: false
       },
       {
-        id: 2,
-        name: 'Bob Smith',
-        username: 'bobsmith',
-        profilePicture: null,
-        bio: 'Photographer and traveler',
-        location: 'New York, NY',
-        followedAt: '2024-01-20T14:15:00Z'
+        id: 16,
+        name: 'mohammed Ayman',
+        username: 'hamo_1',
+        profilePicture: '/uploads/profiles/file-1760281215779-207283174.jpg',
+        bio: 'Welcome to my profile!',
+        location: 'Egypt',
+        followedAt: '2024-01-20T14:15:00Z',
+        isFollowing: false
       },
       {
-        id: 3,
-        name: 'Carol Davis',
-        username: 'carol_d',
+        id: 17,
+        name: 'Shehap elgamal',
+        username: 'shehap',
         profilePicture: null,
-        bio: 'Artist and designer',
-        location: 'Los Angeles, CA',
-        followedAt: '2024-02-01T09:45:00Z'
+        bio: 'Hello from Shehap!',
+        location: 'Egypt',
+        followedAt: '2024-02-01T09:45:00Z',
+        isFollowing: false
       }
     ];
 
-    return NextResponse.json({ followers });
+    console.log('Returning followers data:', followers);
+    return NextResponse.json(followers);
   } catch (error) {
     console.error('Error fetching followers:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

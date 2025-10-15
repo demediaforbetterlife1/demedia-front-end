@@ -58,10 +58,14 @@ export default function FollowersList({ isOpen, onClose, userId, type }: Followe
 
       if (response.ok) {
         const data = await response.json();
+        console.log('FollowersList: Received data:', data);
         // Handle both direct array and object with array property
         const followersData = Array.isArray(data) ? data : (data.followers || data.following || []);
+        console.log('FollowersList: Processed followers data:', followersData);
         setFollowers(followersData);
       } else {
+        const errorText = await response.text();
+        console.error('FollowersList: Failed to load followers:', response.status, errorText);
         setError('Failed to load followers');
       }
     } catch (err) {

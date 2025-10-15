@@ -662,7 +662,8 @@ export default function ProfilePage() {
             formData.append('type', type);
             formData.append('userId', user?.id?.toString() || '');
             
-            const response = await apiFetch(`/api/upload/profile`, {
+            const endpoint = type === 'profile' ? '/api/upload/profile' : '/api/upload/cover';
+            const response = await apiFetch(endpoint, {
                 method: 'POST',
                 body: formData,
             });

@@ -32,38 +32,32 @@ export async function GET(
       console.log('Backend not available for following, using fallback');
     }
 
-    // Fallback: Create sample following data
+    // Fallback: Create sample following data based on real users
     const following = [
       {
-        id: 4,
-        name: 'David Wilson',
-        username: 'davidw',
+        id: 21,
+        name: 'bavly',
+        username: 'brzily',
         profilePicture: null,
-        bio: 'Developer and entrepreneur',
-        location: 'Seattle, WA',
-        followedAt: '2024-02-10T16:20:00Z'
+        bio: 'Welcome to my profile!',
+        location: 'Egypt',
+        followedAt: '2024-02-10T16:20:00Z',
+        isFollowing: true
       },
       {
-        id: 5,
-        name: 'Emma Brown',
-        username: 'emma_b',
-        profilePicture: null,
-        bio: 'Writer and blogger',
-        location: 'Chicago, IL',
-        followedAt: '2024-02-15T11:30:00Z'
-      },
-      {
-        id: 6,
-        name: 'Frank Miller',
-        username: 'frank_m',
-        profilePicture: null,
-        bio: 'Music producer and DJ',
-        location: 'Miami, FL',
-        followedAt: '2024-02-20T08:45:00Z'
+        id: 15,
+        name: 'DeMedia',
+        username: 'demedia_official',
+        profilePicture: 'https://demedia-backend.fly.dev/uploads/profiles/file-1760292243693-835944557.jpg',
+        bio: 'Official DeMedia account - The Future Social Media Platform',
+        location: 'Global',
+        followedAt: '2024-02-15T11:30:00Z',
+        isFollowing: true
       }
     ];
 
-    return NextResponse.json({ following });
+    console.log('Returning following data:', following);
+    return NextResponse.json(following);
   } catch (error) {
     console.error('Error fetching following:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
