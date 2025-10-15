@@ -10,18 +10,17 @@ import {
   FiPaperclip, 
   FiArrowLeft, 
   FiMoreVertical, 
-  FiUserX, 
-  FiTrash2, 
+  FiUserX,
+  FiTrash2,
   FiEdit,
   FiSettings,
   FiArchive,
-  FiBlock,
   FiVolume2,
   FiVolumeX,
   FiEye,
   FiEyeOff,
   FiHeart,
-  FiReply,
+  FiCornerUpLeft,
   FiDownload,
   FiShare
 } from "react-icons/fi";
@@ -490,7 +489,7 @@ export default function ChatPage() {
                     onClick={handleBlockUser}
                     className="w-full px-4 py-3 text-left hover:bg-gray-700 flex items-center gap-3 text-red-400"
                   >
-                    <FiBlock size={16} />
+                    <FiUserX size={16} />
                     Block User
                   </button>
                   <button
