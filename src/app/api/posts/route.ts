@@ -1,5 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Helper function to get user ID from backend by username
+async function getUserByIdFromBackend(username: string, authHeader: string): Promise<number | null> {
+  try {
+    const response = await fetch(`https://demedia-backend.fly.dev/api/users/username/${username}`, {
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (response.ok) {
+      const userData = await response.json();
+      return userData.id;
+    }
+  } catch (error) {
+    console.log('Error fetching user ID from backend:', error);
+  }
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -82,6 +102,7 @@ export async function GET(request: NextRequest) {
           console.log('✅ First post author data:', data[0].author);
           console.log('✅ First post user ID:', data[0].user?.id);
           console.log('✅ First post author ID:', data[0].author?.id);
+          console.log('🔍 Full first post object from backend:', JSON.stringify(data[0], null, 2));
         }
         
         // Log the actual user IDs from the database
@@ -101,20 +122,30 @@ export async function GET(request: NextRequest) {
         }
         
         // Ensure user IDs are present in the data - preserve actual user data
-        const fixedData = data.map((post: any) => {
+        const fixedData = await Promise.all(data.map(async (post: any) => {
             console.log('🔧 Processing post:', post.id, 'user:', post.user, 'author:', post.author);
             
-            // If we have user data but no ID, preserve the user info without assigning fake IDs
+            // If we have user data but no ID, try to get it from the backend
             if (post.user && !post.user.id && (post.user.name || post.user.username)) {
-                console.log('🔧 Post has user data but no ID, preserving user info');
-                // Don't assign fake IDs - let the backend handle this
-                console.log('⚠️ User data exists but no ID - this should be handled by backend');
+                console.log('🔧 Post has user data but no ID, fetching from backend');
+                const userId = await getUserByIdFromBackend(post.user.username || post.user.name, authHeader || '');
+                if (userId) {
+                    post.user.id = userId;
+                    console.log('✅ Got user ID from backend:', userId);
+                } else {
+                    console.log('⚠️ Could not get user ID from backend for:', post.user.username || post.user.name);
+                }
             }
             
             if (post.author && !post.author.id && (post.author.name || post.author.username)) {
-                console.log('🔧 Post has author data but no ID, preserving author info');
-                // Don't assign fake IDs - let the backend handle this
-                console.log('⚠️ Author data exists but no ID - this should be handled by backend');
+                console.log('🔧 Post has author data but no ID, fetching from backend');
+                const authorId = await getUserByIdFromBackend(post.author.username || post.author.name, authHeader || '');
+                if (authorId) {
+                    post.author.id = authorId;
+                    console.log('✅ Got author ID from backend:', authorId);
+                } else {
+                    console.log('⚠️ Could not get author ID from backend for:', post.author.username || post.author.name);
+                }
             }
             
             // Ensure both user and author objects have the same ID if one exists
@@ -144,7 +175,7 @@ export async function GET(request: NextRequest) {
             });
             
             return post;
-        });
+        }));
         
         return NextResponse.json(fixedData);
       } else {
