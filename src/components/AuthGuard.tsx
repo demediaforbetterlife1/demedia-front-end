@@ -14,42 +14,41 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const router = useRouter();
   const [hasRedirected, setHasRedirected] = useState(false);
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastRedirectTime = useRef<number>(0);
 
   useEffect(() => {
-    // Add a small delay to prevent rapid redirects
-    const timeoutId = setTimeout(() => {
-      if (isLoading) return;
+    // Only redirect if not loading and not already redirected
+    if (isLoading || hasRedirected) return;
 
-      console.log('AuthGuard Debug:', {
-        isAuthenticated,
-        isLoading,
-        user: user ? { id: user.id, isSetupComplete: user.isSetupComplete } : null,
-        pathname
-      });
+    console.log('AuthGuard Debug:', {
+      isAuthenticated,
+      isLoading,
+      user: user ? { id: user.id, isSetupComplete: user.isSetupComplete } : null,
+      pathname
+    });
 
-      const authPages = ['/sign-in', '/sign-up'];
-      const setupPages = ['/SignInSetUp', '/interests', '/FinishSetup'];
-      const protectedPrefixes = ['/home', '/profile', '/messaging', '/messeging'];
+    const authPages = ['/sign-in', '/sign-up'];
+    const setupPages = ['/SignInSetUp', '/interests', '/FinishSetup'];
+    const protectedPrefixes = ['/home', '/profile', '/messaging', '/messeging'];
 
-      const isAuthPage = authPages.includes(pathname);
-      const isSetupPage = setupPages.includes(pathname);
-      const isProtectedPage = protectedPrefixes.some(p => pathname.startsWith(p));
+    const isAuthPage = authPages.includes(pathname);
+    const isSetupPage = setupPages.includes(pathname);
+    const isProtectedPage = protectedPrefixes.some(p => pathname.startsWith(p));
 
-      // If not authenticated, redirect to sign-up unless on auth pages
-      if (!isAuthenticated) {
-        console.log('AuthGuard: Not authenticated, checking if should redirect');
-        if (!isAuthPage && !hasRedirected) {
+    // If not authenticated, redirect to sign-up unless on auth pages
+    if (!isAuthenticated) {
+      console.log('AuthGuard: Not authenticated, checking if should redirect');
+      if (!isAuthPage) {
+        const now = Date.now();
+        if (now - lastRedirectTime.current > 1000) { // Debounce redirects
           console.log('AuthGuard: Redirecting to sign-up');
           setHasRedirected(true);
-          router.push('/sign-up');
-        } else {
-          console.log('AuthGuard: On auth page or already redirected, allowing access');
+          lastRedirectTime.current = now;
+          router.replace('/sign-up');
         }
-        return;
       }
-    }, 50); // Small delay to prevent rapid redirects
-
-    return () => clearTimeout(timeoutId);
+      return;
+    }
   }, [isAuthenticated, isLoading, user, pathname, router, hasRedirected]);
 
   // Reset redirect state when pathname changes
@@ -59,7 +58,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
   // Separate useEffect for authenticated user routing
   useEffect(() => {
-    if (isLoading || !isAuthenticated || !user) return;
+    if (isLoading || !isAuthenticated || !user || hasRedirected) return;
 
     const authPages = ['/sign-in', '/sign-up'];
     const setupPages = ['/SignInSetUp', '/interests', '/FinishSetup'];
@@ -76,40 +75,60 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     
     // If on auth pages but already authenticated, redirect appropriately
     if (isAuthPage) {
-      console.log('AuthGuard: On auth page but authenticated, redirecting based on setup status');
-      if (user.isSetupComplete) {
-        console.log('AuthGuard: Setup complete, redirecting to home');
-        router.replace('/home');
-      } else {
-        console.log('AuthGuard: Setup not complete, redirecting to SignInSetUp');
-        router.replace('/SignInSetUp');
+      const now = Date.now();
+      if (now - lastRedirectTime.current > 1000) { // Debounce redirects
+        console.log('AuthGuard: On auth page but authenticated, redirecting based on setup status');
+        setHasRedirected(true);
+        lastRedirectTime.current = now;
+        if (user.isSetupComplete) {
+          console.log('AuthGuard: Setup complete, redirecting to home');
+          router.replace('/home');
+        } else {
+          console.log('AuthGuard: Setup not complete, redirecting to SignInSetUp');
+          router.replace('/SignInSetUp');
+        }
       }
       return;
     }
 
     // If trying to access protected pages without completing setup
     if (isProtectedPage && !user.isSetupComplete) {
-      console.log('AuthGuard: Trying to access protected page without setup, redirecting to SignInSetUp');
-      router.replace('/SignInSetUp');
+      const now = Date.now();
+      if (now - lastRedirectTime.current > 1000) { // Debounce redirects
+        console.log('AuthGuard: Trying to access protected page without setup, redirecting to SignInSetUp');
+        setHasRedirected(true);
+        lastRedirectTime.current = now;
+        router.replace('/SignInSetUp');
+      }
       return;
     }
 
     // If setup is complete but on setup pages, redirect to home
     if (isSetupPage && user.isSetupComplete) {
-      console.log('AuthGuard: Setup complete but on setup page, redirecting to home');
-      router.replace('/home');
+      const now = Date.now();
+      if (now - lastRedirectTime.current > 1000) { // Debounce redirects
+        console.log('AuthGuard: Setup complete but on setup page, redirecting to home');
+        setHasRedirected(true);
+        lastRedirectTime.current = now;
+        router.replace('/home');
+      }
       return;
     }
 
     // If user is on root path and authenticated, redirect to home
     if (pathname === '/') {
-      console.log('AuthGuard: On root path, redirecting to home');
-      router.replace('/home');
+      const now = Date.now();
+      if (now - lastRedirectTime.current > 1000) { // Debounce redirects
+        console.log('AuthGuard: On root path, redirecting to home');
+        setHasRedirected(true);
+        lastRedirectTime.current = now;
+        router.replace('/home');
+      }
       return;
     }
 
     console.log('AuthGuard: All checks passed, allowing access to:', pathname);
-  }, [isAuthenticated, isLoading, user, pathname, router]);
+  }, [isAuthenticated, isLoading, user, pathname, router, hasRedirected]);
 
   // Show loading spinner while checking auth
   if (isLoading) {

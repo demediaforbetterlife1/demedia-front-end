@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Heart, Reply, MoreHorizontal } from "lucide-react";
+import { X, Send, Heart, Reply, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { contentModerationService } from "@/services/contentModeration";
@@ -39,6 +39,8 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [editingComment, setEditingComment] = useState<number | null>(null);
+    const [editContent, setEditContent] = useState("");
 
     useEffect(() => {
         if (isOpen) {
@@ -140,6 +142,55 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
         }
     };
 
+    const handleEditComment = async (commentId: number) => {
+        if (!editContent.trim()) return;
+
+        try {
+            const response = await apiFetch(`/api/comments/${commentId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    content: editContent.trim()
+                })
+            });
+
+            if (response.ok) {
+                const updatedComment = await response.json();
+                setComments(prev => prev.map(comment => 
+                    comment.id === commentId 
+                        ? { ...comment, content: updatedComment.content }
+                        : comment
+                ));
+                setEditingComment(null);
+                setEditContent("");
+            }
+        } catch (err) {
+            console.error('Error editing comment:', err);
+        }
+    };
+
+    const handleDeleteComment = async (commentId: number) => {
+        if (!confirm('Are you sure you want to delete this comment?')) return;
+
+        try {
+            const response = await apiFetch(`/api/comments/${commentId}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                setComments(prev => prev.filter(comment => comment.id !== commentId));
+            }
+        } catch (err) {
+            console.error('Error deleting comment:', err);
+        }
+    };
+
+    const canEditOrDelete = (comment: Comment) => {
+        return user && user.id === comment.user.id.toString();
+    };
+
     const formatTimeAgo = (dateString: string) => {
         const date = new Date(dateString);
         const now = new Date();
@@ -236,6 +287,25 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
                                                     <Reply size={14} />
                                                     <span>Reply</span>
                                                 </button>
+                                                {canEditOrDelete(comment) && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditingComment(comment.id);
+                                                                setEditContent(comment.content);
+                                                            }}
+                                                            className="text-gray-400 hover:text-blue-500 transition-colors"
+                                                        >
+                                                            <Edit size={14} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteComment(comment.id)}
+                                                            className="text-gray-400 hover:text-red-500 transition-colors"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </>
+                                                )}
                                                 <button className="text-gray-400 hover:text-white transition-colors">
                                                     <MoreHorizontal size={14} />
                                                 </button>
@@ -246,6 +316,41 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
                             </div>
                         )}
                     </div>
+
+                    {/* Edit Comment Form */}
+                    {editingComment && (
+                        <div className="p-4 border-t border-gray-700 bg-gray-800/50">
+                            <div className="flex space-x-3">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                                </div>
+                                <div className="flex-1 flex space-x-2">
+                                    <input
+                                        type="text"
+                                        value={editContent}
+                                        onChange={(e) => setEditContent(e.target.value)}
+                                        placeholder="Edit your comment..."
+                                        className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-full text-white placeholder-gray-400 focus:outline-none focus:border-cyan-400 text-sm"
+                                    />
+                                    <button
+                                        onClick={() => handleEditComment(editingComment)}
+                                        className="px-4 py-2 bg-cyan-500 text-white rounded-full hover:bg-cyan-600 transition-colors flex items-center space-x-1"
+                                    >
+                                        <Send size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setEditingComment(null);
+                                            setEditContent("");
+                                        }}
+                                        className="px-4 py-2 bg-gray-600 text-white rounded-full hover:bg-gray-500 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Add Comment Form */}
                     <div className="p-4 border-t border-gray-700 bg-gray-900/50">

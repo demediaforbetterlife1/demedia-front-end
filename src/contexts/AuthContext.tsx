@@ -88,6 +88,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               localStorage.removeItem('token');
               localStorage.removeItem('userId');
               setUser(null);
+              setIsLoading(false);
+              setAuthChecked(true);
               return;
             }
           } catch (e) {
@@ -150,7 +152,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     // Add a small delay to prevent rapid auth checks
-    const timeoutId = setTimeout(checkAuth, 50);
+    const timeoutId = setTimeout(checkAuth, 100);
     
     return () => {
       clearTimeout(timeoutId);
@@ -216,16 +218,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Use replace instead of push for faster navigation
         if (userData.isSetupComplete) {
           console.log('AuthContext: Setup complete, redirecting to home');
-          // Add a small delay to ensure state is updated
-          setTimeout(() => {
-            router.replace('/home');
-          }, 100);
+          router.replace('/home');
         } else {
           console.log('AuthContext: Setup not complete, redirecting to SignInSetUp');
-          // Add a small delay to ensure state is updated
-          setTimeout(() => {
-            router.replace('/SignInSetUp');
-          }, 100);
+          router.replace('/SignInSetUp');
         }
 
         // Fire a welcome notification (non-blocking)
