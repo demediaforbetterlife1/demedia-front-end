@@ -810,42 +810,44 @@ export default function ProfilePage() {
             `}</style>
             <div className={`min-h-screen theme-bg-primary pb-20 md:pb-0`}>
                 <div className="max-w-6xl mx-auto p-4">
-                    {/* Modern Cover Section */}
+                    {/* Enhanced Cover Section */}
                     <div className="relative mb-8">
                         {coverPicture ? (
-                            <div className="relative h-64 sm:h-80 md:h-96 lg:h-[28rem] overflow-hidden rounded-3xl shadow-2xl">
+                            <div className="relative h-64 sm:h-80 md:h-96 lg:h-[28rem] overflow-hidden rounded-3xl shadow-2xl group">
                                 <img
                                     src={coverPicture}
                                     alt="Cover"
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                     loading="lazy"
                                     onError={(e) => (e.currentTarget.style.display = "none")}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                            {isOwnProfile && (
-                                <motion.button
-                        type="button"
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    onClick={() => {
-                                        setPhotoUploadType('cover');
-                                        setShowPhotoUploadModal(true);
-                                    }}
-                                    disabled={isUploadingPhoto}
-                                    className="absolute bottom-4 right-4 p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all duration-300 hover:scale-110"
-                                >
-                                    <Camera size={20} />
-                                </motion.button>
-                            )}
-                        </div>
+                                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20" />
+                                {isOwnProfile && (
+                                    <motion.button
+                                        type="button"
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => {
+                                            setPhotoUploadType('cover');
+                                            setShowPhotoUploadModal(true);
+                                        }}
+                                        disabled={isUploadingPhoto}
+                                        className="absolute bottom-4 right-4 p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
+                                    >
+                                        <Camera size={20} />
+                                    </motion.button>
+                                )}
+                            </div>
                         ) : (
-                            <div className={`h-64 sm:h-80 md:h-96 lg:h-[28rem] bg-gradient-to-br ${themeClasses.coverGradient} rounded-3xl flex items-center justify-center relative overflow-hidden shadow-2xl`}>
+                            <div className={`h-64 sm:h-80 md:h-96 lg:h-[28rem] bg-gradient-to-br ${themeClasses.coverGradient} rounded-3xl flex items-center justify-center relative overflow-hidden shadow-2xl group`}>
                                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10"></div>
+                                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-black/10"></div>
                                 <div className="text-center relative z-10">
-                                    <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+                                    <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
                                         <UserIcon className="w-10 h-10 text-white" />
                                     </div>
-                                    <p className={`text-lg font-medium ${themeClasses.text} mb-4`}>No cover photo</p>
+                                    <p className={`text-lg font-medium text-white/90 mb-4`}>No cover photo</p>
                                     {isOwnProfile && (
                                         <motion.button 
                                             whileHover={{ scale: 1.05 }}
@@ -855,7 +857,7 @@ export default function ProfilePage() {
                                                 setShowPhotoUploadModal(true);
                                             }}
                                             disabled={isUploadingPhoto}
-                                            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 shadow-lg"
+                                            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 shadow-lg backdrop-blur-sm"
                                         >
                                             {isUploadingPhoto ? 'Uploading...' : 'Add Cover Photo'}
                                         </motion.button>
@@ -866,11 +868,14 @@ export default function ProfilePage() {
 
                     {/* Modern Profile Section */}
                     <div className="relative px-6 pb-6">
-                        {/* Circular Profile Picture with Unique Features */}
+                        {/* Enhanced Profile Picture Section */}
                         <div className="absolute -top-20 sm:-top-24 md:-top-28 left-6 sm:left-8">
                             <div className="relative group">
+                                {/* Animated Ring */}
+                                <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 opacity-75 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+                                
                                 {/* Main Profile Circle */}
-                                <div className={`w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl relative ring-4 ring-white/20 backdrop-blur-sm`}>
+                                <div className={`relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl ring-4 ring-white/20 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300`}>
                     {profilePicture ? (
                         <motion.img
                                             key={profilePicture}
@@ -964,18 +969,18 @@ export default function ProfilePage() {
                                 </div>
                             )}
 
-                            {/* Modern Stats Section - Vertical Layout */}
-                            <div className="flex flex-col sm:flex-row gap-6 mb-8">
+                            {/* Modern Stats Section - Horizontal Layout */}
+                            <div className="grid grid-cols-3 gap-4 mb-8">
                                 <motion.div 
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={handleFollowersClick}
-                                    className={`text-center p-6 rounded-2xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-xl transition-all duration-300 backdrop-blur-sm flex-1`}
+                                    className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300 backdrop-blur-sm`}
                                 >
-                                    <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>{followersCount}</div>
-                                    <div className={`text-sm font-medium ${themeClasses.textSecondary} mb-3`}>Followers</div>
-                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                        <div className="bg-gradient-to-r from-cyan-500 to-purple-600 h-2 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (followersCount / 1000) * 100)}%`}}></div>
+                                    <div className={`text-2xl font-bold ${themeClasses.text} mb-1`}>{followersCount}</div>
+                                    <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>Followers</div>
+                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
+                                        <div className="bg-gradient-to-r from-cyan-500 to-purple-600 h-1.5 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (followersCount / 1000) * 100)}%`}}></div>
                                     </div>
                                 </motion.div>
                                 
@@ -983,29 +988,28 @@ export default function ProfilePage() {
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={handleFollowingClick}
-                                    className={`text-center p-6 rounded-2xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-xl transition-all duration-300 backdrop-blur-sm flex-1`}
+                                    className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300 backdrop-blur-sm`}
                                 >
-                                    <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>{followingCount}</div>
-                                    <div className={`text-sm font-medium ${themeClasses.textSecondary} mb-3`}>Following</div>
-                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                        <div className="bg-gradient-to-r from-pink-500 to-rose-600 h-2 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (followingCount / 500) * 100)}%`}}></div>
+                                    <div className={`text-2xl font-bold ${themeClasses.text} mb-1`}>{followingCount}</div>
+                                    <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>Following</div>
+                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
+                                        <div className="bg-gradient-to-r from-pink-500 to-rose-600 h-1.5 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (followingCount / 500) * 100)}%`}}></div>
                                     </div>
                                 </motion.div>
                                 
                                 <motion.div 
                                     whileHover={{ scale: 1.05 }}
-                                    className={`text-center p-6 rounded-2xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-xl transition-all duration-300 backdrop-blur-sm flex-1`}
+                                    className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300 backdrop-blur-sm`}
                                 >
-                                    <div className={`text-3xl font-bold ${themeClasses.text} mb-2`}>{likesCount}</div>
-                                    <div className={`text-sm font-medium ${themeClasses.textSecondary} mb-3`}>Likes</div>
-                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                        <div className="bg-gradient-to-r from-yellow-500 to-orange-600 h-2 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (likesCount / 10000) * 100)}%`}}></div>
+                                    <div className={`text-2xl font-bold ${themeClasses.text} mb-1`}>{likesCount}</div>
+                                    <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>Likes</div>
+                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
+                                        <div className="bg-gradient-to-r from-yellow-500 to-orange-600 h-1.5 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (likesCount / 10000) * 100)}%`}}></div>
                                     </div>
                                 </motion.div>
-                                
                             </div>
 
-                            {/* Modern Action Buttons */}
+                            {/* Enhanced Action Buttons */}
                             <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 mb-8">
                     {isOwnProfile ? (
                                     <>
@@ -1014,7 +1018,7 @@ export default function ProfilePage() {
                             onClick={() => setShowEditModal(true)}
                             whileTap={{ scale: 0.95 }}
                             whileHover={{ scale: 1.02 }}
-                            className={`flex-1 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${themeClasses.button} text-sm sm:text-base shadow-lg hover:shadow-xl`}
+                            className={`flex-1 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${themeClasses.button} text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
                         >
                             <Edit size={18} />
                             <span>Edit Profile</span>
@@ -1041,7 +1045,7 @@ export default function ProfilePage() {
                                     isFollowing
                                         ? `${themeClasses.buttonSecondary}`
                                         : `${themeClasses.button}`
-                                } ${busyFollow ? "opacity-70 cursor-wait" : ""} text-sm sm:text-base shadow-lg hover:shadow-xl`}
+                                } ${busyFollow ? "opacity-70 cursor-wait" : ""} text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
                             >
                                 {busyFollow ? "..." : isFollowing ? "Following" : "Follow"}
                             </motion.button>

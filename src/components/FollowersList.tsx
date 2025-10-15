@@ -45,8 +45,8 @@ export default function FollowersList({ isOpen, onClose, userId, type }: Followe
       setError(null);
 
       const endpoint = type === 'followers' 
-        ? `/api/user/${userId}/followers`
-        : `/api/user/${userId}/following`;
+        ? `/api/users/${userId}/followers`
+        : `/api/users/${userId}/following`;
 
       const response = await fetch(endpoint, {
         headers: {
@@ -58,7 +58,9 @@ export default function FollowersList({ isOpen, onClose, userId, type }: Followe
 
       if (response.ok) {
         const data = await response.json();
-        setFollowers(data);
+        // Handle both direct array and object with array property
+        const followersData = Array.isArray(data) ? data : (data.followers || data.following || []);
+        setFollowers(followersData);
       } else {
         setError('Failed to load followers');
       }
