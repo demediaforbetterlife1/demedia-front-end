@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - represents users in the system
+model User {
+  id              Int      @id @default(autoincrement())
+  name            String
+  username        String   @unique
+  email           String   @unique
+  profilePicture  String?
+  coverPhoto      String?
+  bio             String?
+  location        String?
+  followersCount  Int      @default(0)
+  followingCount  Int      @default(0)
+  likesCount      Int      @default(0)
+  subscriptionTier String?
+  isVerified      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relationships
+  posts           Post[]   @relation("UserPosts")
+  likes           Like[]
+  comments        Comment[]
+  followers       Follow[] @relation("UserFollowers")
+  following       Follow[] @relation("UserFollowing")
+
+  @@map("users")
+}
+
+// Post model - represents posts in the system
+model Post {
+  id          Int      @id @default(autoincrement())
+  content     String
+  title       String?
+  imageUrl    String?
+  videoUrl    String?
+  likes       Int      @default(0)
+  comments    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign key to User table
+  userId      Int
+  user        User     @relation("UserPosts", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relationships
+  postLikes   Like[]
+  postComments Comment[]
+
+  @@map("posts")
+}
+
+// Like model - represents likes on posts
+model Like {
+  id     Int @id @default(autoincrement())
+  userId Int
+  postId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@map("likes")
+}
+
+// Comment model - represents comments on posts
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId Int
+  postId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+// Follow model - represents user follows
+model Follow {
+  id          Int @id @default(autoincrement())
+  followerId  Int
+  followingId Int
+  follower    User @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}

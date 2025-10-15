@@ -6,7 +6,12 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "node index.js",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:setup": "node scripts/setup-database.js",
+    "db:verify": "node scripts/verify-database.js",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
     "@prisma/client": "^6.16.1",
