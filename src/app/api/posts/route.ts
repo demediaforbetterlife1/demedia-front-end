@@ -96,6 +96,7 @@ export async function GET(request: NextRequest) {
         headers: {
           'Authorization': authHeader,
           'user-id': userId || '',
+          'Content-Type': 'application/json',
         },
       });
 
