@@ -45,22 +45,12 @@ export async function POST(request: NextRequest) {
       console.log('Backend not available for upload, using fallback');
     }
 
-    // Fallback: Simulate successful upload
-    const file = formData.get('file') as File;
-    if (!file) {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
-    }
-
-    // Generate a mock URL
-    const mockUrl = `https://demedia-backend.fly.dev/uploads/covers/mock-${Date.now()}-${file.name}`;
-    
-    console.log('Cover photo upload fallback:', { fileName: file.name, fileSize: file.size, mockUrl });
-    
-    return NextResponse.json({
-      success: true,
-      url: mockUrl,
-      message: 'Cover photo uploaded successfully (fallback mode)'
-    });
+    // Fallback: Return error if backend is not available
+    console.log('Backend not available for cover photo upload');
+    return NextResponse.json({ 
+      error: 'Backend not available',
+      message: 'Photo upload requires backend connection'
+    }, { status: 503 });
   } catch (error) {
     console.error('Error uploading cover photo:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

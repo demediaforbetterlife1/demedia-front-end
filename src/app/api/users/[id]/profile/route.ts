@@ -67,77 +67,9 @@ export async function GET(
     // Fallback: Return sample profile data with real user data
     console.log('Using fallback profile data for userId:', userId);
     
-    // Create profile data based on known users
-    const userProfiles: { [key: number]: any } = {
-      15: {
-        id: 15,
-        name: "DeMedia",
-        username: "demedia_official",
-        bio: "Official DeMedia account - The Future Social Media Platform",
-        profilePicture: "https://demedia-backend.fly.dev/uploads/profiles/file-1760292243693-835944557.jpg",
-        coverPhoto: null,
-        followersCount: 150,
-        followingCount: 25,
-        likesCount: 2500,
-        stories: [],
-        createdAt: "2025-10-12T13:31:44.000Z"
-      },
-      16: {
-        id: 16,
-        name: "mohammed Ayman",
-        username: "hamo_1",
-        bio: "Welcome to my profile!",
-        profilePicture: "/uploads/profiles/file-1760281215779-207283174.jpg",
-        coverPhoto: null,
-        followersCount: 45,
-        followingCount: 12,
-        likesCount: 180,
-        stories: [],
-        createdAt: "2025-10-12T14:56:21.000Z"
-      },
-      17: {
-        id: 17,
-        name: "Shehap elgamal",
-        username: "shehap",
-        bio: "Hello from Shehap!",
-        profilePicture: null,
-        coverPhoto: null,
-        followersCount: 32,
-        followingCount: 8,
-        likesCount: 95,
-        stories: [],
-        createdAt: "2025-10-12T14:57:28.000Z"
-      },
-      21: {
-        id: 21,
-        name: "bavly",
-        username: "brzily",
-        bio: "Welcome to my profile!",
-        profilePicture: null,
-        coverPhoto: null,
-        followersCount: 18,
-        followingCount: 5,
-        likesCount: 42,
-        stories: [],
-        createdAt: "2025-10-13T06:54:07.000Z"
-      },
-    };
-
-    const sampleProfile = userProfiles[parseInt(userId)];
-    
-    // If user doesn't exist in our known users, return 404
-    if (!sampleProfile) {
-      console.log('User not found in fallback data:', userId);
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    // Fix profile picture URLs to use full backend URL
-    if (sampleProfile.profilePicture && !sampleProfile.profilePicture.startsWith('http')) {
-      sampleProfile.profilePicture = `https://demedia-backend.fly.dev${sampleProfile.profilePicture}`;
-    }
-
-    console.log('Returning fallback profile:', sampleProfile);
-    return NextResponse.json(sampleProfile);
+    // Fallback: Return 404 if backend is not available
+    console.log('Backend not available for profile, returning 404');
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   } catch (error) {
     console.error('Error fetching user profile:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

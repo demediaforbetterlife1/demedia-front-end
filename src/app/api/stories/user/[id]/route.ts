@@ -6,6 +6,9 @@ export async function GET(
 ) {
   try {
     const { id: userId } = await params;
+    const viewerId = request.nextUrl.searchParams.get('viewerId');
+
+    console.log('Stories API called for user:', userId, 'viewer:', viewerId);
 
     // Get the authorization token
     const authHeader = request.headers.get('authorization');
@@ -15,7 +18,7 @@ export async function GET(
 
     // Try to connect to the actual backend first
     try {
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/users/${userId}/following`, {
+      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/stories/user/${userId}?viewerId=${viewerId}`, {
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json',
@@ -24,19 +27,20 @@ export async function GET(
 
       if (backendResponse.ok) {
         const data = await backendResponse.json();
+        console.log('Backend stories data received:', data);
         return NextResponse.json(data);
       } else {
-        console.log('Backend following fetch failed, using fallback');
+        console.log('Backend stories fetch failed, using fallback');
       }
     } catch (backendError) {
-      console.log('Backend not available for following, using fallback');
+      console.log('Backend not available for stories, using fallback');
     }
 
     // Fallback: Return empty array if backend is not available
-    console.log('Backend not available for following, returning empty array');
+    console.log('Backend not available for stories, returning empty array');
     return NextResponse.json([]);
   } catch (error) {
-    console.error('Error fetching following:', error);
+    console.error('Error fetching stories:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

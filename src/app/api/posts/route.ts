@@ -38,35 +38,12 @@ export async function POST(request: NextRequest) {
       console.log('Backend post creation connection error:', backendError);
     }
 
-    // Fallback: Create a mock post
-    console.log('Using fallback post creation');
-    const mockPost = {
-      id: `post_${userId}_${Date.now()}`,
-      title: body.title || '',
-      content: body.content || '',
-      authorId: parseInt(userId),
-      likes: 0,
-      comments: 0,
-      imageUrl: body.imageUrl || null,
-      imageUrls: body.imageUrls || [],
-      createdAt: new Date().toISOString(),
-      message: 'Post created (fallback mode)',
-      author: {
-        id: parseInt(userId),
-        name: 'Current User',
-        username: 'currentuser',
-        profilePicture: null
-      },
-      user: {
-        id: parseInt(userId),
-        name: 'Current User',
-        username: 'currentuser',
-        profilePicture: null
-      }
-    };
-
-    console.log('Returning mock post:', mockPost);
-    return NextResponse.json(mockPost);
+    // Fallback: Return error if backend is not available
+    console.log('Backend not available for post creation');
+    return NextResponse.json({ 
+      error: 'Backend not available',
+      message: 'Post creation requires backend connection'
+    }, { status: 503 });
 
   } catch (error) {
     console.error('Error creating post:', error);
@@ -127,35 +104,17 @@ export async function GET(request: NextRequest) {
         const fixedData = data.map((post: any) => {
             console.log('🔧 Processing post:', post.id, 'user:', post.user, 'author:', post.author);
             
-            // If we have user data but no ID, try to preserve the name/username and assign a real ID
+            // If we have user data but no ID, preserve the user info without assigning fake IDs
             if (post.user && !post.user.id && (post.user.name || post.user.username)) {
                 console.log('🔧 Post has user data but no ID, preserving user info');
-                // Map usernames to real user IDs from database
-                const usernameToIdMap: { [key: string]: number } = {
-                    'demedia_official': 15,
-                    'hamo_1': 16,
-                    'shehap': 17,
-                    'brzily': 21
-                };
-                
-                const username = post.user.username || post.user.name || 'unknown';
-                post.user.id = usernameToIdMap[username] || 15; // Default to DeMedia if not found
-                console.log('✅ Assigned real user ID:', post.user.id, 'for user:', post.user.name);
+                // Don't assign fake IDs - let the backend handle this
+                console.log('⚠️ User data exists but no ID - this should be handled by backend');
             }
             
             if (post.author && !post.author.id && (post.author.name || post.author.username)) {
                 console.log('🔧 Post has author data but no ID, preserving author info');
-                // Map usernames to real user IDs from database
-                const usernameToIdMap: { [key: string]: number } = {
-                    'demedia_official': 15,
-                    'hamo_1': 16,
-                    'shehap': 17,
-                    'brzily': 21
-                };
-                
-                const username = post.author.username || post.author.name || 'unknown';
-                post.author.id = usernameToIdMap[username] || 15; // Default to DeMedia if not found
-                console.log('✅ Assigned real author ID:', post.author.id, 'for author:', post.author.name);
+                // Don't assign fake IDs - let the backend handle this
+                console.log('⚠️ Author data exists but no ID - this should be handled by backend');
             }
             
             // Ensure both user and author objects have the same ID if one exists
@@ -172,21 +131,10 @@ export async function GET(request: NextRequest) {
                 post.user.profilePicture = post.user.profilePicture || post.author.profilePicture;
             }
             
-            // Only create fallback if absolutely no user data exists
+            // If no user data exists, don't create fake data - let the backend handle this
             if ((!post.user?.id && !post.author?.id) && (!post.user?.name && !post.author?.name)) {
-                console.log('⚠️ No user data at all for post:', post.id, 'creating fallback');
-                const knownUserIds = [15, 16, 17, 21, 4];
-                const fallbackId = knownUserIds[Math.floor(Math.random() * knownUserIds.length)];
-                
-                if (!post.user) post.user = {};
-                if (!post.author) post.author = {};
-                
-                post.user.id = fallbackId;
-                post.author.id = fallbackId;
-                post.user.name = post.user.name || 'Unknown User';
-                post.author.name = post.author.name || 'Unknown User';
-                post.user.username = post.user.username || 'unknown';
-                post.author.username = post.author.username || 'unknown';
+                console.log('⚠️ No user data at all for post:', post.id, '- this should be handled by backend');
+                // Don't create fake user data - let the backend provide real data
             }
             
             console.log('🔧 Final post data:', {
@@ -236,35 +184,17 @@ export async function GET(request: NextRequest) {
         const fixedData = data.map((post: any) => {
             console.log('🔧 Processing post (public):', post.id, 'user:', post.user, 'author:', post.author);
             
-            // If we have user data but no ID, try to preserve the name/username and assign a real ID
+            // If we have user data but no ID, preserve the user info without assigning fake IDs
             if (post.user && !post.user.id && (post.user.name || post.user.username)) {
                 console.log('🔧 Post has user data but no ID (public), preserving user info');
-                // Map usernames to real user IDs from database
-                const usernameToIdMap: { [key: string]: number } = {
-                    'demedia_official': 15,
-                    'hamo_1': 16,
-                    'shehap': 17,
-                    'brzily': 21
-                };
-                
-                const username = post.user.username || post.user.name || 'unknown';
-                post.user.id = usernameToIdMap[username] || 15; // Default to DeMedia if not found
-                console.log('✅ Assigned real user ID (public):', post.user.id, 'for user:', post.user.name);
+                // Don't assign fake IDs - let the backend handle this
+                console.log('⚠️ User data exists but no ID (public) - this should be handled by backend');
             }
             
             if (post.author && !post.author.id && (post.author.name || post.author.username)) {
                 console.log('🔧 Post has author data but no ID (public), preserving author info');
-                // Map usernames to real user IDs from database
-                const usernameToIdMap: { [key: string]: number } = {
-                    'demedia_official': 15,
-                    'hamo_1': 16,
-                    'shehap': 17,
-                    'brzily': 21
-                };
-                
-                const username = post.author.username || post.author.name || 'unknown';
-                post.author.id = usernameToIdMap[username] || 15; // Default to DeMedia if not found
-                console.log('✅ Assigned real author ID (public):', post.author.id, 'for author:', post.author.name);
+                // Don't assign fake IDs - let the backend handle this
+                console.log('⚠️ Author data exists but no ID (public) - this should be handled by backend');
             }
             
             // Ensure both user and author objects have the same ID if one exists
@@ -281,21 +211,10 @@ export async function GET(request: NextRequest) {
                 post.user.profilePicture = post.user.profilePicture || post.author.profilePicture;
             }
             
-            // Only create fallback if absolutely no user data exists
+            // If no user data exists, don't create fake data - let the backend handle this
             if ((!post.user?.id && !post.author?.id) && (!post.user?.name && !post.author?.name)) {
-                console.log('⚠️ No user data at all for post (public):', post.id, 'creating fallback');
-                const knownUserIds = [15, 16, 17, 21, 4];
-                const fallbackId = knownUserIds[Math.floor(Math.random() * knownUserIds.length)];
-                
-                if (!post.user) post.user = {};
-                if (!post.author) post.author = {};
-                
-                post.user.id = fallbackId;
-                post.author.id = fallbackId;
-                post.user.name = post.user.name || 'Unknown User';
-                post.author.name = post.author.name || 'Unknown User';
-                post.user.username = post.user.username || 'unknown';
-                post.author.username = post.author.username || 'unknown';
+                console.log('⚠️ No user data at all for post (public):', post.id, '- this should be handled by backend');
+                // Don't create fake user data - let the backend provide real data
             }
             
             console.log('🔧 Final post data (public):', {
@@ -316,97 +235,9 @@ export async function GET(request: NextRequest) {
       console.log('❌ Public backend connection error:', publicError);
     }
 
-    // Fallback: Return sample posts data with real user IDs from your database
-    console.log('Using fallback posts data with real user IDs');
-    const samplePosts = [
-      {
-        id: 17,
-        content: "Welcome to Demedia, the social media revolution built for the modern world — smarter, safer, and more powerful than ever.",
-        title: "DEMEDIA — The Future Social Media Platform 🚀",
-        likes: 2,
-        comments: 0,
-        liked: false,
-        user: {
-          id: 15,
-          name: "DeMedia",
-          username: "demedia_official",
-          profilePicture: "https://demedia-backend.fly.dev/uploads/profiles/file-1760292243693-835944557.jpg"
-        },
-        author: {
-          id: 15,
-          name: "DeMedia",
-          username: "demedia_official",
-          profilePicture: "https://demedia-backend.fly.dev/uploads/profiles/file-1760292243693-835944557.jpg"
-        },
-        createdAt: "2025-10-12T16:40:03.020Z"
-      },
-      {
-        id: 15,
-        content: "New Post",
-        title: "New Post",
-        likes: 3,
-        comments: 0,
-        liked: false,
-        user: {
-          id: 17,
-          name: "Shehap elgamal",
-          username: "shehap",
-          profilePicture: null
-        },
-        author: {
-          id: 17,
-          name: "Shehap elgamal",
-          username: "shehap",
-          profilePicture: null
-        },
-        createdAt: "2025-10-12T15:04:00.946Z"
-      },
-      {
-        id: 14,
-        content: "🌺 صلِّ على الحبيب المصطفي",
-        title: "🌺 صلِّ على الحبيب المصطفي",
-        likes: 5,
-        comments: 0,
-        liked: false,
-        user: {
-          id: 16,
-          name: "mohammed Ayman",
-          username: "hamo_1",
-          profilePicture: "/uploads/profiles/file-1760281215779-207283174.jpg"
-        },
-        author: {
-          id: 16,
-          name: "mohammed Ayman",
-          username: "hamo_1",
-          profilePicture: "/uploads/profiles/file-1760281215779-207283174.jpg"
-        },
-        createdAt: "2025-10-12T14:58:40.413Z"
-      },
-      {
-        id: 13,
-        content: "صلي ع محمد",
-        title: "صلي ع محمد",
-        likes: 5,
-        comments: 0,
-        liked: false,
-        user: {
-          id: 17,
-          name: "Shehap elgamal",
-          username: "shehap",
-          profilePicture: null
-        },
-        author: {
-          id: 17,
-          name: "Shehap elgamal",
-          username: "shehap",
-          profilePicture: null
-        },
-        createdAt: "2025-10-12T14:58:28.728Z"
-      }
-    ];
-
-    console.log('Returning fallback posts:', samplePosts.length, 'posts');
-    return NextResponse.json(samplePosts);
+    // Fallback: Return empty array if backend is not available
+    console.log('Backend not available, returning empty posts array');
+    return NextResponse.json([]);
   } catch (error) {
     console.error('Error fetching posts:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

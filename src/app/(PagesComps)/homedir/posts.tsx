@@ -139,35 +139,17 @@ export default function Posts() {
                 
                 // Final frontend fix: Ensure all posts have user IDs while preserving actual user data
                 const fixedPosts = data.map((post: any) => {
-                    // If we have user data but no ID, preserve the user info and assign a real ID
+                    // If we have user data but no ID, preserve the user info without assigning fake IDs
                     if (post.user && !post.user.id && (post.user.name || post.user.username)) {
                         console.log('🔧 Frontend: Post has user data but no ID, preserving user info');
-                        // Map usernames to real user IDs from database
-                        const usernameToIdMap: { [key: string]: number } = {
-                            'demedia_official': 15,
-                            'hamo_1': 16,
-                            'shehap': 17,
-                            'brzily': 21
-                        };
-                        
-                        const username = post.user.username || post.user.name || 'unknown';
-                        post.user.id = usernameToIdMap[username] || 15; // Default to DeMedia if not found
-                        console.log('✅ Frontend: Assigned real user ID:', post.user.id, 'for user:', post.user.name);
+                        // Don't assign fake IDs - let the backend handle this
+                        console.log('⚠️ Frontend: User data exists but no ID - this should be handled by backend');
                     }
                     
                     if (post.author && !post.author.id && (post.author.name || post.author.username)) {
                         console.log('🔧 Frontend: Post has author data but no ID, preserving author info');
-                        // Map usernames to real user IDs from database
-                        const usernameToIdMap: { [key: string]: number } = {
-                            'demedia_official': 15,
-                            'hamo_1': 16,
-                            'shehap': 17,
-                            'brzily': 21
-                        };
-                        
-                        const username = post.author.username || post.author.name || 'unknown';
-                        post.author.id = usernameToIdMap[username] || 15; // Default to DeMedia if not found
-                        console.log('✅ Frontend: Assigned real author ID:', post.author.id, 'for author:', post.author.name);
+                        // Don't assign fake IDs - let the backend handle this
+                        console.log('⚠️ Frontend: Author data exists but no ID - this should be handled by backend');
                     }
                     
                     // Ensure both user and author objects have the same ID if one exists

@@ -48,19 +48,19 @@ export async function PUT(
       console.log('Backend not available for update, using fallback');
     }
 
-    // Fallback: Simulate successful update
-    const updatedPost = {
-      id: parseInt(postId),
-      ...body,
-      updatedAt: new Date().toISOString(),
-      message: 'Post updated successfully (fallback mode)'
-    };
-    
-    console.log('Returning fallback updated post:', updatedPost);
-    return NextResponse.json(updatedPost);
+    // Fallback: Return error if backend is not available
+    console.log('Backend not available for post update');
+    return NextResponse.json({ 
+      error: 'Backend not available',
+      message: 'Post update requires backend connection'
+    }, { status: 503 });
   } catch (error) {
     console.error('Error updating post:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: 'Failed to update post',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 
