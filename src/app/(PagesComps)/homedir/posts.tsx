@@ -113,32 +113,59 @@ export default function Posts() {
                 }
 
                 console.log('📊 Posts data received:', data);
-                console.log('📊 Number of posts:', data.length);
-                console.log('📊 First post structure:', data[0]);
-                if (data[0]) {
-                    console.log('🔍 First post user data:', data[0].user);
-                    console.log('🔍 First post author data:', data[0].author);
-                    console.log('🔍 User ID available:', !!data[0].user?.id);
-                    console.log('🔍 Author ID available:', !!data[0].author?.id);
+                console.log('📊 Data type:', typeof data);
+                console.log('📊 Is array:', Array.isArray(data));
+                
+                // Ensure data is an array
+                let postsArray = data;
+                if (!Array.isArray(data)) {
+                    console.log('⚠️ Data is not an array, attempting to extract posts');
+                    if (data && typeof data === 'object') {
+                        // Check if it's wrapped in a posts property
+                        if (data.posts && Array.isArray(data.posts)) {
+                            postsArray = data.posts;
+                        } else if (data.error) {
+                            console.error('❌ API returned error:', data.error);
+                            setPosts([]);
+                            return;
+                        } else {
+                            console.error('❌ Unknown data format:', data);
+                            setPosts([]);
+                            return;
+                        }
+                    } else {
+                        console.error('❌ Invalid data format:', data);
+                        setPosts([]);
+                        return;
+                    }
+                }
+                
+                console.log('📊 Number of posts:', postsArray.length);
+                console.log('📊 First post structure:', postsArray[0]);
+                if (postsArray[0]) {
+                    console.log('🔍 First post user data:', postsArray[0].user);
+                    console.log('🔍 First post author data:', postsArray[0].author);
+                    console.log('🔍 User ID available:', !!postsArray[0].user?.id);
+                    console.log('🔍 Author ID available:', !!postsArray[0].author?.id);
                     console.log('📊 First post author/user data:', {
-                        user: data[0].user,
-                        author: data[0].author,
-                        userId: data[0].user?.id,
-                        authorId: data[0].author?.id,
-                        hasUser: !!data[0].user,
-                        hasAuthor: !!data[0].author,
-                        userHasId: !!data[0].user?.id,
-                        authorHasId: !!data[0].author?.id
+                        user: postsArray[0].user,
+                        author: postsArray[0].author,
+                        userId: postsArray[0].user?.id,
+                        authorId: postsArray[0].author?.id,
+                        hasUser: !!postsArray[0].user,
+                        hasAuthor: !!postsArray[0].author,
+                        userHasId: !!postsArray[0].user?.id,
+                        authorHasId: !!postsArray[0].author?.id
                     });
-                    console.log('📊 Full first post object:', JSON.stringify(data[0], null, 2));
+                    console.log('📊 Full first post object:', JSON.stringify(postsArray[0], null, 2));
                 }
                 
                 // Log the actual user IDs from the API
-                console.log('🔍 Frontend posts data - first post user ID:', data[0]?.user?.id);
-                console.log('🔍 Frontend posts data - first post author ID:', data[0]?.author?.id);
+                console.log('🔍 Frontend posts data - first post user ID:', postsArray[0]?.user?.id);
+                console.log('🔍 Frontend posts data - first post author ID:', postsArray[0]?.author?.id);
                 
                 // Final frontend fix: Ensure all posts have user IDs while preserving actual user data
-                const fixedPosts = data.map((post: any) => {
+                const fixedPosts = postsArray.map((post: any) => {
                     // If we have user data but no ID, preserve the user info without assigning fake IDs
                     if (post.user && !post.user.id && (post.user.name || post.user.username)) {
                         console.log('🔧 Frontend: Post has user data but no ID, preserving user info');
