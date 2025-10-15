@@ -599,7 +599,7 @@ export default function MessagingPage() {
             {/* Archive Modal */}
             {showArchive && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className={`${themeClasses.card} rounded-2xl p-6 max-w-md w-full ${themeClasses.shadow} border ${themeClasses.border}`}>
+                    <div className={`${themeClasses.card} rounded-2xl p-6 max-w-md w-full shadow-lg border ${themeClasses.border}`}>
                         <div className="flex items-center justify-between mb-6">
                             <h2 className={`text-xl font-bold ${themeClasses.text}`}>Archived Chats</h2>
                             <button
