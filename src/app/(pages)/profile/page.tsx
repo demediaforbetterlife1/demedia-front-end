@@ -380,13 +380,8 @@ export default function ProfilePage() {
                     setError("Profile not found - User may not exist or has been deleted");
                     setLoading(false);
                     
-                    // If it's a different user's profile that doesn't exist, redirect to own profile
-                    if (!isOwnProfile && user?.id) {
-                        console.log('🔄 User profile not found, redirecting to own profile');
-                        setTimeout(() => {
-                            window.location.href = '/profile';
-                        }, 3000);
-                    }
+                    // Don't redirect - just show the error message
+                    console.log('❌ User profile not found for userId:', userId);
                     return;
                 }
                 
@@ -738,15 +733,32 @@ export default function ProfilePage() {
     if (error)
         return (
             <div className={`min-h-screen ${themeClasses.bg} pb-20 md:pb-0 flex items-center justify-center`}>
-                <div className="text-center">
-                    <div className="text-red-500 text-xl mb-2">⚠️ Error</div>
-                    <p className={themeClasses.textSecondary}>{error}</p>
-                    <button 
-                        onClick={() => window.location.reload()} 
-                        className="mt-4 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition"
-                    >
-                        Retry
-                    </button>
+                <div className="text-center max-w-md mx-auto p-6">
+                    <div className="w-20 h-20 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <UserIcon className="w-10 h-10 text-red-500" />
+                    </div>
+                    <h2 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>Profile Not Found</h2>
+                    <p className={`${themeClasses.textSecondary} mb-6`}>
+                        {error.includes("User may not exist") 
+                            ? "This user profile doesn't exist or has been deleted." 
+                            : error}
+                    </p>
+                    <div className="space-y-3">
+                        <button
+                            onClick={() => window.history.back()}
+                            className={`w-full px-6 py-3 rounded-lg ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}
+                        >
+                            Go Back
+                        </button>
+                        {user?.id && (
+                            <button
+                                onClick={() => window.location.href = '/profile'}
+                                className={`w-full px-6 py-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-all duration-300`}
+                            >
+                                View My Profile
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         );
@@ -754,9 +766,30 @@ export default function ProfilePage() {
     if (!profile)
         return (
             <div className={`min-h-screen ${themeClasses.bg} pb-20 md:pb-0 flex items-center justify-center`}>
-                <div className="text-center">
-                    <div className="text-gray-400 text-xl mb-2">👤</div>
-                    <p className={themeClasses.textSecondary}>Profile not found</p>
+                <div className="text-center max-w-md mx-auto p-6">
+                    <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <UserIcon className="w-10 h-10 text-gray-500" />
+                    </div>
+                    <h2 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>Profile Not Found</h2>
+                    <p className={`${themeClasses.textSecondary} mb-6`}>
+                        This user profile doesn't exist or has been deleted.
+                    </p>
+                    <div className="space-y-3">
+                        <button
+                            onClick={() => window.history.back()}
+                            className={`w-full px-6 py-3 rounded-lg ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}
+                        >
+                            Go Back
+                        </button>
+                        {user?.id && (
+                            <button
+                                onClick={() => window.location.href = '/profile'}
+                                className={`w-full px-6 py-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-all duration-300`}
+                            >
+                                View My Profile
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         );
