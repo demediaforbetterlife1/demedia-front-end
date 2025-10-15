@@ -153,31 +153,46 @@ export async function GET(request: NextRequest) {
             console.log('  - First post author object keys:', data[0].author ? Object.keys(data[0].author) : 'No author object');
         }
         
-        // Ensure user IDs are present in the data - preserve actual user data
-        const fixedData = await Promise.all(data.map(async (post: any) => {
+        // Process posts to ensure proper user data structure (like Facebook/Instagram/Twitter)
+        const fixedData = data.map((post: any) => {
             console.log('🔧 Processing post:', post.id, 'user:', post.user, 'author:', post.author);
             
-            // If we have user data but no ID, try to get it from the backend
-            if (post.user && !post.user.id && (post.user.name || post.user.username)) {
-                console.log('🔧 Post has user data but no ID, fetching from backend');
-                const userId = await getUserByIdFromBackend(post.user.username || post.user.name, authHeader || '');
-                if (userId) {
-                    post.user.id = userId;
-                    console.log('✅ Got user ID from backend:', userId);
-                } else {
-                    console.log('⚠️ Could not get user ID from backend for:', post.user.username || post.user.name);
-                }
+            // Ensure user object has proper structure
+            if (post.user) {
+                post.user = {
+                    id: post.user.id || null,
+                    name: post.user.name || 'Unknown User',
+                    username: post.user.username || 'unknown',
+                    profilePicture: post.user.profilePicture || null,
+                    coverPhoto: post.user.coverPhoto || null,
+                    bio: post.user.bio || '',
+                    location: post.user.location || '',
+                    followersCount: post.user.followersCount || 0,
+                    followingCount: post.user.followingCount || 0,
+                    likesCount: post.user.likesCount || 0,
+                    subscriptionTier: post.user.subscriptionTier || null,
+                    isVerified: post.user.isVerified || false,
+                    createdAt: post.user.createdAt || new Date().toISOString()
+                };
             }
             
-            if (post.author && !post.author.id && (post.author.name || post.author.username)) {
-                console.log('🔧 Post has author data but no ID, fetching from backend');
-                const authorId = await getUserByIdFromBackend(post.author.username || post.author.name, authHeader || '');
-                if (authorId) {
-                    post.author.id = authorId;
-                    console.log('✅ Got author ID from backend:', authorId);
-                } else {
-                    console.log('⚠️ Could not get author ID from backend for:', post.author.username || post.author.name);
-                }
+            // Ensure author object has proper structure
+            if (post.author) {
+                post.author = {
+                    id: post.author.id || null,
+                    name: post.author.name || 'Unknown User',
+                    username: post.author.username || 'unknown',
+                    profilePicture: post.author.profilePicture || null,
+                    coverPhoto: post.author.coverPhoto || null,
+                    bio: post.author.bio || '',
+                    location: post.author.location || '',
+                    followersCount: post.author.followersCount || 0,
+                    followingCount: post.author.followingCount || 0,
+                    likesCount: post.author.likesCount || 0,
+                    subscriptionTier: post.author.subscriptionTier || null,
+                    isVerified: post.author.isVerified || false,
+                    createdAt: post.author.createdAt || new Date().toISOString()
+                };
             }
             
             // Ensure both user and author objects have the same ID if one exists
@@ -203,11 +218,11 @@ export async function GET(request: NextRequest) {
             console.log('🔧 Final post data:', {
                 id: post.id,
                 user: post.user,
-                author: post.author
+                author: post.author,
             });
             
             return post;
-        }));
+        });
         
         return NextResponse.json(fixedData);
       } else {
@@ -243,21 +258,46 @@ export async function GET(request: NextRequest) {
         console.log('🔍 Public backend posts data - first post author ID:', data[0]?.author?.id);
         console.log('🔍 Full first post object (public):', JSON.stringify(data[0], null, 2));
         
-        // Ensure user IDs are present in the data - preserve actual user data
+        // Process posts to ensure proper user data structure (like Facebook/Instagram/Twitter)
         const fixedData = data.map((post: any) => {
             console.log('🔧 Processing post (public):', post.id, 'user:', post.user, 'author:', post.author);
             
-            // If we have user data but no ID, preserve the user info without assigning fake IDs
-            if (post.user && !post.user.id && (post.user.name || post.user.username)) {
-                console.log('🔧 Post has user data but no ID (public), preserving user info');
-                // Don't assign fake IDs - let the backend handle this
-                console.log('⚠️ User data exists but no ID (public) - this should be handled by backend');
+            // Ensure user object has proper structure
+            if (post.user) {
+                post.user = {
+                    id: post.user.id || null,
+                    name: post.user.name || 'Unknown User',
+                    username: post.user.username || 'unknown',
+                    profilePicture: post.user.profilePicture || null,
+                    coverPhoto: post.user.coverPhoto || null,
+                    bio: post.user.bio || '',
+                    location: post.user.location || '',
+                    followersCount: post.user.followersCount || 0,
+                    followingCount: post.user.followingCount || 0,
+                    likesCount: post.user.likesCount || 0,
+                    subscriptionTier: post.user.subscriptionTier || null,
+                    isVerified: post.user.isVerified || false,
+                    createdAt: post.user.createdAt || new Date().toISOString()
+                };
             }
             
-            if (post.author && !post.author.id && (post.author.name || post.author.username)) {
-                console.log('🔧 Post has author data but no ID (public), preserving author info');
-                // Don't assign fake IDs - let the backend handle this
-                console.log('⚠️ Author data exists but no ID (public) - this should be handled by backend');
+            // Ensure author object has proper structure
+            if (post.author) {
+                post.author = {
+                    id: post.author.id || null,
+                    name: post.author.name || 'Unknown User',
+                    username: post.author.username || 'unknown',
+                    profilePicture: post.author.profilePicture || null,
+                    coverPhoto: post.author.coverPhoto || null,
+                    bio: post.author.bio || '',
+                    location: post.author.location || '',
+                    followersCount: post.author.followersCount || 0,
+                    followingCount: post.author.followingCount || 0,
+                    likesCount: post.author.likesCount || 0,
+                    subscriptionTier: post.author.subscriptionTier || null,
+                    isVerified: post.author.isVerified || false,
+                    createdAt: post.author.createdAt || new Date().toISOString()
+                };
             }
             
             // Ensure both user and author objects have the same ID if one exists
