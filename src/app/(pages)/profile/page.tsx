@@ -80,7 +80,7 @@ import { getUserProfile, apiFetch } from "../../../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { notificationService } from "@/services/notificationService";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import EditProfileModal from "@/app/layoutElementsComps/navdir/EditProfileModal";
 import CreateStoryModal from "@/app/layoutElementsComps/navdir/CreateStoryModal";
 import DeSnapsViewer from "@/components/DeSnapsViewer";
@@ -148,6 +148,7 @@ interface Profile {
 export default function ProfilePage() {
     const { user, isLoading: authLoading } = useAuth();
     const { theme } = useTheme();
+    const router = useRouter();
     const searchParams = useSearchParams();
     const userIdFromUrl = searchParams.get('userId');
     // Fix: Only use current user's ID if no userIdFromUrl is provided
@@ -622,12 +623,10 @@ export default function ProfilePage() {
         
         try {
             // Create or find existing chat with this user
-            const res = await fetch('/api/chat/create-or-find', {
+            const res = await apiFetch('/api/chat/create-or-find', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'user-id': user.id.toString(),
                 },
                 body: JSON.stringify({
                     participantId: profile.id
@@ -636,17 +635,29 @@ export default function ProfilePage() {
 
             if (res.ok) {
                 const chatData = await res.json();
-                // Navigate to the chat
-                window.location.href = `/messeging/chat/${chatData.id}`;
+                // Navigate to the chat using router
+                router.push(`/messeging/chat/${chatData.id}`);
             } else {
                 console.error('Failed to create/find chat');
+                // Show error notification
+                await notificationService.showNotification({
+                    title: 'Chat Error',
+                    body: 'Failed to start chat. Please try again.',
+                    tag: 'chat_error'
+                });
                 // Fallback: try to navigate to messaging page
-                window.location.href = '/messeging';
+                router.push('/messeging');
             }
         } catch (err) {
             console.error('Error starting chat:', err);
+            // Show error notification
+            await notificationService.showNotification({
+                title: 'Chat Error',
+                body: 'Failed to start chat. Please try again.',
+                tag: 'chat_error'
+            });
             // Fallback: try to navigate to messaging page
-            window.location.href = '/messeging';
+            router.push('/messeging');
         }
     }
 

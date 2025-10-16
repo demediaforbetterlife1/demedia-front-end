@@ -94,13 +94,10 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
             
             console.log('EditProfileModal: Uploading file to server...');
             
-            // Upload to server
-            const response = await fetch('/api/upload/profile', {
+            // Upload to server using apiFetch
+            const endpoint = type === 'profile' ? '/api/upload/profile' : '/api/upload/cover';
+            const response = await apiFetch(endpoint, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'user-id': user?.id?.toString() || '',
-                },
                 body: formData
             });
             

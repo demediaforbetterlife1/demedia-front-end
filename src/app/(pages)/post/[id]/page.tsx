@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Heart, MessageCircle, Share2, Bookmark, BookmarkCheck, ArrowLeft, Eye, Flag, MoreHorizontal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { useNotifications } from "@/components/NotificationProvider";
 import CommentModal from "@/components/CommentModal";
@@ -32,6 +33,7 @@ export default function PostDetailPage() {
     const params = useParams();
     const router = useRouter();
     const { user } = useAuth();
+    const { theme } = useTheme();
     const { t } = useI18n();
     const { showSuccess, showError } = useNotifications();
     
@@ -39,6 +41,86 @@ export default function PostDetailPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showCommentModal, setShowCommentModal] = useState(false);
+
+    // Theme classes based on current theme
+    const getThemeClasses = () => {
+        switch (theme) {
+            case 'dark':
+                return {
+                    bg: 'bg-gray-900',
+                    bgSecondary: 'bg-gray-800',
+                    bgTertiary: 'bg-gray-700',
+                    text: 'text-white',
+                    textSecondary: 'text-gray-300',
+                    textMuted: 'text-gray-400',
+                    border: 'border-gray-700',
+                    hover: 'hover:bg-gray-700',
+                    shadow: 'shadow-2xl'
+                };
+            case 'super-dark':
+                return {
+                    bg: 'bg-black',
+                    bgSecondary: 'bg-gray-900',
+                    bgTertiary: 'bg-gray-800',
+                    text: 'text-white',
+                    textSecondary: 'text-gray-200',
+                    textMuted: 'text-gray-500',
+                    border: 'border-gray-800',
+                    hover: 'hover:bg-gray-800',
+                    shadow: 'shadow-2xl'
+                };
+            case 'light':
+                return {
+                    bg: 'bg-white',
+                    bgSecondary: 'bg-gray-50',
+                    bgTertiary: 'bg-gray-100',
+                    text: 'text-gray-900',
+                    textSecondary: 'text-gray-700',
+                    textMuted: 'text-gray-500',
+                    border: 'border-gray-200',
+                    hover: 'hover:bg-gray-100',
+                    shadow: 'shadow-lg'
+                };
+            case 'super-light':
+                return {
+                    bg: 'bg-white',
+                    bgSecondary: 'bg-gray-50',
+                    bgTertiary: 'bg-gray-100',
+                    text: 'text-black',
+                    textSecondary: 'text-gray-800',
+                    textMuted: 'text-gray-600',
+                    border: 'border-gray-300',
+                    hover: 'hover:bg-gray-50',
+                    shadow: 'shadow-md'
+                };
+            case 'gold':
+                return {
+                    bg: 'bg-gray-900',
+                    bgSecondary: 'bg-yellow-900/20',
+                    bgTertiary: 'bg-yellow-800/30',
+                    text: 'text-yellow-400',
+                    textSecondary: 'text-yellow-300',
+                    textMuted: 'text-yellow-500',
+                    border: 'border-yellow-700',
+                    hover: 'hover:bg-yellow-800/30',
+                    shadow: 'shadow-2xl shadow-yellow-500/20'
+                };
+            default:
+                return {
+                    bg: 'bg-gray-900',
+                    bgSecondary: 'bg-gray-800',
+                    bgTertiary: 'bg-gray-700',
+                    text: 'text-white',
+                    textSecondary: 'text-gray-300',
+                    textMuted: 'text-gray-400',
+                    border: 'border-gray-700',
+                    hover: 'hover:bg-gray-700',
+                    shadow: 'shadow-2xl'
+                };
+        }
+    };
+
+    const themeClasses = getThemeClasses();
 
     useEffect(() => {
         const fetchPost = async () => {
@@ -145,21 +227,21 @@ export default function PostDetailPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen theme-bg-primary flex items-center justify-center">
-                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-400"></div>
+            <div className={`min-h-screen ${themeClasses.bg} flex items-center justify-center`}>
+                <div className={`animate-spin rounded-full h-32 w-32 border-b-2 ${theme === 'gold' ? 'border-yellow-400' : 'border-cyan-400'}`}></div>
             </div>
         );
     }
 
     if (error || !post) {
         return (
-            <div className="min-h-screen theme-bg-primary flex items-center justify-center">
+            <div className={`min-h-screen ${themeClasses.bg} flex items-center justify-center`}>
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold theme-text-primary mb-4">Post Not Found</h1>
-                    <p className="theme-text-muted mb-6">{error || "The post you're looking for doesn't exist."}</p>
+                    <h1 className={`text-2xl font-bold ${themeClasses.text} mb-4`}>Post Not Found</h1>
+                    <p className={`${themeClasses.textMuted} mb-6`}>{error || "The post you're looking for doesn't exist."}</p>
                     <button
                         onClick={() => router.push('/home')}
-                        className="px-6 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
+                        className={`px-6 py-3 ${theme === 'gold' ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-cyan-500 hover:bg-cyan-600'} text-white rounded-lg transition-colors`}
                     >
                         Go Home
                     </button>
@@ -169,18 +251,18 @@ export default function PostDetailPage() {
     }
 
     return (
-        <div className="min-h-screen theme-bg-primary">
+        <div className={`min-h-screen ${themeClasses.bg}`}>
             {/* Header */}
-            <div className="sticky top-0 z-10 theme-bg-secondary border-b border-gray-700/50 backdrop-blur-lg">
+            <div className={`sticky top-0 z-10 ${themeClasses.bgSecondary} border-b ${themeClasses.border} backdrop-blur-lg`}>
                 <div className="flex items-center justify-between p-4">
                     <button
                         onClick={() => router.back()}
-                        className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors"
+                        className={`flex items-center gap-2 ${theme === 'gold' ? 'text-yellow-400 hover:text-yellow-300' : 'text-cyan-400 hover:text-cyan-300'} transition-colors`}
                     >
                         <ArrowLeft size={20} />
                         <span>Back</span>
                     </button>
-                    <h1 className="text-lg font-semibold theme-text-primary">Post</h1>
+                    <h1 className={`text-lg font-semibold ${themeClasses.text}`}>Post</h1>
                     <div className="w-8"></div> {/* Spacer for centering */}
                 </div>
             </div>
@@ -191,40 +273,40 @@ export default function PostDetailPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="theme-bg-secondary rounded-2xl theme-shadow p-6"
+                    className={`${themeClasses.bgSecondary} rounded-2xl ${themeClasses.shadow} p-6`}
                 >
                     {/* Header */}
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-3">
                             <div className="relative">
-                                <div className="w-12 h-12 rounded-full theme-bg-tertiary flex items-center justify-center theme-text-secondary font-bold text-lg">
+                                <div className={`w-12 h-12 rounded-full ${themeClasses.bgTertiary} flex items-center justify-center ${themeClasses.textSecondary} font-bold text-lg`}>
                                     {post.user?.name?.charAt(0) ?? "U"}
                                 </div>
                                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
                             </div>
                             <div>
                                 <div className="flex items-center gap-2">
-                                    <h3 className="font-semibold theme-text-primary">{post.user?.name ?? 'Unknown User'}</h3>
+                                    <h3 className={`font-semibold ${themeClasses.text}`}>{post.user?.name ?? 'Unknown User'}</h3>
                                     <div className="w-5 h-5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                                         <span className="text-white text-xs">✓</span>
                                     </div>
                                 </div>
-                                <div className="text-sm theme-text-muted">@{post.user?.username ?? 'user'}</div>
+                                <div className={`text-sm ${themeClasses.textMuted}`}>@{post.user?.username ?? 'user'}</div>
                             </div>
                         </div>
                         <div className="flex items-center space-x-2">
                             {post.createdAt && (
-                                <span className="text-sm theme-text-muted">{formatTimeAgo(post.createdAt)}</span>
+                                <span className={`text-sm ${themeClasses.textMuted}`}>{formatTimeAgo(post.createdAt)}</span>
                             )}
-                            <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                <MoreHorizontal size={16} className="theme-text-muted" />
+                            <button className={`p-2 rounded-full ${themeClasses.hover} transition-colors`}>
+                                <MoreHorizontal size={16} className={themeClasses.textMuted} />
                             </button>
                         </div>
                     </div>
 
                     {/* Content */}
                     <div className="mb-4">
-                        <p className="theme-text-secondary text-lg leading-relaxed">{post.content}</p>
+                        <p className={`${themeClasses.textSecondary} text-lg leading-relaxed`}>{post.content}</p>
                     </div>
 
                     {/* Post Media - Only show if there's actual media */}
@@ -248,7 +330,7 @@ export default function PostDetailPage() {
                     )}
 
                     {/* Actions */}
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-700/50">
+                    <div className={`flex items-center justify-between mt-6 pt-4 border-t ${themeClasses.border}`}>
                         <div className="flex items-center gap-8">
                             <button 
                                 className={`flex items-center gap-2 cursor-pointer transition-all duration-200 hover:scale-105 ${
