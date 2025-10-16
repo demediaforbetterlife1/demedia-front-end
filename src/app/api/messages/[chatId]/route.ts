@@ -4,8 +4,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ chatId: string }> }
 ) {
+  let chatId: string;
   try {
-    const { chatId } = await params;
+    const resolvedParams = await params;
+    chatId = resolvedParams.chatId;
     const authHeader = request.headers.get('authorization');
     const userId = request.headers.get('user-id');
 

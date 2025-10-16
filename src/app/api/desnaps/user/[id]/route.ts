@@ -4,8 +4,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let userId: string;
   try {
-    const { id: userId } = await params;
+    const resolvedParams = await params;
+    userId = resolvedParams.id;
     const viewerId = request.nextUrl.searchParams.get('viewerId');
 
     console.log('DeSnaps API called for user:', userId, 'viewer:', viewerId);

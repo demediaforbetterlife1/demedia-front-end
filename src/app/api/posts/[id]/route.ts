@@ -4,8 +4,10 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let postId: string;
   try {
-    const { id: postId } = await params;
+    const resolvedParams = await params;
+    postId = resolvedParams.id;
     
     // Validate postId
     if (!postId || isNaN(Number(postId))) {
