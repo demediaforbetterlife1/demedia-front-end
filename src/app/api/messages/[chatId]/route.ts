@@ -5,11 +5,14 @@ export async function GET(
   { params }: { params: Promise<{ chatId: string }> }
 ) {
   let chatId: string = '';
+  let authHeader: string | null = null;
+  let userId: string | null = null;
+  
   try {
     const resolvedParams = await params;
     chatId = resolvedParams.chatId;
-    const authHeader = request.headers.get('authorization');
-    const userId = request.headers.get('user-id');
+    authHeader = request.headers.get('authorization');
+    userId = request.headers.get('user-id');
 
     if (!authHeader || !userId) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });

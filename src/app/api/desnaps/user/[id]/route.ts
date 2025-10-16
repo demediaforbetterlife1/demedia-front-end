@@ -5,15 +5,18 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   let userId: string = '';
+  let authHeader: string | null = null;
+  let viewerId: string | null = null;
+  
   try {
     const resolvedParams = await params;
     userId = resolvedParams.id;
-    const viewerId = request.nextUrl.searchParams.get('viewerId');
+    viewerId = request.nextUrl.searchParams.get('viewerId');
 
     console.log('DeSnaps API called for user:', userId, 'viewer:', viewerId);
 
     // Get the authorization token
-    const authHeader = request.headers.get('authorization');
+    authHeader = request.headers.get('authorization');
     if (!authHeader) {
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
     }
