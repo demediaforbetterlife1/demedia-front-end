@@ -64,7 +64,18 @@ export async function POST(request: NextRequest) {
       message: 'Cover photo uploaded successfully (development mode)'
     });
   } catch (error) {
-    console.error('Error uploading cover photo:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    const errorName = error instanceof Error ? error.name : 'Unknown';
+    
+    console.error('❌ Cover upload error:', { 
+      message: errorMessage, 
+      stack: errorStack, 
+      errorType: errorName 
+    });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: errorMessage 
+    }, { status: 500 });
   }
 }

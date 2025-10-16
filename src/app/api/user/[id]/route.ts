@@ -70,9 +70,12 @@ export async function PUT(
     console.log('Profile update fallback (development):', updatedProfile);
     return NextResponse.json(updatedProfile);
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
     console.error('❌ User profile update error:', { 
-      message: error.message, 
-      stack: error.stack, 
+      message: errorMessage, 
+      stack: errorStack, 
       userId,
       body,
       authHeader: !!authHeader 
@@ -80,7 +83,7 @@ export async function PUT(
     return NextResponse.json({ 
       error: 'Internal server error',
       message: 'Failed to update profile',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: errorMessage
     }, { status: 500 });
   }
 }

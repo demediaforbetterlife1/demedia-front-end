@@ -64,16 +64,20 @@ export async function POST(request: NextRequest) {
       message: 'Profile photo uploaded successfully (development mode)'
     });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    const errorName = error instanceof Error ? error.name : 'Unknown';
+    
     console.error('❌ Profile upload error:', { 
-      message: error.message, 
-      stack: error.stack, 
+      message: errorMessage, 
+      stack: errorStack, 
       userId,
       authHeader: !!authHeader,
-      errorType: error.name 
+      errorType: errorName 
     });
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error.message 
+      details: errorMessage 
     }, { status: 500 });
   }
 }

@@ -47,16 +47,19 @@ export async function GET(
     return NextResponse.json([]);
 
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
     console.error('❌ Messages API error:', { 
-      message: error.message, 
-      stack: error.stack, 
+      message: errorMessage, 
+      stack: errorStack, 
       chatId,
       authHeader: !!authHeader,
       userId 
     });
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error.message 
+      details: errorMessage 
     }, { status: 500 });
   }
 }
