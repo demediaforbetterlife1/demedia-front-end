@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Save, Image, Video, Hash, AtSign, MapPin, Calendar, Eye, EyeOff } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { getModalThemeClasses } from "@/utils/enhancedThemeUtils";
 import { notificationService } from "@/services/notificationService";
 
 interface EditPostModalProps {
@@ -50,73 +51,7 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }: 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { theme } = useTheme();
-
-    const getThemeClasses = () => {
-        switch (theme) {
-            case 'light':
-                return {
-                    bg: 'bg-white',
-                    text: 'text-gray-900',
-                    textSecondary: 'text-gray-600',
-                    border: 'border-gray-200',
-                    hover: 'hover:bg-gray-50',
-                    accent: 'text-blue-500',
-                    accentBg: 'bg-blue-50'
-                };
-            case 'super-light':
-                return {
-                    bg: 'bg-gray-50',
-                    text: 'text-gray-800',
-                    textSecondary: 'text-gray-500',
-                    border: 'border-gray-100',
-                    hover: 'hover:bg-gray-100',
-                    accent: 'text-blue-500',
-                    accentBg: 'bg-blue-50'
-                };
-            case 'dark':
-                return {
-                    bg: 'bg-gray-800',
-                    text: 'text-white',
-                    textSecondary: 'text-gray-300',
-                    border: 'border-gray-700',
-                    hover: 'hover:bg-gray-700',
-                    accent: 'text-blue-400',
-                    accentBg: 'bg-blue-900/20'
-                };
-            case 'super-dark':
-                return {
-                    bg: 'bg-gray-900',
-                    text: 'text-gray-100',
-                    textSecondary: 'text-gray-400',
-                    border: 'border-gray-800',
-                    hover: 'hover:bg-gray-800',
-                    accent: 'text-blue-400',
-                    accentBg: 'bg-blue-900/30'
-                };
-            case 'gold':
-                return {
-                    bg: 'bg-gradient-to-br from-yellow-900 to-yellow-800',
-                    text: 'text-yellow-100',
-                    textSecondary: 'text-yellow-200',
-                    border: 'border-yellow-600/50',
-                    hover: 'hover:bg-yellow-800/80 gold-shimmer',
-                    accent: 'text-blue-300',
-                    accentBg: 'bg-blue-900/40'
-                };
-            default:
-                return {
-                    bg: 'bg-gray-800',
-                    text: 'text-white',
-                    textSecondary: 'text-gray-300',
-                    border: 'border-gray-700',
-                    hover: 'hover:bg-gray-700',
-                    accent: 'text-blue-400',
-                    accentBg: 'bg-blue-900/20'
-                };
-        }
-    };
-
-    const themeClasses = getThemeClasses();
+    const themeClasses = getModalThemeClasses(theme);
 
     // Initialize form data when post changes
     useEffect(() => {
@@ -193,11 +128,21 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }: 
 
             if (response.ok) {
                 const updatedPost = await response.json();
-                console.log('Update response:', updatedPost);
+                console.log('✅ Update response:', updatedPost);
                 
-                onPostUpdated(updatedPost);
+                // Ensure the updated post has the correct structure
+                const formattedPost = {
+                    ...updatedPost,
+                    id: updatedPost.id || post.id,
+                    title: updatedPost.title || title,
+                    content: updatedPost.content || content,
+                    updatedAt: updatedPost.updatedAt || new Date().toISOString()
+                };
+                
+                console.log('✅ Formatted post for update:', formattedPost);
+                onPostUpdated(formattedPost);
                 onClose();
-                console.log('Post updated successfully');
+                console.log('✅ Post updated successfully');
                 notificationService.showNotification({
                     title: 'Post Updated',
                     body: 'Your post has been successfully updated',

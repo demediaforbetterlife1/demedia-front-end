@@ -412,28 +412,22 @@ export default function Posts() {
                                 y: -5,
                                 transition: { duration: 0.3 }
                             }}
-                            className={`${themeClasses.postCard} ${themeClasses.postCardHover} rounded-3xl ${themeClasses.shadow} border ${themeClasses.border} overflow-hidden relative group backdrop-blur-sm transition-all duration-300`}
+                            className={`${themeClasses.postCard} ${themeClasses.postCardHover} rounded-2xl ${themeClasses.shadow} border ${themeClasses.border} overflow-hidden relative group transition-all duration-300`}
                         >
                         {/* Post Header */}
-                        <div className={`p-6 border-b ${themeClasses.border} bg-gradient-to-r from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50 relative overflow-hidden`}>
-                            {/* Animated background gradient */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 via-purple-400/10 to-pink-400/10 dark:from-blue-500/5 dark:via-purple-500/5 dark:to-pink-500/5 animate-pulse"></div>
+                        <div className={`p-6 border-b ${themeClasses.border} ${themeClasses.bgSecondary} relative`}>
                             
                             <div className="flex items-center justify-between relative z-10">
                                 <div className="flex items-center space-x-4">
                                     <motion.button
-                                        whileHover={{ scale: 1.1, rotate: 5 }}
+                                        whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
                                         onClick={() => handleProfileClick(post.author.id)}
-                                        className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold hover:shadow-2xl transition-all duration-300 cursor-pointer shadow-lg relative overflow-hidden group"
+                                        className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold hover:shadow-lg transition-all duration-300 cursor-pointer"
                                     >
-                                        {/* Animated background */}
-                                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                        <span className="relative z-10 text-lg font-extrabold">
+                                        <span className="text-lg font-semibold">
                                             {post.author.name.charAt(0).toUpperCase()}
                                         </span>
-                                        {/* Shine effect */}
-                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                                     </motion.button>
                                     <div className="flex-1">
                                         <div className="flex items-center space-x-2">
@@ -502,11 +496,8 @@ export default function Posts() {
                         </div>
 
                         {/* Post Content */}
-                        <div className="p-6 relative">
-                            {/* Content background gradient */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-gray-50/30 via-white/20 to-blue-50/20 dark:from-gray-800/30 dark:via-gray-700/20 dark:to-blue-900/20"></div>
-                            
-                            <div className="relative z-10">
+                        <div className="p-6">
+                            <div>
                                 {post.title && (
                                     <motion.h2 
                                         initial={{ opacity: 0, y: 10 }}
@@ -573,11 +564,8 @@ export default function Posts() {
                         </div>
 
                         {/* Post Actions */}
-                        <div className={`px-6 py-6 border-t ${themeClasses.border} bg-gradient-to-r from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50 relative overflow-hidden`}>
-                            {/* Animated background */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-400/5 via-purple-400/5 to-pink-400/5 dark:from-blue-500/3 dark:via-purple-500/3 dark:to-pink-500/3"></div>
-                            
-                            <div className="flex items-center justify-between relative z-10">
+                        <div className={`px-6 py-4 border-t ${themeClasses.border} ${themeClasses.bgSecondary}`}>
+                            <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-6 sm:space-x-8">
                                     <motion.button
                                         whileHover={{ scale: 1.1, y: -2 }}

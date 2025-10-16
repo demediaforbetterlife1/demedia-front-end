@@ -35,7 +35,7 @@ export async function PUT(
         },
         body: JSON.stringify(body),
         // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(10000)
       });
 
       console.log('🔄 Backend response status:', backendResponse.status);

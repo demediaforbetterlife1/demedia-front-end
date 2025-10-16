@@ -248,7 +248,7 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
 
             // Create JSON payload with image URLs
             const postData = {
-                title: title || content.substring(0, 50) + (content.length > 50 ? "..." : "") || "New Post",
+                title: title || null,
                 content: content,
                 authorId: parseInt(userId),
                 privacySettings: privacySettings,
