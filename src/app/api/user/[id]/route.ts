@@ -6,7 +6,18 @@ export async function PUT(
 ) {
   try {
     const { id: userId } = await params;
+    
+    // Validate userId
+    if (!userId || isNaN(Number(userId))) {
+      return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
+    }
+    
     const body = await request.json();
+    
+    // Validate request body
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
     
     console.log('User profile update request:', { userId, body });
 
@@ -59,7 +70,13 @@ export async function PUT(
     console.log('Profile update fallback (development):', updatedProfile);
     return NextResponse.json(updatedProfile);
   } catch (error) {
-    console.error('Error updating user profile:', error);
+    console.error('❌ User profile update error:', { 
+      message: error.message, 
+      stack: error.stack, 
+      userId,
+      body,
+      authHeader: !!authHeader 
+    });
     return NextResponse.json({ 
       error: 'Internal server error',
       message: 'Failed to update profile',

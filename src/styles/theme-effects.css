@@ -1,0 +1,131 @@
+/* Theme-specific effects and animations */
+
+/* Gold theme shimmer effect */
+.gold-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.gold-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  transform: skewX(-20deg);
+  animation: shimmer 1.8s infinite;
+}
+
+@keyframes shimmer {
+  to {
+    left: 120%;
+  }
+}
+
+/* Gold glow effect */
+.gold-glow {
+  background: linear-gradient(135deg, rgba(255,215,0,0.06), rgba(255,215,0,0.01));
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255,215,0,0.14);
+  backdrop-filter: blur(6px);
+}
+
+/* Super dark theme effects */
+.super-dark-glow {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Super light theme effects */
+.super-light-glow {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), inset 0 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Theme transition animations */
+.theme-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Post card hover effects */
+.post-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.post-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Gold theme specific hover */
+.gold-theme .post-card-hover:hover {
+  box-shadow: 0 10px 25px rgba(255, 215, 0, 0.2);
+}
+
+/* Super dark theme specific hover */
+.super-dark-theme .post-card-hover:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+/* Button hover effects */
+.button-hover {
+  transition: all 0.2s ease-in-out;
+}
+
+.button-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Gold button specific */
+.gold-button {
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  color: #000;
+  font-weight: 600;
+}
+
+.gold-button:hover {
+  background: linear-gradient(135deg, #ffed4e, #ffd700);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+/* Profile picture effects */
+.profile-picture {
+  transition: all 0.3s ease-in-out;
+}
+
+.profile-picture:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Gold theme profile picture */
+.gold-theme .profile-picture:hover {
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+/* Loading animations */
+.loading-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Dark theme loading */
+.dark-theme .loading-shimmer {
+  background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+}
+
+/* Gold theme loading */
+.gold-theme .loading-shimmer {
+  background: linear-gradient(90deg, rgba(255,215,0,0.1) 25%, rgba(255,215,0,0.2) 50%, rgba(255,215,0,0.1) 75%);
+}

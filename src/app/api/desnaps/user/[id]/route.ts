@@ -50,7 +50,16 @@ export async function GET(
     console.log('Backend not available for DeSnaps, returning empty array');
     return NextResponse.json([]);
   } catch (error) {
-    console.error('Error fetching DeSnaps:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('❌ DeSnaps API error:', { 
+      message: error.message, 
+      stack: error.stack, 
+      userId, 
+      viewerId,
+      authHeader: !!authHeader 
+    });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message 
+    }, { status: 500 });
   }
 }

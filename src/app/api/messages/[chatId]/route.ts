@@ -47,7 +47,16 @@ export async function GET(
     return NextResponse.json([]);
 
   } catch (error) {
-    console.error('Error fetching messages:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('❌ Messages API error:', { 
+      message: error.message, 
+      stack: error.stack, 
+      chatId,
+      authHeader: !!authHeader,
+      userId 
+    });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message 
+    }, { status: 500 });
   }
 }

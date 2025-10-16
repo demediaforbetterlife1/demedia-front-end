@@ -6,7 +6,18 @@ export async function PUT(
 ) {
   try {
     const { id: postId } = await params;
+    
+    // Validate postId
+    if (!postId || isNaN(Number(postId))) {
+      return NextResponse.json({ error: 'Invalid post ID' }, { status: 400 });
+    }
+    
     const body = await request.json();
+    
+    // Validate request body
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
     
     // Get the authorization token and user ID
     const authHeader = request.headers.get('authorization');

@@ -62,8 +62,17 @@ export async function GET(
     return NextResponse.json(mockChat);
 
   } catch (error) {
-    console.error('Error fetching chat:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('❌ Chat API error:', { 
+      message: error.message, 
+      stack: error.stack, 
+      chatId,
+      authHeader: !!authHeader,
+      userId 
+    });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message 
+    }, { status: 500 });
   }
 }
 
@@ -110,7 +119,16 @@ export async function DELETE(
     return NextResponse.json({ success: true, message: 'Chat deleted successfully' });
 
   } catch (error) {
-    console.error('Error deleting chat:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('❌ Chat DELETE API error:', { 
+      message: error.message, 
+      stack: error.stack, 
+      chatId,
+      authHeader: !!authHeader,
+      userId 
+    });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message 
+    }, { status: 500 });
   }
 }

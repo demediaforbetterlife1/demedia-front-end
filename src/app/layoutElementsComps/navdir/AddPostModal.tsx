@@ -256,7 +256,8 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
                 mentions: mentions,
                 location: location || '',
                 scheduledDate: isScheduled && scheduleDate ? new Date(scheduleDate).toISOString() : null,
-                imageUrls: imageUrls
+                imageUrls: imageUrls,
+                imageUrl: imageUrls && imageUrls.length > 0 ? imageUrls[0] : null
             };
 
             const res = await apiFetch(`/api/posts`, {

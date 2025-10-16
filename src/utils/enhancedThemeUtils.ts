@@ -404,14 +404,14 @@ export const getPostThemeClasses = (theme: Theme) => {
     ...baseClasses,
     // Modern, consistent post styling
     postCard: theme === 'super-dark' 
-      ? 'bg-black/20 backdrop-blur-sm border border-gray-800/30' 
+      ? 'bg-super-dark/40 backdrop-blur-md border border-gray-800/40 shadow-2xl shadow-black/50' 
       : theme === 'gold' 
-        ? 'bg-gray-600/20 backdrop-blur-sm border border-yellow-700/30' 
+        ? 'bg-gradient-to-br from-yellow-900/20 via-amber-900/10 to-yellow-800/20 backdrop-blur-md border border-yellow-700/40 shadow-2xl shadow-yellow-500/20' 
         : theme === 'dark'
-          ? 'bg-gray-800/90 backdrop-blur-sm border border-gray-700/50'
+          ? 'bg-gray-800/95 backdrop-blur-sm border border-gray-700/60 shadow-xl'
           : theme === 'light'
-            ? 'bg-white/95 backdrop-blur-sm border border-gray-200/50'
-            : 'bg-white/95 backdrop-blur-sm border border-gray-200/50',
+            ? 'bg-white/98 backdrop-blur-sm border border-gray-200/60 shadow-lg'
+            : 'bg-white/98 backdrop-blur-sm border border-gray-200/60 shadow-lg',
     
     postCardHover: theme === 'super-dark' 
       ? 'hover:bg-black/30 hover:border-gray-700/50' 

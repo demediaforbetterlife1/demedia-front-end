@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
         },
         body: formData,
         // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(10000) // Longer timeout for file uploads
+        signal: AbortSignal.timeout(30000) // 30 second timeout for file uploads
       });
 
       if (backendResponse.ok) {
@@ -64,7 +64,16 @@ export async function POST(request: NextRequest) {
       message: 'Profile photo uploaded successfully (development mode)'
     });
   } catch (error) {
-    console.error('Error uploading profile photo:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('❌ Profile upload error:', { 
+      message: error.message, 
+      stack: error.stack, 
+      userId,
+      authHeader: !!authHeader,
+      errorType: error.name 
+    });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message 
+    }, { status: 500 });
   }
 }

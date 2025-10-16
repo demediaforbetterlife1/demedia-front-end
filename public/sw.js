@@ -5,19 +5,41 @@ const urlsToCache = [
   '/home',
   '/sign-in',
   '/sign-up',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
+  '/favicon.ico',
 ];
 
 // Install event
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    console.log('Opened cache');
+    
+    // Filter assets before adding and wrap in try/catch
+    const okUrls = [];
+    for (const url of urlsToCache) {
+      try {
+        const response = await fetch(url, { cache: 'no-store' });
+        if (response.ok) {
+          okUrls.push(url);
+        } else {
+          console.warn('sw: asset fetch failed (not ok)', url, response.status);
+        }
+      } catch (e) {
+        console.warn('sw: asset fetch failed', url, e);
+      }
+    }
+    
+    try {
+      if (okUrls.length > 0) {
+        await cache.addAll(okUrls);
+        console.log('sw: cached', okUrls.length, 'assets');
+      } else {
+        console.warn('sw: no assets to cache');
+      }
+    } catch (e) {
+      console.warn('sw: cache.addAll partial failure', e);
+    }
+  })());
 });
 
 // Fetch event

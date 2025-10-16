@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
         },
         body: formData,
         // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(10000) // Longer timeout for file uploads
+        signal: AbortSignal.timeout(30000) // 30 second timeout for file uploads
       });
 
       if (backendResponse.ok) {

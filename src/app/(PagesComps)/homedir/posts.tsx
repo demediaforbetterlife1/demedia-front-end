@@ -412,7 +412,9 @@ export default function Posts() {
                                 y: -5,
                                 transition: { duration: 0.3 }
                             }}
-                            className={`${themeClasses.postCard} ${themeClasses.postCardHover} rounded-xl shadow-lg overflow-hidden relative group transition-all duration-300`}
+                            className={`${themeClasses.postCard} ${themeClasses.postCardHover} rounded-2xl overflow-hidden relative group post-card-hover theme-transition ${
+                                theme === 'gold' ? 'gold-shimmer' : ''
+                            }`}
                         >
                         {/* Post Header */}
                         <div className={`p-6 ${themeClasses.postHeader} relative`}>
@@ -423,7 +425,9 @@ export default function Posts() {
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
                                         onClick={() => handleProfileClick(post.author.id)}
-                                        className={`${themeClasses.postProfile} hover:shadow-xl transition-all duration-300 cursor-pointer`}
+                                        className={`${themeClasses.postProfile} profile-picture cursor-pointer ${
+                                            theme === 'gold' ? 'gold-glow' : ''
+                                        }`}
                                     >
                                         <span className="text-lg font-semibold">
                                             {post.author.name.charAt(0).toUpperCase()}
