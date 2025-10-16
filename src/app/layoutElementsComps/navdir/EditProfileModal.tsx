@@ -3,7 +3,9 @@ import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Camera, User, Mail, Calendar, MapPin, Link, Phone, Globe, Lock, Users, UserCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useI18n } from "@/contexts/I18nContext";
+import { getModalThemeClasses } from "@/utils/enhancedThemeUtils";
 import { apiFetch } from "@/lib/api";
 import { contentModerationService } from "@/services/contentModeration";
 
@@ -34,7 +36,9 @@ const privacyOptions = [
 
 export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: EditProfileModalProps) {
     const { user } = useAuth();
+    const { theme } = useTheme();
     const { t } = useI18n();
+    const themeClasses = getModalThemeClasses(theme);
     const [profileData, setProfileData] = useState<ProfileData>({
         name: user?.name || "",
         username: user?.username || "",
@@ -178,22 +182,22 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                className={`fixed inset-0 ${themeClasses.modalOverlay} flex items-center justify-center z-50 p-4`}
                 onClick={onClose}
             >
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.9, opacity: 0 }}
-                    className="theme-bg-secondary theme-text-primary rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden theme-shadow border theme-border"
+                    className={`${themeClasses.modal} ${themeClasses.text} rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden ${themeClasses.shadow} border ${themeClasses.border}`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b theme-border">
-                        <h2 className="text-2xl font-bold theme-text-primary">Edit Profile</h2>
+                    <div className={`flex items-center justify-between p-6 border-b ${themeClasses.border}`}>
+                        <h2 className={`text-2xl font-bold ${themeClasses.text}`}>Edit Profile</h2>
                         <button
                             onClick={onClose}
-                            className="text-2xl hover:opacity-70 transition-opacity theme-text-muted hover:theme-text-primary"
+                            className={`text-2xl hover:opacity-70 transition-opacity ${themeClasses.modalClose}`}
                         >
                             ×
                         </button>

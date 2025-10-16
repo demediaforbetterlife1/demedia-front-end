@@ -8,7 +8,9 @@ import {
     Mic, Type, Smile, Hash, AtSign, Link, Brush
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useI18n } from "@/contexts/I18nContext";
+import { getModalThemeClasses } from "@/utils/enhancedThemeUtils";
 
 interface CreateStoryModalProps {
     isOpen: boolean;
@@ -96,7 +98,9 @@ const effectOptions = [
 
 export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: CreateStoryModalProps) {
     const { user } = useAuth();
+    const { theme } = useTheme();
     const { t } = useI18n();
+    const themeClasses = getModalThemeClasses(theme);
     const [content, setContent] = useState("");
     const [showSettings, setShowSettings] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -284,18 +288,18 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-start justify-center z-50 p-4 pt-20"
+                className={`fixed inset-0 ${themeClasses.modalOverlay} flex items-start justify-center z-50 p-4 pt-20`}
                 onClick={onClose}
             >
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-3xl p-0 max-w-xl w-full max-h-[85vh] overflow-hidden border border-gray-700 shadow-2xl"
+                    className={`${themeClasses.modal} rounded-3xl p-0 max-w-xl w-full max-h-[85vh] overflow-hidden border ${themeClasses.border} ${themeClasses.shadow}`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                    <div className={`flex items-center justify-between p-6 border-b ${themeClasses.border}`}>
                         <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full flex items-center justify-center">
                                 <Sparkles className="w-5 h-5 text-white" />

@@ -79,6 +79,7 @@ import {
 import { getUserProfile, apiFetch } from "../../../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { getEnhancedThemeClasses } from "@/utils/enhancedThemeUtils";
 import { notificationService } from "@/services/notificationService";
 import { useSearchParams, useRouter } from "next/navigation";
 import EditProfileModal from "@/app/layoutElementsComps/navdir/EditProfileModal";
@@ -213,84 +214,7 @@ export default function ProfilePage() {
         }
     }
 
-    const getThemeClasses = () => {
-        switch (theme) {
-            case 'light':
-                return {
-                    bg: 'bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30',
-                    card: 'bg-white/90 backdrop-blur-sm shadow-lg border border-white/20',
-                    text: 'text-gray-900',
-                    textSecondary: 'text-gray-600',
-                    border: 'border-gray-200/50',
-                    hover: 'hover:bg-white/80 hover:shadow-xl transition-all duration-300',
-                    gradient: 'from-blue-500/10 via-purple-500/10 to-pink-500/10',
-                    accent: 'text-blue-600',
-                    accentBg: 'bg-gradient-to-r from-blue-50 to-purple-50',
-                    coverGradient: 'from-blue-500/20 via-purple-500/20 to-pink-500/20',
-                    button: 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl',
-                    buttonSecondary: 'bg-white/80 hover:bg-white text-gray-700 border border-gray-200/50 shadow-md hover:shadow-lg'
-                };
-            case 'super-light':
-                return {
-                    bg: 'bg-gradient-to-br from-white via-blue-50/20 to-purple-50/20',
-                    card: 'bg-white/95 backdrop-blur-sm shadow-xl border border-white/30',
-                    text: 'text-gray-800',
-                    textSecondary: 'text-gray-500',
-                    border: 'border-gray-100/50',
-                    hover: 'hover:bg-white/90 hover:shadow-2xl transition-all duration-300',
-                    gradient: 'from-blue-400/10 via-purple-400/10 to-pink-400/10',
-                    accent: 'text-blue-500',
-                    accentBg: 'bg-gradient-to-r from-blue-50/80 to-purple-50/80',
-                    coverGradient: 'from-blue-400/15 via-purple-400/15 to-pink-400/15',
-                    button: 'bg-gradient-to-r from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white shadow-lg hover:shadow-xl',
-                    buttonSecondary: 'bg-white/90 hover:bg-white text-gray-600 border border-gray-100/50 shadow-lg hover:shadow-xl'
-                };
-            case 'dark':
-                return {
-                    bg: 'bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20',
-                    card: 'bg-gray-800/90 backdrop-blur-sm shadow-2xl border border-gray-700/50',
-                    text: 'text-white',
-                    textSecondary: 'text-gray-300',
-                    border: 'border-gray-700/50',
-                    hover: 'hover:bg-gray-700/80 hover:shadow-2xl transition-all duration-300',
-                    gradient: 'from-cyan-500/20 via-purple-500/20 to-pink-500/20',
-                    accent: 'text-cyan-400',
-                    accentBg: 'bg-gradient-to-r from-cyan-900/30 to-purple-900/30',
-                    coverGradient: 'from-cyan-500/25 via-purple-500/25 to-pink-500/25',
-                    button: 'bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white shadow-xl hover:shadow-2xl',
-                    buttonSecondary: 'bg-gray-700/80 hover:bg-gray-600 text-gray-200 border border-gray-600/50 shadow-lg hover:shadow-xl'
-                };
-            case 'super-dark':
-                return {
-                    bg: 'bg-gradient-to-br from-black via-gray-900/50 to-blue-900/20',
-                    card: 'bg-gray-900/95 backdrop-blur-sm shadow-2xl border border-gray-800/50',
-                    text: 'text-gray-100',
-                    textSecondary: 'text-gray-400',
-                    border: 'border-gray-800/50',
-                    hover: 'hover:bg-gray-800/90 hover:shadow-2xl transition-all duration-300',
-                    gradient: 'from-cyan-400/20 via-purple-400/20 to-pink-400/20',
-                    accent: 'text-cyan-300',
-                    accentBg: 'bg-gradient-to-r from-cyan-900/40 to-purple-900/40',
-                    coverGradient: 'from-cyan-400/30 via-purple-400/30 to-pink-400/30',
-                    button: 'bg-gradient-to-r from-cyan-400 to-purple-500 hover:from-cyan-300 hover:to-purple-400 text-black shadow-xl hover:shadow-2xl',
-                    buttonSecondary: 'bg-gray-800/90 hover:bg-gray-700 text-gray-300 border border-gray-700/50 shadow-lg hover:shadow-xl'
-                };
-            default:
-                return {
-                    bg: 'bg-gray-900',
-                    card: 'bg-gray-800',
-                    text: 'text-white',
-                    textSecondary: 'text-gray-300',
-                    border: 'border-gray-700',
-                    hover: 'hover:bg-gray-700',
-                    gradient: 'from-cyan-500/20 to-purple-500/20',
-                    accent: 'text-cyan-400',
-                    accentBg: 'bg-cyan-900/20'
-                };
-        }
-    };
-
-    const themeClasses = getThemeClasses();
+    const themeClasses = getEnhancedThemeClasses(theme);
     
     const handleFollowersClick = () => {
         setListType('followers');

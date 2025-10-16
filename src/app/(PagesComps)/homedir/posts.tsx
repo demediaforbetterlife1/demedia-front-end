@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { useNotifications } from "@/components/NotificationProvider";
+import { getPostThemeClasses } from "@/utils/enhancedThemeUtils";
 import CommentModal from "@/components/CommentModal";
 import ReportModal from "@/components/ReportModal";
 import EditPostModal from "@/components/EditPostModal";
@@ -83,89 +84,7 @@ export default function Posts() {
     const { t } = useI18n();
     const { showSuccess, showError } = useNotifications();
 
-    const getThemeClasses = () => {
-        switch (theme) {
-            case 'light':
-                return {
-                    bg: 'bg-gradient-to-br from-gray-50 to-gray-100',
-                    card: 'bg-white/90 backdrop-blur-sm',
-                    text: 'text-gray-900',
-                    textSecondary: 'text-gray-600',
-                    border: 'border-gray-200',
-                    hover: 'hover:bg-gray-50',
-                    input: 'bg-white/80 border-gray-300 backdrop-blur-sm',
-                    button: 'bg-blue-500 hover:bg-blue-600',
-                    buttonSecondary: 'bg-gray-200 hover:bg-gray-300 text-gray-700',
-                    shadow: 'shadow-lg'
-                };
-            case 'super-light':
-                return {
-                    bg: 'bg-gradient-to-br from-white to-gray-50',
-                    card: 'bg-white/95 backdrop-blur-sm',
-                    text: 'text-gray-800',
-                    textSecondary: 'text-gray-500',
-                    border: 'border-gray-200',
-                    hover: 'hover:bg-gray-50',
-                    input: 'bg-white/90 border-gray-200 backdrop-blur-sm',
-                    button: 'bg-blue-600 hover:bg-blue-700',
-                    buttonSecondary: 'bg-gray-100 hover:bg-gray-200 text-gray-600',
-                    shadow: 'shadow-xl'
-                };
-            case 'dark':
-                return {
-                    bg: 'bg-gradient-to-br from-gray-900 to-gray-800',
-                    card: 'bg-gray-800/90 backdrop-blur-sm',
-                    text: 'text-white',
-                    textSecondary: 'text-gray-300',
-                    border: 'border-gray-700',
-                    hover: 'hover:bg-gray-700/50',
-                    input: 'bg-gray-700/80 border-gray-600 backdrop-blur-sm',
-                    button: 'bg-blue-500 hover:bg-blue-600',
-                    buttonSecondary: 'bg-gray-600 hover:bg-gray-500 text-gray-200',
-                    shadow: 'shadow-2xl'
-                };
-            case 'super-dark':
-                return {
-                    bg: 'bg-gradient-to-br from-black to-gray-900',
-                    card: 'bg-black/60 backdrop-blur-sm',
-                    text: 'text-gray-100',
-                    textSecondary: 'text-gray-400',
-                    border: 'border-gray-800/50',
-                    hover: 'hover:bg-gray-800/30',
-                    input: 'bg-black/40 border-gray-700/50 backdrop-blur-sm',
-                    button: 'bg-blue-600 hover:bg-blue-700',
-                    buttonSecondary: 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300',
-                    shadow: 'shadow-2xl shadow-black/50'
-                };
-            case 'gold':
-                return {
-                    bg: 'bg-gradient-to-br from-yellow-900 via-yellow-800 to-amber-900',
-                    card: 'bg-gray-600/30 backdrop-blur-sm',
-                    text: 'text-yellow-100',
-                    textSecondary: 'text-yellow-200',
-                    border: 'border-yellow-600/30',
-                    hover: 'hover:bg-yellow-800/20',
-                    input: 'bg-yellow-800/30 border-yellow-600/30 backdrop-blur-sm',
-                    button: 'bg-yellow-600 hover:bg-yellow-700 text-yellow-100',
-                    buttonSecondary: 'bg-yellow-700/30 hover:bg-yellow-600/30 text-yellow-200',
-                    shadow: 'shadow-2xl shadow-yellow-500/20'
-                };
-            default:
-                return {
-                    bg: 'bg-gray-900',
-                    card: 'bg-gray-800',
-                    text: 'text-white',
-                    textSecondary: 'text-gray-300',
-                    border: 'border-gray-700',
-                    hover: 'hover:bg-gray-700',
-                    input: 'bg-gray-700 border-gray-600',
-                    button: 'bg-blue-500 hover:bg-blue-600',
-                    buttonSecondary: 'bg-gray-600 hover:bg-gray-500 text-gray-200'
-                };
-        }
-    };
-
-    const themeClasses = getThemeClasses();
+    const themeClasses = getPostThemeClasses(theme);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -493,7 +412,7 @@ export default function Posts() {
                                 y: -5,
                                 transition: { duration: 0.3 }
                             }}
-                            className={`${themeClasses.card} rounded-3xl shadow-2xl border ${themeClasses.border} overflow-hidden relative group backdrop-blur-sm bg-gradient-to-br from-white/90 to-gray-50/90 dark:from-gray-800/90 dark:to-gray-900/90`}
+                            className={`${themeClasses.postCard} ${themeClasses.postCardHover} rounded-3xl ${themeClasses.shadow} border ${themeClasses.border} overflow-hidden relative group backdrop-blur-sm transition-all duration-300`}
                         >
                         {/* Post Header */}
                         <div className={`p-6 border-b ${themeClasses.border} bg-gradient-to-r from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50 relative overflow-hidden`}>
@@ -593,7 +512,7 @@ export default function Posts() {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.2 }}
-                                        className={`text-xl font-bold ${themeClasses.text} mb-4 bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent`}
+                                        className={`text-xl font-bold ${themeClasses.postContent} mb-4`}
                                     >
                                         {post.title}
                                     </motion.h2>
@@ -602,7 +521,7 @@ export default function Posts() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.3 }}
-                                    className={`${themeClasses.text} whitespace-pre-wrap leading-relaxed text-base`}
+                                    className={`${themeClasses.postContent} whitespace-pre-wrap leading-relaxed text-base`}
                                 >
                                 {shouldTruncateText(post.content) && !expandedPosts.has(post.id) ? (
                                     <div>
@@ -611,7 +530,7 @@ export default function Posts() {
                                             whileHover={{ scale: 1.05, y: -2 }}
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => togglePostExpansion(post.id)}
-                                            className="mt-4 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-semibold rounded-full hover:from-blue-600 hover:to-purple-700 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl relative overflow-hidden group"
+                                            className={`mt-4 px-4 py-2 ${themeClasses.postButton} text-sm font-semibold rounded-full transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl relative overflow-hidden group`}
                                         >
                                             <span className="relative z-10">VIEW DETAILS</span>
                                             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -625,7 +544,7 @@ export default function Posts() {
                                                 whileHover={{ scale: 1.05, y: -2 }}
                                                 whileTap={{ scale: 0.95 }}
                                                 onClick={() => togglePostExpansion(post.id)}
-                                                className="mt-4 px-4 py-2 bg-gradient-to-r from-gray-500 to-gray-600 text-white text-sm font-semibold rounded-full hover:from-gray-600 hover:to-gray-700 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl relative overflow-hidden group"
+                                                className={`mt-4 px-4 py-2 ${themeClasses.postButtonSecondary} text-sm font-semibold rounded-full transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl relative overflow-hidden group`}
                                             >
                                                 <span className="relative z-10">SHOW LESS</span>
                                                 <div className="absolute inset-0 bg-gradient-to-r from-gray-600 to-gray-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -667,7 +586,7 @@ export default function Posts() {
                                         className={`flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 relative overflow-hidden group ${
                                             post.liked
                                                 ? 'text-white bg-gradient-to-r from-red-500 to-pink-500 shadow-lg'
-                                                : 'text-gray-600 dark:text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 hover:shadow-lg'
+                                                : `${themeClasses.postActions} hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 hover:shadow-lg`
                                         }`}
                                     >
                                         <Heart size={20} fill={post.liked ? 'currentColor' : 'none'} className="relative z-10" />

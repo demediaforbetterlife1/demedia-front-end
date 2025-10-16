@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "@/contexts/ThemeContext";
+import { getModalThemeClasses } from "@/utils/enhancedThemeUtils";
 import { contentModerationService } from "@/services/contentModeration";
 import { apiFetch } from "@/lib/api";
 import { 
@@ -39,6 +41,8 @@ interface PrivacySettings {
 }
 
 export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModalProps) {
+    const { theme } = useTheme();
+    const themeClasses = getModalThemeClasses(theme);
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [images, setImages] = useState<File[]>([]);
