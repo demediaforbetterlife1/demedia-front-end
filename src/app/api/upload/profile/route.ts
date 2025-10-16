@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
+  let authHeader: string | null = null;
+  let userId: string | null = null;
+  
   try {
     const formData = await request.formData();
     
     // Get the authorization token and user ID
-    const authHeader = request.headers.get('authorization');
-    const userId = request.headers.get('user-id');
+    authHeader = request.headers.get('authorization');
+    userId = request.headers.get('user-id');
     
     if (!authHeader) {
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
