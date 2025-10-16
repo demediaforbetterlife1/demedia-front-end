@@ -76,7 +76,7 @@ import {
     Badge,
     Crown as CrownIcon
 } from "lucide-react";
-import { getUserProfile } from "../../../lib/api";
+import { getUserProfile, apiFetch } from "../../../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { notificationService } from "@/services/notificationService";
@@ -98,7 +98,6 @@ import FollowersList from "@/components/FollowersList";
 import ProfileAnalytics from "@/components/ProfileAnalytics";
 import ProfileCustomization from "@/components/ProfileCustomization";
 import PremiumUserIndicator from "@/components/PremiumUserIndicator";
-import { apiFetch } from "@/lib/api";
 import { getThemeClasses, getButtonClasses, getCardClasses } from "@/utils/themeUtils";
 
 interface Story {
@@ -638,16 +637,16 @@ export default function ProfilePage() {
             if (res.ok) {
                 const chatData = await res.json();
                 // Navigate to the chat
-                window.location.href = `/messeging/chat/${chatData.id}`;
+                window.location.href = `/messaging/chat/${chatData.id}`;
             } else {
                 console.error('Failed to create/find chat');
                 // Fallback: try to navigate to messaging page
-                window.location.href = '/messeging';
+                window.location.href = '/messaging';
             }
         } catch (err) {
             console.error('Error starting chat:', err);
             // Fallback: try to navigate to messaging page
-            window.location.href = '/messeging';
+            window.location.href = '/messaging';
         }
     }
 

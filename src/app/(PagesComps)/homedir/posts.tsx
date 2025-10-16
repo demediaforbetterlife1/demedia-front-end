@@ -77,6 +77,7 @@ export default function Posts() {
     const [comments, setComments] = useState<{[key: number]: any[]}>({});
     const [newComment, setNewComment] = useState<{[key: number]: string}>({});
     const [showComments, setShowComments] = useState<{[key: number]: boolean}>({});
+    const [expandedPosts, setExpandedPosts] = useState<Set<number>>(new Set());
     const { user } = useAuth();
     const { theme } = useTheme();
     const { t } = useI18n();
@@ -257,18 +258,27 @@ export default function Posts() {
         try {
             const response = await apiFetch(`/api/posts/${postId}/like`, {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
             });
 
             if (response.ok) {
                 const data = await response.json();
+                console.log('Like response:', data);
                 setPosts(prev => prev.map(p => 
                     p.id === postId 
                         ? { ...p, liked: data.liked, likes: data.likes }
                         : p
                 ));
+                showSuccess('Like Updated', data.liked ? 'Post liked!' : 'Post unliked!');
+            } else {
+                console.error('Failed to like post:', response.status);
+                showError('Error', 'Failed to like post');
             }
         } catch (error) {
             console.error('Error liking post:', error);
+            showError('Error', 'Failed to like post');
         }
     };
 
@@ -374,13 +384,21 @@ export default function Posts() {
 
     const fetchComments = async (postId: number) => {
         try {
+            console.log('Fetching comments for post:', postId);
             const response = await apiFetch(`/api/posts/${postId}/comments`);
+            console.log('Comments response:', response.status, response.ok);
+            
             if (response.ok) {
                 const data = await response.json();
-                setComments(prev => ({ ...prev, [postId]: data }));
+                console.log('Comments data received:', data);
+                setComments(prev => ({ ...prev, [postId]: Array.isArray(data) ? data : [] }));
+            } else {
+                console.warn('Failed to fetch comments, response not ok');
+                setComments(prev => ({ ...prev, [postId]: [] }));
             }
         } catch (error) {
             console.error('Error fetching comments:', error);
+            setComments(prev => ({ ...prev, [postId]: [] }));
         }
     };
 
@@ -424,6 +442,27 @@ export default function Posts() {
         }
     };
 
+    const togglePostExpansion = (postId: number) => {
+        setExpandedPosts(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(postId)) {
+                newSet.delete(postId);
+            } else {
+                newSet.add(postId);
+            }
+            return newSet;
+        });
+    };
+
+    const shouldTruncateText = (text: string) => {
+        return text.length > 200; // Show first 200 characters
+    };
+
+    const getTruncatedText = (text: string, maxLength: number = 200) => {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    };
+
     if (loading) return <p className={`text-center ${themeClasses.textSecondary} mt-10`}>{t('posts.loading','Loading posts...')}</p>;
     if (error) return <p className="text-center text-red-400 mt-10">{t('posts.error','Error')}: {error}</p>;
     if (!posts.length) return <p className={`text-center ${themeClasses.textSecondary} mt-10`}>{t('posts.none','No posts yet.')}</p>;
@@ -440,29 +479,33 @@ export default function Posts() {
                         className={`${themeClasses.card} rounded-2xl shadow-lg border ${themeClasses.border} overflow-hidden`}
                     >
                         {/* Post Header */}
-                        <div className={`p-4 border-b ${themeClasses.border}`}>
+                        <div className={`p-4 border-b ${themeClasses.border} bg-gradient-to-r from-transparent to-gray-50/30 dark:to-gray-800/30`}>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-3">
-                                    <button
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
                                         onClick={() => handleProfileClick(post.author.id)}
-                                        className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold hover:scale-105 transition-transform cursor-pointer"
+                                        className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold hover:shadow-lg transition-all duration-200 cursor-pointer shadow-md"
                                     >
                                         {post.author.name.charAt(0).toUpperCase()}
-                                    </button>
-                                    <div>
-                                        <button
-                                            onClick={() => handleProfileClick(post.author.id)}
-                                            className={`font-semibold ${themeClasses.text} hover:underline cursor-pointer`}
-                                        >
-                                            {post.author.name}
-                                        </button>
+                                    </motion.button>
+                                    <div className="flex-1">
+                                        <div className="flex items-center space-x-2">
+                                            <button
+                                                onClick={() => handleProfileClick(post.author.id)}
+                                                className={`font-semibold ${themeClasses.text} hover:underline cursor-pointer`}
+                                            >
+                                                {post.author.name}
+                                            </button>
+                                            {post.user?.subscriptionTier && (
+                                                <PremiumUserIndicator subscriptionTier={post.user.subscriptionTier} />
+                                            )}
+                                        </div>
                                         <p className={`text-sm ${themeClasses.textSecondary}`}>
                                             @{post.author.username} • {formatTimeAgo(post.createdAt)}
                                         </p>
                                     </div>
-                                    {post.user?.subscriptionTier && (
-                                        <PremiumUserIndicator subscriptionTier={post.user.subscriptionTier} />
-                                    )}
                                 </div>
                                 
                                 <div className="flex items-center space-x-2">
@@ -492,15 +535,22 @@ export default function Posts() {
                                     </button>
                                     
                                     {showDropdown === post.id && (
-                                        <div className="absolute right-4 top-16 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-10">
+                                        <motion.div 
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="absolute right-4 top-16 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-20 min-w-[120px]"
+                                        >
                                             <button
-                                                onClick={() => handleReport(post)}
-                                                className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full"
+                                                onClick={() => {
+                                                    handleReport(post);
+                                                    setShowDropdown(null);
+                                                }}
+                                                className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 w-full transition-colors"
                                             >
                                                 <Flag className="w-4 h-4" />
                                                 <span>Report</span>
                                             </button>
-                                        </div>
+                                        </motion.div>
                                     )}
                                 </div>
                             </div>
@@ -513,9 +563,35 @@ export default function Posts() {
                                     {post.title}
                                 </h2>
                             )}
-                            <p className={`${themeClasses.text} whitespace-pre-wrap`}>
-                                {post.content}
-                            </p>
+                            <div className={`${themeClasses.text} whitespace-pre-wrap`}>
+                                {shouldTruncateText(post.content) && !expandedPosts.has(post.id) ? (
+                                    <div>
+                                        <p>{getTruncatedText(post.content)}</p>
+                                        <motion.button
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => togglePostExpansion(post.id)}
+                                            className={`mt-2 text-sm font-medium ${themeClasses.textSecondary} hover:${themeClasses.text} transition-colors cursor-pointer`}
+                                        >
+                                            VIEW DETAILS
+                                        </motion.button>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <p>{post.content}</p>
+                                        {shouldTruncateText(post.content) && expandedPosts.has(post.id) && (
+                                            <motion.button
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                onClick={() => togglePostExpansion(post.id)}
+                                                className={`mt-2 text-sm font-medium ${themeClasses.textSecondary} hover:${themeClasses.text} transition-colors cursor-pointer`}
+                                            >
+                                                SHOW LESS
+                                            </motion.button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                             
                             {post.imageUrl && (
                                 <img 
@@ -535,54 +611,62 @@ export default function Posts() {
                         </div>
 
                         {/* Post Actions */}
-                        <div className={`px-4 py-3 border-t ${themeClasses.border}`}>
+                        <div className={`px-4 py-4 border-t ${themeClasses.border} bg-gradient-to-r from-transparent to-gray-50/30 dark:to-gray-800/30`}>
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-6">
-                                    <button
+                                <div className="flex items-center space-x-4 sm:space-x-6">
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
                                         onClick={() => handleLike(post.id)}
-                                        className={`flex items-center space-x-2 transition-colors ${
+                                        className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200 ${
                                             post.liked 
-                                                ? 'text-red-500' 
-                                                : `${themeClasses.textSecondary} hover:text-red-500`
+                                                ? 'text-red-500 bg-red-50 dark:bg-red-900/20' 
+                                                : `${themeClasses.textSecondary} hover:text-red-500 hover:bg-red-50/50 dark:hover:bg-red-900/10`
                                         }`}
                                     >
-                                        <Heart size={20} fill={post.liked ? 'currentColor' : 'none'} />
+                                        <Heart size={18} fill={post.liked ? 'currentColor' : 'none'} />
                                         <span className="text-sm font-medium">{post.likes}</span>
-                                    </button>
+                                    </motion.button>
                                     
-                                    <button
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
                                         onClick={() => toggleComments(post.id)}
-                                        className={`flex items-center space-x-2 ${themeClasses.textSecondary} hover:text-blue-500 transition-colors`}
+                                        className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200 ${themeClasses.textSecondary} hover:text-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10`}
                                     >
-                                        <MessageCircle size={20} />
+                                        <MessageCircle size={18} />
                                         <span className="text-sm font-medium">{post.comments}</span>
-                                    </button>
+                                    </motion.button>
                                     
-                                    <button
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
                                         onClick={() => handleBookmark(post.id)}
-                                        className={`flex items-center space-x-2 transition-colors ${
+                                        className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200 ${
                                             post.bookmarked 
-                                                ? 'text-yellow-500' 
-                                                : `${themeClasses.textSecondary} hover:text-yellow-500`
+                                                ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' 
+                                                : `${themeClasses.textSecondary} hover:text-yellow-500 hover:bg-yellow-50/50 dark:hover:bg-yellow-900/10`
                                         }`}
                                     >
-                                        <Bookmark size={20} fill={post.bookmarked ? 'currentColor' : 'none'} />
-                                        <span className="text-sm font-medium">Save</span>
-                                    </button>
+                                        <Bookmark size={18} fill={post.bookmarked ? 'currentColor' : 'none'} />
+                                        <span className="text-sm font-medium hidden sm:inline">Save</span>
+                                    </motion.button>
                                     
-                                    <button
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
                                         onClick={() => handleShare(post.id)}
-                                        className={`flex items-center space-x-2 ${themeClasses.textSecondary} hover:text-green-500 transition-colors`}
+                                        className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200 ${themeClasses.textSecondary} hover:text-green-500 hover:bg-green-50/50 dark:hover:bg-green-900/10`}
                                     >
-                                        <Share size={20} />
-                                        <span className="text-sm font-medium">Share</span>
-                                    </button>
+                                        <Share size={18} />
+                                        <span className="text-sm font-medium hidden sm:inline">Share</span>
+                                    </motion.button>
                                 </div>
                                 
                                 {post.views && (
-                                    <div className="flex items-center space-x-1 text-sm text-gray-500">
-                                        <Eye size={16} />
-                                        <span>{post.views} views</span>
+                                    <div className="flex items-center space-x-1 text-sm text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg">
+                                        <Eye size={14} />
+                                        <span className="text-xs">{post.views}</span>
                                     </div>
                                 )}
                             </div>
@@ -590,38 +674,56 @@ export default function Posts() {
 
                         {/* Comments Section */}
                         {showComments[post.id] && (
-                            <div className={`border-t ${themeClasses.border} p-4`}>
-                                <div className="space-y-3">
-                                    {comments[post.id]?.map((comment: any) => (
-                                        <div key={comment.id} className="flex space-x-3">
-                                            <button
-                                                onClick={() => handleProfileClick(comment.author.id)}
-                                                className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm hover:scale-105 transition-transform cursor-pointer"
-                                            >
-                                                {comment.author.name.charAt(0).toUpperCase()}
-                                            </button>
-                                            <div className="flex-1">
-                                                <div className={`${themeClasses.card} rounded-lg p-3`}>
-                                                    <div className="flex items-center space-x-2 mb-1">
-                                                        <button
-                                                            onClick={() => handleProfileClick(comment.author.id)}
-                                                            className={`font-semibold text-sm ${themeClasses.text} hover:underline cursor-pointer`}
-                                                        >
-                                                            {comment.author.name}
-                                                        </button>
-                                                        <span className={`text-xs ${themeClasses.textSecondary}`}>
-                                                            {formatTimeAgo(comment.createdAt)}
-                                                        </span>
+                            <div className={`border-t ${themeClasses.border} p-4 bg-gradient-to-r from-transparent to-gray-50/50 dark:to-gray-800/50`}>
+                                <div className="space-y-4">
+                                    {/* Comments List */}
+                                    {comments[post.id] && comments[post.id].length > 0 ? (
+                                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                                            {comments[post.id].map((comment: any) => (
+                                                <motion.div 
+                                                    key={comment.id} 
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    className="flex space-x-3"
+                                                >
+                                                    <button
+                                                        onClick={() => handleProfileClick(comment.author.id)}
+                                                        className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm hover:scale-105 transition-transform cursor-pointer shadow-md"
+                                                    >
+                                                        {comment.author.name.charAt(0).toUpperCase()}
+                                                    </button>
+                                                    <div className="flex-1">
+                                                        <div className={`${themeClasses.card} rounded-xl p-3 shadow-sm border ${themeClasses.border}`}>
+                                                            <div className="flex items-center space-x-2 mb-2">
+                                                                <button
+                                                                    onClick={() => handleProfileClick(comment.author.id)}
+                                                                    className={`font-semibold text-sm ${themeClasses.text} hover:underline cursor-pointer`}
+                                                                >
+                                                                    {comment.author.name}
+                                                                </button>
+                                                                <span className={`text-xs ${themeClasses.textSecondary}`}>
+                                                                    {formatTimeAgo(comment.createdAt)}
+                                                                </span>
+                                                            </div>
+                                                            <p className={`text-sm ${themeClasses.text} leading-relaxed`}>{comment.content}</p>
+                                                        </div>
                                                     </div>
-                                                    <p className={`text-sm ${themeClasses.text}`}>{comment.content}</p>
-                                                </div>
-                                            </div>
+                                                </motion.div>
+                                            ))}
                                         </div>
-                                    ))}
+                                    ) : (
+                                        <div className="text-center py-4">
+                                            <p className={`${themeClasses.textSecondary} text-sm`}>No comments yet. Be the first to comment!</p>
+                                        </div>
+                                    )}
                                     
                                     {/* Add Comment */}
-                                    <div className="flex space-x-3">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="flex space-x-3 pt-2 border-t border-gray-200/50 dark:border-gray-700/50"
+                                    >
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md">
                                             {user?.name?.charAt(0).toUpperCase() || 'U'}
                                         </div>
                                         <div className="flex-1 flex space-x-2">
@@ -630,17 +732,20 @@ export default function Posts() {
                                                 placeholder="Write a comment..."
                                                 value={newComment[post.id] || ''}
                                                 onChange={(e) => setNewComment(prev => ({ ...prev, [post.id]: e.target.value }))}
-                                                className={`flex-1 px-3 py-2 ${themeClasses.input} border rounded-lg ${themeClasses.text} placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                                className={`flex-1 px-4 py-2 ${themeClasses.input} border rounded-xl ${themeClasses.text} placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm`}
                                                 onKeyPress={(e) => e.key === 'Enter' && handleAddComment(post.id)}
                                             />
-                                            <button
+                                            <motion.button
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
                                                 onClick={() => handleAddComment(post.id)}
-                                                className={`px-4 py-2 ${themeClasses.button} text-white rounded-lg hover:opacity-90 transition-opacity`}
+                                                disabled={!newComment[post.id]?.trim()}
+                                                className={`px-4 py-2 ${themeClasses.button} text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed shadow-md`}
                                             >
                                                 <Send className="w-4 h-4" />
-                                            </button>
+                                            </motion.button>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 </div>
                             </div>
                         )}
