@@ -2,16 +2,31 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { 
+    Heart, 
+    MessageCircle, 
+    Share, 
+    Bookmark, 
+    MoreHorizontal,
+    Trash2,
+    Edit,
+    Flag,
+    Eye,
+    ThumbsUp,
+    ThumbsDown,
+    Reply,
+    Send
+} from "lucide-react";
 import Trending from "@/app/(PagesComps)/homedir/trending";
 import Suggestions from "@/app/(PagesComps)/homedir/suggestions";
 import { contentService } from "@/services/contentService";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { useNotifications } from "@/components/NotificationProvider";
 import CommentModal from "@/components/CommentModal";
 import ReportModal from "@/components/ReportModal";
 import EditPostModal from "@/components/EditPostModal";
-import PostWithYouTubeComments from "@/components/PostWithYouTubeComments";
 import { apiFetch } from "@/lib/api";
 import PremiumUserIndicator from "@/components/PremiumUserIndicator";
 
@@ -58,9 +73,93 @@ export default function Posts() {
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedPost, setSelectedPost] = useState<PostType | null>(null);
     const [showDropdown, setShowDropdown] = useState<number | null>(null);
+    const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
+    const [comments, setComments] = useState<{[key: number]: any[]}>({});
+    const [newComment, setNewComment] = useState<{[key: number]: string}>({});
+    const [showComments, setShowComments] = useState<{[key: number]: boolean}>({});
     const { user } = useAuth();
+    const { theme } = useTheme();
     const { t } = useI18n();
     const { showSuccess, showError } = useNotifications();
+
+    const getThemeClasses = () => {
+        switch (theme) {
+            case 'light':
+                return {
+                    bg: 'bg-gray-50',
+                    card: 'bg-white',
+                    text: 'text-gray-900',
+                    textSecondary: 'text-gray-600',
+                    border: 'border-gray-200',
+                    hover: 'hover:bg-gray-50',
+                    input: 'bg-white border-gray-300',
+                    button: 'bg-blue-500 hover:bg-blue-600',
+                    buttonSecondary: 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                };
+            case 'super-light':
+                return {
+                    bg: 'bg-gray-100',
+                    card: 'bg-white',
+                    text: 'text-gray-800',
+                    textSecondary: 'text-gray-500',
+                    border: 'border-gray-100',
+                    hover: 'hover:bg-gray-100',
+                    input: 'bg-white border-gray-200',
+                    button: 'bg-blue-600 hover:bg-blue-700',
+                    buttonSecondary: 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                };
+            case 'dark':
+                return {
+                    bg: 'bg-gray-900',
+                    card: 'bg-gray-800',
+                    text: 'text-white',
+                    textSecondary: 'text-gray-300',
+                    border: 'border-gray-700',
+                    hover: 'hover:bg-gray-700',
+                    input: 'bg-gray-700 border-gray-600',
+                    button: 'bg-blue-500 hover:bg-blue-600',
+                    buttonSecondary: 'bg-gray-600 hover:bg-gray-500 text-gray-200'
+                };
+            case 'super-dark':
+                return {
+                    bg: 'bg-black',
+                    card: 'bg-gray-900',
+                    text: 'text-gray-100',
+                    textSecondary: 'text-gray-400',
+                    border: 'border-gray-800',
+                    hover: 'hover:bg-gray-800',
+                    input: 'bg-gray-800 border-gray-700',
+                    button: 'bg-blue-600 hover:bg-blue-700',
+                    buttonSecondary: 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                };
+            case 'gold':
+                return {
+                    bg: 'bg-gradient-to-br from-yellow-900 to-yellow-800',
+                    card: 'bg-gradient-to-br from-yellow-800 to-yellow-700',
+                    text: 'text-yellow-100',
+                    textSecondary: 'text-yellow-200',
+                    border: 'border-yellow-600/50',
+                    hover: 'hover:bg-yellow-800/80 gold-shimmer',
+                    input: 'bg-yellow-800/50 border-yellow-600/50 focus:border-yellow-400',
+                    button: 'bg-yellow-600 hover:bg-yellow-700 text-yellow-100',
+                    buttonSecondary: 'bg-yellow-700/50 hover:bg-yellow-600/50 text-yellow-200'
+                };
+            default:
+                return {
+                    bg: 'bg-gray-900',
+                    card: 'bg-gray-800',
+                    text: 'text-white',
+                    textSecondary: 'text-gray-300',
+                    border: 'border-gray-700',
+                    hover: 'hover:bg-gray-700',
+                    input: 'bg-gray-700 border-gray-600',
+                    button: 'bg-blue-500 hover:bg-blue-600',
+                    buttonSecondary: 'bg-gray-600 hover:bg-gray-500 text-gray-200'
+                };
+        }
+    };
+
+    const themeClasses = getThemeClasses();
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -273,31 +372,286 @@ export default function Posts() {
         }
     };
 
-    if (loading) return <p className="text-center theme-text-muted mt-10">{t('posts.loading','Loading posts...')}</p>;
+    const fetchComments = async (postId: number) => {
+        try {
+            const response = await apiFetch(`/api/posts/${postId}/comments`);
+            if (response.ok) {
+                const data = await response.json();
+                setComments(prev => ({ ...prev, [postId]: data }));
+            }
+        } catch (error) {
+            console.error('Error fetching comments:', error);
+        }
+    };
+
+    const handleAddComment = async (postId: number) => {
+        const commentText = newComment[postId];
+        if (!commentText?.trim()) return;
+
+        try {
+            const response = await apiFetch(`/api/posts/${postId}/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: commentText.trim() })
+            });
+
+            if (response.ok) {
+                const newCommentData = await response.json();
+                setComments(prev => ({
+                    ...prev,
+                    [postId]: [...(prev[postId] || []), newCommentData]
+                }));
+                setNewComment(prev => ({ ...prev, [postId]: '' }));
+                setPosts(prev => prev.map(p => 
+                    p.id === postId ? { ...p, comments: p.comments + 1 } : p
+                ));
+                showSuccess('Comment Added', 'Your comment has been posted');
+            }
+        } catch (error) {
+            console.error('Error adding comment:', error);
+            showError('Error', 'Failed to add comment');
+        }
+    };
+
+    const handleProfileClick = (userId: number) => {
+        window.location.href = `/profile?userId=${userId}`;
+    };
+
+    const toggleComments = (postId: number) => {
+        setShowComments(prev => ({ ...prev, [postId]: !prev[postId] }));
+        if (!showComments[postId] && !comments[postId]) {
+            fetchComments(postId);
+        }
+    };
+
+    if (loading) return <p className={`text-center ${themeClasses.textSecondary} mt-10`}>{t('posts.loading','Loading posts...')}</p>;
     if (error) return <p className="text-center text-red-400 mt-10">{t('posts.error','Error')}: {error}</p>;
-    if (!posts.length) return <p className="text-center theme-text-muted mt-10">{t('posts.none','No posts yet.')}</p>;
+    if (!posts.length) return <p className={`text-center ${themeClasses.textSecondary} mt-10`}>{t('posts.none','No posts yet.')}</p>;
 
     return (
-        <div className="flex flex-col md:flex-row p-4 gap-6">
+        <div className={`flex flex-col md:flex-row p-4 gap-6 ${themeClasses.bg}`}>
             {/* Feed Section */}
             <div className="flex-1 md:w-2/3 max-w-2xl mx-auto space-y-4">
                 {posts.map((post) => (
-                    <PostWithYouTubeComments
+                    <motion.div
                         key={post.id}
-                        post={post}
-                        onPostUpdated={handlePostUpdated}
-                        onPostDeleted={(postId) => {
-                            setPosts(prev => prev.filter(p => p.id !== postId));
-                            showSuccess('Post Deleted', 'Your post has been deleted successfully');
-                        }}
-                    />
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`${themeClasses.card} rounded-2xl shadow-lg border ${themeClasses.border} overflow-hidden`}
+                    >
+                        {/* Post Header */}
+                        <div className={`p-4 border-b ${themeClasses.border}`}>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                    <button
+                                        onClick={() => handleProfileClick(post.author.id)}
+                                        className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold hover:scale-105 transition-transform cursor-pointer"
+                                    >
+                                        {post.author.name.charAt(0).toUpperCase()}
+                                    </button>
+                                    <div>
+                                        <button
+                                            onClick={() => handleProfileClick(post.author.id)}
+                                            className={`font-semibold ${themeClasses.text} hover:underline cursor-pointer`}
+                                        >
+                                            {post.author.name}
+                                        </button>
+                                        <p className={`text-sm ${themeClasses.textSecondary}`}>
+                                            @{post.author.username} • {formatTimeAgo(post.createdAt)}
+                                        </p>
+                                    </div>
+                                    {post.user?.subscriptionTier && (
+                                        <PremiumUserIndicator subscriptionTier={post.user.subscriptionTier} />
+                                    )}
+                                </div>
+                                
+                                <div className="flex items-center space-x-2">
+                                    {user?.id === post.author.id.toString() && (
+                                        <>
+                                            <button
+                                                onClick={() => handleEdit(post)}
+                                                className={`p-2 rounded-full ${themeClasses.hover} transition-colors`}
+                                                title="Edit post"
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(post.id)}
+                                                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+                                                title="Delete post"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </>
+                                    )}
+                                    <button
+                                        onClick={() => setShowDropdown(showDropdown === post.id ? null : post.id)}
+                                        className={`p-2 rounded-full ${themeClasses.hover} transition-colors`}
+                                    >
+                                        <MoreHorizontal className="w-4 h-4" />
+                                    </button>
+                                    
+                                    {showDropdown === post.id && (
+                                        <div className="absolute right-4 top-16 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-10">
+                                            <button
+                                                onClick={() => handleReport(post)}
+                                                className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full"
+                                            >
+                                                <Flag className="w-4 h-4" />
+                                                <span>Report</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Post Content */}
+                        <div className="p-4">
+                            {post.title && (
+                                <h2 className={`text-lg font-semibold ${themeClasses.text} mb-2`}>
+                                    {post.title}
+                                </h2>
+                            )}
+                            <p className={`${themeClasses.text} whitespace-pre-wrap`}>
+                                {post.content}
+                            </p>
+                            
+                            {post.imageUrl && (
+                                <img 
+                                    src={post.imageUrl} 
+                                    alt="Post image" 
+                                    className="mt-4 w-full rounded-lg"
+                                />
+                            )}
+                            
+                            {post.videoUrl && (
+                                <video 
+                                    src={post.videoUrl} 
+                                    controls 
+                                    className="mt-4 w-full rounded-lg"
+                                />
+                            )}
+                        </div>
+
+                        {/* Post Actions */}
+                        <div className={`px-4 py-3 border-t ${themeClasses.border}`}>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-6">
+                                    <button
+                                        onClick={() => handleLike(post.id)}
+                                        className={`flex items-center space-x-2 transition-colors ${
+                                            post.liked 
+                                                ? 'text-red-500' 
+                                                : `${themeClasses.textSecondary} hover:text-red-500`
+                                        }`}
+                                    >
+                                        <Heart size={20} fill={post.liked ? 'currentColor' : 'none'} />
+                                        <span className="text-sm font-medium">{post.likes}</span>
+                                    </button>
+                                    
+                                    <button
+                                        onClick={() => toggleComments(post.id)}
+                                        className={`flex items-center space-x-2 ${themeClasses.textSecondary} hover:text-blue-500 transition-colors`}
+                                    >
+                                        <MessageCircle size={20} />
+                                        <span className="text-sm font-medium">{post.comments}</span>
+                                    </button>
+                                    
+                                    <button
+                                        onClick={() => handleBookmark(post.id)}
+                                        className={`flex items-center space-x-2 transition-colors ${
+                                            post.bookmarked 
+                                                ? 'text-yellow-500' 
+                                                : `${themeClasses.textSecondary} hover:text-yellow-500`
+                                        }`}
+                                    >
+                                        <Bookmark size={20} fill={post.bookmarked ? 'currentColor' : 'none'} />
+                                        <span className="text-sm font-medium">Save</span>
+                                    </button>
+                                    
+                                    <button
+                                        onClick={() => handleShare(post.id)}
+                                        className={`flex items-center space-x-2 ${themeClasses.textSecondary} hover:text-green-500 transition-colors`}
+                                    >
+                                        <Share size={20} />
+                                        <span className="text-sm font-medium">Share</span>
+                                    </button>
+                                </div>
+                                
+                                {post.views && (
+                                    <div className="flex items-center space-x-1 text-sm text-gray-500">
+                                        <Eye size={16} />
+                                        <span>{post.views} views</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Comments Section */}
+                        {showComments[post.id] && (
+                            <div className={`border-t ${themeClasses.border} p-4`}>
+                                <div className="space-y-3">
+                                    {comments[post.id]?.map((comment: any) => (
+                                        <div key={comment.id} className="flex space-x-3">
+                                            <button
+                                                onClick={() => handleProfileClick(comment.author.id)}
+                                                className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm hover:scale-105 transition-transform cursor-pointer"
+                                            >
+                                                {comment.author.name.charAt(0).toUpperCase()}
+                                            </button>
+                                            <div className="flex-1">
+                                                <div className={`${themeClasses.card} rounded-lg p-3`}>
+                                                    <div className="flex items-center space-x-2 mb-1">
+                                                        <button
+                                                            onClick={() => handleProfileClick(comment.author.id)}
+                                                            className={`font-semibold text-sm ${themeClasses.text} hover:underline cursor-pointer`}
+                                                        >
+                                                            {comment.author.name}
+                                                        </button>
+                                                        <span className={`text-xs ${themeClasses.textSecondary}`}>
+                                                            {formatTimeAgo(comment.createdAt)}
+                                                        </span>
+                                                    </div>
+                                                    <p className={`text-sm ${themeClasses.text}`}>{comment.content}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    
+                                    {/* Add Comment */}
+                                    <div className="flex space-x-3">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                                            {user?.name?.charAt(0).toUpperCase() || 'U'}
+                                        </div>
+                                        <div className="flex-1 flex space-x-2">
+                                            <input
+                                                type="text"
+                                                placeholder="Write a comment..."
+                                                value={newComment[post.id] || ''}
+                                                onChange={(e) => setNewComment(prev => ({ ...prev, [post.id]: e.target.value }))}
+                                                className={`flex-1 px-3 py-2 ${themeClasses.input} border rounded-lg ${themeClasses.text} placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                                onKeyPress={(e) => e.key === 'Enter' && handleAddComment(post.id)}
+                                            />
+                                            <button
+                                                onClick={() => handleAddComment(post.id)}
+                                                className={`px-4 py-2 ${themeClasses.button} text-white rounded-lg hover:opacity-90 transition-opacity`}
+                                            >
+                                                <Send className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </motion.div>
                 ))}
             </div>
 
             {/* Sidebar for Large Screens */}
             <div className="hidden md:block md:w-1/3 space-y-4">
                 <Trending />
-                <div className="theme-bg-secondary rounded-2xl theme-shadow p-4">
+                <div className={`${themeClasses.card} rounded-2xl shadow-lg p-4 border ${themeClasses.border}`}>
                     <Suggestions />
                 </div>
             </div>
