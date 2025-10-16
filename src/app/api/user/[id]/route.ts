@@ -5,6 +5,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   let userId: string = '';
+  let body: any = {};
+  let authHeader: string | null = null;
+  
   try {
     const resolvedParams = await params;
     userId = resolvedParams.id;
@@ -14,7 +17,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
     }
     
-    const body = await request.json();
+    body = await request.json();
     
     // Validate request body
     if (!body || typeof body !== 'object') {
@@ -24,7 +27,7 @@ export async function PUT(
     console.log('User profile update request:', { userId, body });
 
     // Get the authorization token
-    const authHeader = request.headers.get('authorization');
+    authHeader = request.headers.get('authorization');
     if (!authHeader) {
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
     }
