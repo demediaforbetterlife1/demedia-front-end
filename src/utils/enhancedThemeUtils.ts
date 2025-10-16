@@ -402,21 +402,64 @@ export const getPostThemeClasses = (theme: Theme) => {
   
   return {
     ...baseClasses,
+    // Modern, consistent post styling
     postCard: theme === 'super-dark' 
-      ? baseClasses.postTransparent 
+      ? 'bg-black/20 backdrop-blur-sm border border-gray-800/30' 
       : theme === 'gold' 
-        ? baseClasses.postTransparent 
-        : baseClasses.postCard,
+        ? 'bg-gray-600/20 backdrop-blur-sm border border-yellow-700/30' 
+        : theme === 'dark'
+          ? 'bg-gray-800/90 backdrop-blur-sm border border-gray-700/50'
+          : theme === 'light'
+            ? 'bg-white/95 backdrop-blur-sm border border-gray-200/50'
+            : 'bg-white/95 backdrop-blur-sm border border-gray-200/50',
+    
     postCardHover: theme === 'super-dark' 
-      ? 'hover:bg-black/30' 
+      ? 'hover:bg-black/30 hover:border-gray-700/50' 
       : theme === 'gold' 
-        ? 'hover:bg-gray-500/35' 
-        : baseClasses.postCardHover,
+        ? 'hover:bg-gray-600/30 hover:border-yellow-600/50' 
+        : theme === 'dark'
+          ? 'hover:bg-gray-800/95 hover:border-gray-600/70'
+          : 'hover:bg-white/98 hover:border-gray-300/70',
+    
+    postHeader: theme === 'super-dark'
+      ? 'bg-black/10 border-b border-gray-800/30'
+      : theme === 'gold'
+        ? 'bg-yellow-900/20 border-b border-yellow-700/30'
+        : theme === 'dark'
+          ? 'bg-gray-800/50 border-b border-gray-700/50'
+          : 'bg-gray-50/50 border-b border-gray-200/50',
+    
     postContent: `${baseClasses.text} leading-relaxed`,
     postMeta: `${baseClasses.textSecondary} text-sm`,
-    postActions: `${baseClasses.textMuted} hover:${baseClasses.textAccent} transition-colors`,
+    postActions: theme === 'super-dark'
+      ? 'bg-black/10 border-t border-gray-800/30'
+      : theme === 'gold'
+        ? 'bg-yellow-900/20 border-t border-yellow-700/30'
+        : theme === 'dark'
+          ? 'bg-gray-800/50 border-t border-gray-700/50'
+          : 'bg-gray-50/50 border-t border-gray-200/50',
+    
+    postButton: theme === 'super-dark'
+      ? 'bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200'
+      : theme === 'gold'
+        ? 'bg-yellow-600 hover:bg-yellow-700 text-yellow-100 px-4 py-2 rounded-lg transition-all duration-200'
+        : theme === 'dark'
+          ? 'bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-all duration-200'
+          : 'bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-all duration-200',
+    
+    postButtonSecondary: theme === 'super-dark'
+      ? 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 px-4 py-2 rounded-lg transition-all duration-200'
+      : theme === 'gold'
+        ? 'bg-yellow-800/30 hover:bg-yellow-700/30 text-yellow-200 px-4 py-2 rounded-lg transition-all duration-200'
+        : theme === 'dark'
+          ? 'bg-gray-600 hover:bg-gray-500 text-gray-200 px-4 py-2 rounded-lg transition-all duration-200'
+          : 'bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-all duration-200',
+    
     postInput: `${baseClasses.input} ${baseClasses.inputFocus} transition-all duration-200`,
-    postButton: `${baseClasses.button} transition-all duration-200`,
-    postButtonSecondary: `${baseClasses.buttonSecondary} transition-all duration-200`
+    postProfile: theme === 'super-dark'
+      ? 'w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold shadow-lg'
+      : theme === 'gold'
+        ? 'w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center text-yellow-100 font-semibold shadow-lg'
+        : 'w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold shadow-lg'
   };
 };

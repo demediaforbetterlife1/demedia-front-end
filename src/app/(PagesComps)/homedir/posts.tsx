@@ -412,10 +412,10 @@ export default function Posts() {
                                 y: -5,
                                 transition: { duration: 0.3 }
                             }}
-                            className={`${themeClasses.postCard} ${themeClasses.postCardHover} rounded-2xl ${themeClasses.shadow} border ${themeClasses.border} overflow-hidden relative group transition-all duration-300`}
+                            className={`${themeClasses.postCard} ${themeClasses.postCardHover} rounded-xl shadow-lg overflow-hidden relative group transition-all duration-300`}
                         >
                         {/* Post Header */}
-                        <div className={`p-6 border-b ${themeClasses.border} ${themeClasses.bgSecondary} relative`}>
+                        <div className={`p-6 ${themeClasses.postHeader} relative`}>
                             
                             <div className="flex items-center justify-between relative z-10">
                                 <div className="flex items-center space-x-4">
@@ -423,7 +423,7 @@ export default function Posts() {
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
                                         onClick={() => handleProfileClick(post.author.id)}
-                                        className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold hover:shadow-lg transition-all duration-300 cursor-pointer"
+                                        className={`${themeClasses.postProfile} hover:shadow-xl transition-all duration-300 cursor-pointer`}
                                     >
                                         <span className="text-lg font-semibold">
                                             {post.author.name.charAt(0).toUpperCase()}
@@ -564,17 +564,17 @@ export default function Posts() {
                         </div>
 
                         {/* Post Actions */}
-                        <div className={`px-6 py-4 border-t ${themeClasses.border} ${themeClasses.bgSecondary}`}>
+                        <div className={`px-6 py-4 ${themeClasses.postActions}`}>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-6 sm:space-x-8">
                                     <motion.button
                                         whileHover={{ scale: 1.1, y: -2 }}
                                         whileTap={{ scale: 0.9 }}
                                         onClick={() => handleLike(post.id)}
-                                        className={`flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 relative overflow-hidden group ${
+                                        className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all duration-300 relative overflow-hidden group ${
                                             post.liked
                                                 ? 'text-white bg-gradient-to-r from-red-500 to-pink-500 shadow-lg'
-                                                : `${themeClasses.postActions} hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 hover:shadow-lg`
+                                                : `${themeClasses.textMuted} hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 hover:shadow-lg`
                                         }`}
                                     >
                                         <Heart size={20} fill={post.liked ? 'currentColor' : 'none'} className="relative z-10" />
@@ -588,7 +588,7 @@ export default function Posts() {
                                         whileHover={{ scale: 1.1, y: -2 }}
                                         whileTap={{ scale: 0.9 }}
                                         onClick={() => toggleComments(post.id)}
-                                        className="flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 text-gray-600 dark:text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-cyan-500 hover:shadow-lg relative overflow-hidden group"
+                                        className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all duration-300 relative overflow-hidden group ${themeClasses.textMuted} hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-cyan-500 hover:shadow-lg`}
                                     >
                                         <MessageCircle size={20} className="relative z-10" />
                                         <span className="text-sm font-semibold relative z-10">{post.comments}</span>
@@ -599,10 +599,10 @@ export default function Posts() {
                                         whileHover={{ scale: 1.1, y: -2 }}
                                         whileTap={{ scale: 0.9 }}
                                         onClick={() => handleBookmark(post.id)}
-                                        className={`flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 relative overflow-hidden group ${
+                                        className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all duration-300 relative overflow-hidden group ${
                                             post.bookmarked
                                                 ? 'text-white bg-gradient-to-r from-yellow-500 to-orange-500 shadow-lg'
-                                                : 'text-gray-600 dark:text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-yellow-500 hover:to-orange-500 hover:shadow-lg'
+                                                : `${themeClasses.textMuted} hover:text-white hover:bg-gradient-to-r hover:from-yellow-500 hover:to-orange-500 hover:shadow-lg`
                                         }`}
                                     >
                                         <Bookmark size={20} fill={post.bookmarked ? 'currentColor' : 'none'} className="relative z-10" />
@@ -616,7 +616,7 @@ export default function Posts() {
                                         whileHover={{ scale: 1.1, y: -2 }}
                                         whileTap={{ scale: 0.9 }}
                                         onClick={() => handleShare(post.id)}
-                                        className="flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 text-gray-600 dark:text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-500 hover:shadow-lg relative overflow-hidden group"
+                                        className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all duration-300 relative overflow-hidden group ${themeClasses.textMuted} hover:text-white hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-500 hover:shadow-lg`}
                                     >
                                         <Share size={20} className="relative z-10" />
                                         <span className="text-sm font-semibold relative z-10 hidden sm:inline">Share</span>

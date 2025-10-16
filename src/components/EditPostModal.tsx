@@ -187,7 +187,7 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }: 
                     <div className={`flex items-center justify-between p-6 border-b ${themeClasses.border}`}>
                         <div className="flex items-center space-x-3">
                             <div className={`w-10 h-10 ${themeClasses.accentBg} rounded-full flex items-center justify-center`}>
-                                <Save className={`w-5 h-5 ${themeClasses.accent}`} />
+                                <Save className={`w-5 h-5 ${themeClasses.textAccent}`} />
                             </div>
                             <div>
                                 <h2 className={`text-xl font-bold ${themeClasses.text}`}>Edit Post</h2>
