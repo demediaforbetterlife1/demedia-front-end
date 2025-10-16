@@ -87,63 +87,68 @@ export default function Posts() {
         switch (theme) {
             case 'light':
                 return {
-                    bg: 'bg-gray-50',
-                    card: 'bg-white',
+                    bg: 'bg-gradient-to-br from-gray-50 to-gray-100',
+                    card: 'bg-white/90 backdrop-blur-sm',
                     text: 'text-gray-900',
                     textSecondary: 'text-gray-600',
                     border: 'border-gray-200',
                     hover: 'hover:bg-gray-50',
-                    input: 'bg-white border-gray-300',
+                    input: 'bg-white/80 border-gray-300 backdrop-blur-sm',
                     button: 'bg-blue-500 hover:bg-blue-600',
-                    buttonSecondary: 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                    buttonSecondary: 'bg-gray-200 hover:bg-gray-300 text-gray-700',
+                    shadow: 'shadow-lg'
                 };
             case 'super-light':
                 return {
-                    bg: 'bg-gray-100',
-                    card: 'bg-white',
+                    bg: 'bg-gradient-to-br from-white to-gray-50',
+                    card: 'bg-white/95 backdrop-blur-sm',
                     text: 'text-gray-800',
                     textSecondary: 'text-gray-500',
-                    border: 'border-gray-100',
-                    hover: 'hover:bg-gray-100',
-                    input: 'bg-white border-gray-200',
+                    border: 'border-gray-200',
+                    hover: 'hover:bg-gray-50',
+                    input: 'bg-white/90 border-gray-200 backdrop-blur-sm',
                     button: 'bg-blue-600 hover:bg-blue-700',
-                    buttonSecondary: 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                    buttonSecondary: 'bg-gray-100 hover:bg-gray-200 text-gray-600',
+                    shadow: 'shadow-xl'
                 };
             case 'dark':
                 return {
-                    bg: 'bg-gray-900',
-                    card: 'bg-gray-800',
+                    bg: 'bg-gradient-to-br from-gray-900 to-gray-800',
+                    card: 'bg-gray-800/90 backdrop-blur-sm',
                     text: 'text-white',
                     textSecondary: 'text-gray-300',
                     border: 'border-gray-700',
-                    hover: 'hover:bg-gray-700',
-                    input: 'bg-gray-700 border-gray-600',
+                    hover: 'hover:bg-gray-700/50',
+                    input: 'bg-gray-700/80 border-gray-600 backdrop-blur-sm',
                     button: 'bg-blue-500 hover:bg-blue-600',
-                    buttonSecondary: 'bg-gray-600 hover:bg-gray-500 text-gray-200'
+                    buttonSecondary: 'bg-gray-600 hover:bg-gray-500 text-gray-200',
+                    shadow: 'shadow-2xl'
                 };
             case 'super-dark':
                 return {
-                    bg: 'bg-black',
-                    card: 'bg-gray-900',
+                    bg: 'bg-gradient-to-br from-black to-gray-900',
+                    card: 'bg-black/60 backdrop-blur-sm',
                     text: 'text-gray-100',
                     textSecondary: 'text-gray-400',
-                    border: 'border-gray-800',
-                    hover: 'hover:bg-gray-800',
-                    input: 'bg-gray-800 border-gray-700',
+                    border: 'border-gray-800/50',
+                    hover: 'hover:bg-gray-800/30',
+                    input: 'bg-black/40 border-gray-700/50 backdrop-blur-sm',
                     button: 'bg-blue-600 hover:bg-blue-700',
-                    buttonSecondary: 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                    buttonSecondary: 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300',
+                    shadow: 'shadow-2xl shadow-black/50'
                 };
             case 'gold':
                 return {
-                    bg: 'bg-gradient-to-br from-yellow-900 to-yellow-800',
-                    card: 'bg-gradient-to-br from-yellow-800 to-yellow-700',
+                    bg: 'bg-gradient-to-br from-yellow-900 via-yellow-800 to-amber-900',
+                    card: 'bg-gray-600/30 backdrop-blur-sm',
                     text: 'text-yellow-100',
                     textSecondary: 'text-yellow-200',
-                    border: 'border-yellow-600/50',
-                    hover: 'hover:bg-yellow-800/80 gold-shimmer',
-                    input: 'bg-yellow-800/50 border-yellow-600/50 focus:border-yellow-400',
+                    border: 'border-yellow-600/30',
+                    hover: 'hover:bg-yellow-800/20',
+                    input: 'bg-yellow-800/30 border-yellow-600/30 backdrop-blur-sm',
                     button: 'bg-yellow-600 hover:bg-yellow-700 text-yellow-100',
-                    buttonSecondary: 'bg-yellow-700/50 hover:bg-yellow-600/50 text-yellow-200'
+                    buttonSecondary: 'bg-yellow-700/30 hover:bg-yellow-600/30 text-yellow-200',
+                    shadow: 'shadow-2xl shadow-yellow-500/20'
                 };
             default:
                 return {

@@ -25,6 +25,8 @@ export async function GET(
           'Authorization': authHeader,
           'Content-Type': 'application/json',
         },
+        // Add timeout to prevent hanging
+        signal: AbortSignal.timeout(5000)
       });
 
       console.log('🔄 Backend response status:', backendResponse.status);
@@ -36,11 +38,12 @@ export async function GET(
       } else {
         const errorText = await backendResponse.text();
         console.error('❌ Backend DeSnaps fetch failed:', backendResponse.status, errorText);
-        throw new Error(`Backend responded with ${backendResponse.status}: ${errorText}`);
+        // Don't throw error, continue to fallback
       }
     } catch (backendError) {
-      console.error('❌ Backend connection failed for DeSnaps:', backendError);
+      console.error('❌ Backend connection failed for DeSnaps (using fallback):', backendError);
       console.log('🔄 Using fallback for DeSnaps');
+      // Don't throw error, continue to fallback
     }
 
     // Fallback: Return empty array if backend is not available

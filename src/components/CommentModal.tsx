@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Heart, Reply, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { apiFetch } from "@/lib/api";
 import { contentModerationService } from "@/services/contentModeration";
 import PremiumComment from "./PremiumComment";
@@ -34,6 +35,7 @@ interface CommentModalProps {
 
 export default function CommentModal({ isOpen, onClose, postId, postContent, postAuthor }: CommentModalProps) {
     const { user } = useAuth();
+    const { theme } = useTheme();
     const [comments, setComments] = useState<Comment[]>([]);
     const [newComment, setNewComment] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,6 +43,79 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
     const [error, setError] = useState("");
     const [editingComment, setEditingComment] = useState<number | null>(null);
     const [editContent, setEditContent] = useState("");
+
+    const getThemeClasses = () => {
+        switch (theme) {
+            case 'light':
+                return {
+                    bg: 'bg-white/95 backdrop-blur-lg',
+                    text: 'text-gray-900',
+                    textSecondary: 'text-gray-600',
+                    border: 'border-gray-200',
+                    input: 'bg-white/80 border-gray-300 backdrop-blur-sm',
+                    button: 'bg-blue-500 hover:bg-blue-600',
+                    buttonSecondary: 'bg-gray-200 hover:bg-gray-300 text-gray-700',
+                    shadow: 'shadow-2xl'
+                };
+            case 'super-light':
+                return {
+                    bg: 'bg-white/98 backdrop-blur-lg',
+                    text: 'text-gray-800',
+                    textSecondary: 'text-gray-500',
+                    border: 'border-gray-200',
+                    input: 'bg-white/90 border-gray-200 backdrop-blur-sm',
+                    button: 'bg-blue-600 hover:bg-blue-700',
+                    buttonSecondary: 'bg-gray-100 hover:bg-gray-200 text-gray-600',
+                    shadow: 'shadow-3xl'
+                };
+            case 'dark':
+                return {
+                    bg: 'bg-gray-800/95 backdrop-blur-lg',
+                    text: 'text-white',
+                    textSecondary: 'text-gray-300',
+                    border: 'border-gray-700',
+                    input: 'bg-gray-700/80 border-gray-600 backdrop-blur-sm',
+                    button: 'bg-blue-500 hover:bg-blue-600',
+                    buttonSecondary: 'bg-gray-600 hover:bg-gray-500 text-gray-200',
+                    shadow: 'shadow-2xl'
+                };
+            case 'super-dark':
+                return {
+                    bg: 'bg-black/90 backdrop-blur-lg',
+                    text: 'text-gray-100',
+                    textSecondary: 'text-gray-400',
+                    border: 'border-gray-800',
+                    input: 'bg-black/40 border-gray-700 backdrop-blur-sm',
+                    button: 'bg-blue-600 hover:bg-blue-700',
+                    buttonSecondary: 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300',
+                    shadow: 'shadow-2xl shadow-black/50'
+                };
+            case 'gold':
+                return {
+                    bg: 'bg-yellow-900/90 backdrop-blur-lg',
+                    text: 'text-yellow-100',
+                    textSecondary: 'text-yellow-200',
+                    border: 'border-yellow-600/50',
+                    input: 'bg-yellow-800/30 border-yellow-600/30 backdrop-blur-sm',
+                    button: 'bg-yellow-600 hover:bg-yellow-700',
+                    buttonSecondary: 'bg-yellow-700/30 hover:bg-yellow-600/30 text-yellow-200',
+                    shadow: 'shadow-2xl shadow-yellow-500/20'
+                };
+            default:
+                return {
+                    bg: 'bg-gray-800/95 backdrop-blur-lg',
+                    text: 'text-white',
+                    textSecondary: 'text-gray-300',
+                    border: 'border-gray-700',
+                    input: 'bg-gray-700/80 border-gray-600 backdrop-blur-sm',
+                    button: 'bg-blue-500 hover:bg-blue-600',
+                    buttonSecondary: 'bg-gray-600 hover:bg-gray-500 text-gray-200',
+                    shadow: 'shadow-2xl'
+                };
+        }
+    };
+
+    const themeClasses = getThemeClasses();
 
     useEffect(() => {
         if (isOpen) {
@@ -217,26 +292,26 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden border border-gray-700 shadow-2xl"
+                    className={`${themeClasses.bg} rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden border ${themeClasses.border} ${themeClasses.shadow}`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                    <div className={`flex items-center justify-between p-4 border-b ${themeClasses.border}`}>
                         <div>
-                            <h2 className="text-xl font-bold text-white">Comments</h2>
-                            <p className="text-sm text-gray-400">@{postAuthor}</p>
+                            <h2 className={`text-xl font-bold ${themeClasses.text}`}>Comments</h2>
+                            <p className={`text-sm ${themeClasses.textSecondary}`}>@{postAuthor}</p>
                         </div>
                         <button
                             onClick={onClose}
-                            className="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors"
+                            className={`w-8 h-8 rounded-full ${themeClasses.buttonSecondary} flex items-center justify-center transition-colors`}
                         >
-                            <X className="w-4 h-4 text-white" />
+                            <X className={`w-4 h-4 ${themeClasses.text}`} />
                         </button>
                     </div>
 
                     {/* Post Content */}
-                    <div className="p-4 border-b border-gray-700 bg-gray-800/50">
-                        <p className="text-white text-sm">{postContent}</p>
+                    <div className={`p-4 border-b ${themeClasses.border} ${themeClasses.bg}`}>
+                        <p className={`${themeClasses.text} text-sm`}>{postContent}</p>
                     </div>
 
                     {/* Comments List */}

@@ -34,6 +34,8 @@ export async function PUT(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
+        // Add timeout to prevent hanging
+        signal: AbortSignal.timeout(5000)
       });
 
       console.log('🔄 Backend response status:', backendResponse.status);
@@ -45,11 +47,12 @@ export async function PUT(
       } else {
         const errorText = await backendResponse.text();
         console.error('❌ Backend update failed:', backendResponse.status, errorText);
-        throw new Error(`Backend responded with ${backendResponse.status}: ${errorText}`);
+        // Don't throw error, continue to fallback
       }
     } catch (backendError) {
-      console.error('❌ Backend connection failed for post update:', backendError);
+      console.error('❌ Backend connection failed for post update (using fallback):', backendError);
       console.log('🔄 Using fallback for post update');
+      // Don't throw error, continue to fallback
     }
 
     // Fallback: Simulate successful post update for development

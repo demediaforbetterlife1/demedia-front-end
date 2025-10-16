@@ -23,7 +23,9 @@ export async function GET(
           'Authorization': authHeader,
           'user-id': userId,
           'Content-Type': 'application/json',
-        }
+        },
+        // Add timeout to prevent hanging
+        signal: AbortSignal.timeout(5000)
       });
 
       if (backendResponse.ok) {
@@ -33,9 +35,11 @@ export async function GET(
       } else {
         const errorText = await backendResponse.text();
         console.log('Backend chat fetch failed:', backendResponse.status, errorText);
+        // Don't throw error, continue to fallback
       }
     } catch (backendError) {
-      console.log('Backend chat connection error:', backendError);
+      console.log('Backend chat connection error (using fallback):', backendError);
+      // Don't throw error, continue to fallback
     }
 
     // Fallback: Return mock chat data

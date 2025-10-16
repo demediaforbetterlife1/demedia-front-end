@@ -25,16 +25,22 @@ export async function POST(request: NextRequest) {
           'user-id': userId,
         },
         body: formData,
+        // Add timeout to prevent hanging
+        signal: AbortSignal.timeout(10000) // Longer timeout for file uploads
       });
 
       if (backendResponse.ok) {
         const data = await backendResponse.json();
+        console.log('✅ Profile photo uploaded via backend:', data);
         return NextResponse.json(data);
       } else {
-        console.log('Backend upload failed, using fallback');
+        const errorText = await backendResponse.text();
+        console.error('❌ Backend upload failed:', backendResponse.status, errorText);
+        // Don't throw error, continue to fallback
       }
     } catch (backendError) {
-      console.log('Backend not available for upload, using fallback');
+      console.error('❌ Backend connection failed for upload (using fallback):', backendError);
+      // Don't throw error, continue to fallback
     }
 
     // Fallback: Try to simulate upload for development

@@ -27,6 +27,8 @@ export async function PUT(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
+        // Add timeout to prevent hanging
+        signal: AbortSignal.timeout(5000)
       });
 
       console.log('🔄 Backend response status:', backendResponse.status);
@@ -38,11 +40,12 @@ export async function PUT(
       } else {
         const errorText = await backendResponse.text();
         console.error('❌ Backend profile update failed:', backendResponse.status, errorText);
-        throw new Error(`Backend responded with ${backendResponse.status}: ${errorText}`);
+        // Don't throw error, continue to fallback
       }
     } catch (backendError) {
-      console.error('❌ Backend connection failed for profile update:', backendError);
+      console.error('❌ Backend connection failed for profile update (using fallback):', backendError);
       console.log('🔄 Using fallback for profile update');
+      // Don't throw error, continue to fallback
     }
 
     // Fallback: Simulate successful profile update for development
