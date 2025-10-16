@@ -4,7 +4,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  let postId: string;
+  let postId: string = '';
   try {
     const resolvedParams = await params;
     postId = resolvedParams.id;

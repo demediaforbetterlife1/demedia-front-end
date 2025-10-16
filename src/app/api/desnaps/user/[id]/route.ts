@@ -4,7 +4,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  let userId: string;
+  let userId: string = '';
   try {
     const resolvedParams = await params;
     userId = resolvedParams.id;

@@ -4,7 +4,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ chatId: string }> }
 ) {
-  let chatId: string;
+  let chatId: string = '';
   try {
     const resolvedParams = await params;
     chatId = resolvedParams.chatId;
@@ -85,7 +85,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ chatId: string }> }
 ) {
-  let chatId: string;
+  let chatId: string = '';
   try {
     const resolvedParams = await params;
     chatId = resolvedParams.chatId;
