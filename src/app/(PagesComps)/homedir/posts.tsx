@@ -471,24 +471,45 @@ export default function Posts() {
         <div className={`flex flex-col md:flex-row p-4 gap-6 ${themeClasses.bg}`}>
             {/* Feed Section */}
             <div className="flex-1 md:w-2/3 max-w-2xl mx-auto space-y-4">
-                {posts.map((post) => (
-                    <motion.div
-                        key={post.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`${themeClasses.card} rounded-2xl shadow-lg border ${themeClasses.border} overflow-hidden`}
-                    >
+                    {posts.map((post, index) => (
+                        <motion.div
+                            key={post.id}
+                            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{ 
+                                duration: 0.6, 
+                                delay: index * 0.1,
+                                type: "spring",
+                                stiffness: 100,
+                                damping: 15
+                            }}
+                            whileHover={{ 
+                                scale: 1.02, 
+                                y: -5,
+                                transition: { duration: 0.3 }
+                            }}
+                            className={`${themeClasses.card} rounded-3xl shadow-2xl border ${themeClasses.border} overflow-hidden relative group backdrop-blur-sm bg-gradient-to-br from-white/90 to-gray-50/90 dark:from-gray-800/90 dark:to-gray-900/90`}
+                        >
                         {/* Post Header */}
-                        <div className={`p-4 border-b ${themeClasses.border} bg-gradient-to-r from-transparent to-gray-50/30 dark:to-gray-800/30`}>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
+                        <div className={`p-6 border-b ${themeClasses.border} bg-gradient-to-r from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50 relative overflow-hidden`}>
+                            {/* Animated background gradient */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 via-purple-400/10 to-pink-400/10 dark:from-blue-500/5 dark:via-purple-500/5 dark:to-pink-500/5 animate-pulse"></div>
+                            
+                            <div className="flex items-center justify-between relative z-10">
+                                <div className="flex items-center space-x-4">
                                     <motion.button
-                                        whileHover={{ scale: 1.05 }}
+                                        whileHover={{ scale: 1.1, rotate: 5 }}
                                         whileTap={{ scale: 0.95 }}
                                         onClick={() => handleProfileClick(post.author.id)}
-                                        className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold hover:shadow-lg transition-all duration-200 cursor-pointer shadow-md"
+                                        className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold hover:shadow-2xl transition-all duration-300 cursor-pointer shadow-lg relative overflow-hidden group"
                                     >
-                                        {post.author.name.charAt(0).toUpperCase()}
+                                        {/* Animated background */}
+                                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        <span className="relative z-10 text-lg font-extrabold">
+                                            {post.author.name.charAt(0).toUpperCase()}
+                                        </span>
+                                        {/* Shine effect */}
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                                     </motion.button>
                                     <div className="flex-1">
                                         <div className="flex items-center space-x-2">
@@ -557,23 +578,38 @@ export default function Posts() {
                         </div>
 
                         {/* Post Content */}
-                        <div className="p-4">
-                            {post.title && (
-                                <h2 className={`text-lg font-semibold ${themeClasses.text} mb-2`}>
-                                    {post.title}
-                                </h2>
-                            )}
-                            <div className={`${themeClasses.text} whitespace-pre-wrap`}>
+                        <div className="p-6 relative">
+                            {/* Content background gradient */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-gray-50/30 via-white/20 to-blue-50/20 dark:from-gray-800/30 dark:via-gray-700/20 dark:to-blue-900/20"></div>
+                            
+                            <div className="relative z-10">
+                                {post.title && (
+                                    <motion.h2 
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.2 }}
+                                        className={`text-xl font-bold ${themeClasses.text} mb-4 bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent`}
+                                    >
+                                        {post.title}
+                                    </motion.h2>
+                                )}
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.3 }}
+                                    className={`${themeClasses.text} whitespace-pre-wrap leading-relaxed text-base`}
+                                >
                                 {shouldTruncateText(post.content) && !expandedPosts.has(post.id) ? (
                                     <div>
                                         <p>{getTruncatedText(post.content)}</p>
                                         <motion.button
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
+                                            whileHover={{ scale: 1.05, y: -2 }}
+                                            whileTap={{ scale: 0.95 }}
                                             onClick={() => togglePostExpansion(post.id)}
-                                            className={`mt-2 text-sm font-medium ${themeClasses.textSecondary} hover:${themeClasses.text} transition-colors cursor-pointer`}
+                                            className="mt-4 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-semibold rounded-full hover:from-blue-600 hover:to-purple-700 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl relative overflow-hidden group"
                                         >
-                                            VIEW DETAILS
+                                            <span className="relative z-10">VIEW DETAILS</span>
+                                            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                         </motion.button>
                                     </div>
                                 ) : (
@@ -581,16 +617,18 @@ export default function Posts() {
                                         <p>{post.content}</p>
                                         {shouldTruncateText(post.content) && expandedPosts.has(post.id) && (
                                             <motion.button
-                                                whileHover={{ scale: 1.02 }}
-                                                whileTap={{ scale: 0.98 }}
+                                                whileHover={{ scale: 1.05, y: -2 }}
+                                                whileTap={{ scale: 0.95 }}
                                                 onClick={() => togglePostExpansion(post.id)}
-                                                className={`mt-2 text-sm font-medium ${themeClasses.textSecondary} hover:${themeClasses.text} transition-colors cursor-pointer`}
+                                                className="mt-4 px-4 py-2 bg-gradient-to-r from-gray-500 to-gray-600 text-white text-sm font-semibold rounded-full hover:from-gray-600 hover:to-gray-700 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl relative overflow-hidden group"
                                             >
-                                                SHOW LESS
+                                                <span className="relative z-10">SHOW LESS</span>
+                                                <div className="absolute inset-0 bg-gradient-to-r from-gray-600 to-gray-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                             </motion.button>
                                         )}
                                     </div>
                                 )}
+                                </motion.div>
                             </div>
                             
                             {post.imageUrl && (
@@ -611,55 +649,66 @@ export default function Posts() {
                         </div>
 
                         {/* Post Actions */}
-                        <div className={`px-4 py-4 border-t ${themeClasses.border} bg-gradient-to-r from-transparent to-gray-50/30 dark:to-gray-800/30`}>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-4 sm:space-x-6">
+                        <div className={`px-6 py-6 border-t ${themeClasses.border} bg-gradient-to-r from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-600/50 relative overflow-hidden`}>
+                            {/* Animated background */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-400/5 via-purple-400/5 to-pink-400/5 dark:from-blue-500/3 dark:via-purple-500/3 dark:to-pink-500/3"></div>
+                            
+                            <div className="flex items-center justify-between relative z-10">
+                                <div className="flex items-center space-x-6 sm:space-x-8">
                                     <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
+                                        whileHover={{ scale: 1.1, y: -2 }}
+                                        whileTap={{ scale: 0.9 }}
                                         onClick={() => handleLike(post.id)}
-                                        className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200 ${
-                                            post.liked 
-                                                ? 'text-red-500 bg-red-50 dark:bg-red-900/20' 
-                                                : `${themeClasses.textSecondary} hover:text-red-500 hover:bg-red-50/50 dark:hover:bg-red-900/10`
+                                        className={`flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 relative overflow-hidden group ${
+                                            post.liked
+                                                ? 'text-white bg-gradient-to-r from-red-500 to-pink-500 shadow-lg'
+                                                : 'text-gray-600 dark:text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 hover:shadow-lg'
                                         }`}
                                     >
-                                        <Heart size={18} fill={post.liked ? 'currentColor' : 'none'} />
-                                        <span className="text-sm font-medium">{post.likes}</span>
+                                        <Heart size={20} fill={post.liked ? 'currentColor' : 'none'} className="relative z-10" />
+                                        <span className="text-sm font-semibold relative z-10">{post.likes}</span>
+                                        {!post.liked && (
+                                            <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        )}
                                     </motion.button>
                                     
                                     <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
+                                        whileHover={{ scale: 1.1, y: -2 }}
+                                        whileTap={{ scale: 0.9 }}
                                         onClick={() => toggleComments(post.id)}
-                                        className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200 ${themeClasses.textSecondary} hover:text-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10`}
+                                        className="flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 text-gray-600 dark:text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-cyan-500 hover:shadow-lg relative overflow-hidden group"
                                     >
-                                        <MessageCircle size={18} />
-                                        <span className="text-sm font-medium">{post.comments}</span>
+                                        <MessageCircle size={20} className="relative z-10" />
+                                        <span className="text-sm font-semibold relative z-10">{post.comments}</span>
+                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     </motion.button>
                                     
                                     <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
+                                        whileHover={{ scale: 1.1, y: -2 }}
+                                        whileTap={{ scale: 0.9 }}
                                         onClick={() => handleBookmark(post.id)}
-                                        className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200 ${
-                                            post.bookmarked 
-                                                ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' 
-                                                : `${themeClasses.textSecondary} hover:text-yellow-500 hover:bg-yellow-50/50 dark:hover:bg-yellow-900/10`
+                                        className={`flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 relative overflow-hidden group ${
+                                            post.bookmarked
+                                                ? 'text-white bg-gradient-to-r from-yellow-500 to-orange-500 shadow-lg'
+                                                : 'text-gray-600 dark:text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-yellow-500 hover:to-orange-500 hover:shadow-lg'
                                         }`}
                                     >
-                                        <Bookmark size={18} fill={post.bookmarked ? 'currentColor' : 'none'} />
-                                        <span className="text-sm font-medium hidden sm:inline">Save</span>
+                                        <Bookmark size={20} fill={post.bookmarked ? 'currentColor' : 'none'} className="relative z-10" />
+                                        <span className="text-sm font-semibold relative z-10 hidden sm:inline">Save</span>
+                                        {!post.bookmarked && (
+                                            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        )}
                                     </motion.button>
-                                    
+
                                     <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
+                                        whileHover={{ scale: 1.1, y: -2 }}
+                                        whileTap={{ scale: 0.9 }}
                                         onClick={() => handleShare(post.id)}
-                                        className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200 ${themeClasses.textSecondary} hover:text-green-500 hover:bg-green-50/50 dark:hover:bg-green-900/10`}
+                                        className="flex items-center space-x-2 px-4 py-3 rounded-2xl transition-all duration-300 text-gray-600 dark:text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-500 hover:shadow-lg relative overflow-hidden group"
                                     >
-                                        <Share size={18} />
-                                        <span className="text-sm font-medium hidden sm:inline">Share</span>
+                                        <Share size={20} className="relative z-10" />
+                                        <span className="text-sm font-semibold relative z-10 hidden sm:inline">Share</span>
+                                        <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     </motion.button>
                                 </div>
                                 

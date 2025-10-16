@@ -637,16 +637,16 @@ export default function ProfilePage() {
             if (res.ok) {
                 const chatData = await res.json();
                 // Navigate to the chat
-                window.location.href = `/messaging/chat/${chatData.id}`;
+                window.location.href = `/messeging/chat/${chatData.id}`;
             } else {
                 console.error('Failed to create/find chat');
                 // Fallback: try to navigate to messaging page
-                window.location.href = '/messaging';
+                window.location.href = '/messeging';
             }
         } catch (err) {
             console.error('Error starting chat:', err);
             // Fallback: try to navigate to messaging page
-            window.location.href = '/messaging';
+            window.location.href = '/messeging';
         }
     }
 
@@ -1060,18 +1060,6 @@ export default function ProfilePage() {
                             >
                                 <MessageCircle size={18} />
                                 <span>Chat</span>
-                            </motion.button>
-                                        
-                            
-                            <motion.button
-                                type="button"
-                                whileTap={{ scale: 0.95 }}
-                                            whileHover={{ scale: 1.02 }}
-                                            onClick={handleStartChat}
-                                            className={`p-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:from-blue-600 hover:to-cyan-700 shadow-lg hover:shadow-xl transition-all duration-300`}
-                                            title="Message"
-                                        >
-                                            <MessageCircle size={18} />
                             </motion.button>
                                         
                                         <motion.button
