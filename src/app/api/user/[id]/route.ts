@@ -34,7 +34,8 @@ export async function PUT(
 
     // Try to connect to the actual backend first
     try {
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/user/${userId}`, {
+      // Use plural users endpoint to match backend convention
+      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Authorization': authHeader,
