@@ -31,10 +31,10 @@ export const GET = async (
 // PUT: تعديل بيانات البروفايل
 export const PUT = async (
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } // <- النوع الصح
+  context: { params: { id: string } } // <- النوع الصح حسب Next.js 15.5
 ) => {
   try {
-    const { id: userId } = await context.params; // فك الـ Promise
+    const { id: userId } = context.params; // مش Promise، مباشرة { id }
     const body = await request.json();
 
     const backendUrl = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
