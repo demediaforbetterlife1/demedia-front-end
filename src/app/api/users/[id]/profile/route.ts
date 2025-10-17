@@ -53,3 +53,38 @@ export async function GET(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id: userId } = params;
+    const body = await request.json();
+
+    if (!userId) {
+      return NextResponse.json({ error: "User ID required" }, { status: 400 });
+    }
+
+    console.log("🔄 Updating profile for user:", userId, body);
+
+    // تحديث المستخدم في قاعدة البيانات
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: body.name,
+        username: body.username,
+        bio: body.bio,
+        profilePicture: body.profilePicture,
+        coverPhoto: body.coverPhoto,
+      },
+    });
+
+    return NextResponse.json(updatedUser);
+  } catch (error) {
+    console.error("❌ Error updating user:", error);
+    return NextResponse.json(
+      { error: "Failed to update profile" },
+      { status: 500 }
+    );
+  }
+}
