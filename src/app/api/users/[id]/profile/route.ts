@@ -13,83 +13,41 @@ export async function GET(
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
     }
 
-    // Try to connect to the actual backend first
+    // Extract current user id from JWT (server-safe)
+    let currentUserId: string | null = null;
     try {
-      // Extract user ID from token for backend
       const token = authHeader.replace('Bearer ', '');
-      let currentUserId = null;
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        currentUserId = payload.sub || payload.userId || payload.id;
-      } catch (e) {
-        console.log('Could not extract user ID from token');
-      }
+      const part = token.split('.')[1];
+      const decoded = JSON.parse(Buffer.from(part, 'base64').toString('utf-8'));
+      currentUserId = (decoded.sub || decoded.userId || decoded.id)?.toString?.() || null;
+    } catch (_) {}
 
-      console.log('Fetching profile for userId:', userId, 'currentUserId:', currentUserId);
-
+    try {
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/users/${userId}/profile`, {
         headers: {
           'Authorization': authHeader,
-          'user-id': currentUserId || '',
+          'user-id': currentUserId || request.headers.get('user-id') || '',
           'Content-Type': 'application/json',
         },
-        // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(8000)
       });
-
-      console.log('Backend response status:', backendResponse.status);
-      console.log('Backend response ok:', backendResponse.ok);
 
       if (backendResponse.ok) {
         const data = await backendResponse.json();
-        console.log('Backend profile data received:', data);
-        
-        // Fix profile picture URLs to use full backend URL
-        if (data.profilePicture && !data.profilePicture.startsWith('http')) {
+        if (data.profilePicture && typeof data.profilePicture === 'string' && !data.profilePicture.startsWith('http')) {
           data.profilePicture = `https://demedia-backend.fly.dev${data.profilePicture}`;
         }
-        if (data.coverPhoto && !data.coverPhoto.startsWith('http')) {
+        if (data.coverPhoto && typeof data.coverPhoto === 'string' && !data.coverPhoto.startsWith('http')) {
           data.coverPhoto = `https://demedia-backend.fly.dev${data.coverPhoto}`;
         }
-        
         return NextResponse.json(data);
-      } else {
-        const errorText = await backendResponse.text();
-        console.log('Backend profile fetch failed:', backendResponse.status, errorText);
-        
-        // If it's a 404, the user doesn't exist in the backend
-        if (backendResponse.status === 404) {
-          console.log('User not found in backend, using fallback data');
-        }
-        // Don't throw error, continue to fallback
       }
-    } catch (backendError) {
-      console.log('Backend connection error for profile (using fallback):', backendError);
-      // Don't throw error, continue to fallback
-    }
 
-    // Fallback: Return sample profile data with real user data
-    console.log('Using fallback profile data for userId:', userId);
-    
-    // Fallback: Return mock profile data for development
-    const mockProfile = {
-      id: parseInt(userId),
-      name: "User",
-      username: "user",
-      bio: "This is a sample profile",
-      profilePicture: null,
-      coverPhoto: null,
-      createdAt: new Date().toISOString(),
-      followersCount: 0,
-      followingCount: 0,
-      likesCount: 0,
-      privacy: "public",
-      stories: [],
-      message: "Profile loaded in development mode"
-    };
-    
-    console.log('Backend not available for profile, returning mock data');
-    return NextResponse.json(mockProfile);
+      const text = await backendResponse.text();
+      return NextResponse.json({ error: text || 'Failed to fetch profile' }, { status: backendResponse.status });
+    } catch (_) {
+      return NextResponse.json({ error: 'Backend unavailable' }, { status: 503 });
+    }
   } catch (error) {
     console.error('Error fetching user profile:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

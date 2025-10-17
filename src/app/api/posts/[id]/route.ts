@@ -55,29 +55,16 @@ export async function PUT(
 
       if (backendResponse.ok) {
         const data = await backendResponse.json();
-        console.log('✅ Post updated via backend:', data);
         return NextResponse.json(data);
-      } else {
-        const errorText = await backendResponse.text();
-        console.error('❌ Backend update failed:', backendResponse.status, errorText);
-        // Don't throw error, continue to fallback
       }
-    } catch (backendError) {
-      console.error('❌ Backend connection failed for post update (using fallback):', backendError);
-      console.log('🔄 Using fallback for post update');
-      // Don't throw error, continue to fallback
-    }
 
-    // Fallback: Simulate successful post update for development
-    const updatedPost = {
-      id: parseInt(postId),
-      ...body,
-      updatedAt: new Date().toISOString(),
-      message: 'Post updated successfully (development mode)'
-    };
-    
-    console.log('Post update fallback (development):', updatedPost);
-    return NextResponse.json(updatedPost);
+      const errorText = await backendResponse.text();
+      return NextResponse.json({ error: errorText || 'Failed to update post' }, { status: backendResponse.status });
+    } catch (backendError) {
+      console.error('❌ Backend connection failed for post update:', backendError);
+      return NextResponse.json({ error: 'Backend unavailable' }, { status: 503 });
+    }
+    // no fallback in production
   } catch (error) {
     console.error('Error updating post:', error);
     return NextResponse.json({ 
@@ -124,15 +111,14 @@ export async function DELETE(
       if (backendResponse.ok) {
         const data = await backendResponse.json();
         return NextResponse.json(data);
-      } else {
-        console.log('Backend delete failed, using fallback');
       }
+      const errorText = await backendResponse.text();
+      return NextResponse.json({ error: errorText || 'Failed to delete post' }, { status: backendResponse.status });
     } catch (backendError) {
-      console.log('Backend not available for delete, using fallback');
+      console.log('Backend not available for delete');
+      return NextResponse.json({ error: 'Backend unavailable' }, { status: 503 });
     }
-
-    // Fallback: Simulate successful deletion
-    return NextResponse.json({ success: true, message: 'Post deleted successfully' });
+    // no fallback
   } catch (error) {
     console.error('Error deleting post:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -10,14 +10,57 @@ export default function AccountInfo({
                                     }: {
     closeModal: () => void;
 }) {
-    const [name, setName] = useState("John Doe");
-    const [phone, setPhone] = useState("+1234567890");
+    const [name, setName] = useState("");
+    const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
 
-    const handleSave = () => {
-        // هنا تقدر تبعت البيانات للـ backend أو API
-        console.log("Saving:", { name, phone, password });
-        closeModal(); // يقفل الـ modal بعد الحفظ
+    // Load current user data from auth context or API
+    // Prefer context to avoid extra network hops
+    try {
+        // Lazy import to avoid hard deps if context location changes
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { useAuth } = require("@/hooks/useAuth");
+        const { user } = useAuth();
+        if (user) {
+            if (name === "") setName(user.name || "");
+            if (phone === "") setPhone(user.phoneNumber || "");
+        }
+    } catch (_) {
+        // ignore if hook path differs; UI will still allow editing
+    }
+
+    const handleSave = async () => {
+        setError("");
+        setSaving(true);
+        try {
+            // Update account info via API
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+            const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+            if (!token || !userId) throw new Error('Not authenticated');
+
+            const payload: Record<string, any> = { phoneNumber: phone, name };
+            if (password) payload.password = password;
+
+            const res = await fetch(`/api/user/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || 'Failed to save');
+            }
+            closeModal();
+        } catch (e: any) {
+            setError(e?.message || 'Failed to save');
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
@@ -110,11 +153,15 @@ export default function AccountInfo({
 
                         {/* Save Button */}
                         <div className="pt-4">
+                            {error && (
+                                <div className="mb-3 text-sm text-red-400">{error}</div>
+                            )}
                             <button
                                 onClick={handleSave}
-                                className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-gray-900 font-semibold shadow-lg hover:shadow-xl transition"
+                                disabled={saving}
+                                className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-60 text-gray-900 font-semibold shadow-lg hover:shadow-xl transition"
                             >
-                                Save Changes
+                                {saving ? 'Saving…' : 'Save Changes'}
                             </button>
                         </div>
                     </div>

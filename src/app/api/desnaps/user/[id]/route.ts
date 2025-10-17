@@ -7,6 +7,7 @@ export async function GET(
   let userId: string = '';
   let authHeader: string | null = null;
   let viewerId: string | null = null;
+  let currentUserId: string | null = null;
   
   try {
     const resolvedParams = await params;
@@ -23,15 +24,24 @@ export async function GET(
 
     // Try to connect to the actual backend first
     try {
+      // Extract current user id from JWT if present
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const part = token.split('.')[1];
+        const decoded = JSON.parse(Buffer.from(part, 'base64').toString('utf-8'));
+        currentUserId = (decoded.sub || decoded.userId || decoded.id)?.toString?.() || null;
+      } catch (_) {}
+
       console.log('🔄 Fetching DeSnaps via backend for user:', userId, 'viewer:', viewerId);
 
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/desnaps/user/${userId}?viewerId=${viewerId}`, {
         headers: {
           'Authorization': authHeader,
+          'user-id': currentUserId || request.headers.get('user-id') || '',
           'Content-Type': 'application/json',
         },
         // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(8000)
       });
 
       console.log('🔄 Backend response status:', backendResponse.status);

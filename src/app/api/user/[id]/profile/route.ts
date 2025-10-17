@@ -13,140 +13,42 @@ export async function GET(
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
     }
 
-    // Try to connect to the actual backend first
+    // Extract current user id from JWT safely on the server
+    let currentUserId: string | null = null;
     try {
-      // Extract user ID from token for backend
       const token = authHeader.replace('Bearer ', '');
-      let currentUserId = null;
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        currentUserId = payload.sub || payload.userId || payload.id;
-      } catch (e) {
-        console.log('Could not extract user ID from token');
-      }
+      const part = token.split('.')[1];
+      const decoded = JSON.parse(Buffer.from(part, 'base64').toString('utf-8'));
+      currentUserId = (decoded.sub || decoded.userId || decoded.id)?.toString?.() || null;
+    } catch (_) {}
 
-      console.log('Fetching profile for userId:', userId, 'currentUserId:', currentUserId);
-
+    // Call backend and return its exact status/body; no mock fallback
+    try {
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/users/${userId}/profile`, {
         headers: {
           'Authorization': authHeader,
-          'user-id': currentUserId || '',
+          'user-id': currentUserId || request.headers.get('user-id') || '',
           'Content-Type': 'application/json',
         },
+        signal: AbortSignal.timeout(8000)
       });
-
-      console.log('Backend response status:', backendResponse.status);
-      console.log('Backend response ok:', backendResponse.ok);
-      console.log('Backend response headers:', Object.fromEntries(backendResponse.headers.entries()));
 
       if (backendResponse.ok) {
         const data = await backendResponse.json();
-        console.log('Backend profile data received:', data);
-        
-        // Fix profile picture URLs to use full backend URL
-        if (data.profilePicture && !data.profilePicture.startsWith('http')) {
+        if (data.profilePicture && typeof data.profilePicture === 'string' && !data.profilePicture.startsWith('http')) {
           data.profilePicture = `https://demedia-backend.fly.dev${data.profilePicture}`;
         }
-        if (data.coverPhoto && !data.coverPhoto.startsWith('http')) {
+        if (data.coverPhoto && typeof data.coverPhoto === 'string' && !data.coverPhoto.startsWith('http')) {
           data.coverPhoto = `https://demedia-backend.fly.dev${data.coverPhoto}`;
         }
-        
         return NextResponse.json(data);
-      } else {
-        const errorText = await backendResponse.text();
-        console.log('Backend profile fetch failed:', backendResponse.status, errorText);
-        console.log('Error details:', errorText);
-        console.log('Backend error response headers:', Object.fromEntries(backendResponse.headers.entries()));
-        
-        // If it's a 404, the user doesn't exist in the backend
-        if (backendResponse.status === 404) {
-          console.log('User not found in backend, using fallback data');
-        }
       }
-    } catch (backendError) {
-      console.log('Backend connection error for profile:', backendError);
+
+      const text = await backendResponse.text();
+      return NextResponse.json({ error: text || 'Failed to fetch profile' }, { status: backendResponse.status });
+    } catch (_) {
+      return NextResponse.json({ error: 'Backend unavailable' }, { status: 503 });
     }
-
-    // Fallback: Return sample profile data with real user data
-    console.log('Using fallback profile data for userId:', userId);
-    
-    // Create profile data based on known users
-    const userProfiles: { [key: number]: any } = {
-      15: {
-        id: 15,
-        name: "DeMedia",
-        username: "demedia_official",
-        bio: "Official DeMedia account - The Future Social Media Platform",
-        profilePicture: "https://demedia-backend.fly.dev/uploads/profiles/file-1760292243693-835944557.jpg",
-        coverPhoto: null,
-        followersCount: 150,
-        followingCount: 25,
-        likesCount: 2500,
-        stories: [],
-        createdAt: "2025-10-12T13:31:44.000Z"
-      },
-      16: {
-        id: 16,
-        name: "mohammed Ayman",
-        username: "hamo_1",
-        bio: "Welcome to my profile!",
-        profilePicture: "/uploads/profiles/file-1760281215779-207283174.jpg",
-        coverPhoto: null,
-        followersCount: 45,
-        followingCount: 12,
-        likesCount: 180,
-        stories: [],
-        createdAt: "2025-10-12T14:56:21.000Z"
-      },
-      17: {
-        id: 17,
-        name: "Shehap elgamal",
-        username: "shehap",
-        bio: "Hello from Shehap!",
-        profilePicture: null,
-        coverPhoto: null,
-        followersCount: 32,
-        followingCount: 8,
-        likesCount: 95,
-        stories: [],
-        createdAt: "2025-10-12T14:57:28.000Z"
-      },
-      21: {
-        id: 21,
-        name: "bavly",
-        username: "brzily",
-        bio: "Welcome to my profile!",
-        profilePicture: null,
-        coverPhoto: null,
-        followersCount: 18,
-        followingCount: 5,
-        likesCount: 42,
-        stories: [],
-        createdAt: "2025-10-13T06:54:07.000Z"
-      }
-    };
-
-    const sampleProfile = userProfiles[parseInt(userId)] || {
-      id: parseInt(userId),
-      name: `User ${userId}`,
-      username: `user${userId}`,
-      bio: "Welcome to my profile!",
-      profilePicture: null,
-      coverPhoto: null,
-      followersCount: 0,
-      followingCount: 0,
-      likesCount: 0,
-      stories: [],
-      createdAt: new Date().toISOString()
-    };
-
-    // Fix profile picture URLs to use full backend URL
-    if (sampleProfile.profilePicture && !sampleProfile.profilePicture.startsWith('http')) {
-      sampleProfile.profilePicture = `https://demedia-backend.fly.dev${sampleProfile.profilePicture}`;
-    }
-
-    console.log('Returning fallback profile:', sampleProfile);
-    return NextResponse.json(sampleProfile);
   } catch (error) {
     console.error('Error fetching user profile:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
