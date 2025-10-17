@@ -6,10 +6,10 @@ const BACKEND_URL = process.env.BACKEND_URL || "https://demedia-backend.fly.dev"
 // GET: جلب بيانات البروفايل
 export const GET = async (
   request: NextRequest,
-  context: { params: { id: string } } // <- النوع الصحيح
+  context: { params: Promise<{ id: string }> } // align with validator expecting Promise
 ) => {
   try {
-    const { id: userId } = context.params; // مباشرة { id }
+    const { id: userId } = await context.params; // await promised params
     const response = await fetch(`${BACKEND_URL}/api/user/${userId}/profile`);
 
     if (!response.ok) {
@@ -31,10 +31,10 @@ export const GET = async (
 // PUT: تعديل بيانات البروفايل
 export const PUT = async (
   request: NextRequest,
-  context: { params: { id: string } } // <- النوع الصحيح
+  context: { params: Promise<{ id: string }> } // align with validator expecting Promise
 ) => {
   try {
-    const { id: userId } = context.params; // مباشرة { id }
+    const { id: userId } = await context.params; // await promised params
     const body = await request.json();
 
     const response = await fetch(`${BACKEND_URL}/api/user/${userId}/profile`, {
