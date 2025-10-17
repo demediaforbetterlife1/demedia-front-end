@@ -960,13 +960,15 @@ export default function ProfilePage() {
                         </motion.button>
                         
                         {/* Profile Customization Button */}
-                        <ProfileCustomization 
-                            user={user} 
-                            onUpdate={(updates) => {
-                                console.log('Profile customization updated:', updates);
-                                // Here you can implement the actual update logic
-                            }} 
-                        />
+                        {user && (
+                            <ProfileCustomization 
+                                user={{ id: String(user.id) }} 
+                                onUpdate={(updates) => {
+                                    console.log('Profile customization updated:', updates);
+                                    // Here you can implement the actual update logic
+                                }} 
+                            />
+                        )}
                                     </>
                                 ) : (
                                     <>
