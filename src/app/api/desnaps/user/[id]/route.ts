@@ -37,15 +37,22 @@ export async function GET(
       console.log('🔄 Fetching DeSnaps via backend for user:', userId, 'viewer:', viewerId);
 
       const backendQuery = viewerId ? `?viewerId=${viewerId}` : '';
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/desnaps/user/${userId}${backendQuery}`, {
+
+      // Safe timeout wrapper compatible with all runtimes
+      const withTimeout = async <T>(ms: number, op: Promise<T>): Promise<T> => {
+        return await Promise.race([
+          op,
+          new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+        ]);
+      };
+
+      const backendResponse = await withTimeout(8000, fetch(`https://demedia-backend.fly.dev/api/desnaps/user/${userId}${backendQuery}`, {
         headers: {
           'Authorization': authHeader,
           'user-id': currentUserId || request.headers.get('user-id') || '',
           'Content-Type': 'application/json',
-        },
-        // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(8000)
-      });
+        }
+      }));
 
       console.log('🔄 Backend response status:', backendResponse.status);
 
@@ -55,13 +62,10 @@ export async function GET(
         // Ensure we always return an array for the client
         return NextResponse.json(Array.isArray(data) ? data : []);
       } else {
-        const errorText = await backendResponse.text();
+        const errorText = await backendResponse.text().catch(() => '');
         console.error('❌ Backend DeSnaps fetch failed:', backendResponse.status, errorText);
-        // Gracefully degrade to empty list on 5xx/404 to avoid client error loops
-        if (backendResponse.status >= 500 || backendResponse.status === 404) {
-          return NextResponse.json([]);
-        }
-        return NextResponse.json({ error: errorText || 'Failed to fetch desnaps' }, { status: backendResponse.status });
+        // Always degrade to empty list to avoid client error loops
+        return NextResponse.json([]);
       }
     } catch (backendError) {
       console.error('❌ Backend connection failed for DeSnaps:', backendError);
