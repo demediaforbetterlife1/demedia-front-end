@@ -65,21 +65,33 @@ export async function PUT(
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
     }
 
-    console.log("🔄 Updating profile for user:", userId, body);
+    // Forward update to backend API to keep logic centralized
+    const authHeader = request.headers.get('authorization');
+    const currentUserId = request.headers.get('user-id') || '';
 
-    // تحديث المستخدم في قاعدة البيانات
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        name: body.name,
-        username: body.username,
-        bio: body.bio,
-        profilePicture: body.profilePicture,
-        coverPhoto: body.coverPhoto,
-      },
-    });
+    try {
+      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/users/${userId}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader || '',
+          'user-id': currentUserId,
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(8000)
+      });
 
-    return NextResponse.json(updatedUser);
+      if (backendResponse.ok) {
+        const updatedUser = await backendResponse.json();
+        return NextResponse.json(updatedUser);
+      }
+
+      const errorText = await backendResponse.text();
+      return NextResponse.json({ error: errorText || 'Failed to update profile' }, { status: backendResponse.status });
+    } catch (err) {
+      console.error('❌ Backend update failed:', err);
+      return NextResponse.json({ error: 'Backend unavailable' }, { status: 503 });
+    }
   } catch (error) {
     console.error("❌ Error updating user:", error);
     return NextResponse.json(
