@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let userId: string = '';
   let body: any = {};
   let authHeader: string | null = null;
   
   try {
-    userId = params.id;
+    const resolvedParams = await params;
+    userId = resolvedParams.id;
     
     // Validate userId
     if (!userId || isNaN(Number(userId))) {

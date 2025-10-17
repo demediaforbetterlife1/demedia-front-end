@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let userId: string = '';
   let authHeader: string | null = null;
@@ -10,7 +10,8 @@ export async function GET(
   let currentUserId: string | null = null;
   
   try {
-    userId = params.id;
+    const resolvedParams = await params;
+    userId = resolvedParams.id;
     const viewerParam = request.nextUrl.searchParams.get('viewerId');
     // Sanitize viewerId: allow only valid numeric values
     viewerId = viewerParam && !isNaN(Number(viewerParam)) ? String(Number(viewerParam)) : null;
