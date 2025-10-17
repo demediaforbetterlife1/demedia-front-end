@@ -142,14 +142,25 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
         try {
             console.log('EditProfileModal: Submitting profile update:', profileData);
             
+            // Build payload to match backend /api/user/:id expectations
+            const payload: any = {
+                name: profileData.name,
+                username: profileData.username,
+                bio: profileData.bio,
+                email: profileData.email,
+                location: profileData.location,
+                website: profileData.website,
+                preferredLang: profileData.preferredLang,
+                profilePicture: profileData.profilePicture,
+                coverPhoto: profileData.coverPhoto,
+                privacy,
+            };
+            // Do NOT send dateOfBirth here; it's handled by /api/users/:id/profile as dob
+
             const response = await apiFetch(`/api/user/${user?.id}`, {
                 method: "PUT",
                 body: JSON.stringify({
-                    ...profileData,
-                    // Map to backend expectations
-                    dob: profileData.dateOfBirth || undefined,
-                    language: profileData.preferredLang || undefined,
-                    privacy
+                    ...payload
                 })
             });
 

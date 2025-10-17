@@ -6,10 +6,13 @@ const DIRECT_API_BASE = "https://demedia-backend.fly.dev"; // Direct backend URL
 // Health check function
 async function checkBackendHealth(): Promise<boolean> {
   try {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 5000);
     const response = await fetch('/api/health', { 
       method: 'GET',
-      signal: AbortSignal.timeout(5000) // 5 second timeout for health check
+      signal: controller.signal
     });
+    clearTimeout(t);
     return response.ok;
   } catch {
     return false;
@@ -21,14 +24,17 @@ async function tryDirectConnection(path: string, options: RequestInit = {}): Pro
   console.log('Trying direct backend connection...');
   const directUrl = `${DIRECT_API_BASE}${path}`;
   
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), 15000);
   const response = await fetch(directUrl, {
     ...options,
     headers: {
       ...options.headers,
       'Content-Type': 'application/json',
     },
-    signal: AbortSignal.timeout(15000) // 15 second timeout for direct connection
+    signal: controller.signal
   });
+  clearTimeout(t);
   
   return response;
 }
@@ -81,12 +87,14 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
         await new Promise(resolve => setTimeout(resolve, attempt * 2000));
       }
       
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), timeout);
     const res = await fetch(url, { 
       ...options, 
       headers,
-        // Progressive timeout strategy
-        signal: AbortSignal.timeout(timeout)
+      signal: controller.signal
     });
+    clearTimeout(t);
     console.log('API response status:', res.status);
     
     if (res.status === 401) {
