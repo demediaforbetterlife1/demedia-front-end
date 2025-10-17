@@ -1,27 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function PUT(
+export const PUT = async (
   request: NextRequest,
-  context: { params: { id: string } }
-) {
+  context: { params: Promise<{ id: string }> } // <- هنا النوع الصح
+) => {
   try {
-    const { id: userId } = context.params;
+    // فك الـ Promise عشان تجيب الـ id
+    const { id: userId } = await context.params;
     const body = await request.json();
 
-    // استخدم عنوان الباك إند الثابت مباشرة (بدل process.env لو بتواجه مشكلة في Vercel)
-    const backendUrl = "https://demedia-backend.fly.dev";
+    const backendUrl = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
 
-    const response = await fetch(`${backendUrl}/api/users/${userId}/profile`, {
+    const response = await fetch(`${backendUrl}/api/user/${userId}/profile`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Backend error:", errorText);
       return NextResponse.json(
         { error: errorText || "Failed to update user profile" },
         { status: response.status }
@@ -32,9 +29,6 @@ export async function PUT(
     return NextResponse.json(updatedUser);
   } catch (error: any) {
     console.error("Error updating profile:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-}
+};
