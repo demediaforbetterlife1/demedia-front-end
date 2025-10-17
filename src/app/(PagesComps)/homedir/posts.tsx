@@ -55,6 +55,7 @@ type PostType = {
     };
     createdAt: string;
     imageUrl?: string;
+    imageUrls?: string[];
     videoUrl?: string;
     images?: string[];
     videos?: string[];
@@ -550,12 +551,28 @@ export default function Posts() {
                                 </motion.div>
                             </div>
                             
-                            {post.imageUrl && (
-                                <img 
-                                    src={post.imageUrl} 
-                                    alt="Post image" 
-                                    className="mt-4 w-full rounded-lg"
-                                />
+                            {(post.imageUrl || (post.imageUrls && post.imageUrls.length > 0)) && (
+                                <div className="mt-4">
+                                    {post.imageUrl && (
+                                        <img 
+                                            src={post.imageUrl} 
+                                            alt="Post image" 
+                                            className="w-full rounded-lg"
+                                        />
+                                    )}
+                                    {post.imageUrls && post.imageUrls.length > 0 && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {post.imageUrls.map((imageUrl: string, index: number) => (
+                                                <img 
+                                                    key={index}
+                                                    src={imageUrl} 
+                                                    alt={`Post image ${index + 1}`} 
+                                                    className="w-full rounded-lg"
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             )}
                             
                             {post.videoUrl && (
