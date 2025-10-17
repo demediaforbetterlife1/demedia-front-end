@@ -1,13 +1,13 @@
-// src/app/api/user/[id]/profile/route.ts
+// src/app/api/users/[id]/profile/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
 // GET: جلب بيانات البروفايل
 export const GET = async (
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> } // <- النوع المطلوب
 ) => {
   try {
-    const { id: userId } = await context.params;
+    const { id: userId } = await context.params; // فك الـ Promise
     const backendUrl = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
 
     const response = await fetch(`${backendUrl}/api/user/${userId}/profile`);
@@ -31,10 +31,10 @@ export const GET = async (
 // PUT: تعديل بيانات البروفايل
 export const PUT = async (
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> } // <- النوع الصح
 ) => {
   try {
-    const { id: userId } = await context.params;
+    const { id: userId } = await context.params; // فك الـ Promise
     const body = await request.json();
 
     const backendUrl = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
