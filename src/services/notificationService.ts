@@ -127,9 +127,14 @@ class NotificationService {
 
     try {
       const registration = await navigator.serviceWorker.ready;
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidKey) {
+        console.warn('Skipping push subscription: missing NEXT_PUBLIC_VAPID_PUBLIC_KEY');
+        return null;
+      }
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        applicationServerKey: vapidKey,
       });
 
       console.log('Push subscription:', subscription);

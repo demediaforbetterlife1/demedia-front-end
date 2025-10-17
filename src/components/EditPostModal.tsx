@@ -122,7 +122,8 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }: 
                     hashtags,
                     mentions,
                     location: location.trim() || null,
-                    privacySettings
+                    // Backend expects a string, not an object
+                    privacySettings: privacySettings.visibility
                 })
             });
 
