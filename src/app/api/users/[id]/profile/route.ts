@@ -55,10 +55,10 @@ export async function GET(
 }
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: userId } = params;
+    const { id: userId } = await params;
     const body = await request.json();
 
     if (!userId) {
