@@ -144,11 +144,11 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
             
             const response = await apiFetch(`/api/user/${user?.id}`, {
                 method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
                 body: JSON.stringify({
                     ...profileData,
+                    // Map to backend expectations
+                    dob: profileData.dateOfBirth || undefined,
+                    language: profileData.preferredLang || undefined,
                     privacy
                 })
             });

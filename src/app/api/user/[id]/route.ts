@@ -50,12 +50,13 @@ export async function PUT(
 
     // Try to connect to the actual backend first
     try {
-      // Use plural users endpoint to match backend convention
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/users/${userId}`, {
+      // Call backend singular user update endpoint
+      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/user/${userId}`, {
         method: 'PUT',
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json',
+          'user-id': request.headers.get('user-id') || ''
         },
         body: JSON.stringify(normalized),
         signal: AbortSignal.timeout(8000)
