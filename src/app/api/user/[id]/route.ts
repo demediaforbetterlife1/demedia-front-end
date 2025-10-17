@@ -51,6 +51,8 @@ export async function PUT(
     // Try to connect to the actual backend first
     try {
       // Call backend singular user update endpoint
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 8000);
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/user/${userId}`, {
         method: 'PUT',
         headers: {
@@ -59,8 +61,9 @@ export async function PUT(
           'user-id': request.headers.get('user-id') || ''
         },
         body: JSON.stringify(normalized),
-        signal: AbortSignal.timeout(8000)
+        signal: controller.signal
       });
+      clearTimeout(t);
 
       if (backendResponse.ok) {
         const data = await backendResponse.json();
