@@ -1,7 +1,12 @@
-export const AccountInfo = () => {
+type AccountInfoProps = {
+    closeModal: () => void;
+}
+
+const AccountInfo = ({ closeModal }: AccountInfoProps) => {
     return (
-        <div>
-            
+        <div className="min-h-screen w-full">
+
         </div>
     )
 }
+export default AccountInfo;
