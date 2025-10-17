@@ -1,19 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
 import { 
-  Palette, 
-  User, 
-  MapPin, 
-  Link, 
-  Save, 
-  Eye,
-  Layout,
-  Sparkles,
-  Settings,
-  Wand2
+  User, MapPin, Link, Save, Layout, Sparkles, Settings, Wand2 
 } from 'lucide-react';
 
 interface ProfileCustomizationProps {
@@ -23,112 +14,83 @@ interface ProfileCustomizationProps {
 
 export default function ProfileCustomization({ user, onUpdate }: ProfileCustomizationProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const { theme } = useTheme();
+
   const [customization, setCustomization] = useState({
     bio: user?.bio || '',
     location: user?.location || '',
     website: user?.website || '',
-    profileLayout: 'default',
-    showAnalytics: true,
-    showFollowers: true,
-    showFollowing: true,
-    customTheme: 'auto'
+    profileLayout: user?.profileLayout || 'default',
+    showAnalytics: user?.showAnalytics ?? true,
+    showFollowers: user?.showFollowers ?? true,
+    showFollowing: user?.showFollowing ?? true,
+    customTheme: user?.customTheme || 'auto'
   });
-  const [saving, setSaving] = useState(false);
-  const { theme } = useTheme();
 
+  // ✨ Theme-based styles
   const getThemeClasses = () => {
     switch (theme) {
-      case 'light':
-        return {
-          bg: 'bg-white',
-          text: 'text-gray-900',
-          textSecondary: 'text-gray-600',
-          border: 'border-gray-200',
-          hover: 'hover:bg-gray-50',
-          accent: 'text-blue-500',
-          accentBg: 'bg-blue-50',
-          input: 'bg-gray-50 border-gray-200 focus:border-blue-500'
-        };
       case 'super-light':
         return {
-          bg: 'bg-gray-50',
+          bg: 'bg-gray-50 shimmer-light',
           text: 'text-gray-800',
-          textSecondary: 'text-gray-500',
-          border: 'border-gray-100',
-          hover: 'hover:bg-gray-100',
+          border: 'border-gray-200',
           accent: 'text-blue-500',
-          accentBg: 'bg-blue-50',
-          input: 'bg-white border-gray-100 focus:border-blue-500'
-        };
-      case 'dark':
-        return {
-          bg: 'bg-gray-800',
-          text: 'text-white',
-          textSecondary: 'text-gray-300',
-          border: 'border-gray-700',
-          hover: 'hover:bg-gray-700',
-          accent: 'text-blue-400',
-          accentBg: 'bg-blue-900/20',
-          input: 'bg-gray-700 border-gray-600 focus:border-blue-400'
+          input: 'bg-white border-gray-200 focus:border-blue-500',
         };
       case 'super-dark':
         return {
-          bg: 'bg-gray-900',
+          bg: 'bg-gray-900 shimmer-dark',
           text: 'text-gray-100',
-          textSecondary: 'text-gray-400',
           border: 'border-gray-800',
-          hover: 'hover:bg-gray-800',
           accent: 'text-blue-400',
-          accentBg: 'bg-blue-900/30',
-          input: 'bg-gray-800 border-gray-700 focus:border-blue-400'
+          input: 'bg-gray-800 border-gray-700 focus:border-blue-400',
         };
       case 'gold':
         return {
-          bg: 'bg-gradient-to-br from-yellow-900 to-yellow-800',
+          bg: 'bg-gradient-to-br from-yellow-900 to-yellow-800 shimmer-gold',
           text: 'text-yellow-100',
-          textSecondary: 'text-yellow-200',
           border: 'border-yellow-600/50',
-          hover: 'hover:bg-yellow-800/80 gold-shimmer',
           accent: 'text-blue-300',
-          accentBg: 'bg-blue-900/40',
-          input: 'bg-yellow-800/50 border-yellow-600/50 focus:border-yellow-400'
+          input: 'bg-yellow-800/50 border-yellow-600/50 focus:border-yellow-400',
         };
       default:
         return {
-          bg: 'bg-gray-800',
-          text: 'text-white',
-          textSecondary: 'text-gray-300',
-          border: 'border-gray-700',
-          hover: 'hover:bg-gray-700',
-          accent: 'text-blue-400',
-          accentBg: 'bg-blue-900/20',
-          input: 'bg-gray-700 border-gray-600 focus:border-blue-400'
+          bg: 'bg-white',
+          text: 'text-gray-900',
+          border: 'border-gray-200',
+          accent: 'text-blue-500',
+          input: 'bg-gray-50 border-gray-200 focus:border-blue-500',
         };
     }
   };
 
   const themeClasses = getThemeClasses();
 
-  const layoutOptions = [
-    { id: 'default', name: 'Default', description: 'Standard profile layout' },
-    { id: 'minimal', name: 'Minimal', description: 'Clean and simple design' },
-    { id: 'detailed', name: 'Detailed', description: 'Show all information' },
-    { id: 'creative', name: 'Creative', description: 'Artistic and unique' }
-  ];
-
+  // ✅ الفنكشن دي بتحفظ فعلاً في قاعدة البيانات
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      onUpdate(customization);
+      const response = await fetch(`/api/user/${user.id}/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token") || ""}`,
+        },
+        body: JSON.stringify(customization),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update profile");
+      }
+
+      const updated = await response.json();
+      onUpdate(updated);
       setIsOpen(false);
-      
-      // Show success message
-      console.log('Profile customization saved successfully');
-    } catch (error) {
-      console.error('Error saving customization:', error);
+      console.log("✅ Profile updated successfully");
+    } catch (err) {
+      console.error("❌ Error updating profile:", err);
     } finally {
       setSaving(false);
     }
@@ -136,166 +98,78 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
 
   return (
     <>
-      {/* Customization Button */}
+      {/* 🔮 Customize Button */}
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(true)}
-        className={`p-3 rounded-full ${themeClasses.accentBg} ${themeClasses.accent} ${themeClasses.hover} transition-all duration-300`}
-        title="Customize Profile"
+        className={`p-3 rounded-full ${themeClasses.accent} bg-opacity-20 hover:bg-opacity-30 transition-all`}
       >
         <Wand2 size={20} />
       </motion.button>
 
-      {/* Customization Modal */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
-          
+
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className={`relative w-full max-w-2xl max-h-[90vh] overflow-y-auto ${themeClasses.bg} rounded-xl ${themeClasses.border} border shadow-2xl`}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className={`relative w-full max-w-2xl max-h-[90vh] overflow-y-auto ${themeClasses.bg} ${themeClasses.border} border rounded-xl shadow-2xl`}
           >
             {/* Header */}
             <div className={`p-6 border-b ${themeClasses.border}`}>
               <div className="flex items-center justify-between">
                 <h2 className={`text-2xl font-bold ${themeClasses.text} flex items-center gap-2`}>
-                  <Sparkles className="text-purple-500" size={24} />
-                  Profile Customization
+                  <Sparkles className="text-purple-500" size={24} /> Customize Profile
                 </h2>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className={`p-2 rounded-full ${themeClasses.hover} ${themeClasses.textSecondary}`}
-                >
-                  ✕
-                </button>
+                <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
               </div>
             </div>
 
             {/* Content */}
             <div className="p-6 space-y-6">
-              {/* Basic Info */}
-              <div className="space-y-4">
-                <h3 className={`text-lg font-semibold ${themeClasses.text} flex items-center gap-2`}>
-                  <User size={20} className="text-blue-500" />
-                  Basic Information
-                </h3>
-                
-                <div>
-                  <label className={`block text-sm font-medium ${themeClasses.text} mb-2`}>
-                    Bio
-                  </label>
-                  <textarea
-                    value={customization.bio}
-                    onChange={(e) => setCustomization(prev => ({ ...prev, bio: e.target.value }))}
-                    placeholder="Tell us about yourself..."
-                    className={`w-full p-3 rounded-lg ${themeClasses.input} ${themeClasses.text} placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none`}
-                    rows={3}
-                    maxLength={160}
-                  />
-                  <div className={`text-xs ${themeClasses.textSecondary} mt-1`}>
-                    {customization.bio.length}/160 characters
-                  </div>
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium ${themeClasses.text} mb-2`}>
-                    <MapPin size={16} className="inline mr-1" />
-                    Location
-                  </label>
-                  <input
-                    type="text"
-                    value={customization.location}
-                    onChange={(e) => setCustomization(prev => ({ ...prev, location: e.target.value }))}
-                    placeholder="Where are you from?"
-                    className={`w-full p-3 rounded-lg ${themeClasses.input} ${themeClasses.text} placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
-                  />
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium ${themeClasses.text} mb-2`}>
-                    <Link size={16} className="inline mr-1" />
-                    Website
-                  </label>
-                  <input
-                    type="url"
-                    value={customization.website}
-                    onChange={(e) => setCustomization(prev => ({ ...prev, website: e.target.value }))}
-                    placeholder="https://yourwebsite.com"
-                    className={`w-full p-3 rounded-lg ${themeClasses.input} ${themeClasses.text} placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
-                  />
-                </div>
+              {/* Bio */}
+              <div>
+                <label className={`block text-sm font-medium ${themeClasses.text} mb-2`}>
+                  Bio
+                </label>
+                <textarea
+                  value={customization.bio}
+                  onChange={(e) => setCustomization({ ...customization, bio: e.target.value })}
+                  placeholder="Tell us about yourself..."
+                  className={`w-full p-3 rounded-lg ${themeClasses.input} ${themeClasses.text} focus:outline-none`}
+                  rows={3}
+                />
               </div>
 
-              {/* Layout Options */}
-              <div className="space-y-4">
-                <h3 className={`text-lg font-semibold ${themeClasses.text} flex items-center gap-2`}>
-                  <Layout size={20} className="text-green-500" />
-                  Profile Layout
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {layoutOptions.map((option) => (
-                    <motion.div
-                      key={option.id}
-                      whileHover={{ scale: 1.02 }}
-                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-300 ${
-                        customization.profileLayout === option.id
-                          ? `${themeClasses.accentBg} border-blue-500`
-                          : `${themeClasses.border} ${themeClasses.hover}`
-                      }`}
-                      onClick={() => setCustomization(prev => ({ ...prev, profileLayout: option.id }))}
-                    >
-                      <div className={`font-medium ${themeClasses.text}`}>
-                        {option.name}
-                      </div>
-                      <div className={`text-sm ${themeClasses.textSecondary}`}>
-                        {option.description}
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+              {/* Location */}
+              <div>
+                <label className={`block text-sm font-medium ${themeClasses.text} mb-2`}>
+                  <MapPin className="inline mr-1" size={16} /> Location
+                </label>
+                <input
+                  type="text"
+                  value={customization.location}
+                  onChange={(e) => setCustomization({ ...customization, location: e.target.value })}
+                  placeholder="Where are you from?"
+                  className={`w-full p-3 rounded-lg ${themeClasses.input} ${themeClasses.text} focus:outline-none`}
+                />
               </div>
 
-              {/* Display Options */}
-              <div className="space-y-4">
-                <h3 className={`text-lg font-semibold ${themeClasses.text} flex items-center gap-2`}>
-                  <Settings size={20} className="text-orange-500" />
-                  Display Options
-                </h3>
-                
-                <div className="space-y-3">
-                  {[
-                    { key: 'showAnalytics', label: 'Show Analytics Dashboard', description: 'Display engagement metrics' },
-                    { key: 'showFollowers', label: 'Show Followers Count', description: 'Display follower statistics' },
-                    { key: 'showFollowing', label: 'Show Following Count', description: 'Display following statistics' }
-                  ].map((option) => (
-                    <div key={option.key} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <div>
-                        <div className={`font-medium ${themeClasses.text}`}>
-                          {option.label}
-                        </div>
-                        <div className={`text-sm ${themeClasses.textSecondary}`}>
-                          {option.description}
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={customization[option.key as keyof typeof customization] as boolean}
-                          onChange={(e) => setCustomization(prev => ({ 
-                            ...prev, 
-                            [option.key]: e.target.checked 
-                          }))}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-                  ))}
-                </div>
+              {/* Website */}
+              <div>
+                <label className={`block text-sm font-medium ${themeClasses.text} mb-2`}>
+                  <Link className="inline mr-1" size={16} /> Website
+                </label>
+                <input
+                  type="url"
+                  value={customization.website}
+                  onChange={(e) => setCustomization({ ...customization, website: e.target.value })}
+                  placeholder="https://yourwebsite.com"
+                  className={`w-full p-3 rounded-lg ${themeClasses.input} ${themeClasses.text} focus:outline-none`}
+                />
               </div>
             </div>
 
@@ -303,7 +177,7 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
             <div className={`p-6 border-t ${themeClasses.border} flex justify-end gap-3`}>
               <button
                 onClick={() => setIsOpen(false)}
-                className={`px-4 py-2 rounded-lg ${themeClasses.textSecondary} ${themeClasses.hover} transition-colors`}
+                className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg transition"
               >
                 Cancel
               </button>
@@ -312,7 +186,7 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
                 whileTap={{ scale: 0.95 }}
                 onClick={handleSave}
                 disabled={saving}
-                className={`px-6 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors disabled:opacity-50 flex items-center gap-2`}
+                className="px-6 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium flex items-center gap-2"
               >
                 {saving ? (
                   <>
@@ -321,8 +195,7 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
                   </>
                 ) : (
                   <>
-                    <Save size={16} />
-                    Save Changes
+                    <Save size={16} /> Save Changes
                   </>
                 )}
               </motion.button>
@@ -333,3 +206,31 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
     </>
   );
 }
+
+/* ✨ Add this to your globals.css for shimmer effect */
+
+ /*
+.shimmer-light {
+  background: linear-gradient(120deg, #f9fafb, #ffffff, #f9fafb);
+  background-size: 200% 200%;
+  animation: shimmer 4s infinite;
+}
+
+.shimmer-dark {
+  background: linear-gradient(120deg, #0f0f0f, #1a1a1a, #0f0f0f);
+  background-size: 200% 200%;
+  animation: shimmer 4s infinite;
+}
+
+.shimmer-gold {
+  background: linear-gradient(120deg, #b8860b, #ffd700, #b8860b);
+  background-size: 200% 200%;
+  animation: shimmer 4s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+*/
