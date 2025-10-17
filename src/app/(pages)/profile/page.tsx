@@ -813,30 +813,30 @@ export default function ProfilePage() {
                                 <div className={`relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl ring-4 ring-white/20 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300`}>
                     {profilePicture ? (
                         <motion.img
-                                            key={profilePicture}
+                            key={profilePicture}
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ type: "spring", stiffness: 120 }}
                             src={profilePicture}
                             alt={name}
-                                className="w-full h-full object-cover"
+                            className="w-full h-full object-cover"
                             loading="lazy"
                             onError={(e) => {
-                                    console.log("Profile picture failed to load:", profilePicture);
-                                e.currentTarget.style.display = "none";
-                                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                                    if (fallback) {
-                                        fallback.classList.remove("hidden");
-                                    }
-                                }}
-                                onLoad={() => {
-                                    console.log("Profile picture loaded successfully:", profilePicture);
+                                console.log("Profile picture failed to load:", profilePicture);
+                                e.currentTarget.src = "/assets/images/default-avatar.svg";
+                            }}
+                            onLoad={() => {
+                                console.log("Profile picture loaded successfully:", profilePicture);
                             }}
                         />
-                    ) : null}
-                                    <div className={`absolute inset-0 w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold ${profilePicture ? "hidden" : ""}`}>
-                        {name.charAt(0).toUpperCase()}
-                        </div>
+                    ) : (
+                        <img
+                            src="/assets/images/default-avatar.svg"
+                            alt={name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                        />
+                    )}
                                     
                                     {/* Unique Feature: Mood Ring */}
                                     <div className="absolute inset-0 rounded-full border-2 border-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 opacity-60 animate-pulse"></div>
