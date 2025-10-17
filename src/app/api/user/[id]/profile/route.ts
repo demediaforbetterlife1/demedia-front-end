@@ -1,16 +1,16 @@
 // src/app/api/users/[id]/profile/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
+const BACKEND_URL = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
+
 // GET: جلب بيانات البروفايل
 export const GET = async (
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } // <- النوع المطلوب
+  context: { params: { id: string } } // <- النوع الصحيح
 ) => {
   try {
-    const { id: userId } = await context.params; // فك الـ Promise
-    const backendUrl = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
-
-    const response = await fetch(`${backendUrl}/api/user/${userId}/profile`);
+    const { id: userId } = context.params; // مباشرة { id }
+    const response = await fetch(`${BACKEND_URL}/api/user/${userId}/profile`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -31,15 +31,13 @@ export const GET = async (
 // PUT: تعديل بيانات البروفايل
 export const PUT = async (
   request: NextRequest,
-  context: { params: { id: string } } // <- النوع الصح حسب Next.js 15.5
+  context: { params: { id: string } } // <- النوع الصحيح
 ) => {
   try {
-    const { id: userId } = context.params; // مش Promise، مباشرة { id }
+    const { id: userId } = context.params; // مباشرة { id }
     const body = await request.json();
 
-    const backendUrl = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
-
-    const response = await fetch(`${backendUrl}/api/user/${userId}/profile`, {
+    const response = await fetch(`${BACKEND_URL}/api/user/${userId}/profile`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
