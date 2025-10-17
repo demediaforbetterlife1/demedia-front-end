@@ -1,14 +1,22 @@
 "use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useTheme } from '@/contexts/ThemeContext';
-import { 
-  User, MapPin, Link, Save, Layout, Sparkles, Settings, Wand2 
-} from 'lucide-react';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { useTheme } from "@/contexts/ThemeContext";
+import { MapPin, Link, Save, Sparkles, Wand2 } from "lucide-react";
 
 interface ProfileCustomizationProps {
-  user: any;
+  user: {
+    id: string;
+    bio?: string;
+    location?: string;
+    website?: string;
+    profileLayout?: string;
+    showAnalytics?: boolean;
+    showFollowers?: boolean;
+    showFollowing?: boolean;
+    customTheme?: string;
+  };
   onUpdate: (updates: any) => void;
 }
 
@@ -18,71 +26,82 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
   const { theme } = useTheme();
 
   const [customization, setCustomization] = useState({
-    bio: user?.bio || '',
-    location: user?.location || '',
-    website: user?.website || '',
-    profileLayout: user?.profileLayout || 'default',
+    bio: user?.bio || "",
+    location: user?.location || "",
+    website: user?.website || "",
+    profileLayout: user?.profileLayout || "default",
     showAnalytics: user?.showAnalytics ?? true,
     showFollowers: user?.showFollowers ?? true,
     showFollowing: user?.showFollowing ?? true,
-    customTheme: user?.customTheme || 'auto'
+    customTheme: user?.customTheme || "auto",
   });
 
-  // ✨ Theme-based styles
+  // 🎨 Theme styling
   const getThemeClasses = () => {
     switch (theme) {
-      case 'super-light':
+      case "super-light":
         return {
-          bg: 'bg-gray-50 shimmer-light',
-          text: 'text-gray-800',
-          border: 'border-gray-200',
-          accent: 'text-blue-500',
-          input: 'bg-white border-gray-200 focus:border-blue-500',
+          bg: "bg-gray-50 shimmer-light",
+          text: "text-gray-800",
+          border: "border-gray-200",
+          accent: "text-blue-500",
+          input: "bg-white border-gray-200 focus:border-blue-500",
         };
-      case 'super-dark':
+      case "super-dark":
         return {
-          bg: 'bg-gray-900 shimmer-dark',
-          text: 'text-gray-100',
-          border: 'border-gray-800',
-          accent: 'text-blue-400',
-          input: 'bg-gray-800 border-gray-700 focus:border-blue-400',
+          bg: "bg-gray-900 shimmer-dark",
+          text: "text-gray-100",
+          border: "border-gray-800",
+          accent: "text-blue-400",
+          input: "bg-gray-800 border-gray-700 focus:border-blue-400",
         };
-      case 'gold':
+      case "gold":
         return {
-          bg: 'bg-gradient-to-br from-yellow-900 to-yellow-800 shimmer-gold',
-          text: 'text-yellow-100',
-          border: 'border-yellow-600/50',
-          accent: 'text-blue-300',
-          input: 'bg-yellow-800/50 border-yellow-600/50 focus:border-yellow-400',
+          bg: "bg-gradient-to-br from-yellow-900 to-yellow-800 shimmer-gold",
+          text: "text-yellow-100",
+          border: "border-yellow-600/50",
+          accent: "text-blue-300",
+          input: "bg-yellow-800/50 border-yellow-600/50 focus:border-yellow-400",
         };
       default:
         return {
-          bg: 'bg-white',
-          text: 'text-gray-900',
-          border: 'border-gray-200',
-          accent: 'text-blue-500',
-          input: 'bg-gray-50 border-gray-200 focus:border-blue-500',
+          bg: "bg-white",
+          text: "text-gray-900",
+          border: "border-gray-200",
+          accent: "text-blue-500",
+          input: "bg-gray-50 border-gray-200 focus:border-blue-500",
         };
     }
   };
 
   const themeClasses = getThemeClasses();
 
-  // ✅ الفنكشن دي بتحفظ فعلاً في قاعدة البيانات
+  // ✅ تحديث البيانات على السيرفر
   const handleSave = async () => {
+    if (!user?.id) {
+      console.error("❌ User ID is missing.");
+      return;
+    }
+
     setSaving(true);
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No auth token found");
+      }
+
       const response = await fetch(`/api/user/${user.id}/profile`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token") || ""}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(customization),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update profile");
+        const errorText = await response.text();
+        throw new Error(`Failed to update profile: ${errorText}`);
       }
 
       const updated = await response.json();
@@ -98,7 +117,7 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
 
   return (
     <>
-      {/* 🔮 Customize Button */}
+      {/* ⚙️ زر التخصيص */}
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -108,6 +127,7 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
         <Wand2 size={20} />
       </motion.button>
 
+      {/* 🪄 نافذة التخصيص */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
@@ -124,7 +144,9 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
                 <h2 className={`text-2xl font-bold ${themeClasses.text} flex items-center gap-2`}>
                   <Sparkles className="text-purple-500" size={24} /> Customize Profile
                 </h2>
-                <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+                <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600">
+                  ✕
+                </button>
               </div>
             </div>
 
@@ -132,9 +154,7 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
             <div className="p-6 space-y-6">
               {/* Bio */}
               <div>
-                <label className={`block text-sm font-medium ${themeClasses.text} mb-2`}>
-                  Bio
-                </label>
+                <label className={`block text-sm font-medium ${themeClasses.text} mb-2`}>Bio</label>
                 <textarea
                   value={customization.bio}
                   onChange={(e) => setCustomization({ ...customization, bio: e.target.value })}
@@ -206,31 +226,3 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
     </>
   );
 }
-
-/* ✨ Add this to your globals.css for shimmer effect */
-
- /*
-.shimmer-light {
-  background: linear-gradient(120deg, #f9fafb, #ffffff, #f9fafb);
-  background-size: 200% 200%;
-  animation: shimmer 4s infinite;
-}
-
-.shimmer-dark {
-  background: linear-gradient(120deg, #0f0f0f, #1a1a1a, #0f0f0f);
-  background-size: 200% 200%;
-  animation: shimmer 4s infinite;
-}
-
-.shimmer-gold {
-  background: linear-gradient(120deg, #b8860b, #ffd700, #b8860b);
-  background-size: 200% 200%;
-  animation: shimmer 4s infinite;
-}
-
-@keyframes shimmer {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-*/
