@@ -22,7 +22,8 @@ export async function GET(
 
     // Try to connect to the actual backend first
     try {
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/chat/${chatId}`, {
+      // Backend expects /api/chat/id/:chatId to fetch by chat id
+      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/chat/id/${chatId}`, {
         method: 'GET',
         headers: {
           'Authorization': authHeader,
@@ -39,32 +40,14 @@ export async function GET(
         return NextResponse.json(data);
       } else {
         const errorText = await backendResponse.text();
-        console.log('Backend chat fetch failed:', backendResponse.status, errorText);
-        // Don't throw error, continue to fallback
+        console.error('Backend chat fetch failed:', backendResponse.status, errorText);
+        return NextResponse.json({ error: errorText || 'Failed to fetch chat' }, { status: backendResponse.status });
       }
     } catch (backendError) {
-      console.log('Backend chat connection error (using fallback):', backendError);
-      // Don't throw error, continue to fallback
+      console.error('Backend chat connection error:', backendError);
+      return NextResponse.json({ error: 'Backend unavailable' }, { status: 503 });
     }
-
-    // Fallback: Return mock chat data
-    console.log('Using fallback chat data');
-    const mockChat = {
-      id: chatId,
-      chatName: "Chat",
-      participants: [
-        {
-          id: userId,
-          name: "You",
-          username: "you",
-          profilePicture: null
-        }
-      ],
-      isGroup: false,
-      createdAt: new Date().toISOString()
-    };
-
-    return NextResponse.json(mockChat);
+    // No fallback: surface the backend issue
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

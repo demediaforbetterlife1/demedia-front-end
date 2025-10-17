@@ -39,17 +39,14 @@ export async function GET(
         return NextResponse.json(data);
       } else {
         const errorText = await backendResponse.text();
-        console.log('Backend messages fetch failed:', backendResponse.status, errorText);
-        // Don't throw error, continue to fallback
+        console.error('Backend messages fetch failed:', backendResponse.status, errorText);
+        return NextResponse.json({ error: errorText || 'Failed to fetch messages' }, { status: backendResponse.status });
       }
     } catch (backendError) {
-      console.log('Backend messages connection error (using fallback):', backendError);
-      // Don't throw error, continue to fallback
+      console.error('Backend messages connection error:', backendError);
+      return NextResponse.json({ error: 'Backend unavailable' }, { status: 503 });
     }
-
-    // Fallback: Return empty messages array
-    console.log('Using fallback messages data');
-    return NextResponse.json([]);
+    // No fallback
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

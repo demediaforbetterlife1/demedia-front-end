@@ -43,17 +43,13 @@ export async function GET(
       } else {
         const errorText = await backendResponse.text();
         console.error('❌ Backend DeSnaps fetch failed:', backendResponse.status, errorText);
-        // Don't throw error, continue to fallback
+        return NextResponse.json({ error: errorText || 'Failed to fetch desnaps' }, { status: backendResponse.status });
       }
     } catch (backendError) {
-      console.error('❌ Backend connection failed for DeSnaps (using fallback):', backendError);
-      console.log('🔄 Using fallback for DeSnaps');
-      // Don't throw error, continue to fallback
+      console.error('❌ Backend connection failed for DeSnaps:', backendError);
+      return NextResponse.json({ error: 'Backend unavailable' }, { status: 503 });
     }
-
-    // Fallback: Return empty array if backend is not available
-    console.log('Backend not available for DeSnaps, returning empty array');
-    return NextResponse.json([]);
+    // No fallback
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
