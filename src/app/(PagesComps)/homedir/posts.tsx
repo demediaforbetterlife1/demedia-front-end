@@ -134,6 +134,13 @@ export default function Posts() {
                 console.log('📊 Data type:', typeof data);
                 console.log('📊 Is array:', Array.isArray(data));
                 
+                // Debug first post if it exists
+                if (Array.isArray(data) && data.length > 0) {
+                    console.log('📊 First post details:', data[0]);
+                    console.log('📊 First post imageUrl:', data[0].imageUrl);
+                    console.log('📊 First post imageUrls:', data[0].imageUrls);
+                }
+                
                 // Ensure data is an array
                 let postsArray: any[] = data;
                 if (!Array.isArray(data)) {
@@ -519,33 +526,39 @@ export default function Posts() {
                                     transition={{ delay: 0.3 }}
                                     className={`${themeClasses.postContent} whitespace-pre-wrap leading-relaxed text-base`}
                                 >
-                                {shouldTruncateText(post.content) && !expandedPosts.has(post.id) ? (
-                                    <div>
-                                        <p>{getTruncatedText(post.content)}</p>
-                                        <motion.button
-                                            whileHover={{ scale: 1.05, y: -2 }}
-                                            whileTap={{ scale: 0.95 }}
-                                            onClick={() => togglePostExpansion(post.id)}
-                                            className={`mt-4 px-4 py-2 ${themeClasses.postButton} text-sm font-semibold rounded-full transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl relative overflow-hidden group`}
-                                        >
-                                            <span className="relative z-10">VIEW DETAILS</span>
-                                            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                        </motion.button>
-                                    </div>
-                                ) : (
-                                    <div>
-                                        <p>{post.content}</p>
-                                        {shouldTruncateText(post.content) && expandedPosts.has(post.id) && (
+                                {post.content && post.content.trim() ? (
+                                    shouldTruncateText(post.content) && !expandedPosts.has(post.id) ? (
+                                        <div>
+                                            <p>{getTruncatedText(post.content)}</p>
                                             <motion.button
                                                 whileHover={{ scale: 1.05, y: -2 }}
                                                 whileTap={{ scale: 0.95 }}
                                                 onClick={() => togglePostExpansion(post.id)}
-                                                className={`mt-4 px-4 py-2 ${themeClasses.postButtonSecondary} text-sm font-semibold rounded-full transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl relative overflow-hidden group`}
+                                                className={`mt-4 px-4 py-2 ${themeClasses.postButton} text-sm font-semibold rounded-full transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl relative overflow-hidden group`}
                                             >
-                                                <span className="relative z-10">SHOW LESS</span>
-                                                <div className="absolute inset-0 bg-gradient-to-r from-gray-600 to-gray-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                                <span className="relative z-10">VIEW DETAILS</span>
+                                                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                             </motion.button>
-                                        )}
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <p>{post.content}</p>
+                                            {shouldTruncateText(post.content) && expandedPosts.has(post.id) && (
+                                                <motion.button
+                                                    whileHover={{ scale: 1.05, y: -2 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                    onClick={() => togglePostExpansion(post.id)}
+                                                    className={`mt-4 px-4 py-2 ${themeClasses.postButtonSecondary} text-sm font-semibold rounded-full transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl relative overflow-hidden group`}
+                                                >
+                                                    <span className="relative z-10">SHOW LESS</span>
+                                                    <div className="absolute inset-0 bg-gradient-to-r from-gray-600 to-gray-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                                </motion.button>
+                                            )}
+                                        </div>
+                                    )
+                                ) : (
+                                    <div className="text-gray-500 italic">
+                                        {post.imageUrl || (post.imageUrls && post.imageUrls.length > 0) ? 'Shared a photo' : 'New post'}
                                     </div>
                                 )}
                                 </motion.div>
@@ -558,6 +571,13 @@ export default function Posts() {
                                             src={post.imageUrl} 
                                             alt="Post image" 
                                             className="w-full rounded-lg"
+                                            onError={(e) => {
+                                                console.log('Image failed to load:', post.imageUrl);
+                                                e.currentTarget.style.display = 'none';
+                                            }}
+                                            onLoad={() => {
+                                                console.log('Image loaded successfully:', post.imageUrl);
+                                            }}
                                         />
                                     )}
                                     {post.imageUrls && post.imageUrls.length > 0 && (
@@ -568,6 +588,13 @@ export default function Posts() {
                                                     src={imageUrl} 
                                                     alt={`Post image ${index + 1}`} 
                                                     className="w-full rounded-lg"
+                                                    onError={(e) => {
+                                                        console.log('Image failed to load:', imageUrl);
+                                                        e.currentTarget.style.display = 'none';
+                                                    }}
+                                                    onLoad={() => {
+                                                        console.log('Image loaded successfully:', imageUrl);
+                                                    }}
                                                 />
                                             ))}
                                         </div>

@@ -99,6 +99,7 @@ import FollowersList from "@/components/FollowersList";
 import ProfileAnalytics from "@/components/ProfileAnalytics";
 import ProfileCustomization from "@/components/ProfileCustomization";
 import PremiumUserIndicator from "@/components/PremiumUserIndicator";
+import PhotoUploadModal from "@/components/PhotoUploadModal";
 import { getThemeClasses, getButtonClasses, getCardClasses } from "@/utils/themeUtils";
 
 interface Story {
@@ -605,16 +606,42 @@ export default function ProfilePage() {
             if (response.ok) {
                 const data = await response.json();
                 console.log(`${type} photo uploaded:`, data);
+                console.log('Photo URL received:', data.url);
+                
+                // Ensure the URL is properly formatted
+                let photoUrl = data.url;
+                if (photoUrl && !photoUrl.startsWith('http')) {
+                    photoUrl = `https://demedia-backend.fly.dev${photoUrl}`;
+                }
+                console.log('Formatted photo URL:', photoUrl);
                 
                 // Update profile state with new photo URL
                 setProfile(prev => prev ? {
                     ...prev,
-                    [type === 'profile' ? 'profilePicture' : 'coverPicture']: data.url
+                    [type === 'profile' ? 'profilePicture' : 'coverPicture']: photoUrl
                 } : null);
+                
+                // Also update the user context if it's the current user's profile
+                if (isOwnProfile && user) {
+                    // Update user context with new photo URL
+                    const updatedUser = {
+                        ...user,
+                        [type === 'profile' ? 'profilePicture' : 'coverPhoto']: data.url
+                    };
+                    // Note: You might need to add a method to update user context
+                    // This depends on how your AuthContext is implemented
+                }
                 
                 // Show success notification
                 if (typeof window !== 'undefined' && window.Notification) {
                     new Notification(`${type === 'profile' ? 'Profile' : 'Cover'} photo updated!`);
+                }
+                
+                // Refresh profile data to ensure photo is displayed
+                if (isOwnProfile) {
+                    setTimeout(() => {
+                        refreshProfile();
+                    }, 1000);
                 }
             } else {
                 console.error(`Failed to upload ${type} photo`);
@@ -731,6 +758,10 @@ export default function ProfilePage() {
 
     const { coverPicture, profilePicture, name, username, bio, followersCount, followingCount, likesCount, stories } =
         profile;
+    
+    // Debug logging for profile picture
+    console.log('Profile picture value:', profilePicture);
+    console.log('Cover picture value:', coverPicture);
 
     return (
         <div key={userId}>
@@ -823,6 +854,7 @@ export default function ProfilePage() {
                             loading="lazy"
                             onError={(e) => {
                                     console.log("Profile picture failed to load:", profilePicture);
+                                    console.log("Error details:", e);
                                 e.currentTarget.src = "/assets/images/default-avatar.svg";
                                 }}
                                 onLoad={() => {
@@ -1526,6 +1558,15 @@ export default function ProfilePage() {
                 onClose={() => setShowFollowingList(false)}
                 userId={parseInt(userId)}
                 type="following"
+            />
+
+            {/* Photo Upload Modal */}
+            <PhotoUploadModal
+                isOpen={showPhotoUploadModal}
+                onClose={() => setShowPhotoUploadModal(false)}
+                onUpload={handlePhotoUpload}
+                type={photoUploadType}
+                isUploading={isUploadingPhoto}
             />
         </div>
     );

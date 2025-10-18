@@ -226,10 +226,11 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
             if (images.length > 0) {
                 for (const image of images) {
                     const formData = new FormData();
-                    formData.append('image', image);
+                    formData.append('file', image);
+                    formData.append('type', 'image');
                     formData.append('userId', userId);
 
-                    const uploadResponse = await fetch(`/api/upload/post`, {
+                    const uploadResponse = await fetch(`/api/upload`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -239,9 +240,12 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
 
                     if (uploadResponse.ok) {
                         const uploadData = await uploadResponse.json();
+                        console.log('Image upload successful:', uploadData);
                         imageUrls.push(uploadData.url);
                     } else {
-                        console.error('Failed to upload image:', image.name);
+                        console.error('Failed to upload image:', image.name, uploadResponse.status);
+                        const errorText = await uploadResponse.text();
+                        console.error('Upload error details:', errorText);
                     }
                 }
             }
@@ -259,6 +263,9 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
                 imageUrls: imageUrls,
                 imageUrl: imageUrls && imageUrls.length > 0 ? imageUrls[0] : null
             };
+            
+            console.log('Post data being sent:', postData);
+            console.log('Image URLs:', imageUrls);
 
             const res = await apiFetch(`/api/posts`, {
                 method: "POST",
