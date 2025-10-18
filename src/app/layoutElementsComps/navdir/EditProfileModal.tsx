@@ -143,6 +143,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
             console.log('EditProfileModal: Submitting profile update:', profileData);
             
             // Build payload to match backend /api/user/:id expectations
+            // Now includes all fields from the updated User model schema
             const payload: any = {
                 name: profileData.name,
                 username: profileData.username,
@@ -150,12 +151,12 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                 email: profileData.email,
                 location: profileData.location,
                 website: profileData.website,
-                preferredLang: profileData.preferredLang,
                 profilePicture: profileData.profilePicture,
                 coverPhoto: profileData.coverPhoto,
-                privacy,
+                preferredLang: profileData.preferredLang,
+                privacy: privacy,
             };
-            // Do NOT send dateOfBirth here; it's handled by /api/users/:id/profile as dob
+            // dateOfBirth is handled by /api/users/:id/profile as dob
 
             const response = await apiFetch(`/api/user/${user?.id}`, {
                 method: "PUT",
