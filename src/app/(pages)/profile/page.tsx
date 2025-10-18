@@ -813,20 +813,20 @@ export default function ProfilePage() {
                                 <div className={`relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl ring-4 ring-white/20 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300`}>
                     {profilePicture ? (
                         <motion.img
-                            key={profilePicture}
+                                            key={profilePicture}
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ type: "spring", stiffness: 120 }}
                             src={profilePicture}
                             alt={name}
-                            className="w-full h-full object-cover"
+                                className="w-full h-full object-cover"
                             loading="lazy"
                             onError={(e) => {
-                                console.log("Profile picture failed to load:", profilePicture);
+                                    console.log("Profile picture failed to load:", profilePicture);
                                 e.currentTarget.src = "/assets/images/default-avatar.svg";
-                            }}
-                            onLoad={() => {
-                                console.log("Profile picture loaded successfully:", profilePicture);
+                                }}
+                                onLoad={() => {
+                                    console.log("Profile picture loaded successfully:", profilePicture);
                             }}
                         />
                     ) : (
@@ -961,13 +961,13 @@ export default function ProfilePage() {
                         
                         {/* Profile Customization Button */}
                         {user && (
-                            <ProfileCustomization 
+                        <ProfileCustomization 
                                 user={{ id: String(user.id) }} 
-                                onUpdate={(updates) => {
-                                    console.log('Profile customization updated:', updates);
-                                    // Here you can implement the actual update logic
-                                }} 
-                            />
+                            onUpdate={(updates) => {
+                                console.log('Profile customization updated:', updates);
+                                // Here you can implement the actual update logic
+                            }} 
+                        />
                         )}
                                     </>
                                 ) : (

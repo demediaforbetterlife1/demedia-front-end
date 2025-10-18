@@ -23,6 +23,7 @@ import ThemeModal from "@/app/(PagesComps)/settingsdir/settingComps/appearence/t
 import FontSizeModal from "@/app/(PagesComps)/settingsdir/settingComps/support/HelpCenter";
 import HelpCenterModal from "@/app/(PagesComps)/settingsdir/settingComps/support/HelpCenter";
 import { useI18n } from "@/contexts/I18nContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 type Item = {
@@ -58,6 +59,7 @@ export default function SettingsItems() {
     const [activeModal, setActiveModal] = useState<Item["modal"] | null>(null);
     const contentRef = useRef<HTMLDivElement | null>(null);
     const { t, supportedLocales, language, setLanguage } = useI18n();
+    const { user } = useAuth();
 
     const sections: Section[] = [
         {
@@ -208,7 +210,7 @@ export default function SettingsItems() {
             {/* === Modals === */}
 
             {/* Account & Security */}
-            {activeModal === "account" && <AccountInfo closeModal={closeActiveModal} />}
+            {activeModal === "account" && user && <AccountInfo user={{...user, id: parseInt(user.id), privacy: user.privacy || 'public'}} closeModal={closeActiveModal} />}
             {activeModal === "2fa" && <TwoFactorSettings closeModal={closeActiveModal} />}
             {activeModal === "loginactivity" && <LoginActivity closeModal={closeActiveModal} />}
             {activeModal === "trusteddevices" && <TrustedDevicesModal closeModal={closeActiveModal} />}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
-import { MapPin, Link, Save, Sparkles, Wand2 } from "lucide-react";
+import { MapPin, Link, Save, Sparkles, Wand2, Camera } from "lucide-react";
 
 interface ProfileCustomizationProps {
   user: {
@@ -16,6 +16,7 @@ interface ProfileCustomizationProps {
     showFollowers?: boolean;
     showFollowing?: boolean;
     customTheme?: string;
+    image?: string; // ✅ تأكد من وجود هذا الحقل
   };
   onUpdate: (updates: any) => void;
 }
@@ -34,6 +35,7 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
     showFollowers: user?.showFollowers ?? true,
     showFollowing: user?.showFollowing ?? true,
     customTheme: user?.customTheme || "auto",
+    image: user?.image || "", // ✅
   });
 
   // 🎨 Theme styling
@@ -115,6 +117,34 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
     }
   };
 
+  // 📸 رفع صورة جديدة
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("No auth token found");
+
+      const res = await fetch(`/api/user/${user.id}/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Failed to upload image");
+
+      const data = await res.json();
+      setCustomization({ ...customization, image: data.imageUrl });
+      console.log("✅ Image uploaded successfully");
+    } catch (error) {
+      console.error("❌ Upload error:", error);
+    }
+  };
+
   return (
     <>
       {/* ⚙️ زر التخصيص */}
@@ -152,6 +182,31 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
 
             {/* Content */}
             <div className="p-6 space-y-6">
+              {/* 🖼️ صورة المستخدم */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  <img
+                    src={customization.image || "/default-avatar.png"}
+                    alt="Profile Picture"
+                    className="w-28 h-28 rounded-full object-cover border-2 border-blue-500 shadow-md"
+                  />
+                  <label
+                    htmlFor="imageUpload"
+                    className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600 transition"
+                  >
+                    <Camera size={16} />
+                    <input
+                      id="imageUpload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                    />
+                  </label>
+                </div>
+                <p className={`text-sm ${themeClasses.text}`}>Change Profile Picture</p>
+              </div>
+
               {/* Bio */}
               <div>
                 <label className={`block text-sm font-medium ${themeClasses.text} mb-2`}>Bio</label>
