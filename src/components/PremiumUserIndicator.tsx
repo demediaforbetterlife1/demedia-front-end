@@ -70,12 +70,16 @@ export default function PremiumUserIndicator({
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             whileHover={{ scale: 1.1 }}
-            className={`${sizeClasses[size]} ${config.bgColor} ${config.borderColor} border rounded-full flex items-center justify-center ${className}`}
+            className={`${sizeClasses[size]} ${config.bgColor} ${config.borderColor} border rounded-full flex items-center justify-center ${className} ${
+                subscriptionTier === 'monthly' ? 'gold-shimmer' : ''
+            }`}
             title={config.title}
         >
             <Icon 
                 size={iconSizes[size]} 
-                className={config.color}
+                className={`${config.color} ${
+                    subscriptionTier === 'monthly' ? 'drop-shadow-lg' : ''
+                }`}
             />
         </motion.div>
     );

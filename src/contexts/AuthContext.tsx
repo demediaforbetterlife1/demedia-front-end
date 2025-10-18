@@ -13,15 +13,20 @@ interface User {
   email?: string;
   phoneNumber: string;
   profilePicture?: string;
+  coverPhoto?: string;
   bio?: string;
+  location?: string;
+  website?: string;
   dateOfBirth?: string;
   dob?: string;
   age?: number;
   language?: string;
   preferredLang?: string;
+  privacy?: string;
   interests?: string[];
   isSetupComplete?: boolean;
   isPhoneVerified?: boolean;
+  createdAt?: string;
 }
 
 interface AuthContextType {

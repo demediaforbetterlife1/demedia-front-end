@@ -167,6 +167,8 @@ interface UserProfileResponse {
     username: string;
     email: string;
     bio: string | null;
+    location: string | null;
+    website: string | null;
     profilePicture: string | null;
     coverPhoto: string | null;
     createdAt: string;

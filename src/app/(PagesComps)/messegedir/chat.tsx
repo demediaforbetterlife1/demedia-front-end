@@ -54,6 +54,30 @@ export default function ChatRoom({ chat, currentUserId }: ChatRoomProps) {
 
         socket.emit("joinChat", chat.id);
 
+        // Auto-delete messages when read (for premium users)
+        const autoDeleteMessages = async () => {
+            // Check if user has premium subscription
+            const userSubscription = localStorage.getItem('userSubscription');
+            if (!userSubscription || userSubscription === 'free') return;
+
+            // Auto-delete messages that have been seen
+            const messagesToDelete = messages.filter(msg => 
+                msg.senderId !== currentUserId && msg.status === 'seen'
+            );
+
+            for (const message of messagesToDelete) {
+                try {
+                    await axios.delete(`/api/messages/${message.id}`);
+                    setMessages(prev => prev.filter(m => m.id !== message.id));
+                } catch (err) {
+                    console.error('Failed to auto-delete message:', err);
+                }
+            }
+        };
+
+        // Run auto-delete every 30 seconds
+        const interval = setInterval(autoDeleteMessages, 30000);
+
         socket.on("newMessage", (message: Message) => {
             if (message.chatId === chat.id) {
                 setMessages((prev) => [...prev, message]);
@@ -73,6 +97,7 @@ export default function ChatRoom({ chat, currentUserId }: ChatRoomProps) {
         return () => {
             socket.off("newMessage");
             socket.off("typing");
+            clearInterval(interval);
         };
     }, [chat.id]);
 

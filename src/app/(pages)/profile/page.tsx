@@ -1688,7 +1688,11 @@ const UserPosts = ({
             {posts.map((post) => (
                 <motion.div 
                     key={post.id} 
-                    className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-2xl p-6 border border-gray-700/50 shadow-xl backdrop-blur-sm"
+                    className={`rounded-2xl p-6 shadow-xl backdrop-blur-sm transition-all duration-300 ${
+                        theme === 'gold' 
+                            ? 'bg-gradient-to-br from-gray-700/90 to-gray-800/90 border border-yellow-500/30 gold-glow gold-shimmer' 
+                            : 'bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-700/50'
+                    }`}
                     whileHover={{ scale: 1.02, y: -2 }}
                     transition={{ duration: 0.2 }}
                 >
