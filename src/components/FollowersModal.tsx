@@ -252,7 +252,13 @@ export default function FollowersModal({ isOpen, onClose, userId, type }: Follow
                                         transition={{ duration: 0.2 }}
                                     >
                                         <div className="flex items-center space-x-3">
-                                            <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                                            <button
+                                                onClick={() => {
+                                                    onClose();
+                                                    window.location.href = `/profile?userId=${follower.id}`;
+                                                }}
+                                                className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold hover:scale-105 transition-transform cursor-pointer"
+                                            >
                                                 {follower.profilePicture ? (
                                                     <img
                                                         src={follower.profilePicture}
@@ -262,14 +268,22 @@ export default function FollowersModal({ isOpen, onClose, userId, type }: Follow
                                                 ) : (
                                                     follower.name?.charAt(0) || 'U'
                                                 )}
-                                            </div>
+                                            </button>
                                             <div className="flex-1">
-                                                <h3 className={`font-semibold ${themeClasses.text}`}>
-                                                    {follower.name}
-                                                </h3>
-                                                <p className={`text-sm ${themeClasses.textSecondary}`}>
-                                                    @{follower.username}
-                                                </p>
+                                                <button
+                                                    onClick={() => {
+                                                        onClose();
+                                                        window.location.href = `/profile?userId=${follower.id}`;
+                                                    }}
+                                                    className="text-left hover:underline cursor-pointer"
+                                                >
+                                                    <h3 className={`font-semibold ${themeClasses.text}`}>
+                                                        {follower.name}
+                                                    </h3>
+                                                    <p className={`text-sm ${themeClasses.textSecondary}`}>
+                                                        @{follower.username}
+                                                    </p>
+                                                </button>
                                                 {follower.bio && (
                                                     <p className={`text-sm ${themeClasses.textSecondary} mt-1`}>
                                                         {follower.bio}

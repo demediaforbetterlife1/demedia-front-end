@@ -403,10 +403,10 @@ export const getPostThemeClasses = (theme: Theme) => {
   return {
     ...baseClasses,
     // Modern, consistent post styling
-    postCard: theme === 'super-dark' 
+        postCard: theme === 'super-dark' 
       ? 'bg-black/40 backdrop-blur-md border border-gray-800/40 shadow-2xl shadow-black/50 relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-r before:from-gray-800/20 before:via-gray-700/10 before:to-gray-800/20 before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-700 before:animate-pulse' 
       : theme === 'gold' 
-        ? 'bg-gradient-to-br from-yellow-900/20 via-amber-900/10 to-yellow-800/20 backdrop-blur-md border border-yellow-700/40 shadow-2xl shadow-yellow-500/20 relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-r before:from-yellow-600/20 before:via-amber-500/10 before:to-yellow-600/20 before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-700 before:animate-pulse' 
+        ? 'bg-gray-600/30 backdrop-blur-md border border-gray-500/40 shadow-2xl shadow-gray-500/20 relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-r before:from-gray-500/20 before:via-gray-400/10 before:to-gray-500/20 before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-700 before:animate-pulse' 
         : theme === 'dark'
           ? 'bg-gray-800/95 backdrop-blur-sm border border-gray-700/60 shadow-xl relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-r before:from-gray-600/10 before:via-gray-500/5 before:to-gray-600/10 before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-500'
           : theme === 'light'
@@ -418,7 +418,7 @@ export const getPostThemeClasses = (theme: Theme) => {
     postCardHover: theme === 'super-dark' 
       ? 'hover:bg-black/30 hover:border-gray-700/50' 
       : theme === 'gold' 
-        ? 'hover:bg-gray-600/30 hover:border-yellow-600/50' 
+        ? 'hover:bg-gray-600/40 hover:border-gray-400/50' 
         : theme === 'dark'
           ? 'hover:bg-gray-800/95 hover:border-gray-600/70'
           : 'hover:bg-white/98 hover:border-gray-300/70',
@@ -426,7 +426,7 @@ export const getPostThemeClasses = (theme: Theme) => {
     postHeader: theme === 'super-dark'
       ? 'bg-black/10 border-b border-gray-800/30'
       : theme === 'gold'
-        ? 'bg-yellow-900/20 border-b border-yellow-700/30'
+        ? 'bg-gray-600/20 border-b border-gray-500/30'
         : theme === 'dark'
           ? 'bg-gray-800/50 border-b border-gray-700/50'
           : 'bg-gray-50/50 border-b border-gray-200/50',
@@ -436,7 +436,7 @@ export const getPostThemeClasses = (theme: Theme) => {
     postActions: theme === 'super-dark'
       ? 'bg-black/10 border-t border-gray-800/30'
       : theme === 'gold'
-        ? 'bg-yellow-900/20 border-t border-yellow-700/30'
+        ? 'bg-gray-600/20 border-t border-gray-500/30'
         : theme === 'dark'
           ? 'bg-gray-800/50 border-t border-gray-700/50'
           : 'bg-gray-50/50 border-t border-gray-200/50',

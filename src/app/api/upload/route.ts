@@ -48,18 +48,22 @@ export async function POST(request: NextRequest) {
       console.log('Backend upload connection error:', backendError);
     }
 
-    // Fallback: Create a mock upload response
+    // Fallback: Convert to base64 for development
     console.log('Using fallback upload response');
+    const arrayBuffer = await file.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    const dataUrl = `data:${file.type};base64,${base64}`;
+    
     const mockUpload = {
       success: true,
-      url: `https://demedia-backend.fly.dev/uploads/${type}s/${file.name}`,
+      url: dataUrl,
       filename: file.name,
       size: file.size,
       type: type,
       message: 'File uploaded (fallback mode)'
     };
 
-    console.log('Returning mock upload:', mockUpload);
+    console.log('Returning base64 upload:', { filename: file.name, type: file.type });
     return NextResponse.json(mockUpload);
 
   } catch (error) {

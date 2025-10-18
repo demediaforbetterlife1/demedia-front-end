@@ -28,6 +28,8 @@ import { getPostThemeClasses } from "@/utils/enhancedThemeUtils";
 import CommentModal from "@/components/CommentModal";
 import ReportModal from "@/components/ReportModal";
 import EditPostModal from "@/components/EditPostModal";
+import YouTubeStyleComments from "@/components/YouTubeStyleComments";
+import LiveReactions from "@/components/LiveReactions";
 import { apiFetch } from "@/lib/api";
 import PremiumUserIndicator from "@/components/PremiumUserIndicator";
 
@@ -122,11 +124,11 @@ export default function Posts() {
                         data = await response.json();
                     } catch (error) {
                         console.log('Personalized posts failed, falling back to regular posts');
-                        const response = await apiFetch('/api/posts');
+                        const response = await apiFetch('/api/test-posts');
                         data = await response.json();
                     }
                 } else {
-                    const response = await apiFetch('/api/posts');
+                    const response = await apiFetch('/api/test-posts');
                     data = await response.json();
                 }
 
@@ -680,6 +682,26 @@ export default function Posts() {
                                 )}
                             </div>
                         </div>
+
+                        {/* YouTube Style Comments for Videos */}
+                        {post.videoUrl && (
+                            <YouTubeStyleComments
+                                postId={post.id}
+                                postContent={post.content}
+                                postAuthor={post.author.username}
+                                isVisible={true}
+                            />
+                        )}
+
+                        {/* Live Reactions */}
+                        <LiveReactions
+                            postId={post.id}
+                            isVisible={true}
+                            onReactionCount={(count) => {
+                                // Update post reaction count if needed
+                                console.log(`Post ${post.id} has ${count} reactions`);
+                            }}
+                        />
 
                         {/* Comments Section */}
                         {showComments[post.id] && (

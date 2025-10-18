@@ -1116,17 +1116,11 @@ export default function ProfilePage() {
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.3 }}
                         >
-                                            <div className="text-center py-8">
-                                                <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                                                    <Video className="w-10 h-10 text-white" />
-                            </div>
-                                                <h3 className={`text-xl font-bold ${themeClasses.text} mb-2`}>DeSnaps</h3>
-                                                <p className={`${themeClasses.textSecondary} mb-4`}>Short-form video content with unique features</p>
-                                                <div className="text-center">
-                                                    <p className={`${themeClasses.textSecondary} mb-4`}>No DeSnaps yet</p>
-                                                    <p className={`${themeClasses.textSecondary} mb-4`}>DeSnaps will appear here when created</p>
-                                        </div>
-                                                    </div>
+                            <UserDeSnaps 
+                                userId={userId} 
+                                themeClasses={themeClasses}
+                                theme={theme}
+                            />
                         </motion.div>
                     )}
 
@@ -1576,6 +1570,163 @@ export default function ProfilePage() {
         </div>
     );
 }
+
+// UserDeSnaps component to display user's DeSnaps
+const UserDeSnaps = ({ 
+    userId, 
+    themeClasses,
+    theme
+}: { 
+    userId?: string;
+    themeClasses: any;
+    theme: string;
+}) => {
+    const [deSnaps, setDeSnaps] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!userId) return;
+        
+        const fetchUserDeSnaps = async () => {
+            try {
+                setLoading(true);
+                const response = await apiFetch(`/api/desnaps/user/${userId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch DeSnaps');
+                }
+                
+                const data = await response.json();
+                setDeSnaps(Array.isArray(data) ? data : []);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to load DeSnaps');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserDeSnaps();
+    }, [userId]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-8">
+                <p className="text-red-400">{error}</p>
+            </div>
+        );
+    }
+
+    if (deSnaps.length === 0) {
+        return (
+            <div className="text-center py-8">
+                <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <Video className="w-10 h-10 text-white" />
+                </div>
+                <h3 className={`text-xl font-bold ${themeClasses.text} mb-2`}>DeSnaps</h3>
+                <p className={`${themeClasses.textSecondary} mb-4`}>Short-form video content with unique features</p>
+                <div className="text-center">
+                    <p className={`${themeClasses.textSecondary} mb-4`}>No DeSnaps yet</p>
+                    <p className={`${themeClasses.textSecondary} mb-4`}>DeSnaps will appear here when created</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            {deSnaps.map((deSnap) => (
+                <motion.div 
+                    key={deSnap.id} 
+                    className={`rounded-2xl p-6 shadow-xl backdrop-blur-sm transition-all duration-300 ${
+                        theme === 'gold' 
+                            ? 'bg-gradient-to-br from-gray-700/90 to-gray-800/90 border border-yellow-500/30 gold-glow gold-shimmer' 
+                            : 'bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-700/50'
+                    }`}
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    {/* DeSnap Header */}
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-white font-bold">
+                                {deSnap.author?.name?.charAt(0) || 'U'}
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-white text-lg">{deSnap.author?.name || 'Unknown User'}</h3>
+                                <p className="text-sm text-gray-400">@{deSnap.author?.username || 'unknown'}</p>
+                            </div>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                            {new Date(deSnap.createdAt).toLocaleDateString()}
+                        </div>
+                    </div>
+
+                    {/* DeSnap Content */}
+                    <div className="mb-4">
+                        {deSnap.content && (
+                            <p className="text-gray-300 text-base leading-relaxed mb-4">
+                                {deSnap.content}
+                            </p>
+                        )}
+                        
+                        {/* DeSnap Video/Thumbnail */}
+                        {deSnap.thumbnail && (
+                            <div className="relative rounded-xl overflow-hidden">
+                                <img 
+                                    src={deSnap.thumbnail} 
+                                    alt="DeSnap thumbnail" 
+                                    className="w-full h-64 object-cover"
+                                    onError={(e) => {
+                                        console.log('DeSnap thumbnail failed to load:', deSnap.thumbnail);
+                                        e.currentTarget.style.display = 'none';
+                                    }}
+                                />
+                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                    <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
+                                        <Video className="w-8 h-8 text-white" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* DeSnap Actions */}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-700/50">
+                        <div className="flex items-center space-x-6">
+                            <button className="flex items-center space-x-2 text-gray-400 hover:text-red-400 transition-colors">
+                                <Heart size={20} />
+                                <span className="font-medium">{deSnap.likes || 0}</span>
+                            </button>
+                            <button className="flex items-center space-x-2 text-gray-400 hover:text-blue-400 transition-colors">
+                                <MessageCircle size={20} />
+                                <span className="font-medium">{deSnap.comments || 0}</span>
+                            </button>
+                            <button className="flex items-center space-x-2 text-gray-400 hover:text-green-400 transition-colors">
+                                <Share size={20} />
+                                <span className="font-medium">Share</span>
+                            </button>
+                        </div>
+                        
+                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            <span>{deSnap.views || 0} views</span>
+                            <span>•</span>
+                            <span>{deSnap.duration || 0}s</span>
+                        </div>
+                    </div>
+                </motion.div>
+            ))}
+        </div>
+    );
+};
 
 // UserPosts component to display user's posts
 const UserPosts = ({ 

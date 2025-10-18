@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { apiFetch } from "@/lib/api";
 import YouTubeStyleComments from "./YouTubeStyleComments";
+import LiveReactions from "./LiveReactions";
 import CommentModal from "./CommentModal";
 
 interface Post {
@@ -284,6 +285,15 @@ export default function PostWithYouTubeComments({ post, onPostUpdated, onPostDel
                     isVisible={showYouTubeComments}
                 />
             )}
+
+            {/* Live Reactions */}
+            <LiveReactions
+                postId={post.id}
+                isVisible={true}
+                onReactionCount={(count) => {
+                    console.log(`Post ${post.id} has ${count} live reactions`);
+                }}
+            />
 
             {/* Comment Modal */}
             <CommentModal

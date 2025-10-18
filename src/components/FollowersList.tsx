@@ -195,7 +195,13 @@ export default function FollowersList({ isOpen, onClose, userId, type }: Followe
                     className={`flex items-center justify-between p-3 rounded-lg ${themeClasses.bgTertiary} ${themeClasses.border}`}
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center">
+                      <button
+                        onClick={() => {
+                          onClose();
+                          window.location.href = `/profile?userId=${follower.id}`;
+                        }}
+                        className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
+                      >
                         {follower.profilePicture ? (
                           <img
                             src={follower.profilePicture}
@@ -205,14 +211,22 @@ export default function FollowersList({ isOpen, onClose, userId, type }: Followe
                         ) : (
                           <User className="w-5 h-5 text-white" />
                         )}
-                      </div>
-                      <div>
-                        <h3 className={`font-semibold ${themeClasses.textPrimary}`}>
-                          {follower.name}
-                        </h3>
-                        <p className={`text-sm ${themeClasses.textSecondary}`}>
-                          @{follower.username}
-                        </p>
+                      </button>
+                      <div className="flex-1">
+                        <button
+                          onClick={() => {
+                            onClose();
+                            window.location.href = `/profile?userId=${follower.id}`;
+                          }}
+                          className="text-left hover:underline cursor-pointer"
+                        >
+                          <h3 className={`font-semibold ${themeClasses.textPrimary}`}>
+                            {follower.name}
+                          </h3>
+                          <p className={`text-sm ${themeClasses.textSecondary}`}>
+                            @{follower.username}
+                          </p>
+                        </button>
                       </div>
                     </div>
                     

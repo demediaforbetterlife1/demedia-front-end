@@ -46,24 +46,26 @@ export async function POST(request: NextRequest) {
       // Don't throw error, continue to fallback
     }
 
-    // Fallback: Try to simulate upload for development
+    // Fallback: Convert to base64 for development
     const file = formData.get('file') as File;
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    // Generate a temporary URL for development
-    const tempUrl = `https://demedia-backend.fly.dev/uploads/profiles/temp-${Date.now()}-${file.name}`;
+    // Convert file to base64
+    const arrayBuffer = await file.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    const dataUrl = `data:${file.type};base64,${base64}`;
     
     console.log('Profile photo upload fallback (development):', { 
       fileName: file.name, 
-      fileSize: file.size, 
-      tempUrl 
+      fileSize: file.size,
+      type: file.type
     });
     
     return NextResponse.json({
       success: true,
-      url: tempUrl,
+      url: dataUrl,
       message: 'Profile photo uploaded successfully (development mode)'
     });
   } catch (error) {

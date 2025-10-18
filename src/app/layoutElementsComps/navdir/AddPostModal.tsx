@@ -230,11 +230,8 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
                     formData.append('type', 'image');
                     formData.append('userId', userId);
 
-                    const uploadResponse = await fetch(`/api/upload`, {
+                    const uploadResponse = await fetch(`/api/test-upload`, {
                         method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        },
                         body: formData,
                     });
 
@@ -246,6 +243,9 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
                         console.error('Failed to upload image:', image.name, uploadResponse.status);
                         const errorText = await uploadResponse.text();
                         console.error('Upload error details:', errorText);
+                        setError(`Failed to upload image: ${image.name} - ${errorText}`);
+                        setLoading(false);
+                        return;
                     }
                 }
             }
@@ -267,13 +267,18 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
             console.log('Post data being sent:', postData);
             console.log('Image URLs:', imageUrls);
 
-            const res = await apiFetch(`/api/posts`, {
+            console.log('Creating post with data:', postData);
+            console.log('Image URLs being sent:', imageUrls);
+            
+            const res = await apiFetch(`/api/test-posts`, {
                 method: "POST",
                 headers: {
                     'user-id': userId,
                 },
                 body: JSON.stringify(postData),
             });
+            
+            console.log('Post creation response status:', res.status);
 
             if (!res.ok) {
                 let errorMessage = "Failed to create post";
@@ -618,29 +623,50 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
 
                             {/* Media Preview */}
                             {(images.length > 0 || videos.length > 0) && (
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    {images.map((img, i) => (
-                                        <div key={i} className="relative group rounded-xl overflow-hidden">
-                                            <img src={URL.createObjectURL(img)} alt="preview" className="w-full h-32 object-cover" />
-                                            <button
-                                                onClick={() => removeImage(i)}
-                                                className="absolute top-2 right-2 bg-red-500 rounded-full p-1 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <X size={16} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                    {videos.map((vid, i) => (
-                                        <div key={i} className="relative group rounded-xl overflow-hidden bg-black">
-                                            <video src={URL.createObjectURL(vid)} className="w-full h-32 object-cover" />
-                                            <button
-                                                onClick={() => removeVideo(i)}
-                                                className="absolute top-2 right-2 bg-red-500 rounded-full p-1 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <X size={16} />
-                                            </button>
-                                        </div>
-                                    ))}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold theme-text-primary">Media Preview</h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {images.map((img, i) => (
+                                            <div key={i} className="relative group rounded-xl overflow-hidden shadow-lg">
+                                                <img 
+                                                    src={URL.createObjectURL(img)} 
+                                                    alt="preview" 
+                                                    className="w-full h-40 sm:h-32 object-cover hover:scale-105 transition-transform duration-300" 
+                                                />
+                                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                                <button
+                                                    onClick={() => removeImage(i)}
+                                                    className="absolute top-2 right-2 bg-red-500 rounded-full p-2 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg"
+                                                    title="Remove image"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                                <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                                                    Image {i + 1}
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {videos.map((vid, i) => (
+                                            <div key={i} className="relative group rounded-xl overflow-hidden bg-black shadow-lg">
+                                                <video 
+                                                    src={URL.createObjectURL(vid)} 
+                                                    className="w-full h-40 sm:h-32 object-cover hover:scale-105 transition-transform duration-300"
+                                                    controls
+                                                    preload="metadata"
+                                                />
+                                                <button
+                                                    onClick={() => removeVideo(i)}
+                                                    className="absolute top-2 right-2 bg-red-500 rounded-full p-2 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg"
+                                                    title="Remove video"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                                <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                                                    Video {i + 1}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>
