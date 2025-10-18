@@ -1547,6 +1547,7 @@ const UserPosts = ({
     setSelectedPost: (post: any) => void;
     themeClasses: any;
 }) => {
+    const { theme } = useTheme();
     const [posts, setPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
