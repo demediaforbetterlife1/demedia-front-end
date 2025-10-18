@@ -23,7 +23,7 @@ export async function GET(
     } catch (_) {}
 
     try {
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/users/${userId}/profile`, {
+      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/user/${userId}/profile`, {
         headers: {
           'Authorization': authHeader,
           'user-id': currentUserId || request.headers.get('user-id') || '',
@@ -70,7 +70,7 @@ export async function PUT(
     const currentUserId = request.headers.get('user-id') || '';
 
     try {
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/users/${userId}/profile`, {
+      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/user/${userId}/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
