@@ -38,10 +38,15 @@ export async function PUT(
       username: typeof body.username === 'string' ? body.username.trim() : undefined,
       bio: typeof body.bio === 'string' ? (body.bio.trim() || null) : body.bio ?? null,
       email: typeof body.email === 'string' ? (body.email.trim() || null) : body.email ?? null,
+      location: typeof body.location === 'string' ? (body.location.trim() || null) : body.location ?? null,
+      website: typeof body.website === 'string' ? (body.website.trim() || null) : body.website ?? null,
+      profilePicture: typeof body.profilePicture === 'string' ? (body.profilePicture || null) : body.profilePicture ?? null,
+      coverPhoto: typeof body.coverPhoto === 'string' ? (body.coverPhoto || null) : body.coverPhoto ?? null,
+      preferredLang: typeof body.preferredLang === 'string' ? (body.preferredLang.trim() || null) : body.preferredLang ?? null,
+      privacy: typeof body.privacy === 'string' ? body.privacy : 'public',
       dateOfBirth: typeof body.dateOfBirth === 'string' && body.dateOfBirth
         ? new Date(body.dateOfBirth).toISOString()
         : null,
-      profilePicture: typeof body.profilePicture === 'string' ? (body.profilePicture || null) : body.profilePicture ?? null,
     } as Record<string, any>;
 
     if (!normalized.name || !normalized.username) {
@@ -72,6 +77,14 @@ export async function PUT(
 
       // Surface common validation/conflict errors cleanly
       const text = await backendResponse.text();
+      console.error('Backend profile update failed:', {
+        status: backendResponse.status,
+        statusText: backendResponse.statusText,
+        responseText: text,
+        userId,
+        normalized
+      });
+      
       if (backendResponse.status === 409) {
         return NextResponse.json({ error: text || 'Username already taken' }, { status: 409 });
       }
