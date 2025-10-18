@@ -633,8 +633,15 @@ export default function ProfilePage() {
                 }
                 
                 // Show success notification
-                if (typeof window !== 'undefined' && window.Notification) {
-                    new Notification(`${type === 'profile' ? 'Profile' : 'Cover'} photo updated!`);
+                try {
+                    const { notificationService } = await import('@/services/notificationService');
+                    notificationService.showNotification({
+                        title: 'Photo Updated',
+                        body: `${type === 'profile' ? 'Profile' : 'Cover'} photo updated successfully!`,
+                        tag: 'photo_updated'
+                    });
+                } catch (error) {
+                    console.log('Notification service not available');
                 }
                 
                 // Refresh profile data to ensure photo is displayed
@@ -645,11 +652,33 @@ export default function ProfilePage() {
                 }
             } else {
                 console.error(`Failed to upload ${type} photo`);
-                alert(`Failed to upload ${type} photo. Please try again.`);
+                const errorText = await response.text();
+                console.error('Upload error details:', errorText);
+                
+                try {
+                    const { notificationService } = await import('@/services/notificationService');
+                    notificationService.showNotification({
+                        title: 'Upload Failed',
+                        body: `Failed to upload ${type} photo. Please try again.`,
+                        tag: 'upload_error'
+                    });
+                } catch (error) {
+                    alert(`Failed to upload ${type} photo. Please try again.`);
+                }
             }
         } catch (error) {
             console.error(`Error uploading ${type} photo:`, error);
-            alert(`Error uploading ${type} photo. Please try again.`);
+            
+            try {
+                const { notificationService } = await import('@/services/notificationService');
+                notificationService.showNotification({
+                    title: 'Upload Error',
+                    body: `Error uploading ${type} photo. Please try again.`,
+                    tag: 'upload_error'
+                });
+            } catch (error) {
+                alert(`Error uploading ${type} photo. Please try again.`);
+            }
         } finally {
             setIsUploadingPhoto(false);
             setShowPhotoUploadModal(false);
@@ -799,9 +828,9 @@ export default function ProfilePage() {
                                             setShowPhotoUploadModal(true);
                                         }}
                                         disabled={isUploadingPhoto}
-                                        className="absolute bottom-4 right-4 p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
+                                        className="absolute bottom-4 right-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
                                     >
-                                        <Camera size={20} />
+                                        <Camera size={16} />
                                     </motion.button>
                                 )}
                             </div>
@@ -823,7 +852,7 @@ export default function ProfilePage() {
                                                 setShowPhotoUploadModal(true);
                                             }}
                                             disabled={isUploadingPhoto}
-                                            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 shadow-lg backdrop-blur-sm"
+                                            className="px-4 py-2 bg-white/20 backdrop-blur-md text-white rounded-lg hover:bg-white/30 transition-all duration-300 disabled:opacity-50 shadow-lg text-sm font-medium"
                                         >
                                             {isUploadingPhoto ? 'Uploading...' : 'Add Cover Photo'}
                                         </motion.button>
@@ -870,48 +899,9 @@ export default function ProfilePage() {
                         />
                     )}
                                     
-                                    {/* Unique Feature: Mood Ring */}
-                                    <div className="absolute inset-0 rounded-full border-2 border-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 opacity-60 animate-pulse"></div>
-                                    
-                                    {/* Unique Feature: Online Status */}
+                                    {/* Online Status */}
                                     <div className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
                     </div>
-                                
-                                {/* Unique Feature: Floating Action Buttons */}
-                                {isOwnProfile && (
-                                    <div className="absolute -bottom-2 -right-2 flex space-x-2">
-                                        <motion.button
-                        type="button"
-                                            whileHover={{ scale: 1.1 }}
-                                            whileTap={{ scale: 0.9 }}
-                                            onClick={() => {
-                                                setPhotoUploadType('profile');
-                                                setShowPhotoUploadModal(true);
-                                            }}
-                                            disabled={isUploadingPhoto}
-                                            className="p-2 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
-                                            title="Change Photo"
-                    >
-                        {isUploadingPhoto ? (
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                            <Camera size={16} />
-                        )}
-                                        </motion.button>
-                                        <motion.button
-                                type="button"
-                                            whileHover={{ scale: 1.1 }}
-                                            whileTap={{ scale: 0.9 }}
-                                            className="p-2 bg-gradient-to-r from-pink-500 to-rose-600 rounded-full text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                                            title="Mood Filter"
-                                        >
-                                            <Sparkles size={16} />
-                                        </motion.button>
-                                    </div>
-                                )}
-                                
-                                {/* Unique Feature: Energy Ring */}
-                                <div className="absolute -inset-2 rounded-full border-2 border-transparent bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 opacity-20 animate-spin-slow"></div>
                             </div>
                 </div>
 
@@ -989,6 +979,21 @@ export default function ProfilePage() {
                         >
                             <Edit size={18} />
                             <span>Edit Profile</span>
+                        </motion.button>
+                        
+                        {/* Profile Photo Upload Button */}
+                        <motion.button
+                            type="button"
+                            onClick={() => {
+                                setPhotoUploadType('profile');
+                                setShowPhotoUploadModal(true);
+                            }}
+                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.02 }}
+                            className={`px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${themeClasses.buttonSecondary} flex items-center space-x-2 text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
+                        >
+                            <Camera size={18} />
+                            <span>Change Photo</span>
                         </motion.button>
                         
                         {/* Profile Customization Button */}
