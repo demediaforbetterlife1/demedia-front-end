@@ -250,7 +250,7 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
             const postData = {
                 title: title || null,
                 content: content,
-                authorId: parseInt(userId),
+                userId: parseInt(userId), // Backend expects userId, not authorId
                 privacySettings: privacySettings,
                 hashtags: hashtags,
                 mentions: mentions,

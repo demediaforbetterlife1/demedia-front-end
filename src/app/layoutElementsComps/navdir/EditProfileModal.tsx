@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Camera, User, Mail, Calendar, MapPin, Link, Phone, Globe, Lock, Users, UserCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -45,9 +45,11 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
         bio: user?.bio || "",
         email: user?.email || "",
         dateOfBirth: user?.dateOfBirth || "",
-        location: "",
-        website: "",
-        preferredLang: user?.preferredLang || "en"
+        location: user?.location || "",
+        website: user?.website || "",
+        preferredLang: user?.preferredLang || "en",
+        profilePicture: user?.profilePicture || "",
+        coverPhoto: user?.coverPhoto || ""
     });
     
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,6 +59,24 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
     
     const profilePictureRef = useRef<HTMLInputElement>(null);
     const coverPhotoRef = useRef<HTMLInputElement>(null);
+
+    // Update profileData when user data changes
+    useEffect(() => {
+        if (user) {
+            setProfileData({
+                name: user.name || "",
+                username: user.username || "",
+                bio: user.bio || "",
+                email: user.email || "",
+                dateOfBirth: user.dateOfBirth || "",
+                location: user.location || "",
+                website: user.website || "",
+                preferredLang: user.preferredLang || "en",
+                profilePicture: user.profilePicture || "",
+                coverPhoto: user.coverPhoto || ""
+            });
+        }
+    }, [user]);
 
     const handleInputChange = (field: keyof ProfileData, value: string) => {
         setProfileData(prev => ({ ...prev, [field]: value }));
