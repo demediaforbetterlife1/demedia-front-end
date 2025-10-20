@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BarChart3, TrendingUp, Users, Heart, ThumbsUp, Laugh, Fire, Star, Zap, PartyPopper } from "lucide-react";
+import { BarChart3, TrendingUp, Users, Heart, ThumbsUp, Laugh, Flame, Star, Zap, PartyPopper } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 
 interface ReactionAnalyticsProps {
@@ -22,7 +22,7 @@ const REACTION_ICONS = {
     "❤️": Heart,
     "👍": ThumbsUp,
     "😂": Laugh,
-    "🔥": Fire,
+    "🔥": Flame,
     "⭐": Star,
     "⚡": Zap,
     "🎉": PartyPopper,

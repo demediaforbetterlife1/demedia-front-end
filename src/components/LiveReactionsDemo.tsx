@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Heart, Zap, Star, Fire, ThumbsUp, Laugh, PartyPopper } from "lucide-react";
+import { Heart, Zap, Star, Flame, ThumbsUp, Laugh, PartyPopper } from "lucide-react";
 
 export default function LiveReactionsDemo() {
     return (
@@ -46,7 +46,7 @@ export default function LiveReactionsDemo() {
                                 { icon: Heart, text: "7 Different Emoji Reactions", color: "text-red-400" },
                                 { icon: Zap, text: "Real-time Animated Effects", color: "text-yellow-400" },
                                 { icon: Star, text: "Live Reaction Analytics", color: "text-purple-400" },
-                                { icon: Fire, text: "Instant Visual Feedback", color: "text-orange-400" },
+                                { icon: Flame, text: "Instant Visual Feedback", color: "text-orange-400" },
                                 { icon: ThumbsUp, text: "User Engagement Tracking", color: "text-blue-400" },
                                 { icon: Laugh, text: "Interactive Reaction Picker", color: "text-green-400" },
                                 { icon: PartyPopper, text: "Mobile Responsive Design", color: "text-pink-400" },

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, ThumbsUp, Laugh, Fire, Star, Zap, PartyPopper, BarChart3 } from "lucide-react";
+import { Heart, ThumbsUp, Laugh, Flame, Star, Zap, PartyPopper, BarChart3 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch } from "@/lib/api";
 import ReactionAnalytics from "./ReactionAnalytics";
@@ -27,7 +27,7 @@ const REACTION_TYPES = [
     { emoji: "❤️", icon: Heart, color: "text-red-500", bgColor: "bg-red-500/20" },
     { emoji: "👍", icon: ThumbsUp, color: "text-blue-500", bgColor: "bg-blue-500/20" },
     { emoji: "😂", icon: Laugh, color: "text-yellow-500", bgColor: "bg-yellow-500/20" },
-    { emoji: "🔥", icon: Fire, color: "text-orange-500", bgColor: "bg-orange-500/20" },
+    { emoji: "🔥", icon: Flame, color: "text-orange-500", bgColor: "bg-orange-500/20" },
     { emoji: "⭐", icon: Star, color: "text-purple-500", bgColor: "bg-purple-500/20" },
     { emoji: "⚡", icon: Zap, color: "text-cyan-500", bgColor: "bg-cyan-500/20" },
     { emoji: "🎉", icon: PartyPopper, color: "text-pink-500", bgColor: "bg-pink-500/20" },
