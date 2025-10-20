@@ -191,7 +191,7 @@ export default function LiveReactions({ postId, isVisible, onReactionCount }: Li
                                 ease: "easeOut"
                             }}
                             className="absolute text-2xl pointer-events-none select-none"
-                            style={{
+                            style
                                 left: `${reaction.x}%`,
                                 top: `${reaction.y}%`,
                                 transform: 'translate(-50%, -50%)'
@@ -232,8 +232,7 @@ export default function LiveReactions({ postId, isVisible, onReactionCount }: Li
                                     whileTap={{ scale: 0.9 }}
                                     onClick={() => userReactions[emoji] ? removeReaction(emoji) : addReaction(emoji)}
                                     className={`flex items-center space-x-1 px-2 py-1 rounded-full text-sm font-medium transition-all duration-200 ${
-                                        userReactions[emoji] 
-                                            ? 'bg-blue-500 text-white shadow-lg' 
+                                        userReablue-500 text-white shadow-lg' 
                                             : 'bg-white/90 text-gray-700 hover:bg-gray-100 shadow-md'
                                     }`}
                                 >
