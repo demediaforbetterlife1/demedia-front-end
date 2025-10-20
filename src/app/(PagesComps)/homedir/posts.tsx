@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch } from "@/lib/api";
-import ReactionAnalytics from "./ReactionAnalytics";
+import ReactionAnalytics from "@/components/ReactionAnalytics";
 
 interface Reaction {
   id: string;
