@@ -22,14 +22,10 @@ export async function GET() {
 }
 
 // ✅ POST → إنشاء بوست جديد
+// ✅ POST → إنشاء بوست جديد (debug version)
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
-    // نطبع الـ body على الصفحة لو فيه مشكلة
-    const debugInfo = {
-      sentBody: body,
-    };
 
     const res = await fetch(BACKEND_URL, {
       method: "POST",
@@ -42,17 +38,23 @@ export async function POST(req: Request) {
 
     const text = await res.text();
 
-    if (!res.ok) {
-      return NextResponse.json(
-        {
-          error: `❌ Failed to create post (${res.status})`,
-          backendResponse: text,
-          sentBody: debugInfo.sentBody,
-        },
-        { status: res.status }
-      );
-    }
-
+    // نعرض كل التفاصيل على الصفحة نفسها علشان نحللها
+    return NextResponse.json(
+      {
+        status: res.status,
+        ok: res.ok,
+        sentBody: body,
+        backendResponse: text,
+      },
+      { status: res.status }
+    );
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: "Failed to create post", details: error.message },
+      { status: 500 }
+    );
+  }
+}
     const newPost = JSON.parse(text);
     return NextResponse.json(newPost, { status: 201 });
   } catch (error: any) {
