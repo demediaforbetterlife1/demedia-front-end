@@ -6,11 +6,9 @@ const BACKEND_URL = "https://demedia-backend.fly.dev/api/posts";
 export async function GET() {
   try {
     const res = await fetch(BACKEND_URL, { cache: "no-store" });
-
     if (!res.ok) {
       throw new Error(`Failed to fetch posts: ${res.statusText}`);
     }
-
     const data = await res.json();
     return NextResponse.json(data);
   } catch (error: any) {
@@ -22,10 +20,17 @@ export async function GET() {
   }
 }
 
-// ✅ POST → إنشاء بوست جديد (debug version)
+// ✅ POST → إنشاء بوست جديد
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+
+    if (!body || !body.content) {
+      return NextResponse.json(
+        { error: "Content field is required" },
+        { status: 400 }
+      );
+    }
 
     const res = await fetch(BACKEND_URL, {
       method: "POST",
@@ -36,18 +41,16 @@ export async function POST(req: Request) {
       body: JSON.stringify(body),
     });
 
-    const text = await res.text();
+    const backendResponse = await res.json();
 
-    // 🧩 نرجع الرد كامل علشان نشوف بالضبط الباك إند بيقول إيه
-    return NextResponse.json(
-      {
-        status: res.status,
-        ok: res.ok,
-        sentBody: body,
-        backendResponse: text,
-      },
-      { status: res.status }
-    );
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: "Failed to create post", details: backendResponse },
+        { status: res.status }
+      );
+    }
+
+    return NextResponse.json(backendResponse, { status: 201 });
   } catch (error: any) {
     console.error("Error creating post:", error.message);
     return NextResponse.json(
