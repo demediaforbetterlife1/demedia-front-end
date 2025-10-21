@@ -2,16 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Heart,
-  ThumbsUp,
-  Laugh,
-  Flame,
-  Star,
-  Zap,
-  PartyPopper,
-  BarChart3,
-} from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch } from "@/lib/api";
 import ReactionAnalytics from "@/components/ReactionAnalytics";
@@ -56,67 +47,54 @@ export default function LiveReactions({
   const [isLoading, setIsLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // 🧮 Helper function to safely sum counts
   const sumCounts = (counts: Record<string, number> | undefined | null) =>
-    Object.values(counts || {})
-      .map((v) => Number(v) || 0)
-      .reduce((a, b) => a + b, 0);
+    Object.values(counts || {}).reduce((a, b) => a + (Number(b) || 0), 0);
 
-  // 🔄 Fetch all reactions
+  // ✅ Fetch Reactions from DB
   const fetchReactions = useCallback(async () => {
-    if (!postId) return;
+    if (!postId || !isVisible) return;
     try {
       const response = await apiFetch(`/api/posts/${postId}/reactions`);
       if (!response.ok) return console.error("Failed to fetch reactions:", response.status);
 
       const data = await response.json();
+      const counts = data?.counts || {};
+      const userReacts = data?.userReactions || {};
 
-      // ✅ Ensure data structure is correct
-      const rawCounts = (data && typeof data.counts === "object" && data.counts) || {};
       const normalizedCounts: Record<string, number> = {};
-      Object.entries(rawCounts).forEach(([k, v]) => {
-        normalizedCounts[k] = Number(v) || 0;
-      });
-
-      const userReacts =
-        data && typeof data.userReactions === "object" && data.userReactions
-          ? data.userReactions
-          : {};
+      Object.entries(counts).forEach(([k, v]) => (normalizedCounts[k] = Number(v) || 0));
 
       setReactionCounts(normalizedCounts);
       setUserReactions(userReacts);
-
       onReactionCount?.(sumCounts(normalizedCounts));
     } catch (err) {
       console.error("Error fetching reactions:", err);
     }
-  }, [postId, onReactionCount]);
+  }, [postId, isVisible, onReactionCount]);
 
-  // ⏱ Auto-refresh reactions
   useEffect(() => {
-    if (!isVisible || !postId) return;
     fetchReactions();
-    const interval = setInterval(fetchReactions, 2000);
+    if (!isVisible) return;
+    const interval = setInterval(fetchReactions, 3000);
     return () => clearInterval(interval);
-  }, [isVisible, postId, fetchReactions]);
+  }, [fetchReactions, isVisible]);
 
   // ❤️ Add Reaction
   const addReaction = async (emoji: string) => {
-    if (!user || isLoading) return;
+    if (!user || !postId || isLoading) return;
     setIsLoading(true);
 
     try {
-      const newReaction: Reaction = {
-        id: Math.random().toString(36).substr(2, 9),
+      const temp: Reaction = {
+        id: crypto.randomUUID(),
         emoji,
-        userId: Number(user.id) || 0,
+        userId: Number(user.id),
         userName: user.name || "You",
         timestamp: Date.now(),
         x: Math.random() * 80 + 10,
         y: Math.random() * 60 + 20,
       };
-
-      setReactions((prev) => [...prev, newReaction]);
+      setReactions((prev) => [...prev, temp]);
 
       const response = await apiFetch(`/api/posts/${postId}/reactions`, {
         method: "POST",
@@ -126,7 +104,7 @@ export default function LiveReactions({
 
       if (response.ok) {
         const data = await response.json();
-        const counts = (data && typeof data.counts === "object" && data.counts) || {};
+        const counts = data?.counts || {};
         const normalized: Record<string, number> = {};
         Object.entries(counts).forEach(([k, v]) => (normalized[k] = Number(v) || 0));
 
@@ -135,10 +113,9 @@ export default function LiveReactions({
         onReactionCount?.(sumCounts(normalized));
       }
 
-      // 🧼 Clean up flying animation
       setTimeout(() => {
-        setReactions((prev) => prev.filter((r) => r.id !== newReaction.id));
-      }, 3000);
+        setReactions((prev) => prev.filter((r) => r.id !== temp.id));
+      }, 2500);
     } catch (err) {
       console.error("Error adding reaction:", err);
     } finally {
@@ -149,7 +126,7 @@ export default function LiveReactions({
 
   // 💔 Remove Reaction
   const removeReaction = async (emoji: string) => {
-    if (!user || isLoading) return;
+    if (!user || !postId || isLoading) return;
     setIsLoading(true);
 
     try {
@@ -161,7 +138,7 @@ export default function LiveReactions({
 
       if (response.ok) {
         const data = await response.json();
-        const counts = (data && typeof data.counts === "object" && data.counts) || {};
+        const counts = data?.counts || {};
         const normalized: Record<string, number> = {};
         Object.entries(counts).forEach(([k, v]) => (normalized[k] = Number(v) || 0));
 
@@ -176,6 +153,7 @@ export default function LiveReactions({
     }
   };
 
+  // ⚠️ Don't render hidden posts
   if (!isVisible) return null;
 
   return (
@@ -206,75 +184,59 @@ export default function LiveReactions({
                 transform: "translate(-50%, -50%)",
               }}
             >
-              <motion.div
-                animate={{ scale: [1, 1.3, 1], rotate: [0, -15, 15, 0] }}
-                transition={{ duration: 0.8, ease: "easeInOut" }}
-              >
-                {r.emoji}
-              </motion.div>
+              {r.emoji}
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
 
-      {/* ⚙️ Reaction Buttons */}
+      {/* 🧡 Reaction Controls */}
       <div className="absolute bottom-4 right-4 z-20">
-        {/* Counts */}
-        {Object.keys(reactionCounts).length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-3 flex flex-wrap gap-1"
-          >
-            {Object.entries(reactionCounts)
-              .filter(([_, count]) => (Number(count) || 0) > 0)
-              .map(([emoji, count]) => (
-                <motion.button
-                  key={emoji}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() =>
-                    userReactions[emoji]
-                      ? removeReaction(emoji)
-                      : addReaction(emoji)
-                  }
-                  className={`flex items-center space-x-1 px-2 py-1 rounded-full text-sm font-medium transition-all duration-200 ${
-                    userReactions[emoji]
-                      ? "bg-blue-500 text-white shadow-lg"
-                      : "bg-white/90 text-gray-700 hover:bg-gray-100 shadow-md"
-                  }`}
-                >
-                  <span>{emoji}</span>
-                  <span>{Number(count) || 0}</span>
-                </motion.button>
-              ))}
-          </motion.div>
-        )}
+        {/* Existing Counts */}
+        {Object.entries(reactionCounts)
+          .filter(([_, c]) => Number(c) > 0)
+          .map(([emoji, count]) => (
+            <motion.button
+              key={emoji}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() =>
+                userReactions[emoji] ? removeReaction(emoji) : addReaction(emoji)
+              }
+              className={`flex items-center space-x-1 px-2 py-1 rounded-full text-sm font-medium ${
+                userReactions[emoji]
+                  ? "bg-blue-500 text-white shadow-lg"
+                  : "bg-white/80 text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              <span>{emoji}</span>
+              <span>{Number(count)}</span>
+            </motion.button>
+          ))}
 
-        {/* Picker */}
+        {/* Reaction Picker */}
         <AnimatePresence>
           {showReactionPicker && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: 20 }}
-              className="absolute bottom-12 right-0 bg-white/95 backdrop-blur-sm rounded-2xl p-3 shadow-2xl border border-gray-200"
+              initial={{ opacity: 0, y: 20, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.8 }}
+              className="absolute bottom-12 right-0 bg-white rounded-2xl p-3 shadow-2xl border"
             >
               <div className="flex space-x-2">
                 {REACTION_TYPES.map((r) => (
                   <motion.button
                     key={r.emoji}
-                    whileHover={{ scale: 1.2, y: -5 }}
-                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.2, y: -4 }}
                     onClick={() => addReaction(r.emoji)}
                     disabled={isLoading}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
                       userReactions[r.emoji]
-                        ? "bg-blue-500 text-white shadow-lg"
-                        : `${r.bgColor} ${r.color} hover:shadow-md`
+                        ? "bg-blue-500 text-white"
+                        : `${r.bgColor} ${r.color}`
                     }`}
                   >
-                    <span className="text-lg">{r.emoji}</span>
+                    {r.emoji}
                   </motion.button>
                 ))}
               </div>
@@ -282,29 +244,29 @@ export default function LiveReactions({
           )}
         </AnimatePresence>
 
-        {/* Analytics Button */}
+        {/* Analytics */}
         {Object.keys(reactionCounts).length > 0 && (
           <motion.button
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowAnalytics(true)}
-            className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg hover:shadow-xl transition-all duration-200 mb-2"
+            className="w-10 h-10 mb-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg"
             title="View Analytics"
           >
             <BarChart3 size={16} />
           </motion.button>
         )}
 
-        {/* Main Button */}
+        {/* Main ❤️ Button */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => setShowReactionPicker((s) => !s)}
+          onClick={() => setShowReactionPicker((p) => !p)}
           disabled={isLoading}
-          className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 ${
+          className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg transition-all ${
             isLoading
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+              : "bg-gradient-to-r from-pink-500 to-purple-600"
           }`}
         >
           {isLoading ? (
@@ -315,7 +277,7 @@ export default function LiveReactions({
             />
           ) : (
             <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
+              animate={{ scale: [1, 1.2, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
               ❤️
@@ -324,19 +286,19 @@ export default function LiveReactions({
         </motion.button>
       </div>
 
-      {/* 🔴 Live Indicator */}
+      {/* Live Indicator */}
       <div className="absolute top-4 left-4 z-20">
         <motion.div
           animate={{ scale: [1, 1.2, 1] }}
           transition={{ duration: 1.5, repeat: Infinity }}
-          className="flex items-center space-x-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium shadow-lg"
+          className="flex items-center space-x-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm shadow-lg"
         >
-          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
           <span>Live Reactions</span>
         </motion.div>
       </div>
 
-      {/* 📊 Analytics Modal */}
+      {/* Analytics Modal */}
       <ReactionAnalytics
         postId={postId}
         isOpen={showAnalytics}
