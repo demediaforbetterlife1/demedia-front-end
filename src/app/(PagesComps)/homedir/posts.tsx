@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Heart, MessageCircle, Share2, Bookmark, BookmarkCheck } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useNotifications } from "@/components/NotificationProvider";
 import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
@@ -32,13 +31,11 @@ interface PostsProps {
 
 export default function Posts({ isVisible = true, postId }: PostsProps) {
   const { theme } = useTheme();
-  const { showError } = useNotifications();
   const [posts, setPosts] = useState<PostType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // 🎨 Theme classes
   const themeClasses = (() => {
     switch (theme) {
       case "light":
@@ -76,7 +73,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     }
   })();
 
-  // 🟢 Fetch posts
+  // 🔹 Fetch posts
   const fetchPosts = async () => {
     try {
       setLoading(true);
@@ -85,107 +82,77 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
       const res = await apiFetch(endpoint);
 
-      if (!res.ok) throw new Error("Failed to load posts");
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = text; }
 
-      // 🔧 تأكد أن البيانات Array
+      if (!res.ok) throw new Error(JSON.stringify(data));
+
       const fetchedPosts = Array.isArray(data) ? data : [data];
-      setPosts(fetchedPosts.reverse()); // الأحدث فوق
+      setPosts(fetchedPosts.reverse());
     } catch (err: any) {
-      console.error("Error loading posts:", err);
-      setError("Failed to load posts");
-      showError("Error", "Could not load posts from database");
+      setError(err.message || "Failed to load posts");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🟢 Load on mount
   useEffect(() => {
     if (isVisible) fetchPosts();
   }, [isVisible, postId]);
 
-  // ✅ Handle creating a new post dynamically (without refreshing)
-  const addNewPost = (newPost: PostType) => {
-    setPosts((prev) => [newPost, ...prev]); // ضيف الجديد في أول القائمة
-  };
-
-  const handleLike = async (postId: number) => {
+  // ✅ Handle creating a post dynamically
+  const handleCreatePost = async (content: string, userId: string) => {
     try {
-      const res = await apiFetch(`/api/posts/${postId}/like`, { method: "POST" });
-      if (!res.ok) return;
-      const data = await res.json();
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId ? { ...p, liked: data.liked, likes: data.likes } : p
-        )
-      );
-    } catch (err) {
-      console.error("Failed to like:", err);
-    }
-  };
+      setError(null);
+      const res = await apiFetch("/api/posts", {
+        method: "POST",
+        body: JSON.stringify({ content, userId }),
+        headers: { "Content-Type": "application/json" },
+      });
 
-  const handleBookmark = async (postId: number) => {
-    try {
-      const res = await apiFetch(`/api/posts/${postId}/bookmark`, { method: "POST" });
-      if (!res.ok) return;
-      const data = await res.json();
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId ? { ...p, bookmarked: data.bookmarked } : p
-        )
-      );
-    } catch (err) {
-      console.error("Failed to bookmark:", err);
-    }
-  };
+      const text = await res.text();
+      let backendResponse;
+      try { backendResponse = JSON.parse(text); } catch { backendResponse = text; }
 
-  const handleShare = async (postId: number) => {
-    try {
-      const post = posts.find((p) => p.id === postId);
-      if (!post) return;
-      const shareData = {
-        title: "Check out this post on DeMedia",
-        text: post.content,
-        url: `${window.location.origin}/posts/${postId}`,
-      };
-      if (navigator.share) await navigator.share(shareData);
-      else await navigator.clipboard.writeText(shareData.url);
-    } catch (err) {
-      console.error("Error sharing:", err);
+      if (!res.ok) {
+        throw new Error(JSON.stringify(backendResponse));
+      }
+
+      // Add the new post to the list
+      setPosts((prev) => [backendResponse, ...prev]);
+    } catch (err: any) {
+      setError(err.message || "Failed to create post");
     }
   };
 
   // 🔘 UI
   if (!isVisible) return null;
 
-  if (loading)
-    return (
-      <div className={`flex justify-center items-center h-64 ${themeClasses.bg}`}>
-        <div
-          className={`animate-spin rounded-full h-10 w-10 border-b-2 ${
-            theme === "gold" ? "border-yellow-400" : "border-cyan-400"
-          }`}
-        ></div>
-      </div>
-    );
-
-  if (error)
-    return (
-      <div className={`text-center py-10 ${themeClasses.textMuted}`}>
-        Failed to load posts.
-      </div>
-    );
-
-  if (posts.length === 0)
-    return (
-      <div className={`text-center py-10 ${themeClasses.textMuted}`}>
-        No posts yet.
-      </div>
-    );
-
   return (
     <div className="flex flex-col gap-6 p-4">
+      {error && (
+        <div className="bg-red-100 text-red-800 border border-red-400 p-3 rounded mb-4">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+
+      {loading && (
+        <div className={`flex justify-center items-center h-64 ${themeClasses.bg}`}>
+          <div
+            className={`animate-spin rounded-full h-10 w-10 border-b-2 ${
+              theme === "gold" ? "border-yellow-400" : "border-cyan-400"
+            }`}
+          ></div>
+        </div>
+      )}
+
+      {!loading && posts.length === 0 && !error && (
+        <div className={`text-center py-10 ${themeClasses.textMuted}`}>
+          No posts yet.
+        </div>
+      )}
+
       {posts.map((post) => (
         <motion.div
           key={post.id}
@@ -204,70 +171,14 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               </p>
             </div>
             <p className={`text-xs ${themeClasses.textMuted}`}>
-              {post.createdAt
-                ? new Date(post.createdAt).toLocaleDateString()
-                : ""}
+              {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}
             </p>
           </div>
-
           <div
             className={`cursor-pointer ${themeClasses.text}`}
             onClick={() => router.push(`/posts/${post.id}`)}
           >
             {post.content}
-          </div>
-
-          {post.imageUrl && (
-            <img src={post.imageUrl} alt="post" className="w-full rounded-xl mt-3" />
-          )}
-          {post.videoUrl && (
-            <video src={post.videoUrl} controls className="w-full rounded-xl mt-3" />
-          )}
-
-          <div className="flex justify-between items-center mt-4">
-            <div className="flex items-center gap-5">
-              <button
-                onClick={() => handleLike(post.id)}
-                className={`flex items-center gap-1 ${
-                  post.liked
-                    ? "text-pink-500"
-                    : `${themeClasses.textMuted} hover:text-pink-400`
-                } transition`}
-              >
-                <Heart size={18} fill={post.liked ? "currentColor" : "none"} />
-                <span>{post.likes}</span>
-              </button>
-
-              <div
-                onClick={() => router.push(`/posts/${post.id}`)}
-                className={`${themeClasses.textMuted} hover:text-blue-400 cursor-pointer flex items-center gap-1`}
-              >
-                <MessageCircle size={18} />
-                <span>{post.comments}</span>
-              </div>
-
-              <button
-                onClick={() => handleShare(post.id)}
-                className={`${themeClasses.textMuted} hover:text-green-400 flex items-center gap-1`}
-              >
-                <Share2 size={18} />
-              </button>
-            </div>
-
-            <button
-              onClick={() => handleBookmark(post.id)}
-              className={`${
-                post.bookmarked
-                  ? "text-yellow-500"
-                  : `${themeClasses.textMuted} hover:text-yellow-400`
-              }`}
-            >
-              {post.bookmarked ? (
-                <BookmarkCheck size={18} />
-              ) : (
-                <Bookmark size={18} />
-              )}
-            </button>
           </div>
         </motion.div>
       ))}
