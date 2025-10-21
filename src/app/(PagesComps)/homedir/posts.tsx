@@ -75,28 +75,31 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
   // 🔹 Fetch posts
   const fetchPosts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  try {
+    setLoading(true);
+    setError(null);
 
-      const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
-      const res = await apiFetch(endpoint);
+    const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
+    const res = await apiFetch(endpoint);
 
-      const text = await res.text();
-      let data;
-      try { data = JSON.parse(text); } catch { data = text; }
-
-      if (!res.ok) throw new Error(JSON.stringify(data));
-
-      const fetchedPosts = Array.isArray(data) ? data : [data];
-      setPosts(fetchedPosts.reverse());
-    } catch (err: any) {
-      setError(err.message || "Failed to load posts");
-    } finally {
-      setLoading(false);
+    // ✅ جربنا نحصل على نص الخطأ من السيرفر
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Server error: ${res.status} ${errorText}`);
     }
-  };
 
+    const data = await res.json();
+
+    // 🔧 تأكد أن البيانات Array
+    const fetchedPosts = Array.isArray(data) ? data : [data];
+    setPosts(fetchedPosts.reverse());
+  } catch (err: any) {
+    console.error("Error loading posts:", err);
+    setError(err.message || "Failed to load posts");
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     if (isVisible) fetchPosts();
   }, [isVisible, postId]);
