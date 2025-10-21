@@ -1,56 +1,38 @@
-import { NextResponse } from "next/server";
-
-const BACKEND_URL = "https://demedia-backend.fly.dev/api/posts";
-
-// ✅ GET → جلب كل البوستات
-export async function GET() {
-  try {
-    const res = await fetch(BACKEND_URL, { cache: "no-store" });
-    if (!res.ok) {
-      throw new Error(`Failed to fetch posts: ${res.statusText}`);
-    }
-    const data = await res.json();
-    return NextResponse.json(data);
-  } catch (error: any) {
-    console.error("Error fetching posts:", error.message);
-    return NextResponse.json(
-      { error: "Failed to fetch posts. Please try again." },
-      { status: 500 }
-    );
-  }
-}
-
-// ✅ POST → إنشاء بوست جديد
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
-    if (!body || !body.content) {
-      return NextResponse.json(
-        { error: "Content field is required" },
-        { status: 400 }
-      );
-    }
+    console.log("Sending body:", body);
 
     const res = await fetch(BACKEND_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "user-id": String(body.userId || ""),
+        // لو الباك إند محتاج توكن، هنا تضيفه:
+        // "Authorization": "Bearer YOUR_TOKEN_HERE",
       },
       body: JSON.stringify(body),
     });
 
-    const backendResponse = await res.json();
+    const text = await res.text();
+    console.log("Backend response text:", text);
 
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: "Failed to create post", details: backendResponse },
-        { status: res.status }
-      );
+    let backendResponse;
+    try {
+      backendResponse = JSON.parse(text);
+    } catch {
+      backendResponse = text;
     }
 
-    return NextResponse.json(backendResponse, { status: 201 });
+    return NextResponse.json(
+      {
+        status: res.status,
+        ok: res.ok,
+        sentBody: body,
+        backendResponse,
+      },
+      { status: res.status }
+    );
   } catch (error: any) {
     console.error("Error creating post:", error.message);
     return NextResponse.json(
