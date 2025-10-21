@@ -75,56 +75,63 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
   // 🔹 Fetch posts
   const fetchPosts = async () => {
-  try {
-    setLoading(true);
-    setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
-    const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
-    const res = await apiFetch(endpoint);
+      const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
+      const res = await apiFetch(endpoint);
 
-    // ✅ جربنا نحصل على نص الخطأ من السيرفر
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`Server error: ${res.status} ${errorText}`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Server error: ${res.status} ${errorText}`);
+      }
+
+      const data = await res.json();
+      const fetchedPosts = Array.isArray(data) ? data : [data];
+      setPosts(fetchedPosts.reverse());
+    } catch (err: any) {
+      console.error("Error loading posts:", err);
+      setError(err.message || "Failed to load posts");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const data = await res.json();
-
-    // 🔧 تأكد أن البيانات Array
-    const fetchedPosts = Array.isArray(data) ? data : [data];
-    setPosts(fetchedPosts.reverse());
-  } catch (err: any) {
-    console.error("Error loading posts:", err);
-    setError(err.message || "Failed to load posts");
-  } finally {
-    setLoading(false);
-  }
-};
   useEffect(() => {
     if (isVisible) fetchPosts();
   }, [isVisible, postId]);
 
-  // ✅ Handle creating a post dynamically
+  // ✅ Create Post (with detailed error info)
   const handleCreatePost = async (content: string, userId: string) => {
     try {
       setError(null);
+
       const res = await apiFetch("/api/posts", {
         method: "POST",
-        body: JSON.stringify({ content, userId }),
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, userId }),
       });
 
       const text = await res.text();
       let backendResponse;
-      try { backendResponse = JSON.parse(text); } catch { backendResponse = text; }
-
-      if (!res.ok) {
-        throw new Error(JSON.stringify(backendResponse));
+      try {
+        backendResponse = JSON.parse(text);
+      } catch {
+        backendResponse = text;
       }
 
-      // Add the new post to the list
+      if (!res.ok) {
+        throw new Error(
+          typeof backendResponse === "string"
+            ? backendResponse
+            : JSON.stringify(backendResponse, null, 2)
+        );
+      }
+
       setPosts((prev) => [backendResponse, ...prev]);
     } catch (err: any) {
+      console.error("Create Post Error:", err);
       setError(err.message || "Failed to create post");
     }
   };
@@ -135,8 +142,9 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   return (
     <div className="flex flex-col gap-6 p-4">
       {error && (
-        <div className="bg-red-100 text-red-800 border border-red-400 p-3 rounded mb-4">
-          <strong>Error:</strong> {error}
+        <div className="bg-red-100 text-red-800 border border-red-400 p-3 rounded mb-4 whitespace-pre-wrap break-words">
+          <strong className="block text-red-600 mb-2">⚠️ Error Details:</strong>
+          {error}
         </div>
       )}
 
@@ -177,6 +185,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}
             </p>
           </div>
+
           <div
             className={`cursor-pointer ${themeClasses.text}`}
             onClick={() => router.push(`/posts/${post.id}`)}
