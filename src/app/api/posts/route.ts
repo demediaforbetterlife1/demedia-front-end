@@ -1,28 +1,42 @@
 import { NextResponse } from "next/server";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://demedia-backend.fly.dev";
+const BACKEND_URL = "https://demedia-backend.fly.dev/api/posts";
 
-// ✅ GET → جلب كل البوستات من الباك إند
+// 🟢 GET — جلب كل البوستات
 export async function GET() {
   try {
-    const response = await fetch(`${API_URL}/api/posts`, {
+    const res = await fetch(BACKEND_URL, {
       method: "GET",
-      cache: "no-store",
       headers: {
         "Content-Type": "application/json",
       },
+      cache: "no-store",
     });
 
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Backend error: ${response.status} - ${text}`);
+    const text = await res.text();
+
+    if (!res.ok) {
+      console.error("❌ Backend GET error:", text);
+      return NextResponse.json(
+        { error: `Failed to fetch posts (${res.status})` },
+        { status: res.status }
+      );
     }
 
-    const data = await response.json();
-    return NextResponse.json(data, { status: 200 });
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error("❌ Invalid JSON from backend:", text);
+      return NextResponse.json(
+        { error: "Invalid response from backend" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(data);
   } catch (error: any) {
-    console.error("❌ Error fetching posts:", error.message);
+    console.error("🚨 Network error fetching posts:", error.message);
     return NextResponse.json(
       { error: "Failed to fetch posts. Please try again." },
       { status: 500 }
@@ -30,39 +44,47 @@ export async function GET() {
   }
 }
 
-// ✅ POST → إنشاء بوست جديد
+// 🟡 POST — إنشاء بوست جديد
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // التحقق من البيانات قبل الإرسال
-    if (!body || !body.userId || !body.content) {
-      return NextResponse.json(
-        { error: "Missing required fields (userId or content)." },
-        { status: 400 }
-      );
-    }
-
-    const response = await fetch(`${API_URL}/api/posts`, {
+    const res = await fetch(BACKEND_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "user-id": String(body.userId),
+        "user-id": String(body.userId || ""),
       },
       body: JSON.stringify(body),
     });
 
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Failed to create post: ${text}`);
+    const text = await res.text();
+
+    if (!res.ok) {
+      console.error("❌ Backend POST error:", text);
+      return NextResponse.json(
+        { error: `Failed to create post (${res.status})`, details: text },
+        { status: res.status }
+      );
     }
 
-    const newPost = await response.json();
+    let newPost;
+    try {
+      newPost = JSON.parse(text);
+    } catch {
+      console.error("❌ Invalid JSON response on POST:", text);
+      return NextResponse.json(
+        { error: "Invalid JSON from backend" },
+        { status: 500 }
+      );
+    }
+
+    // ✅ رجع البوست الجديد
     return NextResponse.json(newPost, { status: 201 });
   } catch (error: any) {
-    console.error("❌ Error creating post:", error.message);
+    console.error("🚨 Network error creating post:", error.message);
     return NextResponse.json(
-      { error: "Failed to create post. Please try again." },
+      { error: "Failed to create post" },
       { status: 500 }
     );
   }
