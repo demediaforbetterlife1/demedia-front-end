@@ -176,173 +176,110 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
     };
 
     const handleSubmit = async () => {
-        if (!title && !content && images.length === 0 && videos.length === 0) {
-            setError("Please add some content to your post");
+    if (!title && !content && images.length === 0 && videos.length === 0) {
+        setError("⚠️ Please add some content to your post");
+        return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+        const userId = localStorage.getItem("userId");
+        if (!userId) {
+            setError("⚠️ Please log in to create a post");
             return;
         }
 
-        setLoading(true);
-        setError(null);
-        
-        try {
-            // Get userId from localStorage
-            const userId = localStorage.getItem("userId");
-            if (!userId) {
-                setError("Please log in to create a post");
+        if (content.trim()) {
+            const moderationResult = await contentModerationService.moderateText(content);
+            if (!moderationResult.isApproved) {
+                setError(`❌ Content not approved: ${moderationResult.reason}`);
+                setLoading(false);
                 return;
             }
-
-            // Content moderation check
-            if (content.trim()) {
-                console.log('AddPostModal: Checking content moderation...');
-                const moderationResult = await contentModerationService.moderateText(content);
-                
-                if (!moderationResult.isApproved) {
-                    console.log('AddPostModal: Content moderation failed:', moderationResult.reason);
-                    setError(`Content not approved: ${moderationResult.reason}. ${moderationResult.suggestions?.join('. ')}`);
-                    setLoading(false);
-                    return;
-                }
-                
-                console.log('AddPostModal: Content moderation passed');
-            }
-
-            // Validate content length
-            if (content.length > 5000) {
-                setError("Content is too long. Please keep it under 5000 characters.");
-                return;
-            }
-
-            // Validate file sizes
-            const maxFileSize = 10 * 1024 * 1024; // 10MB
-            const oversizedFiles = [...images, ...videos].filter(file => file.size > maxFileSize);
-            if (oversizedFiles.length > 0) {
-                setError("Some files are too large. Please keep files under 10MB.");
-                return;
-            }
-
-            // Upload images first if any
-            let imageUrls: string[] = [];
-            if (images.length > 0) {
-                for (const image of images) {
-                    const formData = new FormData();
-                    formData.append('file', image);
-                    formData.append('type', 'image');
-                    formData.append('userId', userId);
-
-                    const uploadResponse = await fetch(`/api/test-upload`, {
-                        method: 'POST',
-                        body: formData,
-                    });
-
-                    if (uploadResponse.ok) {
-                        const uploadData = await uploadResponse.json();
-                        console.log('Image upload successful:', uploadData);
-                        imageUrls.push(uploadData.url);
-                    } else {
-                        console.error('Failed to upload image:', image.name, uploadResponse.status);
-                        const errorText = await uploadResponse.text();
-                        console.error('Upload error details:', errorText);
-                        setError(`Failed to upload image: ${image.name} - ${errorText}`);
-                        setLoading(false);
-                        return;
-                    }
-                }
-            }
-
-            // Create JSON payload with image URLs
-            const postData = {
-                title: title || null,
-                content: content,
-                userId: parseInt(userId), // Backend expects userId, not authorId
-                privacySettings: privacySettings,
-                hashtags: hashtags,
-                mentions: mentions,
-                location: location || '',
-                scheduledDate: isScheduled && scheduleDate ? new Date(scheduleDate).toISOString() : null,
-                imageUrls: imageUrls,
-                imageUrl: imageUrls && imageUrls.length > 0 ? imageUrls[0] : null
-            };
-            
-            console.log('Post data being sent:', postData);
-            console.log('Image URLs:', imageUrls);
-
-            console.log('Creating post with data:', postData);
-            console.log('Image URLs being sent:', imageUrls);
-            
-            const res = await apiFetch(`/api/test-posts`, {
-                method: "POST",
-                headers: {
-                    'user-id': userId,
-                },
-                body: JSON.stringify(postData),
-            });
-            
-            console.log('Post creation response status:', res.status);
-
-            if (!res.ok) {
-                let errorMessage = "Failed to create post";
-                try {
-                    const errorText = await res.text();
-                    console.log('Post creation error response:', errorText);
-                    
-                    if (errorText.trim().startsWith('{')) {
-                        const errorData = JSON.parse(errorText);
-                        errorMessage = errorData.error || errorData.message || errorMessage;
-                    } else {
-                        errorMessage = `Server error: ${res.status} - ${errorText}`;
-                    }
-                } catch (parseError) {
-                    errorMessage = `Server error: ${res.status}`;
-                }
-                throw new Error(errorMessage);
-            }
-
-            // Safe JSON parsing for success response
-            let newPost;
-            try {
-                const responseText = await res.text();
-                console.log('Post creation response text:', responseText);
-                
-                if (!responseText.trim()) {
-                    throw new Error('Empty response from server');
-                }
-                
-                if (responseText.trim().startsWith('<')) {
-                    throw new Error('Server returned HTML error page. Please check your connection.');
-                }
-                
-                newPost = JSON.parse(responseText);
-                console.log('Post created successfully:', newPost);
-            } catch (jsonError) {
-                console.error('JSON parsing error:', jsonError);
-                throw new Error('Invalid response from server. Please try again.');
-            }
-
-            // Reset form
-            setTitle("");
-            setContent("");
-            setImages([]);
-            setVideos([]);
-            setHashtags([]);
-            setMentions([]);
-            setLocation("");
-            setScheduleDate("");
-            setIsScheduled(false);
-            setSelectedAudience([]);
-            setError(null);
-            onClose();
-            
-            // Show success message
-            alert("Post created successfully!");
-        } catch (err: any) {
-            console.error('Post creation error:', err);
-            setError(err.message || "Failed to create post. Please try again.");
-        } finally {
-            setLoading(false);
         }
-    };
 
+        const maxFileSize = 10 * 1024 * 1024;
+        const oversizedFiles = [...images, ...videos].filter(f => f.size > maxFileSize);
+        if (oversizedFiles.length > 0) {
+            setError("⚠️ Some files are too large (max 10MB).");
+            return;
+        }
+
+        // Upload images if any
+        let imageUrls: string[] = [];
+        for (const image of images) {
+            const formData = new FormData();
+            formData.append('file', image);
+            formData.append('type', 'image');
+            formData.append('userId', userId);
+
+            const uploadResponse = await fetch(`/api/test-upload`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const uploadText = await uploadResponse.text();
+            if (!uploadResponse.ok) {
+                setError(`❌ Image upload failed: ${uploadResponse.status} - ${uploadText}`);
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const uploadData = JSON.parse(uploadText);
+                imageUrls.push(uploadData.url);
+            } catch (err) {
+                setError(`❌ Invalid upload response: ${uploadText}`);
+                setLoading(false);
+                return;
+            }
+        }
+
+        const postData = {
+            title: title || null,
+            content,
+            userId: parseInt(userId),
+            privacySettings,
+            hashtags,
+            mentions,
+            location,
+            scheduledDate: isScheduled && scheduleDate ? new Date(scheduleDate).toISOString() : null,
+            imageUrls,
+            imageUrl: imageUrls[0] || null
+        };
+
+        const res = await apiFetch(`/api/test-posts`, {
+            method: "POST",
+            headers: { 'user-id': userId },
+            body: JSON.stringify(postData),
+        });
+
+        const responseText = await res.text();
+
+        if (!res.ok) {
+            // ❌ Show full response in UI instead of just saying "failed"
+            setError(`❌ Post creation failed (${res.status}):\n${responseText}`);
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const newPost = JSON.parse(responseText);
+            alert("✅ Post created successfully!");
+            onClose();
+        } catch (jsonErr) {
+            setError(`⚠️ JSON parse error: ${responseText}`);
+        }
+
+    } catch (err: any) {
+        // 🔥 Show full error message in UI
+        setError(`❌ ${err.message || err}`);
+    } finally {
+        setLoading(false);
+    }
+};
     if (!isOpen) return null;
 
     return (
