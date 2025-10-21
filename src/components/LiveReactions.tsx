@@ -10,9 +10,15 @@ interface Reaction {
   y: number;
 }
 
+interface LiveReactionsProps {
+  postId: number;
+  isVisible: boolean;
+  onReactionCount?: (count: number) => void;
+}
+
 const REACTIONS = ["❤️", "🔥", "🎉", "😂", "👍", "😮"];
 
-export default function LiveReactions() {
+export default function LiveReactions({postId,isVisible,onReactionCount}: LiveReactionsProps) {
   const [floatingReactions, setFloatingReactions] = useState<Reaction[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
 
