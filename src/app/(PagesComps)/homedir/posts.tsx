@@ -25,7 +25,13 @@ type PostType = {
   };
 };
 
-export default function Posts() {
+// ✅ إضافة props اختيارية isVisible و postId
+interface PostsProps {
+  isVisible?: boolean;
+  postId?: number;
+}
+
+export default function Posts({ isVisible = true, postId }: PostsProps) {
   const { theme } = useTheme();
   const { showError } = useNotifications();
   const [posts, setPosts] = useState<PostType[]>([]);
@@ -73,16 +79,20 @@ export default function Posts() {
 
   // Fetch posts from DB
   useEffect(() => {
+    if (!isVisible) return; // ⛔️ لو isVisible = false، متfetchش أي حاجة
+
     const fetchPosts = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const res = await apiFetch("/api/posts");
+        const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
+        const res = await apiFetch(endpoint);
+
         if (!res.ok) throw new Error("Failed to load posts");
 
         const data = await res.json();
-        setPosts(data);
+        setPosts(Array.isArray(data) ? data : [data]); // ⛔️ لو بيرجع بوست واحد خليه جوه array
       } catch (err: any) {
         console.error("Error loading posts:", err);
         setError("Failed to load posts");
@@ -93,7 +103,7 @@ export default function Posts() {
     };
 
     fetchPosts();
-  }, []);
+  }, [isVisible, postId]);
 
   const handleLike = async (postId: number) => {
     try {
@@ -140,6 +150,9 @@ export default function Posts() {
       console.error("Error sharing:", err);
     }
   };
+
+  // ⛔️ لو isVisible = false رجع لا شيء
+  if (!isVisible) return null;
 
   if (loading) {
     return (
@@ -227,10 +240,7 @@ export default function Posts() {
                     : `${themeClasses.textMuted} hover:text-pink-400`
                 } transition`}
               >
-                <Heart
-                  size={18}
-                  fill={post.liked ? "currentColor" : "none"}
-                />
+                <Heart size={18} fill={post.liked ? "currentColor" : "none"} />
                 <span>{post.likes}</span>
               </button>
 
