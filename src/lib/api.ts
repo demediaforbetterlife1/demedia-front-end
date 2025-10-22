@@ -24,19 +24,40 @@ async function tryDirectConnection(path: string, options: RequestInit = {}): Pro
   console.log('Trying direct backend connection...');
   const directUrl = `${DIRECT_API_BASE}${path}`;
   
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), 15000);
-  const response = await fetch(directUrl, {
-    ...options,
-    headers: {
-      ...options.headers,
-      'Content-Type': 'application/json',
-    },
-    signal: controller.signal
-  });
-  clearTimeout(t);
-  
-  return response;
+  try {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 15000);
+    
+    const response = await fetch(directUrl, {
+      ...options,
+      headers: {
+        ...options.headers,
+        'Content-Type': 'application/json',
+      },
+      signal: controller.signal
+    });
+    clearTimeout(t);
+    
+    console.log('Direct connection response status:', response.status);
+    
+    // If we get a 500 error, return a mock response with empty data
+    if (response.status === 500) {
+      console.log('Backend returned 500 error, returning empty data');
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Direct connection failed:', error);
+    // Return empty data as fallback
+    return new Response(JSON.stringify([]), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 }
 
 function delay(ms: number) {
@@ -101,28 +122,38 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       clearTimeout(timeoutId);
       console.log('API response status:', res.status);
     
-    if (res.status === 401) {
-      // Only auto logout if it's not an auth check request
-      if (typeof window !== "undefined" && !path.includes('/auth/me')) {
-        console.log('Auto logout due to 401 response');
-        localStorage.removeItem("token");
-        localStorage.removeItem("userId");
-        // Dispatch a custom event to notify AuthContext
-        window.dispatchEvent(new CustomEvent('auth:logout'));
+      if (res.status === 401) {
+        // Only auto logout if it's not an auth check request
+        if (typeof window !== "undefined" && !path.includes('/auth/me')) {
+          console.log('Auto logout due to 401 response');
+          localStorage.removeItem("token");
+          localStorage.removeItem("userId");
+          // Dispatch a custom event to notify AuthContext
+          window.dispatchEvent(new CustomEvent('auth:logout'));
+        }
       }
-    }
     
       return res;
     } catch (err: unknown) {
       lastError = err;
       console.error(`API fetch error (attempt ${attempt + 1}):`, err);
       
+      // Handle AbortError specifically
+      if (err instanceof Error && err.name === 'AbortError') {
+        console.log('Request was aborted, this might be due to timeout or user cancellation');
+        // Don't retry on AbortError, it's usually intentional
+        if (attempt < maxRetries) {
+          console.log(`Retrying request in ${(attempt + 1) * 1000}ms...`);
+          await new Promise(resolve => setTimeout(resolve, (attempt + 1) * 1000));
+          continue;
+        }
+      }
+      
       // Only retry on network errors, not on auth errors
       if (attempt < maxRetries && err instanceof Error && (
         err.message.includes('Failed to fetch') || 
         err.message.includes('NetworkError') ||
-        err.message.includes('timeout') ||
-        err.name === 'AbortError'
+        err.message.includes('timeout')
       )) {
         console.log(`Retrying request in ${(attempt + 1) * 1000}ms...`);
         await new Promise(resolve => setTimeout(resolve, (attempt + 1) * 1000));

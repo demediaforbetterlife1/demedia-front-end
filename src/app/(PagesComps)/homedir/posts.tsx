@@ -92,15 +92,41 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
       if (!res.ok) {
         const errorText = await res.text();
+        console.error(`Server error: ${res.status} ${errorText}`);
+        
+        // If it's a 500 error, show a more user-friendly message
+        if (res.status === 500) {
+          setError("Posts service is temporarily unavailable. Please try again later.");
+          setPosts([]); // Set empty posts instead of showing error
+          return;
+        }
+        
         throw new Error(`Server error: ${res.status} ${errorText}`);
       }
 
       const data = await res.json();
       const fetchedPosts = Array.isArray(data) ? data : [data];
-      setPosts(fetchedPosts.reverse());
+      
+      // If we get empty data, show a friendly message instead of error
+      if (fetchedPosts.length === 0) {
+        console.log('No posts available');
+        setPosts([]);
+        setError(null); // Clear any previous errors
+      } else {
+        setPosts(fetchedPosts.reverse());
+        setError(null); // Clear any previous errors
+      }
     } catch (err: any) {
       console.error("Error loading posts:", err);
-      setError(err.message || "Failed to load posts");
+      
+      // Provide more specific error messages
+      if (err.message.includes('AbortError') || err.message.includes('aborted')) {
+        setError("Request was cancelled. Please try again.");
+      } else if (err.message.includes('Failed to fetch')) {
+        setError("Network error. Please check your connection and try again.");
+      } else {
+        setError(err.message || "Failed to load posts");
+      }
     } finally {
       setLoading(false);
     }
@@ -150,9 +176,18 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   return (
     <div className="flex flex-col gap-6 p-4">
       {error && (
-        <div className="bg-red-100 text-red-800 border border-red-400 p-3 rounded mb-4 whitespace-pre-wrap break-words">
-          <strong className="block text-red-600 mb-2">⚠️ Error Details:</strong>
-          {error}
+        <div className="bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-400 dark:border-red-600 p-4 rounded-lg mb-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <span className="text-red-500">⚠️</span>
+            <strong className="text-red-600 dark:text-red-300">Unable to load posts</strong>
+          </div>
+          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+          <button 
+            onClick={() => fetchPosts()}
+            className="mt-2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       )}
 
@@ -167,8 +202,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       )}
 
       {!loading && posts.length === 0 && !error && (
-        <div className={`text-center py-10 ${themeClasses.textMuted}`}>
-          No posts yet.
+        <div className={`text-center py-16 ${themeClasses.textMuted}`}>
+          <div className="text-6xl mb-4">📝</div>
+          <h3 className={`text-xl font-semibold ${themeClasses.text} mb-2`}>No posts yet</h3>
+          <p className="text-sm">Be the first to share something amazing!</p>
         </div>
       )}
 
