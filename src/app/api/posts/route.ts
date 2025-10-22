@@ -1,33 +1,48 @@
 import { NextResponse } from "next/server";
 
-// ✅ GET → جلب كل البوستات
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const backendUrl = 'https://demedia-backend.fly.dev';
-    const res = await fetch(`${backendUrl}/api/posts`, { cache: "no-store" });
+    
+    // 🧠 لو في توكن محفوظ بالكوكيز أو الهيدر، خده
+    const authHeader = req.headers.get('authorization') || '';
+    const userId = req.headers.get('user-id') || '';
+
+    const res = await fetch(`${backendUrl}/api/posts`, {
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authHeader ? { "Authorization": authHeader } : {}),
+        ...(userId ? { "user-id": userId } : {}),
+      },
+    });
+
     if (!res.ok) {
-      throw new Error(`Failed to fetch posts: ${res.status} ${res.statusText}`);
+      const errText = await res.text();
+      throw new Error(`Failed to fetch posts: ${res.status} ${errText}`);
     }
+
     const data = await res.json();
     return NextResponse.json(data);
+
   } catch (error: any) {
-    // Fallback to local test posts to avoid empty feed
+    console.error("Error fetching posts:", error?.message || error);
+
+    // 🧩 fallback محلي لو السيرفر واقع
     try {
-      const testRes = await fetch('/api/test-posts');
+      const testRes = await fetch('http://localhost:3000/api/test-posts');
       if (testRes.ok) {
         const testData = await testRes.json();
         return NextResponse.json(testData);
       }
     } catch {}
 
-    console.error("Error fetching posts:", error?.message || error);
     return NextResponse.json(
       { error: "Failed to fetch posts. Please try again." },
       { status: 500 }
     );
   }
 }
-
 // ✅ POST → إنشاء بوست جديد مع debug كامل
 export async function POST(req: Request) {
   let body: any = null;
