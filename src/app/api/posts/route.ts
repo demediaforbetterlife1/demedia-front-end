@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
 
-// ✅ GET → جلب كل البوستات
-import { NextResponse } from "next/server";
-
 export async function GET(req: Request) {
   try {
     const backendUrl = 'https://demedia-backend.fly.dev';
