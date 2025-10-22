@@ -2,836 +2,198 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { 
-    Heart, 
-    MessageCircle, 
-    Share, 
-    Bookmark, 
-    MoreHorizontal,
-    Trash2,
-    Edit,
-    Flag,
-    Eye,
-    ThumbsUp,
-    ThumbsDown,
-    Reply,
-    Send
-} from "lucide-react";
-import Trending from "@/app/(PagesComps)/homedir/trending";
-import Suggestions from "@/app/(PagesComps)/homedir/suggestions";
-import { contentService } from "@/services/contentService";
-import { useAuth } from "@/contexts/AuthContext";
+import { Heart, MessageCircle, Share2, Bookmark, BookmarkCheck } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useI18n } from "@/contexts/I18nContext";
-import { useNotifications } from "@/components/NotificationProvider";
-import { getPostThemeClasses } from "@/utils/enhancedThemeUtils";
-import CommentModal from "@/components/CommentModal";
-import ReportModal from "@/components/ReportModal";
-import EditPostModal from "@/components/EditPostModal";
-import YouTubeStyleComments from "@/components/YouTubeStyleComments";
-import LiveReactions from "@/components/LiveReactions";
 import { apiFetch } from "@/lib/api";
-import PremiumUserIndicator from "@/components/PremiumUserIndicator";
+import { useRouter } from "next/navigation";
 
 type PostType = {
-    id: number;
-    title?: string;
-    content: string;
-    likes: number;
-    comments: number;
-    liked?: boolean;
-    bookmarked?: boolean;
-    views?: number;
-    user?: {
-        id?: number;
-        name?: string;
-        username?: string;
-        profilePicture?: string;
-        subscriptionTier?: 'monthly' | 'quarterly' | 'semiannual' | null;
-    };
-    author: {
-        id: number;
-        name: string;
-        username: string;
-        profilePicture?: string;
-    };
-    createdAt: string;
-    imageUrl?: string;
-    imageUrls?: string[];
-    videoUrl?: string;
-    images?: string[];
-    videos?: string[];
-    media?: {
-        type: 'image' | 'video';
-        url: string;
-        thumbnail?: string;
-    }[];
+  id: number;
+  content: string;
+  likes: number;
+  comments: number;
+  liked?: boolean;
+  bookmarked?: boolean;
+  imageUrl?: string;
+  videoUrl?: string;
+  createdAt?: string;
+  user?: {
+    name?: string;
+    username?: string;
+    profilePicture?: string;
+  };
 };
 
-export default function Posts() {
-    const [posts, setPosts] = useState<PostType[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [showCommentModal, setShowCommentModal] = useState(false);
-    const [showReportModal, setShowReportModal] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [selectedPost, setSelectedPost] = useState<PostType | null>(null);
-    const [showDropdown, setShowDropdown] = useState<number | null>(null);
-    const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
-    const [comments, setComments] = useState<{[key: number]: any[]}>({});
-    const [newComment, setNewComment] = useState<{[key: number]: string}>({});
-    const [showComments, setShowComments] = useState<{[key: number]: boolean}>({});
-    const [expandedPosts, setExpandedPosts] = useState<Set<number>>(new Set());
-    const { user } = useAuth();
-    const { theme } = useTheme();
-    const { t } = useI18n();
-    const { showSuccess, showError } = useNotifications();
+interface PostsProps {
+  isVisible?: boolean;
+  postId?: number;
+}
 
-    const themeClasses = getPostThemeClasses(theme);
+export default function Posts({ isVisible = true, postId }: PostsProps) {
+  const { theme } = useTheme();
+  const [posts, setPosts] = useState<PostType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (showDropdown && !(event.target as Element).closest('.dropdown')) {
-                setShowDropdown(null);
-            }
+  const themeClasses = (() => {
+    switch (theme) {
+      case "light":
+        return {
+          bg: "bg-white",
+          text: "text-gray-900",
+          textMuted: "text-gray-500",
+          border: "border-gray-200",
+          hover: "hover:bg-gray-100",
         };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [showDropdown]);
-
-    useEffect(() => {
-        const abort = new AbortController();
-        let retryCount = 0;
-        const maxRetries = 3;
-
-        async function fetchPosts() {
-            try {
-                setLoading(true);
-                setError(null);
-
-                // Use personalized content if user has interests, otherwise fallback to regular posts
-                const userInterests = user?.interests || [];
-                let data;
-                
-                if (userInterests.length > 0) {
-                    try {
-                        const response = await apiFetch('/api/posts/personalized', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ interests: userInterests })
-                        });
-                        data = await response.json();
-                    } catch (error) {
-                        console.log('Personalized posts failed, falling back to regular posts');
-                        const response = await apiFetch('/api/test-posts');
-                        data = await response.json();
-                    }
-                } else {
-                    const response = await apiFetch('/api/test-posts');
-                    data = await response.json();
-                }
-
-                console.log('📊 Posts data received:', data);
-                console.log('📊 Data type:', typeof data);
-                console.log('📊 Is array:', Array.isArray(data));
-                
-                // Debug first post if it exists
-                if (Array.isArray(data) && data.length > 0) {
-                    console.log('📊 First post details:', data[0]);
-                    console.log('📊 First post imageUrl:', data[0].imageUrl);
-                    console.log('📊 First post imageUrls:', data[0].imageUrls);
-                }
-                
-                // Ensure data is an array
-                let postsArray: any[] = data;
-                if (!Array.isArray(data)) {
-                    console.log('📊 Data is not array, checking for posts property...');
-                    if (data && Array.isArray(data.posts)) {
-                        postsArray = data.posts;
-                    } else if (data && Array.isArray(data.data)) {
-                        postsArray = data.data;
-                    } else {
-                        console.log('📊 No posts array found, using empty array');
-                        postsArray = [];
-                    }
-                }
-
-                console.log('📊 Final posts array:', postsArray);
-                console.log('📊 Posts count:', postsArray.length);
-                
-                // Ensure all posts have required fields
-                const processedPosts = postsArray.map((post: any) => ({
-                    ...post,
-                    createdAt: post.createdAt || new Date().toISOString(),
-                    author: {
-                        id: post.author?.id || post.user?.id || 0,
-                        name: post.author?.name || post.user?.name || 'Unknown User',
-                        username: post.author?.username || post.user?.username || 'unknown',
-                        profilePicture: post.author?.profilePicture || post.user?.profilePicture
-                    }
-                }));
-                
-                setPosts(processedPosts);
-            } catch (err) {
-                console.error('Error fetching posts:', err);
-                setError('Failed to load posts');
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        fetchPosts();
-
-        return () => {
-            abort.abort();
+      case "dark":
+        return {
+          bg: "bg-gray-900",
+          text: "text-white",
+          textMuted: "text-gray-400",
+          border: "border-gray-700",
+          hover: "hover:bg-gray-800",
         };
-    }, [user?.interests]);
+      case "gold":
+        return {
+          bg: "bg-gray-900",
+          text: "text-yellow-400",
+          textMuted: "text-yellow-500",
+          border: "border-yellow-700",
+          hover: "hover:bg-yellow-800/30",
+        };
+      default:
+        return {
+          bg: "bg-gray-900",
+          text: "text-white",
+          textMuted: "text-gray-400",
+          border: "border-gray-700",
+          hover: "hover:bg-gray-800",
+        };
+    }
+  })();
 
-    const handleLike = async (postId: number) => {
-        try {
-            const response = await apiFetch(`/api/posts/${postId}/like`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
+  // 🔹 Fetch posts
+  const fetchPosts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Like response:', data);
-                setPosts(prev => prev.map(p => 
-                    p.id === postId 
-                        ? { ...p, liked: data.liked, likes: data.likes }
-                        : p
-                ));
-                showSuccess('Like Updated', data.liked ? 'Post liked!' : 'Post unliked!');
-            } else {
-                console.error('Failed to like post:', response.status);
-                showError('Error', 'Failed to like post');
-            }
-        } catch (error) {
-            console.error('Error liking post:', error);
-            showError('Error', 'Failed to like post');
-        }
-    };
+      const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
+      const res = await apiFetch(endpoint);
 
-    const handleBookmark = async (postId: number) => {
-        try {
-            const response = await apiFetch(`/api/posts/${postId}/bookmark`, {
-                method: 'POST',
-            });
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Server error: ${res.status} ${errorText}`);
+      }
 
-            if (response.ok) {
-                const data = await response.json();
-                setPosts(prev => prev.map(p => 
-                    p.id === postId 
-                        ? { ...p, bookmarked: data.bookmarked }
-                        : p
-                ));
-            }
-        } catch (error) {
-            console.error('Error bookmarking post:', error);
-        }
-    };
+      const data = await res.json();
+      const fetchedPosts = Array.isArray(data) ? data : [data];
+      setPosts(fetchedPosts.reverse());
+    } catch (err: any) {
+      console.error("Error loading posts:", err);
+      setError(err.message || "Failed to load posts");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleComment = (post: PostType) => {
-        setSelectedPost(post);
-        setShowCommentModal(true);
-    };
+  useEffect(() => {
+    if (isVisible) fetchPosts();
+  }, [isVisible, postId]);
 
-    const handleReport = (post: PostType) => {
-        setSelectedPost(post);
-        setShowReportModal(true);
-    };
+  // ✅ Create Post (with detailed error info)
+  const handleCreatePost = async (content: string, userId: string) => {
+    try {
+      setError(null);
 
-    const handleDelete = async (postId: number) => {
-        if (!confirm('Are you sure you want to delete this post?')) return;
+      const res = await apiFetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, userId }),
+      });
 
-        try {
-            const response = await apiFetch(`/api/posts/${postId}`, {
-                method: 'DELETE',
-            });
+      const text = await res.text();
+      let backendResponse;
+      try {
+        backendResponse = JSON.parse(text);
+      } catch {
+        backendResponse = text;
+      }
 
-            if (response.ok) {
-                setPosts(prev => prev.filter(p => p.id !== postId));
-                showSuccess('Post Deleted', 'Your post has been deleted successfully');
-            }
-        } catch (error) {
-            console.error('Error deleting post:', error);
-            showError('Error', 'Failed to delete post');
-        }
-    };
+      if (!res.ok) {
+        throw new Error(
+          typeof backendResponse === "string"
+            ? backendResponse
+            : JSON.stringify(backendResponse, null, 2)
+        );
+      }
 
-    const handleEdit = (post: PostType) => {
-        setSelectedPost(post);
-        setShowEditModal(true);
-    };
+      setPosts((prev) => [backendResponse, ...prev]);
+    } catch (err: any) {
+      console.error("Create Post Error:", err);
+      setError(err.message || "Failed to create post");
+    }
+  };
 
-    const handlePostUpdated = (updatedPost: PostType) => {
-        setPosts(prev => prev.map(p => 
-            p.id === updatedPost.id ? updatedPost : p
-        ));
-        setShowEditModal(false);
-        setSelectedPost(null);
-        showSuccess('Post Updated', 'Your post has been updated successfully');
-    };
+  // 🔘 UI
+  if (!isVisible) return null;
 
-    const handleReportSubmitted = () => {
-        setShowReportModal(false);
-        setSelectedPost(null);
-        showSuccess('Report Submitted', 'Thank you for your report');
-    };
-
-    const formatTimeAgo = (dateString: string) => {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-        
-        if (diffInSeconds < 60) return 'Just now';
-        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-        return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    };
-
-    const handleShare = async (postId: number) => {
-        try {
-            const post = posts.find(p => p.id === postId);
-            if (!post) return;
-
-            const shareData = {
-                title: 'Check out this post on DeMedia',
-                text: post.content,
-                url: `${window.location.origin}/post/${postId}`
-            };
-
-            if (navigator.share) {
-                await navigator.share(shareData);
-            } else {
-                await navigator.clipboard.writeText(shareData.url);
-                showSuccess('Link Copied!', 'Post link copied to clipboard');
-            }
-        } catch (error: unknown) {
-            console.error('Error sharing post:', error);
-        }
-    };
-
-    const fetchComments = async (postId: number) => {
-        try {
-            console.log('Fetching comments for post:', postId);
-            const response = await apiFetch(`/api/posts/${postId}/comments`);
-            console.log('Comments response:', response.status, response.ok);
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Comments data received:', data);
-                setComments(prev => ({ ...prev, [postId]: Array.isArray(data) ? data : [] }));
-            } else {
-                console.warn('Failed to fetch comments, response not ok');
-                setComments(prev => ({ ...prev, [postId]: [] }));
-            }
-        } catch (error) {
-            console.error('Error fetching comments:', error);
-            setComments(prev => ({ ...prev, [postId]: [] }));
-        }
-    };
-
-    const handleAddComment = async (postId: number) => {
-        const commentText = newComment[postId];
-        if (!commentText?.trim()) return;
-
-        try {
-            const response = await apiFetch(`/api/posts/${postId}/comments`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: commentText.trim() })
-            });
-
-            if (response.ok) {
-                const newCommentData = await response.json();
-                setComments(prev => ({
-                    ...prev,
-                    [postId]: [...(prev[postId] || []), newCommentData]
-                }));
-                setNewComment(prev => ({ ...prev, [postId]: '' }));
-                setPosts(prev => prev.map(p => 
-                    p.id === postId ? { ...p, comments: p.comments + 1 } : p
-                ));
-                showSuccess('Comment Added', 'Your comment has been posted');
-            }
-        } catch (error) {
-            console.error('Error adding comment:', error);
-            showError('Error', 'Failed to add comment');
-        }
-    };
-
-    const handleProfileClick = (userId: number) => {
-        window.location.href = `/profile?userId=${userId}`;
-    };
-
-    const toggleComments = (postId: number) => {
-        setShowComments(prev => ({ ...prev, [postId]: !prev[postId] }));
-        if (!showComments[postId] && !comments[postId]) {
-            fetchComments(postId);
-        }
-    };
-
-    const togglePostExpansion = (postId: number) => {
-        setExpandedPosts(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(postId)) {
-                newSet.delete(postId);
-            } else {
-                newSet.add(postId);
-            }
-            return newSet;
-        });
-    };
-
-    const shouldTruncateText = (text: string) => {
-        return text.length > 200; // Show first 200 characters
-    };
-
-    const getTruncatedText = (text: string, maxLength: number = 200) => {
-        if (text.length <= maxLength) return text;
-        return text.substring(0, maxLength) + '...';
-    };
-
-    if (loading) return <p className={`text-center ${themeClasses.textSecondary} mt-10`}>{t('posts.loading','Loading posts...')}</p>;
-    if (error) return <p className="text-center text-red-400 mt-10">{t('posts.error','Error')}: {error}</p>;
-    if (!posts.length) return <p className={`text-center ${themeClasses.textSecondary} mt-10`}>{t('posts.none','No posts yet.')}</p>;
-
-    return (
-        <div className={`flex flex-col md:flex-row p-4 gap-6 ${themeClasses.bg}`}>
-            {/* Feed Section */}
-            <div className="flex-1 md:w-2/3 max-w-2xl mx-auto space-y-4">
-                    {posts.map((post, index) => (
-                        <motion.div
-                            key={post.id}
-                            initial={{ opacity: 0, y: 30, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            transition={{ 
-                                duration: 0.6, 
-                                delay: index * 0.1,
-                                type: "spring",
-                                stiffness: 100,
-                                damping: 15
-                            }}
-                            whileHover={{ 
-                                scale: 1.02, 
-                                y: -5,
-                                transition: { duration: 0.3 }
-                            }}
-                            className={`${themeClasses.postCard} ${themeClasses.postCardHover} rounded-2xl overflow-hidden relative group post-card-hover theme-transition ${
-                                theme === 'gold' ? 'gold-shimmer' : ''
-                            }`}
-                        >
-                        {/* Post Header */}
-                        <div className={`p-6 ${themeClasses.postHeader} relative`}>
-                            
-                            <div className="flex items-center justify-between relative z-10">
-                                <div className="flex items-center space-x-4">
-                                    <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => handleProfileClick(post.author.id)}
-                                        className={`${themeClasses.postProfile} profile-picture cursor-pointer ${
-                                            theme === 'gold' ? 'gold-glow' : ''
-                                        }`}
-                                    >
-                                        <span className="text-lg font-semibold">
-                                            {post.author.name.charAt(0).toUpperCase()}
-                                        </span>
-                                    </motion.button>
-                                    <div className="flex-1">
-                                        <div className="flex items-center space-x-2">
-                                            <button
-                                                onClick={() => handleProfileClick(post.author.id)}
-                                                className={`font-semibold ${themeClasses.text} hover:underline cursor-pointer`}
-                                            >
-                                                {post.author.name}
-                                            </button>
-                                            {post.user?.subscriptionTier && (
-                                                <PremiumUserIndicator subscriptionTier={post.user.subscriptionTier} />
-                                            )}
-                                        </div>
-                                        <p className={`text-sm ${themeClasses.textSecondary}`}>
-                                            @{post.author.username} • {formatTimeAgo(post.createdAt)}
-                                        </p>
-                                    </div>
-                                </div>
-                                
-                                <div className="flex items-center space-x-2">
-                                    {user?.id === post.author.id.toString() && (
-                                        <>
-                                            <button
-                                                onClick={() => handleEdit(post)}
-                                                className={`p-2 rounded-full ${themeClasses.hover} transition-colors`}
-                                                title="Edit post"
-                                            >
-                                                <Edit className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(post.id)}
-                                                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
-                                                title="Delete post"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </>
-                                    )}
-                                    <button
-                                        onClick={() => setShowDropdown(showDropdown === post.id ? null : post.id)}
-                                        className={`p-2 rounded-full ${themeClasses.hover} transition-colors`}
-                                    >
-                                        <MoreHorizontal className="w-4 h-4" />
-                                    </button>
-                                    
-                                    {showDropdown === post.id && (
-                                        <motion.div 
-                                            initial={{ opacity: 0, y: -10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className="absolute right-4 top-16 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-20 min-w-[120px]"
-                                        >
-                                            <button
-                                                onClick={() => {
-                                                    handleReport(post);
-                                                    setShowDropdown(null);
-                                                }}
-                                                className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 w-full transition-colors"
-                                            >
-                                                <Flag className="w-4 h-4" />
-                                                <span>Report</span>
-                                            </button>
-                                        </motion.div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Post Content */}
-                        <div className="p-6">
-                            <div>
-                                {post.title && (
-                                    <motion.h2 
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.2 }}
-                                        className={`text-xl font-bold ${themeClasses.postContent} mb-4`}
-                                    >
-                                        {post.title}
-                                    </motion.h2>
-                                )}
-                                <motion.div 
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.3 }}
-                                    className={`${themeClasses.postContent} whitespace-pre-wrap leading-relaxed text-base`}
-                                >
-                                {post.content && post.content.trim() ? (
-                                    shouldTruncateText(post.content) && !expandedPosts.has(post.id) ? (
-                                        <div>
-                                            <p>{getTruncatedText(post.content)}</p>
-                                            <motion.button
-                                                whileHover={{ scale: 1.05, y: -2 }}
-                                                whileTap={{ scale: 0.95 }}
-                                                onClick={() => togglePostExpansion(post.id)}
-                                                className={`mt-4 px-4 py-2 ${themeClasses.postButton} text-sm font-semibold rounded-full transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl relative overflow-hidden group`}
-                                            >
-                                                <span className="relative z-10">VIEW DETAILS</span>
-                                                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                            </motion.button>
-                                        </div>
-                                    ) : (
-                                        <div>
-                                            <p>{post.content}</p>
-                                            {shouldTruncateText(post.content) && expandedPosts.has(post.id) && (
-                                                <motion.button
-                                                    whileHover={{ scale: 1.05, y: -2 }}
-                                                    whileTap={{ scale: 0.95 }}
-                                                    onClick={() => togglePostExpansion(post.id)}
-                                                    className={`mt-4 px-4 py-2 ${themeClasses.postButtonSecondary} text-sm font-semibold rounded-full transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl relative overflow-hidden group`}
-                                                >
-                                                    <span className="relative z-10">SHOW LESS</span>
-                                                    <div className="absolute inset-0 bg-gradient-to-r from-gray-600 to-gray-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                                </motion.button>
-                                            )}
-                                        </div>
-                                    )
-                                ) : (
-                                    <div className="text-gray-500 italic">
-                                        {post.imageUrl || (post.imageUrls && post.imageUrls.length > 0) ? 'Shared a photo' : 'New post'}
-                                    </div>
-                                )}
-                                </motion.div>
-                            </div>
-                            
-                            {(post.imageUrl || (post.imageUrls && post.imageUrls.length > 0)) && (
-                                <div className="mt-4">
-                                    {post.imageUrl && (
-                                        <img 
-                                            src={post.imageUrl} 
-                                            alt="Post image" 
-                                            className="w-full rounded-lg"
-                                            onError={(e) => {
-                                                console.log('Image failed to load:', post.imageUrl);
-                                                e.currentTarget.style.display = 'none';
-                                            }}
-                                            onLoad={() => {
-                                                console.log('Image loaded successfully:', post.imageUrl);
-                                            }}
-                                        />
-                                    )}
-                                    {post.imageUrls && post.imageUrls.length > 0 && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {post.imageUrls.map((imageUrl: string, index: number) => (
-                                                <img 
-                                                    key={index}
-                                                    src={imageUrl} 
-                                                    alt={`Post image ${index + 1}`} 
-                                                    className="w-full rounded-lg"
-                                                    onError={(e) => {
-                                                        console.log('Image failed to load:', imageUrl);
-                                                        e.currentTarget.style.display = 'none';
-                                                    }}
-                                                    onLoad={() => {
-                                                        console.log('Image loaded successfully:', imageUrl);
-                                                    }}
-                                                />
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            
-                            {post.videoUrl && (
-                                <video 
-                                    src={post.videoUrl} 
-                                    controls 
-                                    className="mt-4 w-full rounded-lg"
-                                />
-                            )}
-                        </div>
-
-                        {/* Post Actions */}
-                        <div className={`px-6 py-4 ${themeClasses.postActions}`}>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-6 sm:space-x-8">
-                                    <motion.button
-                                        whileHover={{ scale: 1.1, y: -2 }}
-                                        whileTap={{ scale: 0.9 }}
-                                        onClick={() => handleLike(post.id)}
-                                        className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all duration-300 relative overflow-hidden group ${
-                                            post.liked
-                                                ? 'text-white bg-gradient-to-r from-red-500 to-pink-500 shadow-lg'
-                                                : `${themeClasses.textMuted} hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 hover:shadow-lg`
-                                        }`}
-                                    >
-                                        <Heart size={20} fill={post.liked ? 'currentColor' : 'none'} className="relative z-10" />
-                                        <span className="text-sm font-semibold relative z-10">{post.likes}</span>
-                                        {!post.liked && (
-                                            <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                        )}
-                                    </motion.button>
-                                    
-                                    <motion.button
-                                        whileHover={{ scale: 1.1, y: -2 }}
-                                        whileTap={{ scale: 0.9 }}
-                                        onClick={() => toggleComments(post.id)}
-                                        className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all duration-300 relative overflow-hidden group ${themeClasses.textMuted} hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-cyan-500 hover:shadow-lg`}
-                                    >
-                                        <MessageCircle size={20} className="relative z-10" />
-                                        <span className="text-sm font-semibold relative z-10">{post.comments}</span>
-                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                    </motion.button>
-                                    
-                                    <motion.button
-                                        whileHover={{ scale: 1.1, y: -2 }}
-                                        whileTap={{ scale: 0.9 }}
-                                        onClick={() => handleBookmark(post.id)}
-                                        className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all duration-300 relative overflow-hidden group ${
-                                            post.bookmarked
-                                                ? 'text-white bg-gradient-to-r from-yellow-500 to-orange-500 shadow-lg'
-                                                : `${themeClasses.textMuted} hover:text-white hover:bg-gradient-to-r hover:from-yellow-500 hover:to-orange-500 hover:shadow-lg`
-                                        }`}
-                                    >
-                                        <Bookmark size={20} fill={post.bookmarked ? 'currentColor' : 'none'} className="relative z-10" />
-                                        <span className="text-sm font-semibold relative z-10 hidden sm:inline">Save</span>
-                                        {!post.bookmarked && (
-                                            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                        )}
-                                    </motion.button>
-
-                                    <motion.button
-                                        whileHover={{ scale: 1.1, y: -2 }}
-                                        whileTap={{ scale: 0.9 }}
-                                        onClick={() => handleShare(post.id)}
-                                        className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all duration-300 relative overflow-hidden group ${themeClasses.textMuted} hover:text-white hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-500 hover:shadow-lg`}
-                                    >
-                                        <Share size={20} className="relative z-10" />
-                                        <span className="text-sm font-semibold relative z-10 hidden sm:inline">Share</span>
-                                        <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                    </motion.button>
-                                </div>
-                                
-                                {post.views && (
-                                    <div className="flex items-center space-x-1 text-sm text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg">
-                                        <Eye size={14} />
-                                        <span className="text-xs">{post.views}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* YouTube Style Comments for Videos */}
-                        {post.videoUrl && (
-                            <YouTubeStyleComments
-                                postId={post.id}
-                                postContent={post.content}
-                                postAuthor={post.author.username}
-                                isVisible={true}
-                            />
-                        )}
-
-                        {/* Live Reactions */}
-                        <LiveReactions
-                            postId={post.id}
-                            isVisible={true}
-                            onReactionCount={(count) => {
-                                // Update post reaction count if needed
-                                console.log(`Post ${post.id} has ${count} reactions`);
-                            }}
-                        />
-
-                        {/* Comments Section */}
-                        {showComments[post.id] && (
-                            <div className={`border-t ${themeClasses.border} p-4 bg-gradient-to-r from-transparent to-gray-50/50 dark:to-gray-800/50`}>
-                                <div className="space-y-4">
-                                    {/* Comments List */}
-                                    {comments[post.id] && comments[post.id].length > 0 ? (
-                                        <div className="space-y-3 max-h-64 overflow-y-auto">
-                                            {comments[post.id].map((comment: any) => (
-                                                <motion.div 
-                                                    key={comment.id} 
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    className="flex space-x-3"
-                                                >
-                                                    <button
-                                                        onClick={() => handleProfileClick(comment.author.id)}
-                                                        className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm hover:scale-105 transition-transform cursor-pointer shadow-md"
-                                                    >
-                                                        {comment.author.name.charAt(0).toUpperCase()}
-                                                    </button>
-                                                    <div className="flex-1">
-                                                        <div className={`${themeClasses.card} rounded-xl p-3 shadow-sm border ${themeClasses.border}`}>
-                                                            <div className="flex items-center space-x-2 mb-2">
-                                                                <button
-                                                                    onClick={() => handleProfileClick(comment.author.id)}
-                                                                    className={`font-semibold text-sm ${themeClasses.text} hover:underline cursor-pointer`}
-                                                                >
-                                                                    {comment.author.name}
-                                                                </button>
-                                                                <span className={`text-xs ${themeClasses.textSecondary}`}>
-                                                                    {formatTimeAgo(comment.createdAt)}
-                                                                </span>
-                                                            </div>
-                                                            <p className={`text-sm ${themeClasses.text} leading-relaxed`}>{comment.content}</p>
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-4">
-                                            <p className={`${themeClasses.textSecondary} text-sm`}>No comments yet. Be the first to comment!</p>
-                                        </div>
-                                    )}
-                                    
-                                    {/* Add Comment */}
-                                    <motion.div 
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="flex space-x-3 pt-2 border-t border-gray-200/50 dark:border-gray-700/50"
-                                    >
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                                            {user?.name?.charAt(0).toUpperCase() || 'U'}
-                                        </div>
-                                        <div className="flex-1 flex space-x-2">
-                                            <input
-                                                type="text"
-                                                placeholder="Write a comment..."
-                                                value={newComment[post.id] || ''}
-                                                onChange={(e) => setNewComment(prev => ({ ...prev, [post.id]: e.target.value }))}
-                                                className={`flex-1 px-4 py-2 ${themeClasses.input} border rounded-xl ${themeClasses.text} placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm`}
-                                                onKeyPress={(e) => e.key === 'Enter' && handleAddComment(post.id)}
-                                            />
-                                            <motion.button
-                                                whileHover={{ scale: 1.05 }}
-                                                whileTap={{ scale: 0.95 }}
-                                                onClick={() => handleAddComment(post.id)}
-                                                disabled={!newComment[post.id]?.trim()}
-                                                className={`px-4 py-2 ${themeClasses.button} text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed shadow-md`}
-                                            >
-                                                <Send className="w-4 h-4" />
-                                            </motion.button>
-                                        </div>
-                                    </motion.div>
-                                </div>
-                            </div>
-                        )}
-                    </motion.div>
-                ))}
-            </div>
-
-            {/* Sidebar for Large Screens */}
-            <div className="hidden md:block md:w-1/3 space-y-4">
-                <Trending />
-                <div className={`${themeClasses.card} rounded-2xl shadow-lg p-4 border ${themeClasses.border}`}>
-                    <Suggestions />
-                </div>
-            </div>
-
-            {/* Comment Modal */}
-            {selectedPost && (
-                <CommentModal
-                    isOpen={showCommentModal}
-                    onClose={() => {
-                        setShowCommentModal(false);
-                        setSelectedPost(null);
-                    }}
-                    postId={selectedPost.id}
-                    postContent={selectedPost.content}
-                    postAuthor={selectedPost.user?.name || 'Unknown'}
-                />
-            )}
-
-            {/* Report Modal */}
-            {selectedPost && (
-                <ReportModal
-                    isOpen={showReportModal}
-                    onClose={() => {
-                        setShowReportModal(false);
-                        setSelectedPost(null);
-                    }}
-                    postId={selectedPost.id}
-                    postAuthor={selectedPost.user?.name || 'Unknown'}
-                    onReportSubmitted={handleReportSubmitted}
-                />
-            )}
-
-            {/* Edit Post Modal */}
-            {selectedPost && (
-                <EditPostModal
-                    isOpen={showEditModal}
-                    onClose={() => {
-                        setShowEditModal(false);
-                        setSelectedPost(null);
-                    }}
-                    post={selectedPost}
-                    onPostUpdated={handlePostUpdated}
-                />
-            )}
+  return (
+    <div className="flex flex-col gap-6 p-4">
+      {error && (
+        <div className="bg-red-100 text-red-800 border border-red-400 p-3 rounded mb-4 whitespace-pre-wrap break-words">
+          <strong className="block text-red-600 mb-2">⚠️ Error Details:</strong>
+          {error}
         </div>
-    );
+      )}
+
+      {loading && (
+        <div className={`flex justify-center items-center h-64 ${themeClasses.bg}`}>
+          <div
+            className={`animate-spin rounded-full h-10 w-10 border-b-2 ${
+              theme === "gold" ? "border-yellow-400" : "border-cyan-400"
+            }`}
+          ></div>
+        </div>
+      )}
+
+      {!loading && posts.length === 0 && !error && (
+        <div className={`text-center py-10 ${themeClasses.textMuted}`}>
+          No posts yet.
+        </div>
+      )}
+
+      {posts.map((post) => (
+        <motion.div
+          key={post.id}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className={`${themeClasses.bg} border ${themeClasses.border} rounded-2xl p-5`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className={`font-semibold ${themeClasses.text}`}>
+                {post.user?.name || "Unknown User"}
+              </h3>
+              <p className={`text-sm ${themeClasses.textMuted}`}>
+                @{post.user?.username || "user"}
+              </p>
+            </div>
+            <p className={`text-xs ${themeClasses.textMuted}`}>
+              {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}
+            </p>
+          </div>
+
+          <div
+            className={`cursor-pointer ${themeClasses.text}`}
+            onClick={() => router.push(`/posts/${post.id}`)}
+          >
+            {post.content}
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
 }
