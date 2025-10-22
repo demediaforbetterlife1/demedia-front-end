@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Theme = 'dark' | 'light' | 'super-dark' | 'super-light' | 'gold';
+export type Theme = 'dark' | 'light' | 'super-dark' | 'super-light' | 'gold' | 'iron';
 
 interface ThemeContextType {
   theme: Theme;

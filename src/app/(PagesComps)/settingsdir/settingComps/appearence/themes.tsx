@@ -51,6 +51,13 @@ export default function ThemeModal({ closeModal }: ThemeModalProps) {
             description: 'Luxurious gold theme with shimmer effects',
             preview: 'bg-gradient-to-br from-yellow-900 to-yellow-800 relative overflow-hidden',
             icon: '✨'
+        },
+        {
+            id: 'iron' as const,
+            name: 'Iron',
+            description: 'Shining iron theme with metallic effects',
+            preview: 'bg-gradient-to-br from-gray-800 to-gray-700 relative overflow-hidden',
+            icon: '⚡'
         }
     ];
 

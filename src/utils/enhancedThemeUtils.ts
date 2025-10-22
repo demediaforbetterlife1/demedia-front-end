@@ -326,6 +326,58 @@ export const getEnhancedThemeClasses = (theme: Theme): EnhancedThemeClasses => {
         accentBg: 'bg-gradient-to-r from-yellow-800/40 to-amber-800/40',
         coverGradient: 'from-yellow-500/20 via-amber-500/20 to-orange-500/20'
       };
+
+    case 'iron':
+      return {
+        bg: 'bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900',
+        bgSecondary: 'bg-gray-700/40',
+        bgTertiary: 'bg-gray-600/30',
+        bgAccent: 'bg-gray-800/40',
+        
+        text: 'text-gray-300',
+        textSecondary: 'text-gray-400',
+        textMuted: 'text-gray-500',
+        textAccent: 'text-gray-200',
+        
+        border: 'border-gray-600/50',
+        borderSecondary: 'border-gray-500/50',
+        borderAccent: 'border-gray-400/50',
+        
+        hover: 'hover:bg-gray-700/20',
+        hoverSecondary: 'hover:bg-gray-600/20',
+        active: 'active:bg-gray-600/20',
+        
+        card: 'bg-gray-600/30 backdrop-blur-sm',
+        cardSecondary: 'bg-gray-700/25 backdrop-blur-sm',
+        cardAccent: 'bg-gray-800/40 backdrop-blur-sm',
+        
+        button: 'bg-gray-600 hover:bg-gray-700 text-gray-100',
+        buttonSecondary: 'bg-gray-700/30 hover:bg-gray-600/30 text-gray-200',
+        buttonAccent: 'bg-gray-700 hover:bg-gray-800 text-gray-100',
+        buttonDanger: 'bg-red-600 hover:bg-red-700 text-white',
+        
+        input: 'bg-gray-800/30 border-gray-600/30 backdrop-blur-sm',
+        inputFocus: 'focus:border-gray-500 focus:ring-gray-500/20',
+        
+        shadow: 'shadow-2xl shadow-gray-500/20',
+        shadowSecondary: 'shadow-xl shadow-gray-500/10',
+        shadowAccent: 'shadow-gray-500/30',
+        
+        modal: 'bg-gray-900/80 backdrop-blur-md',
+        modalOverlay: 'bg-black/60 backdrop-blur-sm',
+        modalContent: 'bg-gray-900/70 backdrop-blur-sm',
+        
+        postCard: 'bg-gray-600/30 backdrop-blur-sm',
+        postCardHover: 'hover:bg-gray-600/40',
+        postTransparent: 'bg-gray-500/25 backdrop-blur-sm',
+        
+        gradient: 'bg-gradient-to-br from-gray-600 to-gray-800',
+        gradientSecondary: 'bg-gradient-to-br from-gray-700 to-gray-900',
+        gradientAccent: 'bg-gradient-to-br from-gray-500 to-gray-700',
+        
+        accentBg: 'bg-gradient-to-r from-gray-800/40 to-gray-700/40',
+        coverGradient: 'from-gray-500/20 via-gray-600/20 to-gray-700/20'
+      };
       
     default:
       return {
