@@ -87,15 +87,19 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
         await new Promise(resolve => setTimeout(resolve, attempt * 2000));
       }
       
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), timeout);
-    const res = await fetch(url, { 
-      ...options, 
-      headers,
-      signal: controller.signal
-    });
-    clearTimeout(t);
-    console.log('API response status:', res.status);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log(`Request timeout after ${timeout}ms`);
+        controller.abort();
+      }, timeout);
+      
+      const res = await fetch(url, { 
+        ...options, 
+        headers,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      console.log('API response status:', res.status);
     
     if (res.status === 401) {
       // Only auto logout if it's not an auth check request

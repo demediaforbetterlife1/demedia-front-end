@@ -803,7 +803,7 @@ export default function ProfilePage() {
                     animation: spin-slow 3s linear infinite;
                 }
             `}</style>
-            <div className={`min-h-screen theme-bg-primary pb-20 md:pb-0`}>
+            <div className={`min-h-screen theme-bg-primary pb-20 md:pb-0 gold-theme`}>
                 <div className="max-w-6xl mx-auto p-4">
                     {/* Enhanced Cover Section */}
                     <div className="relative mb-8">

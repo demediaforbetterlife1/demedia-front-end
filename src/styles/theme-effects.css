@@ -129,3 +129,56 @@
 .gold-theme .loading-shimmer {
   background: linear-gradient(90deg, rgba(255,215,0,0.1) 25%, rgba(255,215,0,0.2) 50%, rgba(255,215,0,0.1) 75%);
 }
+
+/* Iron theme shimmer effect */
+.iron-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.iron-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(192, 192, 192, 0.06), transparent);
+  transform: skewX(-20deg);
+  animation: shimmer 1.8s infinite;
+}
+
+/* Iron glow effect */
+.iron-glow {
+  background: linear-gradient(135deg, rgba(192,192,192,0.06), rgba(192,192,192,0.01));
+  box-shadow: 0 6px 20px rgba(192, 192, 192, 0.08);
+  border: 1px solid rgba(192,192,192,0.14);
+  backdrop-filter: blur(6px);
+}
+
+/* Iron theme specific hover */
+.iron-theme .post-card-hover:hover {
+  box-shadow: 0 10px 25px rgba(192, 192, 192, 0.2);
+}
+
+/* Iron button specific */
+.iron-button {
+  background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
+  color: #000;
+  font-weight: 600;
+}
+
+.iron-button:hover {
+  background: linear-gradient(135deg, #a8a8a8, #c0c0c0);
+  box-shadow: 0 4px 12px rgba(192, 192, 192, 0.3);
+}
+
+/* Iron theme profile picture */
+.iron-theme .profile-picture:hover {
+  box-shadow: 0 4px 12px rgba(192, 192, 192, 0.3);
+}
+
+/* Iron theme loading */
+.iron-theme .loading-shimmer {
+  background: linear-gradient(90deg, rgba(192,192,192,0.1) 25%, rgba(192,192,192,0.2) 50%, rgba(192,192,192,0.1) 75%);
+}

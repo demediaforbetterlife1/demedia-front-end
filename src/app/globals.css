@@ -91,6 +91,19 @@
   --hover-bg: #2d2d2d;
 }
 
+/* Iron Theme */
+.iron {
+  --bg-primary: #2c2c2c;
+  --bg-secondary: #3a3a3a;
+  --bg-tertiary: #4a4a4a;
+  --text-primary: #c0c0c0;
+  --text-secondary: #a8a8a8;
+  --text-tertiary: #808080;
+  --border-color: #5a5a5a;
+  --accent-color: #c0c0c0;
+  --hover-bg: #3a3a3a;
+}
+
 /* Theme-aware utility classes */
 .bg-primary { background-color: var(--bg-primary); }
 .bg-secondary { background-color: var(--bg-secondary); }

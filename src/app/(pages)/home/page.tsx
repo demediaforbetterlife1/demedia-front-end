@@ -12,7 +12,9 @@ export default function HomePage() {
     return (
         <div className={`min-h-screen ${themeClasses.bg} ${themeClasses.text} flex flex-col pb-20 md:pb-0`}>
             <Stories />
-            <Posts />
+            <div className="iron-theme">
+                <Posts />
+            </div>
         </div>
     )
 };

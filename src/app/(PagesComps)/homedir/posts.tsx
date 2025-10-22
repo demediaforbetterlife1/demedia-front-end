@@ -62,6 +62,14 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           border: "border-yellow-700",
           hover: "hover:bg-yellow-800/30",
         };
+      case "iron":
+        return {
+          bg: "bg-gray-800",
+          text: "text-gray-300",
+          textMuted: "text-gray-400",
+          border: "border-gray-600",
+          hover: "hover:bg-gray-700",
+        };
       default:
         return {
           bg: "bg-gray-900",
@@ -170,7 +178,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className={`${themeClasses.bg} border ${themeClasses.border} rounded-2xl p-5`}
+          className={`${themeClasses.bg} border ${themeClasses.border} rounded-2xl p-5 iron-shimmer iron-glow post-card-hover`}
         >
           <div className="flex items-center justify-between mb-3">
             <div>
