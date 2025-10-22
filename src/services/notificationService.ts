@@ -132,9 +132,27 @@ class NotificationService {
         console.warn('Skipping push subscription: missing NEXT_PUBLIC_VAPID_PUBLIC_KEY');
         return null;
       }
+
+      // Convert base64 URL-safe VAPID public key string to Uint8Array as required by PushManager
+      const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
+        const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding)
+          .replace(/-/g, '+')
+          .replace(/_/g, '/');
+        const rawData = typeof window !== 'undefined'
+          ? window.atob(base64)
+          : Buffer.from(base64, 'base64').toString('binary');
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+          outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+      };
+
+      const applicationServerKey = urlBase64ToUint8Array(vapidKey);
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: vapidKey,
+        applicationServerKey,
       });
 
       console.log('Push subscription:', subscription);
