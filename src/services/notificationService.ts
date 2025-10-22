@@ -149,11 +149,11 @@ class NotificationService {
         return outputArray;
       };
 
-      const applicationServerKey = urlBase64ToUint8Array(vapidKey).buffer;
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey,
-      });
+      const applicationServerKey = urlBase64ToUint8Array(vapidKey);
+const subscription = await registration.pushManager.subscribe({
+  userVisibleOnly: true,
+  applicationServerKey: applicationServerKey.buffer, // ✅ هنا التعديل
+});
 
       console.log('Push subscription:', subscription);
       return subscription;
