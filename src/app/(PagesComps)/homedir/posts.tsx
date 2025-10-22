@@ -81,51 +81,60 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     }
   })();
 
-  // 🔹 Fetch posts
+  // 🔹 Fetch posts from database
   const fetchPosts = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      console.log('🔍 Fetching posts from database...');
       const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
       const res = await apiFetch(endpoint);
 
+      console.log('📊 Posts API response status:', res.status);
+      console.log('📊 Posts API response ok:', res.ok);
+
       if (!res.ok) {
         const errorText = await res.text();
-        console.error(`Server error: ${res.status} ${errorText}`);
+        console.error(`Database connection error: ${res.status} ${errorText}`);
         
-        // If it's a 500 error, show a more user-friendly message
+        // If it's a 500 error, the backend is having issues
         if (res.status === 500) {
-          setError("Posts service is temporarily unavailable. Please try again later.");
-          setPosts([]); // Set empty posts instead of showing error
+          setError("Database connection issue. Please try again in a moment.");
+          setPosts([]);
           return;
         }
         
-        throw new Error(`Server error: ${res.status} ${errorText}`);
+        throw new Error(`Database error: ${res.status} ${errorText}`);
       }
 
       const data = await res.json();
+      console.log('✅ Posts data received from database:', data?.length || 0, 'posts');
+      
       const fetchedPosts = Array.isArray(data) ? data : [data];
       
-      // If we get empty data, show a friendly message instead of error
+      // If we get empty data, it means no posts in database yet
       if (fetchedPosts.length === 0) {
-        console.log('No posts available');
+        console.log('📝 No posts found in database');
         setPosts([]);
         setError(null); // Clear any previous errors
       } else {
+        console.log('✅ Successfully loaded posts from database');
         setPosts(fetchedPosts.reverse());
         setError(null); // Clear any previous errors
       }
     } catch (err: any) {
-      console.error("Error loading posts:", err);
+      console.error("❌ Error loading posts from database:", err);
       
       // Provide more specific error messages
       if (err.message.includes('AbortError') || err.message.includes('aborted')) {
         setError("Request was cancelled. Please try again.");
       } else if (err.message.includes('Failed to fetch')) {
-        setError("Network error. Please check your connection and try again.");
+        setError("Cannot connect to database. Please check your connection and try again.");
+      } else if (err.message.includes('Database')) {
+        setError("Database connection failed. Please try again later.");
       } else {
-        setError(err.message || "Failed to load posts");
+        setError(err.message || "Failed to load posts from database");
       }
     } finally {
       setLoading(false);
