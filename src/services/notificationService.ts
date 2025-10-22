@@ -149,7 +149,7 @@ class NotificationService {
         return outputArray;
       };
 
-      const applicationServerKey = urlBase64ToUint8Array(vapidKey);
+      const applicationServerKey = urlBase64ToUint8Array(vapidKey) as ArrayBuffer;
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey,
