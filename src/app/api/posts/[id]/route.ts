@@ -1,5 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params;
+
+    if (!id) {
+      return NextResponse.json({ error: "Missing post ID" }, { status: 400 });
+    }
+
+    const backendUrl = "https://demedia-backend.fly.dev";
+    const res = await fetch(`${backendUrl}/api/posts/${id}`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Backend responded with ${res.status}: ${errText}`);
+    }
+
+    const data = await res.json();
+    return NextResponse.json(data, { status: 200 });
+  } catch (error: any) {
+    console.error("Error fetching single post:", error?.message || error);
+    return NextResponse.json(
+      { error: "Failed to fetch post. Please try again." },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
