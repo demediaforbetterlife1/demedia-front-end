@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Share2, Bookmark, BookmarkCheck } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -36,6 +35,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  // 🎨 Theme styles
   const themeClasses = (() => {
     switch (theme) {
       case "light":
@@ -62,14 +62,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           border: "border-yellow-700",
           hover: "hover:bg-yellow-800/30",
         };
-      case "iron":
-        return {
-          bg: "bg-gray-800",
-          text: "text-gray-300",
-          textMuted: "text-gray-400",
-          border: "border-gray-600",
-          hover: "hover:bg-gray-700",
-        };
       default:
         return {
           bg: "bg-gray-900",
@@ -81,61 +73,29 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     }
   })();
 
-  // 🔹 Fetch posts from database
+  // 🧠 Fetch posts
   const fetchPosts = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      console.log('🔍 Fetching posts from database...');
       const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
       const res = await apiFetch(endpoint);
 
-      console.log('📊 Posts API response status:', res.status);
-      console.log('📊 Posts API response ok:', res.ok);
-
       if (!res.ok) {
-        const errorText = await res.text();
-        console.error(`Database connection error: ${res.status} ${errorText}`);
-        
-        // If it's a 500 error, the backend is having issues
-        if (res.status === 500) {
-          setError("Database connection issue. Please try again in a moment.");
-          setPosts([]);
-          return;
-        }
-        
-        throw new Error(`Database error: ${res.status} ${errorText}`);
+        const text = await res.text();
+        throw new Error(`Failed to load posts: ${res.status} ${text}`);
       }
 
       const data = await res.json();
-      console.log('✅ Posts data received from database:', data?.length || 0, 'posts');
-      
       const fetchedPosts = Array.isArray(data) ? data : [data];
-      
-      // If we get empty data, it means no posts in database yet
-      if (fetchedPosts.length === 0) {
-        console.log('📝 No posts found in database');
-        setPosts([]);
-        setError(null); // Clear any previous errors
-      } else {
-        console.log('✅ Successfully loaded posts from database');
-        setPosts(fetchedPosts.reverse());
-        setError(null); // Clear any previous errors
-      }
+
+      setPosts(fetchedPosts.reverse());
+      setError(null);
     } catch (err: any) {
-      console.error("❌ Error loading posts from database:", err);
-      
-      // Provide more specific error messages
-      if (err.message.includes('AbortError') || err.message.includes('aborted')) {
-        setError("Request was cancelled. Please try again.");
-      } else if (err.message.includes('Failed to fetch')) {
-        setError("Cannot connect to database. Please check your connection and try again.");
-      } else if (err.message.includes('Database')) {
-        setError("Database connection failed. Please try again later.");
-      } else {
-        setError(err.message || "Failed to load posts from database");
-      }
+      console.error("❌ Error loading posts:", err);
+      setError(err.message || "Failed to load posts");
+      setPosts([]);
     } finally {
       setLoading(false);
     }
@@ -145,9 +105,12 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     if (isVisible) fetchPosts();
   }, [isVisible, postId]);
 
-  // ✅ Create Post (with detailed error info)
+  // 🧩 Create post handler
   const handleCreatePost = async (content: string, userId: string) => {
     try {
+      if (!content.trim()) throw new Error("Post content cannot be empty.");
+      if (!userId) throw new Error("Missing user ID.");
+
       setError(null);
 
       const res = await apiFetch("/api/posts", {
@@ -157,42 +120,45 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       });
 
       const text = await res.text();
-      let backendResponse;
-      try {
-        backendResponse = JSON.parse(text);
-      } catch {
-        backendResponse = text;
-      }
 
       if (!res.ok) {
-        throw new Error(
-          typeof backendResponse === "string"
-            ? backendResponse
-            : JSON.stringify(backendResponse, null, 2)
-        );
+        console.error("❌ Failed to create post:", text);
+        throw new Error(text || `Request failed with ${res.status}`);
       }
 
-      setPosts((prev) => [backendResponse, ...prev]);
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { content, id: Date.now(), user: { name: "Unknown" } };
+      }
+
+      setPosts((prev) => [data, ...prev]);
     } catch (err: any) {
-      console.error("Create Post Error:", err);
+      console.error("❌ Create post error:", err);
       setError(err.message || "Failed to create post");
     }
   };
 
-  // 🔘 UI
+  // 🖼️ UI
   if (!isVisible) return null;
 
   return (
     <div className="flex flex-col gap-6 p-4">
+      {/* Error UI */}
       {error && (
         <div className="bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-400 dark:border-red-600 p-4 rounded-lg mb-4">
           <div className="flex items-center space-x-2 mb-2">
-            <span className="text-red-500">⚠️</span>
-            <strong className="text-red-600 dark:text-red-300">Unable to load posts</strong>
+            <span>⚠️</span>
+            <strong className="text-red-600 dark:text-red-300">
+              {error.includes("create")
+                ? "Failed to create post"
+                : "Unable to load posts"}
+            </strong>
           </div>
           <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-          <button 
-            onClick={() => fetchPosts()}
+          <button
+            onClick={fetchPosts}
             className="mt-2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
           >
             Try Again
@@ -200,6 +166,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         </div>
       )}
 
+      {/* Loading Spinner */}
       {loading && (
         <div className={`flex justify-center items-center h-64 ${themeClasses.bg}`}>
           <div
@@ -210,44 +177,51 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         </div>
       )}
 
+      {/* No Posts */}
       {!loading && posts.length === 0 && !error && (
         <div className={`text-center py-16 ${themeClasses.textMuted}`}>
           <div className="text-6xl mb-4">📝</div>
-          <h3 className={`text-xl font-semibold ${themeClasses.text} mb-2`}>No posts yet</h3>
+          <h3 className={`text-xl font-semibold ${themeClasses.text} mb-2`}>
+            No posts yet
+          </h3>
           <p className="text-sm">Be the first to share something amazing!</p>
         </div>
       )}
 
-      {posts.map((post) => (
-        <motion.div
-          key={post.id}
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className={`${themeClasses.bg} border ${themeClasses.border} rounded-2xl p-5 iron-shimmer iron-glow post-card-hover`}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className={`font-semibold ${themeClasses.text}`}>
-                {post.user?.name || "Unknown User"}
-              </h3>
-              <p className={`text-sm ${themeClasses.textMuted}`}>
-                @{post.user?.username || "user"}
+      {/* Posts List */}
+      {!loading &&
+        posts.map((post) => (
+          <motion.div
+            key={post.id}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className={`${themeClasses.bg} border ${themeClasses.border} rounded-2xl p-5`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className={`font-semibold ${themeClasses.text}`}>
+                  {post.user?.name || "Unknown User"}
+                </h3>
+                <p className={`text-sm ${themeClasses.textMuted}`}>
+                  @{post.user?.username || "user"}
+                </p>
+              </div>
+              <p className={`text-xs ${themeClasses.textMuted}`}>
+                {post.createdAt
+                  ? new Date(post.createdAt).toLocaleDateString()
+                  : ""}
               </p>
             </div>
-            <p className={`text-xs ${themeClasses.textMuted}`}>
-              {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}
-            </p>
-          </div>
 
-          <div
-            className={`cursor-pointer ${themeClasses.text}`}
-            onClick={() => router.push(`/posts/${post.id}`)}
-          >
-            {post.content}
-          </div>
-        </motion.div>
-      ))}
+            <div
+              className={`cursor-pointer ${themeClasses.text}`}
+              onClick={() => router.push(`/posts/${post.id}`)}
+            >
+              {post.content}
+            </div>
+          </motion.div>
+        ))}
     </div>
   );
 }
