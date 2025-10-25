@@ -5,22 +5,14 @@ const nextConfig = {
     reactStrictMode: true,
   
     eslint: {
-      // Allow production builds to succeed even if ESLint finds errors
       ignoreDuringBuilds: true,
     },
   
-    // Disable Turbopack (because it's experimental and breaks static chunks on Vercel)
-    experimental: {
-      turbo: false,
-    },
-  
-    // Enable standalone build output
     output: "standalone",
     compress: true,
     poweredByHeader: false,
   
     async rewrites() {
-      // Always use the Fly.io backend URL
       const target = "https://demedia-backend.fly.dev";
       return [
         { source: "/api/:path*", destination: `${target}/api/:path*` },
