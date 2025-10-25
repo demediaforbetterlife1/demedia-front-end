@@ -36,59 +36,58 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   const router = useRouter();
 
   // 🎨 Theme styles
-const themeClasses = (() => {
-  switch (theme) {
-    case "light":
-      return {
-        bg: "bg-white",
-        text: "text-gray-900",
-        textMuted: "text-gray-500",
-        border: "border-gray-200",
-        hover: "hover:bg-gray-100",
-      };
-    case "dark":
-      return {
-        bg: "bg-gray-900",
-        text: "text-white",
-        textMuted: "text-gray-400",
-        border: "border-gray-700",
-        hover: "hover:bg-gray-800",
-      };
-    case "gold":
-      return {
-        bg: "bg-gray-900 gold-glow",
-        text: "text-yellow-400",
-        textMuted: "text-yellow-500",
-        border: "border-yellow-700",
-        hover: "hover:bg-yellow-800/30 gold-shimmer",
-      };
-    case "super-dark":
-      return {
-        bg: "bg-black/90 super-dark-glow",
-        text: "text-white",
-        textMuted: "text-gray-500",
-        border: "border-gray-800",
-        hover: "hover:bg-gray-900/80",
-      };
-    case "super-light":
-      return {
-        bg: "bg-white/90 super-light-glow",
-        text: "text-gray-900",
-        textMuted: "text-gray-600",
-        border: "border-gray-200",
-        hover: "hover:bg-gray-100/70",
-      };
-    default:
-      return {
-        bg: "bg-gray-900",
-        text: "text-white",
-        textMuted: "text-gray-400",
-        border: "border-gray-700",
-        hover: "hover:bg-gray-800",
-      };
-  }
-})();
-
+  const themeClasses = (() => {
+    switch (theme) {
+      case "light":
+        return {
+          bg: "bg-white",
+          text: "text-gray-900",
+          textMuted: "text-gray-500",
+          border: "border-gray-200",
+          hover: "hover:bg-gray-100",
+        };
+      case "dark":
+        return {
+          bg: "bg-gray-900",
+          text: "text-white",
+          textMuted: "text-gray-400",
+          border: "border-gray-700",
+          hover: "hover:bg-gray-800",
+        };
+      case "gold":
+        return {
+          bg: "bg-gray-900 gold-glow",
+          text: "text-yellow-400",
+          textMuted: "text-yellow-500",
+          border: "border-yellow-700",
+          hover: "hover:bg-yellow-800/30 gold-shimmer",
+        };
+      case "super-dark":
+        return {
+          bg: "bg-black/90 super-dark-glow",
+          text: "text-white",
+          textMuted: "text-gray-500",
+          border: "border-gray-800",
+          hover: "hover:bg-gray-900/80",
+        };
+      case "super-light":
+        return {
+          bg: "bg-white/90 super-light-glow",
+          text: "text-gray-900",
+          textMuted: "text-gray-600",
+          border: "border-gray-200",
+          hover: "hover:bg-gray-100/70",
+        };
+      default:
+        return {
+          bg: "bg-gray-900",
+          text: "text-white",
+          textMuted: "text-gray-400",
+          border: "border-gray-700",
+          hover: "hover:bg-gray-800",
+        };
+    }
+  })();
 
   // 🧠 Fetch posts
   const fetchPosts = async () => {
@@ -143,7 +142,7 @@ const themeClasses = (() => {
         throw new Error(text || `Request failed with ${res.status}`);
       }
 
-      let data = await res.json();
+      let data: any;
       try {
         data = JSON.parse(text);
         setPosts((prev) => [data, ...prev]);
@@ -151,11 +150,11 @@ const themeClasses = (() => {
         console.error("❌ JSON Parse Error:", e);
         setError("Invalid server response");
       }
-      
-  }catch(err){
-    setError("true");
-    console.log(`something went wrong: ${err}`)
-  }
+    } catch (err: any) {
+      setError("true");
+      console.log(`something went wrong: ${err}`);
+    }
+  }; // ← هنا كان ناقص القوس
 
   // 🖼️ UI
   if (!isVisible) return null;
