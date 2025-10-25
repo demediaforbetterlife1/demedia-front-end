@@ -250,16 +250,33 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
             imageUrl: imageUrls[0] || null
         };
 
+        console.log('🚀 Sending post creation request:', {
+            url: '/api/posts',
+            method: 'POST',
+            userId,
+            postData: {
+                ...postData,
+                content: postData.content?.substring(0, 50) + '...'
+            }
+        });
+
         const res = await apiFetch(`/api/posts`, {
             method: "POST",
             headers: { 'user-id': userId },
             body: JSON.stringify(postData),
         });
 
+        console.log('📡 Post creation response:', {
+            status: res.status,
+            ok: res.ok,
+            statusText: res.statusText
+        });
+
         const responseText = await res.text();
+        console.log('📄 Response text length:', responseText.length);
 
         if (!res.ok) {
-            // ❌ Show full response in UI instead of just saying "failed"
+            console.error('❌ Post creation failed:', res.status, responseText);
             setError(`❌ Post creation failed (${res.status}):\n${responseText}`);
             setLoading(false);
             return;
@@ -267,7 +284,11 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
 
         try {
             const newPost = JSON.parse(responseText);
-            console.log('Post created successfully:', newPost);
+            console.log('✅ Post created successfully:', {
+                id: newPost.id,
+                content: newPost.content?.substring(0, 50) + '...',
+                user: newPost.user
+            });
             alert("✅ Post created successfully!");
             
             // Dispatch event to refresh posts list
@@ -277,6 +298,7 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
             
             onClose();
         } catch (jsonErr) {
+            console.error('❌ JSON parse error:', jsonErr, 'Response:', responseText);
             setError(`⚠️ JSON parse error: ${responseText}`);
         }
 
