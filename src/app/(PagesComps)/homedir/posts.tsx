@@ -124,29 +124,33 @@ const themeClasses = (() => {
 
   // 🧩 Create post handler
   const handleCreatePost = async (content: string, userId: string) => {
-  try {
-  const res = await fetch("/api/posts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content }),
-  });
+    try {
+      if (!content.trim()) throw new Error("Post content cannot be empty.");
+      if (!userId) throw new Error("Missing user ID.");
 
-  const text = await res.text();
+      setError(null);
 
-  let data;
-  try {
-    data = JSON.parse(text);
-    setPosts((prev) => [data, ...prev]);
-  } catch (e) {
-    console.error("❌ JSON Parse Error:", e);
-    setError("Invalid server response");
-  }
+      const res = await apiFetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, userId }),
+      });
 
-} catch (err: any) {
-  console.error("❌ Create post error:", err);
-  setError(err.message || "Failed to create post");
-}
+      const text = await res.text();
 
+      if (!res.ok) {
+        console.error("❌ Failed to create post:", text);
+        throw new Error(text || `Request failed with ${res.status}`);
+      }
+
+      let data = await res.json();
+      try {
+        data = JSON.parse(text);
+        setPosts((prev) => [data, ...prev]);
+      } catch (e) {
+        console.error("❌ JSON Parse Error:", e);
+        setError("Invalid server response");
+      }
       
   };
 
