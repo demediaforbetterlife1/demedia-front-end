@@ -146,8 +146,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   // Listen for post creation events
   useEffect(() => {
     const handlePostCreated = () => {
-      console.log('Post creation event received, refreshing posts...');
-      fetchPosts();
+      console.log('🔄 Post creation event received, refreshing posts...');
+      // Add a small delay to ensure the post is saved in the database
+      setTimeout(() => {
+        fetchPosts();
+      }, 1000);
     };
 
     // Listen for custom post creation events
@@ -155,6 +158,20 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     
     return () => {
       window.removeEventListener('post:created', handlePostCreated);
+    };
+  }, []);
+
+  // Also listen for focus events to refresh when user comes back to the page
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('🔄 Page focused, refreshing posts...');
+      fetchPosts();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
     };
   }, []);
 
@@ -237,7 +254,13 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           <h3 className={`text-xl font-semibold ${themeClasses.text} mb-2`}>
             No posts yet
           </h3>
-          <p className="text-sm">Be the first to share something amazing!</p>
+          <p className="text-sm mb-4">Be the first to share something amazing!</p>
+          <button
+            onClick={fetchPosts}
+            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+          >
+            🔄 Refresh Posts
+          </button>
         </div>
       )}
 
