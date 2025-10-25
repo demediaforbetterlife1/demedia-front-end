@@ -8,17 +8,25 @@ const nextConfig = {
       ignoreDuringBuilds: true,
     },
   
-    output: "standalone",
+   // output: "standalone",
     compress: true,
     poweredByHeader: false,
   
     async rewrites() {
-      const target = "https://demedia-backend.fly.dev";
-      return [
-        { source: "/api/:path*", destination: `${target}/api/:path*` },
-        { source: "/socket.io/:path*", destination: `${target}/socket.io/:path*` },
-      ];
-    },
+        const target = "https://demedia-backend.fly.dev";
+        return [
+          // API routes only
+          {
+            source: "/api/:path*",
+            destination: `${target}/api/:path*`,
+          },
+          {
+            source: "/socket.io/:path*",
+            destination: `${target}/socket.io/:path*`,
+          },
+          // تأكد إن باقي الملفات (زي _next/static) ما تتأثرش
+        ];
+      }      
   };
   
   export default nextConfig;

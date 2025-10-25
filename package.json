@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build ",
+    "build": "NEXT_DISABLE_TURBOPACK=1
+next build",
     "start": "node index.js",
     "lint": "eslint"
   },
