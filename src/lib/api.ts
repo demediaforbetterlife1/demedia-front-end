@@ -59,13 +59,6 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     headers["user-id"] = userId;
   }
 
-  console.log('🌐 apiFetch called:', {
-    path,
-    method: options.method || 'GET',
-    hasToken: !!token,
-    userId,
-    headers: Object.keys(headers)
-  });
   // Only set Content-Type to application/json if body is not FormData
   if (!(headers as Record<string, string>)["Content-Type"] && options.body && !(options.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
@@ -124,12 +117,6 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       }
       
       const res = await fetch(url, fetchOptions);
-      console.log('📡 API response:', {
-        status: res.status,
-        ok: res.ok,
-        statusText: res.statusText,
-        url: res.url
-      });
     
       if (res.status === 401) {
         // Only auto logout if it's not an auth check request

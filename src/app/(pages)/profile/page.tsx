@@ -1782,7 +1782,6 @@ const UserPosts = ({
     // Listen for post creation events to refresh user posts
     useEffect(() => {
         const handlePostCreated = () => {
-            console.log('Post creation event received, refreshing user posts...');
             fetchUserPosts();
         };
 

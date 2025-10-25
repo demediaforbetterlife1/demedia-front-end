@@ -104,8 +104,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       }
 
       const data = await res.json();
-      console.log('Posts data received:', data);
-      console.log('Posts data type:', typeof data, 'Is array:', Array.isArray(data));
       
       // Handle different response formats
       let fetchedPosts;
@@ -115,17 +113,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         fetchedPosts = data.data;
       } else {
         fetchedPosts = [data];
-      }
-
-      console.log('Processed posts:', fetchedPosts);
-      console.log('Number of posts to display:', fetchedPosts.length);
-      
-      if (fetchedPosts.length > 0) {
-        console.log('First post details:', {
-          id: fetchedPosts[0].id,
-          content: fetchedPosts[0].content?.substring(0, 50) + '...',
-          user: fetchedPosts[0].user
-        });
       }
       
       setPosts(fetchedPosts.reverse());
@@ -146,7 +133,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   // Listen for post creation events
   useEffect(() => {
     const handlePostCreated = () => {
-      console.log('🔄 Post creation event received, refreshing posts...');
       // Add a small delay to ensure the post is saved in the database
       setTimeout(() => {
         fetchPosts();
@@ -164,7 +150,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   // Also listen for focus events to refresh when user comes back to the page
   useEffect(() => {
     const handleFocus = () => {
-      console.log('🔄 Page focused, refreshing posts...');
       fetchPosts();
     };
 
