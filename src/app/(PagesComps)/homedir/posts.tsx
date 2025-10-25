@@ -104,8 +104,19 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       }
 
       const data = await res.json();
-      const fetchedPosts = Array.isArray(data) ? data : [data];
+      console.log('Posts data received:', data);
+      
+      // Handle different response formats
+      let fetchedPosts;
+      if (Array.isArray(data)) {
+        fetchedPosts = data;
+      } else if (data.data && Array.isArray(data.data)) {
+        fetchedPosts = data.data;
+      } else {
+        fetchedPosts = [data];
+      }
 
+      console.log('Processed posts:', fetchedPosts);
       setPosts(fetchedPosts.reverse());
       setError(null);
     } catch (err: any) {

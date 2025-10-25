@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const backendUrl = 'https://demedia-backend.fly.dev/api/posts';
-    const debug: any = { step: "start", backendUrl };
+    const userId = request.headers.get('user-id');
+    const authHeader = request.headers.get('authorization');
+    const debug: any = { step: "start", backendUrl, userId };
 
-    const res = await fetch(backendUrl, { cache: "no-store" });
+    const headers: HeadersInit = { cache: "no-store" };
+    if (userId) headers['user-id'] = userId;
+    if (authHeader) headers['Authorization'] = authHeader;
+
+    const res = await fetch(backendUrl, { 
+      cache: "no-store",
+      headers
+    });
     debug.status = res.status;
     debug.statusText = res.statusText;
 
@@ -18,6 +27,8 @@ export async function GET() {
 
     const data = JSON.parse(text);
     debug.ok = true;
+    debug.postsCount = Array.isArray(data) ? data.length : 0;
+    console.log('Posts API: Returning', Array.isArray(data) ? data.length : 0, 'posts');
     // Return the posts array directly instead of wrapping it
     return NextResponse.json(data);
 

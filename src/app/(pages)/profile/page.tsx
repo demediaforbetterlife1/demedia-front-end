@@ -1767,7 +1767,8 @@ const UserPosts = ({
                 }
                 
                 const data = await response.json();
-                setPosts(data.posts || []);
+                // Handle both direct array and wrapped response formats
+                setPosts(Array.isArray(data) ? data : (data.posts || []));
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load posts');
             } finally {
