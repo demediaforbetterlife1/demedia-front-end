@@ -3,21 +3,6 @@ export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 const API_BASE = ""; // same-origin; Next.js rewrite proxies /api to backend
 const DIRECT_API_BASE = "https://demedia-backend.fly.dev"; // Direct backend URL as fallback
 
-// Health check function
-async function checkBackendHealth(): Promise<boolean> {
-  try {
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch('/api/health', { 
-      method: 'GET',
-      signal: controller.signal
-    });
-    clearTimeout(t);
-    return response.ok;
-  } catch {
-    return false;
-  }
-}
 
 // Fallback function to try direct backend connection
 async function tryDirectConnection(path: string, options: RequestInit = {}): Promise<Response> {
@@ -60,9 +45,6 @@ async function tryDirectConnection(path: string, options: RequestInit = {}): Pro
   }
 }
 
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -77,7 +59,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     headers["user-id"] = userId;
   }
   // Only set Content-Type to application/json if body is not FormData
-  if (!(headers as any)["Content-Type"] && options.body && !(options.body instanceof FormData)) {
+  if (!(headers as Record<string, string>)["Content-Type"] && options.body && !(options.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
 
@@ -118,7 +100,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       } else {
         // For other endpoints, use AbortController
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
+        setTimeout(() => {
           console.log(`Request timeout after ${timeout}ms`);
           controller.abort();
         }, timeout);
@@ -212,14 +194,14 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   throw lastError;
 }
 
-export async function readJsonSafe<T = any>(res: Response): Promise<T | { error?: string }> {
+export async function readJsonSafe<T = unknown>(res: Response): Promise<T | { error?: string }> {
 	try {
 		return (await res.json()) as T;
-	} catch (_) {
+	} catch {
 		try {
 			const txt = await res.text();
 			return { error: txt || res.statusText };
-		} catch (_) {
+		} catch {
 			return { error: res.statusText };
 		}
 	}

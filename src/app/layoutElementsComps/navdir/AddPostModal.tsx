@@ -250,7 +250,7 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
             imageUrl: imageUrls[0] || null
         };
 
-        const res = await apiFetch(`/api/test-posts`, {
+        const res = await apiFetch(`/api/posts`, {
             method: "POST",
             headers: { 'user-id': userId },
             body: JSON.stringify(postData),

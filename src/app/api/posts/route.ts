@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
   try {
@@ -18,11 +18,48 @@ export async function GET() {
 
     const data = JSON.parse(text);
     debug.ok = true;
-    return NextResponse.json({ success: true, data, debug });
+    // Return the posts array directly instead of wrapping it
+    return NextResponse.json(data);
 
   } catch (error: any) {
     return NextResponse.json(
       { error: true, message: error?.message || "Unknown error", debug: error },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const backendUrl = 'https://demedia-backend.fly.dev/api/posts';
+    const body = await request.json();
+    const userId = request.headers.get('user-id');
+    
+    console.log('Creating post via backend:', { userId, body });
+
+    const res = await fetch(backendUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': userId || '',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const text = await res.text();
+
+    if (!res.ok) {
+      console.error('Backend post creation failed:', res.status, text);
+      return NextResponse.json({ error: true, message: "Backend returned error", status: res.status, response: text }, { status: res.status });
+    }
+
+    const data = JSON.parse(text);
+    return NextResponse.json(data);
+
+  } catch (error: any) {
+    console.error('Post creation error:', error);
+    return NextResponse.json(
+      { error: true, message: error?.message || "Unknown error" },
       { status: 500 }
     );
   }
