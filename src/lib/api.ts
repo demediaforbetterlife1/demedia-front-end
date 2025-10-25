@@ -112,7 +112,8 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
           headers,
           cache: 'no-cache',
           mode: 'cors',
-          credentials: 'omit'
+          credentials: 'include'
+
         };
       } else {
         // For other endpoints, use AbortController
