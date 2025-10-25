@@ -152,7 +152,10 @@ const themeClasses = (() => {
         setError("Invalid server response");
       }
       
-  };
+  }catch(err){
+    setError(true);
+    console.log(`something went wrong: ${err})
+  }
 
   // 🖼️ UI
   if (!isVisible) return null;
