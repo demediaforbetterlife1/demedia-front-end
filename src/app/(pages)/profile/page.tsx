@@ -1779,6 +1779,20 @@ const UserPosts = ({
         fetchUserPosts();
     }, [userId]);
 
+    // Listen for post creation events to refresh user posts
+    useEffect(() => {
+        const handlePostCreated = () => {
+            console.log('Post creation event received, refreshing user posts...');
+            fetchUserPosts();
+        };
+
+        window.addEventListener('post:created', handlePostCreated);
+        
+        return () => {
+            window.removeEventListener('post:created', handlePostCreated);
+        };
+    }, [userId]);
+
     const handleEdit = (post: any) => {
         setSelectedPost(post);
         setShowEditModal(true);

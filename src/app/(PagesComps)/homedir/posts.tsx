@@ -105,6 +105,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
       const data = await res.json();
       console.log('Posts data received:', data);
+      console.log('Posts data type:', typeof data, 'Is array:', Array.isArray(data));
       
       // Handle different response formats
       let fetchedPosts;
@@ -117,6 +118,16 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       }
 
       console.log('Processed posts:', fetchedPosts);
+      console.log('Number of posts to display:', fetchedPosts.length);
+      
+      if (fetchedPosts.length > 0) {
+        console.log('First post details:', {
+          id: fetchedPosts[0].id,
+          content: fetchedPosts[0].content?.substring(0, 50) + '...',
+          user: fetchedPosts[0].user
+        });
+      }
+      
       setPosts(fetchedPosts.reverse());
       setError(null);
     } catch (err: any) {
@@ -131,6 +142,21 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   useEffect(() => {
     if (isVisible) fetchPosts();
   }, [isVisible, postId]);
+
+  // Listen for post creation events
+  useEffect(() => {
+    const handlePostCreated = () => {
+      console.log('Post creation event received, refreshing posts...');
+      fetchPosts();
+    };
+
+    // Listen for custom post creation events
+    window.addEventListener('post:created', handlePostCreated);
+    
+    return () => {
+      window.removeEventListener('post:created', handlePostCreated);
+    };
+  }, []);
 
   // 🧩 Create post handler
   const handleCreatePost = async (content: string, userId: string) => {

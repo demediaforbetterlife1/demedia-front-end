@@ -267,7 +267,14 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
 
         try {
             const newPost = JSON.parse(responseText);
+            console.log('Post created successfully:', newPost);
             alert("✅ Post created successfully!");
+            
+            // Dispatch event to refresh posts list
+            window.dispatchEvent(new CustomEvent('post:created', { 
+                detail: { post: newPost } 
+            }));
+            
             onClose();
         } catch (jsonErr) {
             setError(`⚠️ JSON parse error: ${responseText}`);

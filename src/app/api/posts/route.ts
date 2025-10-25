@@ -29,6 +29,11 @@ export async function GET(request: NextRequest) {
     debug.ok = true;
     debug.postsCount = Array.isArray(data) ? data.length : 0;
     console.log('Posts API: Returning', Array.isArray(data) ? data.length : 0, 'posts');
+    console.log('Posts API: First post sample:', Array.isArray(data) && data.length > 0 ? {
+      id: data[0].id,
+      content: data[0].content?.substring(0, 50) + '...',
+      user: data[0].user
+    } : 'No posts');
     // Return the posts array directly instead of wrapping it
     return NextResponse.json(data);
 
