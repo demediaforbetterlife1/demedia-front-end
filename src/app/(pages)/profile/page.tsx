@@ -1754,28 +1754,28 @@ const UserPosts = ({
     const [isDeleting, setIsDeleting] = useState(false);
     const { user } = useAuth();
 
-    useEffect(() => {
+    const fetchUserPosts = async () => {
         if (!userId) return;
         
-        const fetchUserPosts = async () => {
-            try {
-                setLoading(true);
-                const response = await apiFetch(`/api/posts/user/${userId}`);
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch posts');
-                }
-                
-                const data = await response.json();
-                // Handle both direct array and wrapped response formats
-                setPosts(Array.isArray(data) ? data : (data.posts || []));
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to load posts');
-            } finally {
-                setLoading(false);
+        try {
+            setLoading(true);
+            const response = await apiFetch(`/api/posts/user/${userId}`);
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch posts');
             }
-        };
+            
+            const data = await response.json();
+            // Handle both direct array and wrapped response formats
+            setPosts(Array.isArray(data) ? data : (data.posts || []));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load posts');
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchUserPosts();
     }, [userId]);
 
@@ -1791,7 +1791,7 @@ const UserPosts = ({
         return () => {
             window.removeEventListener('post:created', handlePostCreated);
         };
-    }, [userId]);
+    }, [userId, fetchUserPosts]);
 
     const handleEdit = (post: any) => {
         setSelectedPost(post);
