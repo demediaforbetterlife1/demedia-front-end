@@ -153,7 +153,7 @@ const themeClasses = (() => {
       }
       
   }catch(err){
-    setError(true);
+    setError("true");
     console.log(`something went wrong: ${err}`)
   }
 
