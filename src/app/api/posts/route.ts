@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '50mb', // أو أكتر لو الصور كبيرة
+    },
+  },
+};
 export async function GET(request: NextRequest) {
   try {
     const backendUrl = 'https://demedia-backend.fly.dev/api/posts';
