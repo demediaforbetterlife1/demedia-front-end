@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
+
+
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '200mb',
+    },
+  },
+};
+
 /**
  * DeSnaps API - Proxies requests to backend
  * Handles story creation and management
