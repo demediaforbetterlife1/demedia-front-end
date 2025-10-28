@@ -355,7 +355,7 @@ export default function SignUpPage() {
     useEffect(() => {
         if (isLoading) return;
         if (isAuthenticated && user) {
-            router.replace(user.isSetupComplete ? "/(pages)/home" : "/SignInSetUp");
+            router.replace(user.isSetupComplete ? "/(pages)/home" : "/verify-phone");
         }
     }, [isAuthenticated, isLoading, user, router]);
 
