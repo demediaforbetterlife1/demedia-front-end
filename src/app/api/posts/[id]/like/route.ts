@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, context: any) {
+  const postId = context.params.id;
+
   try {
-    const postId = context.params.id;
     const authHeader = request.headers.get("authorization");
     const userId = request.headers.get("user-id");
 
     if (!authHeader || !userId) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
     }
 
     console.log("Like request for post:", postId, "user:", userId);
 
-    // اتصال بالباك إند الفعلي
     try {
       const backendResponse = await fetch(
         `https://demedia-backend.fly.dev/api/posts/${postId}/like`,
@@ -36,13 +36,16 @@ export async function POST(
         return NextResponse.json(data);
       } else {
         const errorText = await backendResponse.text();
-        console.error("❌ Backend like failed:", backendResponse.status, errorText);
+        console.error(
+          "❌ Backend like failed:",
+          backendResponse.status,
+          errorText
+        );
       }
     } catch (backendError) {
       console.error("❌ Backend connection failed (fallback):", backendError);
     }
 
-    // في حالة فشل الاتصال بالباك إند
     console.log("Using fallback like response");
     return NextResponse.json({
       success: true,
@@ -52,6 +55,9 @@ export async function POST(
     });
   } catch (error) {
     console.error("Error handling like:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
