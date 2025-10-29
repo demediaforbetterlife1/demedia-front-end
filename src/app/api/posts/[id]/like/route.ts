@@ -6,51 +6,44 @@ export async function POST(
 ) {
   try {
     const { id: postId } = params;
-    const authHeader = request.headers.get("authorization");
-    const userId = request.headers.get("user-id");
+    const authHeader = request.headers.get('authorization');
+    const userId = request.headers.get('user-id');
 
     if (!authHeader || !userId) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    console.log("📩 Like request for post:", postId, "by user:", userId);
+    console.log('➡️ Like request for post:', postId, 'by user:', userId);
 
-    // ✅ الاتصال المباشر بالباك اند الحقيقي
     const backendResponse = await fetch(
       `https://demedia-backend.fly.dev/api/posts/${postId}/like`,
       {
         method: "POST",
         headers: {
-          Authorization: authHeader,
+          "Authorization": authHeader,
           "user-id": userId,
           "Content-Type": "application/json",
         },
+        cache: "no-store",
       }
     );
 
+    const text = await backendResponse.text();
     if (!backendResponse.ok) {
-      const errorText = await backendResponse.text();
-      console.error(
-        "❌ Backend like failed:",
-        backendResponse.status,
-        errorText
-      );
+      console.error('❌ Backend like failed:', backendResponse.status, text);
       return NextResponse.json(
-        { error: "Failed to update like on backend" },
+        { error: true, message: "Backend like failed", details: text },
         { status: backendResponse.status }
       );
     }
 
-    const data = await backendResponse.json();
-    console.log("✅ Like updated successfully:", data);
+    const data = JSON.parse(text);
+    console.log('✅ Like updated via backend:', data);
 
-    // رجّع النتيجة من الباك اند نفسه
     return NextResponse.json(data);
+
   } catch (error) {
-    console.error("🔥 Error handling like request:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error('🔥 Error handling like:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
