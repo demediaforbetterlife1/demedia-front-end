@@ -44,59 +44,44 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 🎨 Theme setup
-  const themeClasses = (() => {
-    switch (theme) {
-      case "light":
-        return {
-          bg: "bg-white",
-          text: "text-gray-900",
-          textMuted: "text-gray-500",
-          border: "border-gray-200",
-          hover: "hover:bg-gray-100",
-        };
-      case "dark":
-        return {
-          bg: "bg-gray-900",
-          text: "text-white",
-          textMuted: "text-gray-400",
-          border: "border-gray-700",
-          hover: "hover:bg-gray-800",
-        };
-      case "gold":
-        return {
-          bg: "bg-gray-900 gold-glow",
-          text: "text-yellow-400",
-          textMuted: "text-yellow-500",
-          border: "border-yellow-700",
-          hover: "hover:bg-yellow-800/30 gold-shimmer",
-        };
-      case "super-dark":
-        return {
-          bg: "bg-black/90 super-dark-glow",
-          text: "text-white",
-          textMuted: "text-gray-500",
-          border: "border-gray-800",
-          hover: "hover:bg-gray-900/80",
-        };
-      case "super-light":
-        return {
-          bg: "bg-white/90 super-light-glow",
-          text: "text-gray-900",
-          textMuted: "text-gray-600",
-          border: "border-gray-200",
-          hover: "hover:bg-gray-100/70",
-        };
-      default:
-        return {
-          bg: "bg-gray-900",
-          text: "text-white",
-          textMuted: "text-gray-400",
-          border: "border-gray-700",
-          hover: "hover:bg-gray-800",
-        };
-    }
-  })();
+  // 🎨 Theme Styles
+  const themeClasses = {
+    light: {
+      bg: "bg-white shadow-md hover:shadow-lg transition-shadow",
+      text: "text-gray-900",
+      textMuted: "text-gray-500",
+      border: "border-gray-200",
+      hover: "hover:bg-gray-50",
+    },
+    dark: {
+      bg: "bg-gray-900 shadow-lg hover:shadow-xl transition-all",
+      text: "text-gray-100",
+      textMuted: "text-gray-400",
+      border: "border-gray-700",
+      hover: "hover:bg-gray-800",
+    },
+    gold: {
+      bg: "bg-gray-900 border border-yellow-700 shadow-gold hover:shadow-yellow-500/20 transition",
+      text: "text-yellow-400",
+      textMuted: "text-yellow-500",
+      border: "border-yellow-700",
+      hover: "hover:bg-yellow-800/20",
+    },
+    "super-dark": {
+      bg: "bg-black border border-gray-800 shadow-xl hover:shadow-2xl transition-all",
+      text: "text-white",
+      textMuted: "text-gray-500",
+      border: "border-gray-800",
+      hover: "hover:bg-gray-900/70",
+    },
+    "super-light": {
+      bg: "bg-white border border-gray-200 shadow-md hover:shadow-xl transition-all",
+      text: "text-gray-900",
+      textMuted: "text-gray-600",
+      border: "border-gray-200",
+      hover: "hover:bg-gray-100",
+    },
+  }[theme] || themeClasses.dark;
 
   // 📥 Fetch posts
   const fetchPosts = async () => {
@@ -106,214 +91,115 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
       const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
       const res = await apiFetch(endpoint);
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Failed to load posts: ${res.status} ${text}`);
-      }
-
       const data = await res.json();
+
       const fetched = Array.isArray(data)
         ? data
         : Array.isArray(data.data)
         ? data.data
         : [data];
 
-      // Ensure posts have defaults to avoid undefined errors
-      const normalized = fetched.map((p: any) => ({
-        id: p.id,
-        title: p.title,
-        content: p.content || "",
-        likes: typeof p.likes === "number" ? p.likes : p._count?.likes ?? 0,
-        comments: typeof p.comments === "number" ? p.comments : p._count?.comments ?? 0,
-        liked: typeof p.isLiked === "boolean" ? p.isLiked : Boolean(p.liked),
-        bookmarked: Boolean(p.isBookmarked),
-        imageUrl: p.imageUrl ?? null,
-        imageUrls: p.imageUrls ?? p.imageUrls ?? [],
-        videoUrl: p.videoUrl ?? null,
-        createdAt: p.createdAt ?? p.created_at ?? null,
-        user: p.user ?? p.author ?? p.owner ?? null,
-        author: p.author ?? p.user ?? null,
-      }));
-
-      setPosts(normalized.reverse());
+      setPosts(
+        fetched
+          .map((p: any) => ({
+            id: p.id,
+            content: p.content || "",
+            likes: p._count?.likes ?? p.likes ?? 0,
+            comments: p._count?.comments ?? p.comments ?? 0,
+            liked: Boolean(p.liked || p.isLiked),
+            bookmarked: Boolean(p.bookmarked || p.isBookmarked),
+            imageUrl: p.imageUrl ?? null,
+            imageUrls: p.imageUrls ?? [],
+            createdAt: p.createdAt ?? p.created_at ?? null,
+            author: p.user ?? p.author ?? null,
+          }))
+          .reverse()
+      );
     } catch (err: any) {
       console.error("❌ Fetch error:", err);
-      setError(err.message || "Failed to load posts");
+      setError("Failed to load posts");
       setPosts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // 🌀 Load posts
   useEffect(() => {
     if (isVisible) fetchPosts();
   }, [isVisible, postId]);
 
-  useEffect(() => {
-    const handleRefresh = () => setTimeout(fetchPosts, 800);
-    window.addEventListener("post:created", handleRefresh);
-    return () => window.removeEventListener("post:created", handleRefresh);
-  }, []);
-
-  // 🩶 Handle Like (optimistic + use server response if provided)
-  const handleLike = async (e: React.MouseEvent, postId: number) => {
-    e.stopPropagation(); // 🛑 prevent parent navigation
+  // 🩶 Like Post
+  const handleLike = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
     try {
-      // optimistic update: flip immediately
       setPosts((prev) =>
         prev.map((p) =>
-          p.id === postId
+          p.id === id
             ? {
                 ...p,
                 liked: !p.liked,
-                likes: p.liked ? Math.max(0, p.likes - 1) : p.likes + 1,
+                likes: p.liked ? p.likes - 1 : p.likes + 1,
               }
             : p
         )
       );
 
-      const res = await apiFetch(`/api/posts/${postId}/like`, {
+      const res = await apiFetch(`/api/posts/${id}/like`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Authorization": localStorage.getItem("token") || "",
+          "user-id": localStorage.getItem("userId") || "",
         },
       });
 
-      if (!res.ok) {
-        // rollback optimistic if server failed
-        setPosts((prev) =>
-          prev.map((p) =>
-            p.id === postId
-              ? {
-                  ...p,
-                  liked: !p.liked,
-                  likes: p.liked ? Math.max(0, p.likes - 1) : p.likes + 1,
-                }
-              : p
-          )
-        );
-        const text = await res.text().catch(() => "");
-        throw new Error(text || `Like failed (${res.status})`);
-      }
+      if (!res.ok) throw new Error("Failed to like post");
+      const data = await res.json();
 
-      // use server's canonical response if provided
-      let data: any = null;
-      try {
-        data = await res.json();
-      } catch {
-        data = null;
-      }
-
-      if (data && (typeof data.liked === "boolean" || typeof data.likes === "number")) {
-        setPosts((prev) =>
-          prev.map((p) =>
-            p.id === postId
-              ? {
-                  ...p,
-                  liked: typeof data.liked === "boolean" ? data.liked : p.liked,
-                  likes: typeof data.likes === "number" ? data.likes : p.likes,
-                }
-              : p
-          )
-        );
-      }
-    } catch (err: any) {
-      console.error("❌ Like error:", err);
-      // optionally show user-friendly message
-      // alert(err.message || "Failed to like post");
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                liked: data.liked ?? p.liked,
+                likes: data.likes ?? p.likes,
+              }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error("Like error:", err);
     }
   };
 
-  // 🧑‍💻 Navigate to user profile (try username, fallback to id, otherwise notify)
+  // 👤 Navigate to user profile
   const goToUser = (e: React.MouseEvent, author: any) => {
     e.stopPropagation();
-    if (!author) {
-      // nothing to open
-      return;
-    }
+    if (!author) return;
+
     const username = author.username;
     const id = author.id;
-
-    try {
-      if (username && username !== "unknown") {
-        router.push(`/users/${encodeURIComponent(username)}`);
-      } else if (id) {
-        // fallback route — adjust if your app uses a different path for id-based profile
-        router.push(`/users/id/${id}`);
-      } else {
-        // no way to open profile
-        // you can replace alert with a toast in your UI system
-        alert("Profile unavailable");
-      }
-    } catch (err) {
-      console.error("Navigation error:", err);
-      alert("Unable to open profile");
-    }
+    if (username) router.push(`/profile/${username}`);
+    else if (id) router.push(`/profile/id/${id}`);
+    else alert("User profile unavailable");
   };
 
-  // 💬 Navigate to post details
-  const goToPost = (id: number) => {
-    try {
-      router.push(`/posts/${id}`);
-    } catch (err) {
-      console.error("Navigation error:", err);
-    }
-  };
+  const goToPost = (id: number) => router.push(`/posts/${id}`);
 
   // 💡 UI
   if (!isVisible) return null;
 
   return (
     <div className="flex flex-col gap-6 p-4">
-      {/* ⚠️ Error */}
-      {error && (
-        <div className="bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-400 dark:border-red-600 p-4 rounded-lg">
-          <strong className="block mb-2">⚠️ {error}</strong>
-          <button
-            onClick={fetchPosts}
-            className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      )}
-
-      {/* ⏳ Loading */}
       {loading && (
-        <div className={`flex justify-center items-center h-64 ${themeClasses.bg}`}>
-          <div
-            className={`animate-spin rounded-full h-10 w-10 border-b-2 ${
-              theme === "gold" ? "border-yellow-400" : "border-cyan-400"
-            }`}
-          ></div>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin h-10 w-10 rounded-full border-4 border-b-transparent border-cyan-400"></div>
         </div>
       )}
 
-      {/* 📭 Empty */}
-      {!loading && posts.length === 0 && !error && (
-        <div className={`text-center py-16 ${themeClasses.textMuted}`}>
-          <div className="text-6xl mb-4">📝</div>
-          <h3 className={`text-xl font-semibold ${themeClasses.text} mb-2`}>
-            No posts yet
-          </h3>
-          <p className="text-sm mb-4">Be the first to share something!</p>
-          <button
-            onClick={fetchPosts}
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-          >
-            Refresh
-          </button>
-        </div>
-      )}
-
-      {/* 🧾 Posts List */}
       {!loading &&
         posts.map((post) => {
-          const author = post.user || post.author || null;
-          const profilePic = author?.profilePicture || "/default-avatar.png";
-          const username = author?.username ?? null;
+          const author = post.author || {};
+          const profilePic = author.profilePicture || "/default-avatar.png";
 
           return (
             <motion.div
@@ -322,51 +208,52 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
               onClick={() => goToPost(post.id)}
-              className={`${themeClasses.bg} border ${themeClasses.border} rounded-2xl p-5 cursor-pointer ${themeClasses.hover}`}
+              className={`${themeClasses.bg} ${themeClasses.border} rounded-2xl p-5 cursor-pointer ${themeClasses.hover}`}
             >
-              {/* 👤 User Info */}
+              {/* Header */}
               <div className="flex items-center justify-between mb-3">
                 <div
-                  className="flex items-center space-x-3 cursor-pointer"
+                  className="flex items-center gap-3 cursor-pointer group"
                   onClick={(e) => goToUser(e, author)}
-                  role="button"
-                  aria-label={author?.username ? `Open ${author.username} profile` : "Open profile"}
                 >
                   <img
                     src={profilePic}
-                    alt={author?.name ? `${author.name} avatar` : "Profile"}
-                    className="w-10 h-10 rounded-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = "/default-avatar.png";
-                    }}
+                    alt="User avatar"
+                    className="w-10 h-10 rounded-full object-cover group-hover:ring-2 group-hover:ring-cyan-400 transition"
                   />
                   <div>
                     <h3 className={`font-semibold ${themeClasses.text}`}>
-                      {author?.name || "Unknown User"}
+                      {author.name || "Unknown User"}
                     </h3>
                     <p className={`text-sm ${themeClasses.textMuted}`}>
-                      @{username ?? "user"}
+                      @{author.username ?? "user"}
                     </p>
                   </div>
                 </div>
                 <p className={`text-xs ${themeClasses.textMuted}`}>
-                  {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}
+                  {post.createdAt
+                    ? new Date(post.createdAt).toLocaleDateString()
+                    : ""}
                 </p>
               </div>
 
-              {/* 📝 Post Content */}
-              <p className={`text-sm mb-3 ${themeClasses.text}`}>{post.content || ""}</p>
+              {/* Content */}
+              <p
+                className={`text-sm mb-3 leading-relaxed ${themeClasses.text}`}
+              >
+                {post.content || ""}
+              </p>
 
-              {/* ❤️ Like & 💬 Comment */}
+              {/* Actions */}
               <div className="flex items-center justify-between mt-3">
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center gap-6">
                   <button
                     onClick={(e) => handleLike(e, post.id)}
-                    className="flex items-center hover:text-red-500 transition-colors"
-                    aria-pressed={post.liked ? "true" : "false"}
-                    aria-label={post.liked ? "Unlike" : "Like"}
+                    className={`flex items-center transition-colors ${
+                      post.liked ? "text-red-500" : themeClasses.textMuted
+                    } hover:text-red-400`}
                   >
-                    <span className="mr-1" aria-hidden>
+                    <span className="text-lg mr-1">
                       {post.liked ? "❤️" : "🤍"}
                     </span>
                     <span>{post.likes ?? 0}</span>
@@ -377,9 +264,9 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                       e.stopPropagation();
                       router.push(`/posts/${post.id}#comments`);
                     }}
-                    className="flex items-center hover:text-blue-500 transition-colors"
+                    className={`flex items-center hover:text-blue-400 transition-colors ${themeClasses.textMuted}`}
                   >
-                    <span className="mr-1">💬</span>
+                    <span className="mr-1 text-lg">💬</span>
                     <span>{post.comments ?? 0}</span>
                   </button>
                 </div>
