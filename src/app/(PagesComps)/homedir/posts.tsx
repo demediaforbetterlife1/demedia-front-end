@@ -1,4 +1,3 @@
-// components/Posts.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -38,39 +37,59 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
   const allThemes = {
     light: {
-      bg: "bg-white shadow-md hover:shadow-lg",
+      bg: "bg-white/90 backdrop-blur-md shadow-md hover:shadow-lg transition-shadow duration-300",
       text: "text-gray-900",
       textMuted: "text-gray-500",
       border: "border-gray-200",
-      hover: "hover:bg-gray-50",
+      hover: "hover:bg-gray-50/50",
+      accent: "text-blue-600",
+      like: "text-red-500 hover:text-red-600",
+      comment: "hover:text-blue-500",
+      shadow: "shadow-md",
     },
     dark: {
-      bg: "bg-gray-900 shadow-lg hover:shadow-xl",
+      bg: "bg-gray-900/90 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-300",
       text: "text-gray-100",
       textMuted: "text-gray-400",
       border: "border-gray-700",
-      hover: "hover:bg-gray-800",
+      hover: "hover:bg-gray-800/50",
+      accent: "text-cyan-400",
+      like: "text-red-400 hover:text-red-500",
+      comment: "hover:text-cyan-300",
+      shadow: "shadow-lg",
     },
     gold: {
-      bg: "bg-gray-900 border border-yellow-700 shadow-gold hover:shadow-yellow-500/20",
-      text: "text-yellow-400",
-      textMuted: "text-yellow-500",
-      border: "border-yellow-700",
-      hover: "hover:bg-yellow-800/20",
+      bg: "bg-gradient-to-br from-gray-900 to-black/95 backdrop-blur-xl border border-yellow-600/50 shadow-[0_0_15px_rgba(234,179,8,0.3)] hover:shadow-[0_0_25px_rgba(234,179,8,0.5)] transition-all duration-300",
+      text: "text-yellow-300 font-medium",
+      textMuted: "text-yellow-600/70",
+      border: "border-yellow-700/30",
+      hover: "hover:bg-yellow-900/10",
+      accent: "text-yellow-400",
+      like: "text-red-400 hover:text-red-300",
+      comment: "hover:text-yellow-300",
+      shadow: "shadow-xl",
     },
     "super-dark": {
-      bg: "bg-black border border-gray-800 shadow-xl hover:shadow-2xl",
+      bg: "bg-black/95 backdrop-blur-md border border-gray-800 shadow-xl hover:shadow-2xl transition-all duration-300",
       text: "text-white",
       textMuted: "text-gray-500",
       border: "border-gray-800",
       hover: "hover:bg-gray-900/70",
+      accent: "text-purple-400",
+      like: "text-red-500 hover:text-red-600",
+      comment: "hover:text-purple-300",
+      shadow: "shadow-2xl",
     },
     "super-light": {
-      bg: "bg-white border border-gray-200 shadow-md hover:shadow-xl",
+      bg: "bg-white/95 backdrop-blur-md border border-gray-200 shadow-md hover:shadow-xl transition-all duration-300",
       text: "text-gray-900",
       textMuted: "text-gray-600",
       border: "border-gray-200",
-      hover: "hover:bg-gray-100",
+      hover: "hover:bg-gray-100/50",
+      accent: "text-green-600",
+      like: "text-red-500 hover:text-red-600",
+      comment: "hover:text-green-500",
+      shadow: "shadow-xl",
     },
   } as const;
 
@@ -118,60 +137,71 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     if (isVisible) fetchPosts();
   }, [isVisible, postId]);
 
-  // Like Handler
   const handleLike = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
     e.nativeEvent.stopImmediatePropagation();
-
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 }
-          : p
-      )
-    );
-
     try {
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                liked: !p.liked,
+                likes: p.liked ? p.likes - 1 : p.likes + 1,
+              }
+            : p
+        )
+      );
+
       const res = await apiFetch(`/api/posts/${id}/like`, {
         method: "POST",
         headers: {
-          Authorization: localStorage.getItem("token") || "",
+          "Authorization": localStorage.getItem("token") || "",
           "user-id": localStorage.getItem("userId") || "",
         },
       });
 
-      if (!res.ok) throw new Error("Failed");
-
+      if (!res.ok) throw new Error("Failed to like post");
       const data = await res.json();
+
       setPosts((prev) =>
         prev.map((p) =>
           p.id === id
-            ? { ...p, liked: data.liked ?? p.liked, likes: data.likes ?? p.likes }
+            ? {
+                ...p,
+                liked: data.liked ?? p.liked,
+                likes: data.likes ?? p.likes,
+              }
             : p
         )
       );
     } catch (err) {
-      console.error("Like failed:", err);
+      console.error("Like error:", err);
       // Revert optimistic update
       setPosts((prev) =>
         prev.map((p) =>
           p.id === id
-            ? { ...p, liked: !p.liked, likes: p.liked ? p.likes + 1 : p.likes - 1 }
+            ? {
+                ...p,
+                liked: !p.liked,
+                likes: p.liked ? p.likes + 1 : p.likes - 1,
+              }
             : p
         )
       );
     }
   };
 
-  // Go to User Profile
   const goToUser = (e: React.MouseEvent, author: any) => {
     e.stopPropagation();
     e.nativeEvent.stopImmediatePropagation();
     if (!author) return;
 
-    if (author.username) router.push(`/profile/${author.username}`);
-    else if (author.id) router.push(`/profile/id/${author.id}`);
-    else alert("Profile unavailable");
+    const username = author.username;
+    const id = author.id;
+    if (username) router.push(`/profile/${username}`);
+    else if (id) router.push(`/profile/id/${id}`);
+    else alert("User profile unavailable");
   };
 
   const goToPost = (id: number) => router.push(`/posts/${id}`);
@@ -179,10 +209,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   if (!isVisible) return null;
 
   return (
-    <div className="flex flex-col gap-6 p-4">
+    <div className="flex flex-col gap-6 p-4 md:p-6 max-w-3xl mx-auto">
       {loading && (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin h-10 w-10 rounded-full border-4 border-b-transparent border-cyan-400"></div>
+          <div className="animate-spin h-12 w-12 rounded-full border-4 border-b-transparent border-current" style={{ borderColor: themeClasses.accent }}></div>
         </div>
       )}
 
@@ -190,75 +220,81 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         posts.map((post) => {
           const author = post.author || {};
           const profilePic = author.profilePicture || "/default-avatar.png";
+          const images = post.imageUrls?.length ? post.imageUrls : post.imageUrl ? [post.imageUrl] : [];
 
           return (
             <motion.div
               key={post.id}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
-              onTap={() => goToPost(post.id)} // ← Critical: Use onTap
-              className={`${themeClasses.bg} ${themeClasses.border} rounded-2xl p-5 ${themeClasses.hover} cursor-pointer`}
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              onTap={() => goToPost(post.id)}
+              className={`${themeClasses.bg} ${themeClasses.border} rounded-2xl p-6 cursor-pointer ${themeClasses.hover} ${themeClasses.shadow} overflow-hidden`}
             >
               {/* Header */}
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-4">
                 <div
-                  className="flex items-center gap-3 cursor-pointer group"
-                  onClickCapture={(e) => goToUser(e, author)} // ← Critical
+                  className="flex items-center gap-4 cursor-pointer group"
+                  onClickCapture={(e) => goToUser(e, author)}
                 >
                   <img
                     src={profilePic}
-                    alt="Avatar"
-                    className="w-10 h-10 rounded-full object-cover group-hover:ring-2 group-hover:ring-cyan-400 transition"
+                    alt="User avatar"
+                    className="w-12 h-12 rounded-full object-cover ring-2 ring-transparent group-hover:ring-current transition-all duration-300"
+                    style={{ ringColor: themeClasses.accent }}
                   />
                   <div>
-                    <h3 className={`font-semibold ${themeClasses.text}`}>
+                    <h3 className={`font-bold text-lg ${themeClasses.text}`}>
                       {author.name || "Unknown User"}
                     </h3>
                     <p className={`text-sm ${themeClasses.textMuted}`}>
-                      @{author.username ?? "user"}
+                      @{author.username ?? "user"} • {post.createdAt ? new Date(post.createdAt).toLocaleString() : ""}
                     </p>
                   </div>
                 </div>
-                <p className={`text-xs ${themeClasses.textMuted}`}>
-                  {post.createdAt
-                    ? new Date(post.createdAt).toLocaleDateString()
-                    : ""}
-                </p>
               </div>
 
-495              {/* Content */}
-              <p className={`text-sm mb-3 leading-relaxed ${themeClasses.text}`}>
+              {/* Content */}
+              <p className={`text-base mb-4 leading-relaxed ${themeClasses.text} font-light`}>
                 {post.content || ""}
               </p>
 
-              {/* Actions */}
-              <div className="flex items-center justify-between mt-3">
-                <div className="flex items-center gap-6">
-                  {/* Like Button */}
-                  <button
-                    onClickCapture={(e) => handleLike(e, post.id)} // ← Critical
-                    className={`flex items-center transition-colors ${
-                      post.liked ? "text-red-500" : themeClasses.textMuted
-                    } hover:text-red-400`}
-                  >
-                    <span className="text-lg mr-1">
-                      {post.liked ? "❤️" : "Like"}
-                    </span>
-                    <span>{post.likes ?? 0}</span>
-                  </button>
+              {/* Images */}
+              {images.length > 0 && (
+                <div className="mb-4 rounded-xl overflow-hidden">
+                  {images.length === 1 ? (
+                    <img src={images[0]} alt="Post image" className="w-full h-auto object-cover" />
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      {images.map((img, idx) => (
+                        <img key={idx} src={img} alt={`Post image ${idx + 1}`} className="w-full h-48 object-cover rounded-lg" />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
-                  {/* Comment Button */}
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: themeClasses.border.replace("border-", "") }}>
+                <div className="flex items-center gap-6">
+                  <button
+                    onClickCapture={(e) => handleLike(e, post.id)}
+                    className={`flex items-center gap-1 text-sm font-medium transition-colors ${post.liked ? themeClasses.like : themeClasses.textMuted} ${themeClasses.like}`}
+                  >
+                    <span className="text-xl">{post.liked ? "❤️" : "🤍"}</span>
+                    {post.likes ?? 0}
+                  </button>
                   <button
                     onClickCapture={(e) => {
                       e.stopPropagation();
                       e.nativeEvent.stopImmediatePropagation();
                       router.push(`/posts/${post.id}#comments`);
                     }}
-                    className={`flex items-center hover:text-blue-400 transition-colors ${themeClasses.textMuted}`}
+                    className={`flex items-center gap-1 text-sm font-medium transition-colors ${themeClasses.textMuted} ${themeClasses.comment}`}
                   >
-                    <span className="mr-1 text-lg">Comment</span>
-                    <span>{post.comments ?? 0}</span>
+                    <span className="text-xl">💬</span>
+                    {post.comments ?? 0}
                   </button>
                 </div>
               </div>
