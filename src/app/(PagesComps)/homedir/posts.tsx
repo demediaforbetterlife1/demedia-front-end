@@ -277,125 +277,80 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               transition={{ duration: 0.3 }}
               className={`${themeClasses.bg} border ${themeClasses.border} rounded-2xl p-5`}
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <img
-                    src={profilePic}
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div>
-                    <h3 className={`font-semibold ${themeClasses.text}`}>
-                      {displayName}
-                    </h3>
-                    <p className={`text-sm ${themeClasses.textMuted}`}>
-                      @{username}
-                    </p>
-                  </div>
-                </div>
-                <p className={`text-xs ${themeClasses.textMuted}`}>
-                  {post.createdAt
-                    ? new Date(post.createdAt).toLocaleDateString()
-                    : ""}
-                </p>
-              </div>
+              {/* 🧍‍♂️ User Info */}
+<div className="flex items-center justify-between mb-3">
+  <div
+    className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition"
+    onClick={() =>
+      router.push(
+        `/users/${
+          post.user?.username ||
+          post.author?.username ||
+          post.userId ||
+          "unknown"
+        }`
+      )
+    }
+  >
+    {/* User Avatar */}
+    {(post.user?.profilePicture || post.author?.profilePicture) && (
+      <img
+        src={post.user?.profilePicture || post.author?.profilePicture}
+        alt="Profile"
+        className="w-10 h-10 rounded-full object-cover"
+      />
+    )}
+    <div>
+      <h3 className={`font-semibold ${themeClasses.text}`}>
+        {post.user?.name || post.author?.name || "Unknown User"}
+      </h3>
+      <p className={`text-sm ${themeClasses.textMuted}`}>
+        @{post.user?.username || post.author?.username || "user"}
+      </p>
+    </div>
+  </div>
 
-              <div
-                className={`cursor-pointer ${themeClasses.text}`}
-                onClick={() => router.push(`/posts/${post.id}`)}
-              >
-                {post.title && (
-                  <h3 className={`font-semibold text-lg mb-2 ${themeClasses.text}`}>
-                    {post.title}
-                  </h3>
-                )}
+  <p className={`text-xs ${themeClasses.textMuted}`}>
+    {post.createdAt
+      ? new Date(post.createdAt).toLocaleDateString()
+      : ""}
+  </p>
+</div>
 
-                {post.content && (
-                  <p className="mb-3 whitespace-pre-wrap">{post.content}</p>
-                )}
+{/* 🖤 Post Stats */}
+<div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mt-3">
+  <div className="flex items-center space-x-4">
+    {/* ❤️ Like Button */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation(); // ❗يمنع التنقل للبوست
+        handleLike(post.id);
+      }}
+      className="flex items-center hover:text-red-500 transition-colors"
+    >
+      <span className="mr-1">{post.liked ? "❤️" : "🤍"}</span>
+      {post.likes || 0}
+    </button>
 
-                {post.imageUrls && post.imageUrls.length > 0 && (
-                  <div className="mb-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {post.imageUrls.slice(0, 4).map((imageUrl, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={imageUrl}
-                            alt={`Post image ${index + 1}`}
-                            className="w-full h-48 object-cover rounded-lg"
-                            loading="lazy"
-                            onError={(e) => {
-                              e.currentTarget.style.display = "none";
-                            }}
-                          />
-                        </div>
-                      ))}
-                      {post.imageUrls.length > 4 && (
-                        <div className="relative">
-                          <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                            <span className="text-gray-500">
-                              +{post.imageUrls.length - 4} more
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+    {/* 💬 Comment Button */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation(); // ❗يمنع التنقل للبوست
+        router.push(`/posts/${post.id}#comments`);
+      }}
+      className="flex items-center hover:text-blue-500 transition-colors"
+    >
+      <span className="mr-1">💬</span>
+      {post.comments || 0}
+    </button>
+  </div>
 
-                {!post.imageUrls && post.imageUrl && (
-                  <div className="mb-3">
-                    <img
-                      src={post.imageUrl}
-                      alt="Post image"
-                      className="w-full h-64 object-cover rounded-lg"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
-                  </div>
-                )}
-
-                {post.videoUrl && (
-                  <div className="mb-3">
-                    <video
-                      src={post.videoUrl}
-                      controls
-                      className="w-full h-64 rounded-lg"
-                      poster={post.imageUrl}
-                    >
-                      Your browser does not support the video tag.
-                    </video>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mt-3">
-                  <div className="flex items-center space-x-4">
-                    <button
-                      onClick={() => handleLike(post.id)}
-                      className="flex items-center hover:text-red-500 transition-colors"
-                    >
-                      <span className="mr-1">{post.liked ? "❤️" : "🤍"}</span>
-                      {post.likes || 0}
-                    </button>
-                    <button
-                      onClick={() =>
-                        router.push(`/posts/${post.id}#comments`)
-                      }
-                      className="flex items-center hover:text-blue-500 transition-colors"
-                    >
-                      <span className="mr-1">💬</span>
-                      {post.comments || 0}
-                    </button>
-                  </div>
-
-                  <span>
-                    {post.createdAt
-                      ? new Date(post.createdAt).toLocaleDateString()
-                      : ""}
-                  </span>
-                </div>
+  <span>
+    {post.createdAt
+      ? new Date(post.createdAt).toLocaleDateString()
+      : ""}
+  </span>
+</div>
               </div>
             </motion.div>
           );
