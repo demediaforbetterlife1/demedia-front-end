@@ -27,7 +27,14 @@ export async function POST(
         // Add timeout to prevent hanging
         signal: AbortSignal.timeout(5000)
       });
-
+      const res = await apiFetch(`/api/posts/${postId}/like`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "authorization": localStorage.getItem("token") || "",
+    "user-id": localStorage.getItem("userId") || "",
+  },
+});
       if (backendResponse.ok) {
         const data = await backendResponse.json();
         console.log('✅ Like updated via backend:', data);
