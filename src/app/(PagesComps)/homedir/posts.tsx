@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -247,7 +248,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                     src={profilePic}
                     alt="User avatar"
                     className="w-12 h-12 rounded-full object-cover ring-2 ring-transparent group-hover:ring-2 transition-all duration-300"
-                    style={{ "--tw-ring-color": themeClasses.accentColor }}
+                    style={{ "--tw-ring-color": themeClasses.accentColor } as React.CSSProperties}
                   />
                   <div>
                     <h3 className={`font-bold text-lg ${themeClasses.text}`}>
