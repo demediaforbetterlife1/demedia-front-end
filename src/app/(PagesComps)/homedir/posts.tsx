@@ -195,11 +195,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         const author = post.author || {};
         const profilePic = author.profilePicture || "/default-avatar.png";
         const images =
-          post.imageUrls?.length > 0
-            ? post.imageUrls
-            : post.imageUrl
-            ? [post.imageUrl]
-            : [];
+  Array.isArray(post.imageUrls) && post.imageUrls.length > 0
+    ? post.imageUrls
+    : post.imageUrl
+    ? [post.imageUrl]
+    : [];
 
         return (
           <motion.div
