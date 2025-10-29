@@ -45,44 +45,47 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   const [error, setError] = useState<string | null>(null);
 
   // 🎨 Theme Styles
-  const themeClasses = {
-    light: {
-      bg: "bg-white shadow-md hover:shadow-lg transition-shadow",
-      text: "text-gray-900",
-      textMuted: "text-gray-500",
-      border: "border-gray-200",
-      hover: "hover:bg-gray-50",
-    },
-    dark: {
-      bg: "bg-gray-900 shadow-lg hover:shadow-xl transition-all",
-      text: "text-gray-100",
-      textMuted: "text-gray-400",
-      border: "border-gray-700",
-      hover: "hover:bg-gray-800",
-    },
-    gold: {
-      bg: "bg-gray-900 border border-yellow-700 shadow-gold hover:shadow-yellow-500/20 transition",
-      text: "text-yellow-400",
-      textMuted: "text-yellow-500",
-      border: "border-yellow-700",
-      hover: "hover:bg-yellow-800/20",
-    },
-    "super-dark": {
-      bg: "bg-black border border-gray-800 shadow-xl hover:shadow-2xl transition-all",
-      text: "text-white",
-      textMuted: "text-gray-500",
-      border: "border-gray-800",
-      hover: "hover:bg-gray-900/70",
-    },
-    "super-light": {
-      bg: "bg-white border border-gray-200 shadow-md hover:shadow-xl transition-all",
-      text: "text-gray-900",
-      textMuted: "text-gray-600",
-      border: "border-gray-200",
-      hover: "hover:bg-gray-100",
-    },
-  }[theme] || themeClasses.dark;
+  // 🎨 Theme Styles
+const allThemes = {
+  light: {
+    bg: "bg-white shadow-md hover:shadow-lg transition-shadow",
+    text: "text-gray-900",
+    textMuted: "text-gray-500",
+    border: "border-gray-200",
+    hover: "hover:bg-gray-50",
+  },
+  dark: {
+    bg: "bg-gray-900 shadow-lg hover:shadow-xl transition-all",
+    text: "text-gray-100",
+    textMuted: "text-gray-400",
+    border: "border-gray-700",
+    hover: "hover:bg-gray-800",
+  },
+  gold: {
+    bg: "bg-gray-900 border border-yellow-700 shadow-gold hover:shadow-yellow-500/20 transition",
+    text: "text-yellow-400",
+    textMuted: "text-yellow-500",
+    border: "border-yellow-700",
+    hover: "hover:bg-yellow-800/20",
+  },
+  "super-dark": {
+    bg: "bg-black border border-gray-800 shadow-xl hover:shadow-2xl transition-all",
+    text: "text-white",
+    textMuted: "text-gray-500",
+    border: "border-gray-800",
+    hover: "hover:bg-gray-900/70",
+  },
+  "super-light": {
+    bg: "bg-white border border-gray-200 shadow-md hover:shadow-xl transition-all",
+    text: "text-gray-900",
+    textMuted: "text-gray-600",
+    border: "border-gray-200",
+    hover: "hover:bg-gray-100",
+  },
+} as const;
 
+type ThemeKey = keyof typeof allThemes;
+const themeClasses = allThemes[(theme as ThemeKey) || "dark"];
   // 📥 Fetch posts
   const fetchPosts = async () => {
     try {
