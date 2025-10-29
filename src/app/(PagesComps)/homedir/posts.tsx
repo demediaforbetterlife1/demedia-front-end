@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -42,6 +41,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       text: "text-gray-900",
       textMuted: "text-gray-500",
       border: "border-gray-200",
+      borderColor: "#e5e7eb",
       hover: "hover:bg-gray-50/50",
       accent: "text-blue-600",
       accentColor: "#2563eb", // blue-600
@@ -54,6 +54,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       text: "text-gray-100",
       textMuted: "text-gray-400",
       border: "border-gray-700",
+      borderColor: "#374151",
       hover: "hover:bg-gray-800/50",
       accent: "text-cyan-400",
       accentColor: "#22d3ee", // cyan-400
@@ -66,6 +67,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       text: "text-yellow-300 font-medium",
       textMuted: "text-yellow-600/70",
       border: "border-yellow-700/30",
+      borderColor: "rgba(161,98,7,0.3)",
       hover: "hover:bg-yellow-900/10",
       accent: "text-yellow-400",
       accentColor: "#fbbf24", // amber-400 for gold glow
@@ -78,6 +80,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       text: "text-white",
       textMuted: "text-gray-500",
       border: "border-gray-800",
+      borderColor: "#1f2937",
       hover: "hover:bg-gray-900/70",
       accent: "text-purple-400",
       accentColor: "#a78bfa", // purple-400
@@ -90,6 +93,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       text: "text-gray-900",
       textMuted: "text-gray-600",
       border: "border-gray-200",
+      borderColor: "#e5e7eb",
       hover: "hover:bg-gray-100/50",
       accent: "text-green-600",
       accentColor: "#16a34a", // green-600
@@ -144,6 +148,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   }, [isVisible, postId]);
 
   const handleLike = async (e: React.MouseEvent, id: number) => {
+    e.preventDefault();
     e.stopPropagation();
     e.nativeEvent.stopImmediatePropagation();
     try {
@@ -199,6 +204,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   };
 
   const goToUser = (e: React.MouseEvent, author: any) => {
+    e.preventDefault();
     e.stopPropagation();
     e.nativeEvent.stopImmediatePropagation();
     if (!author) return;
@@ -235,20 +241,20 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               animate={{ opacity: 1, y: 0 }}
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
-              onTap={() => goToPost(post.id)}
+              onClick={() => goToPost(post.id)}
               className={`${themeClasses.bg} ${themeClasses.border} rounded-2xl p-6 cursor-pointer ${themeClasses.hover} ${themeClasses.shadow} overflow-hidden`}
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <div
-                  className="flex items-center gap-4 cursor-pointer group"
+                  className="flex items-center gap-4 cursor-pointer group pointer-events-auto"
                   onClickCapture={(e) => goToUser(e, author)}
                 >
                   <img
                     src={profilePic}
                     alt="User avatar"
                     className="w-12 h-12 rounded-full object-cover ring-2 ring-transparent group-hover:ring-2 transition-all duration-300"
-                    style={{ "--tw-ring-color": themeClasses.accentColor } as React.CSSProperties}
+                    style={{ ['--tw-ring-color' as any]: themeClasses.accentColor }}
                   />
                   <div>
                     <h3 className={`font-bold text-lg ${themeClasses.text}`}>
@@ -262,13 +268,13 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               </div>
 
               {/* Content */}
-              <p className={`text-base mb-4 leading-relaxed ${themeClasses.text} font-light`}>
+              <p className={`text-base mb-4 leading-relaxed ${themeClasses.text} font-light pointer-events-none`}>
                 {post.content || ""}
               </p>
 
               {/* Images */}
               {images.length > 0 && (
-                <div className="mb-4 rounded-xl overflow-hidden">
+                <div className="mb-4 rounded-xl overflow-hidden pointer-events-none">
                   {images.length === 1 ? (
                     <img src={images[0]} alt="Post image" className="w-full h-auto object-cover max-h-96" />
                   ) : (
@@ -282,22 +288,23 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               )}
 
               {/* Actions */}
-              <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: themeClasses.border.replace("border-", "") }}>
-                <div className="flex items-center gap-6">
+              <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: themeClasses.borderColor }}>
+                <div className="flex items-center gap-6 pointer-events-auto">
                   <button
                     onClickCapture={(e) => handleLike(e, post.id)}
-                    className={`flex items-center gap-1 text-sm font-medium transition-colors ${post.liked ? themeClasses.like : themeClasses.textMuted} ${themeClasses.like}`}
+                    className={`flex items-center gap-1 text-sm font-medium transition-colors cursor-pointer ${post.liked ? themeClasses.like : themeClasses.textMuted} ${themeClasses.like}`}
                   >
                     <span className="text-xl">{post.liked ? "❤️" : "🤍"}</span>
                     {post.likes ?? 0}
                   </button>
                   <button
                     onClickCapture={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
                       e.nativeEvent.stopImmediatePropagation();
                       router.push(`/posts/${post.id}#comments`);
                     }}
-                    className={`flex items-center gap-1 text-sm font-medium transition-colors ${themeClasses.textMuted} ${themeClasses.comment}`}
+                    className={`flex items-center gap-1 text-sm font-medium transition-colors cursor-pointer ${themeClasses.textMuted} ${themeClasses.comment}`}
                   >
                     <span className="text-xl">💬</span>
                     {post.comments ?? 0}
