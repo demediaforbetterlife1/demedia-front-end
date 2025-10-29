@@ -6,22 +6,23 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
+type AuthorType = {
+  id: number;
+  name: string;
+  username: string;
+  profilePicture?: string | null;
+};
+
 type PostType = {
   id: number;
   content: string;
   likes: number;
   comments: number;
   liked?: boolean;
-  bookmarked?: boolean;
-  imageUrl?: string;
+  imageUrl?: string | null;
   imageUrls?: string[];
   createdAt?: string;
-  author?: {
-    id?: number;
-    name?: string;
-    username?: string;
-    profilePicture?: string;
-  };
+  author?: AuthorType | null;
 };
 
 interface PostsProps {
@@ -87,12 +88,14 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   type ThemeKey = keyof typeof allThemes;
   const themeClasses = allThemes[(theme as ThemeKey) || "dark"];
 
-  // 🧩 جلب البوستات
+  // 🧩 جلب البوستات من الباك اند
   const fetchPosts = async () => {
     try {
       setLoading(true);
       const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
       const res = await apiFetch(endpoint, { cache: "no-store" });
+
+      if (!res.ok) throw new Error("Failed to fetch posts");
       const data = await res.json();
 
       const fetched = Array.isArray(data)
@@ -104,15 +107,14 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       setPosts(
         fetched.map((p: any) => ({
           id: p.id,
-          content: p.content || "",
-          likes: p._count?.likes ?? p.likes ?? 0,
-          comments: p._count?.comments ?? p.comments ?? 0,
+          content: p.content ?? "",
+          likes: p.likes ?? p._count?.likes ?? 0,
+          comments: p.comments ?? p._count?.comments ?? 0,
           liked: Boolean(p.liked || p.isLiked),
-          bookmarked: Boolean(p.bookmarked || p.isBookmarked),
           imageUrl: p.imageUrl ?? null,
           imageUrls: p.imageUrls ?? [],
           createdAt: p.createdAt ?? p.created_at ?? null,
-          author: p.user ?? p.author ?? null,
+          author: p.author ?? p.user ?? null,
         })).reverse()
       );
     } catch (err) {
@@ -127,34 +129,30 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     if (isVisible) fetchPosts();
   }, [isVisible, postId]);
 
-  // ❤️ التعامل مع اللايك
+  // ❤️ اللايك
   const handleLike = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
-    try {
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === id
-            ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 }
-            : p
-        )
-      );
 
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 }
+          : p
+      )
+    );
+
+    try {
       const res = await apiFetch(`/api/posts/${id}/like`, {
         method: "POST",
         cache: "no-store",
       });
-
       if (!res.ok) throw new Error("Like request failed");
-
       const data = await res.json();
+
       setPosts((prev) =>
         prev.map((p) =>
           p.id === id
-            ? {
-                ...p,
-                liked: data.liked ?? p.liked,
-                likes: data.likes ?? p.likes,
-              }
+            ? { ...p, liked: data.liked ?? p.liked, likes: data.likes ?? p.likes }
             : p
         )
       );
@@ -163,20 +161,17 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     }
   };
 
-  // 👤 الذهاب لصفحة المستخدم
-  const goToUser = (e: React.MouseEvent, author: any) => {
+  // 👤 الانتقال لصفحة المستخدم
+  const goToUser = (e: React.MouseEvent, author?: AuthorType | null) => {
     e.stopPropagation();
     if (!author) return;
-    const username = author.username;
-    const id = author.id;
-    if (username) router.push(`/profile/${username}`);
-    else if (id) router.push(`/profile/id/${id}`);
+    router.push(`/profile/${author.id}`);
   };
 
-  // 📄 الذهاب لصفحة البوست
+  // 📄 صفحة البوست
   const goToPost = (id: number) => router.push(`/posts/${id}`);
 
-  // 🌀 واجهة التحميل
+  // 🌀 أثناء التحميل
   if (!isVisible) return null;
   if (loading)
     return (
@@ -192,14 +187,14 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6 max-w-3xl mx-auto">
       {posts.map((post) => {
-        const author = post.author || {};
-        const profilePic = author.profilePicture || "/default-avatar.png";
+        const author = post.author;
+        const profilePic = author?.profilePicture || "/default-avatar.png";
         const images =
-  Array.isArray(post.imageUrls) && post.imageUrls.length > 0
-    ? post.imageUrls
-    : post.imageUrl
-    ? [post.imageUrl]
-    : [];
+          post.imageUrls && post.imageUrls.length > 0
+            ? post.imageUrls
+            : post.imageUrl
+            ? [post.imageUrl]
+            : [];
 
         return (
           <motion.div
@@ -211,7 +206,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
             onClick={() => goToPost(post.id)}
             className={`${themeClasses.bg} rounded-2xl p-6 cursor-pointer overflow-hidden`}
           >
-            {/* Header */}
+            {/* 🧑‍ Header */}
             <div
               className="flex items-center gap-4 mb-4 cursor-pointer group"
               onClick={(e) => goToUser(e, author)}
@@ -224,10 +219,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               />
               <div>
                 <h3 className={`font-bold text-lg ${themeClasses.text}`}>
-                  {author.name || "Unknown User"}
+                  {author?.name || "Unknown User"}
                 </h3>
                 <p className={`text-sm ${themeClasses.textMuted}`}>
-                  @{author.username ?? "user"} •{" "}
+                  @{author?.username ?? "user"} •{" "}
                   {post.createdAt
                     ? new Date(post.createdAt).toLocaleString()
                     : ""}
@@ -235,14 +230,14 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               </div>
             </div>
 
-            {/* Content */}
+            {/* 📝 Content */}
             <p
               className={`text-base mb-4 leading-relaxed ${themeClasses.text} font-light select-text`}
             >
               {post.content}
             </p>
 
-            {/* Images */}
+            {/* 🖼️ Images */}
             {images.length > 0 && (
               <div className="mb-4 rounded-xl overflow-hidden">
                 {images.length === 1 ? (
@@ -266,7 +261,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               </div>
             )}
 
-            {/* Actions */}
+            {/* ❤️💬 Actions */}
             <div
               className="flex items-center justify-between pt-2 border-t"
               style={{ borderColor: themeClasses.accentColor + "40" }}
@@ -274,7 +269,9 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               <div className="flex items-center gap-6">
                 <button
                   onClick={(e) => handleLike(e, post.id)}
-                  className={`flex items-center gap-1 text-sm font-medium ${post.liked ? themeClasses.like : themeClasses.textMuted}`}
+                  className={`flex items-center gap-1 text-sm font-medium ${
+                    post.liked ? themeClasses.like : themeClasses.textMuted
+                  }`}
                 >
                   <span className="text-xl">
                     {post.liked ? "❤️" : "🤍"}
