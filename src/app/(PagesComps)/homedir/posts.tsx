@@ -43,6 +43,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       border: "border-gray-200",
       hover: "hover:bg-gray-50/50",
       accent: "text-blue-600",
+      accentColor: "#2563eb", // blue-600
       like: "text-red-500 hover:text-red-600",
       comment: "hover:text-blue-500",
       shadow: "shadow-md",
@@ -54,6 +55,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       border: "border-gray-700",
       hover: "hover:bg-gray-800/50",
       accent: "text-cyan-400",
+      accentColor: "#22d3ee", // cyan-400
       like: "text-red-400 hover:text-red-500",
       comment: "hover:text-cyan-300",
       shadow: "shadow-lg",
@@ -65,6 +67,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       border: "border-yellow-700/30",
       hover: "hover:bg-yellow-900/10",
       accent: "text-yellow-400",
+      accentColor: "#fbbf24", // amber-400 for gold glow
       like: "text-red-400 hover:text-red-300",
       comment: "hover:text-yellow-300",
       shadow: "shadow-xl",
@@ -76,6 +79,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       border: "border-gray-800",
       hover: "hover:bg-gray-900/70",
       accent: "text-purple-400",
+      accentColor: "#a78bfa", // purple-400
       like: "text-red-500 hover:text-red-600",
       comment: "hover:text-purple-300",
       shadow: "shadow-2xl",
@@ -87,6 +91,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       border: "border-gray-200",
       hover: "hover:bg-gray-100/50",
       accent: "text-green-600",
+      accentColor: "#16a34a", // green-600
       like: "text-red-500 hover:text-red-600",
       comment: "hover:text-green-500",
       shadow: "shadow-xl",
@@ -212,7 +217,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     <div className="flex flex-col gap-6 p-4 md:p-6 max-w-3xl mx-auto">
       {loading && (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin h-12 w-12 rounded-full border-4 border-b-transparent border-current" style={{ borderColor: themeClasses.accent }}></div>
+          <div className="animate-spin h-12 w-12 rounded-full border-4 border-b-transparent border-current" style={{ borderColor: themeClasses.accentColor }}></div>
         </div>
       )}
 
@@ -241,8 +246,8 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   <img
                     src={profilePic}
                     alt="User avatar"
-                    className="w-12 h-12 rounded-full object-cover ring-2 ring-transparent group-hover:ring-current transition-all duration-300"
-                    style={{ ringColor: themeClasses.accent }}
+                    className="w-12 h-12 rounded-full object-cover ring-2 ring-transparent group-hover:ring-2 transition-all duration-300"
+                    style={{ "--tw-ring-color": themeClasses.accentColor }}
                   />
                   <div>
                     <h3 className={`font-bold text-lg ${themeClasses.text}`}>
@@ -264,7 +269,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               {images.length > 0 && (
                 <div className="mb-4 rounded-xl overflow-hidden">
                   {images.length === 1 ? (
-                    <img src={images[0]} alt="Post image" className="w-full h-auto object-cover" />
+                    <img src={images[0]} alt="Post image" className="w-full h-auto object-cover max-h-96" />
                   ) : (
                     <div className="grid grid-cols-2 gap-2">
                       {images.map((img, idx) => (
