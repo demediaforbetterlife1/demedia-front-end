@@ -111,9 +111,8 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       }
 
       const data = await res.json();
-      
-      // Handle different response formats
       let fetchedPosts;
+
       if (Array.isArray(data)) {
         fetchedPosts = data;
       } else if (data.data && Array.isArray(data.data)) {
@@ -122,21 +121,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         fetchedPosts = [data];
       }
 
-      // Debug: Log the structure of the first post
-      if (fetchedPosts.length > 0) {
-        console.log('🔍 First post structure:', {
-          id: fetchedPosts[0].id,
-          title: fetchedPosts[0].title,
-          content: fetchedPosts[0].content,
-          imageUrl: fetchedPosts[0].imageUrl,
-          imageUrls: fetchedPosts[0].imageUrls,
-          videoUrl: fetchedPosts[0].videoUrl,
-          user: fetchedPosts[0].user,
-          author: fetchedPosts[0].author,
-          allKeys: Object.keys(fetchedPosts[0])
-        });
-      }
-      
       setPosts(fetchedPosts.reverse());
       setError(null);
     } catch (err: any) {
@@ -152,37 +136,22 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     if (isVisible) fetchPosts();
   }, [isVisible, postId]);
 
-  // Listen for post creation events
   useEffect(() => {
     const handlePostCreated = () => {
-      // Add a small delay to ensure the post is saved in the database
       setTimeout(() => {
         fetchPosts();
       }, 1000);
     };
-
-    // Listen for custom post creation events
-    window.addEventListener('post:created', handlePostCreated);
-    
-    return () => {
-      window.removeEventListener('post:created', handlePostCreated);
-    };
+    window.addEventListener("post:created", handlePostCreated);
+    return () => window.removeEventListener("post:created", handlePostCreated);
   }, []);
 
-  // Also listen for focus events to refresh when user comes back to the page
   useEffect(() => {
-    const handleFocus = () => {
-      fetchPosts();
-    };
-
-    window.addEventListener('focus', handleFocus);
-    
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-    };
+    const handleFocus = () => fetchPosts();
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, []);
 
-  // 🧩 Create post handler
   const handleCreatePost = async (content: string, userId: string) => {
     try {
       if (!content.trim()) throw new Error("Post content cannot be empty.");
@@ -215,14 +184,34 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       setError("true");
       console.log(`something went wrong: ${err}`);
     }
-  }; // ← هنا كان ناقص القوس
+  };
+
+  const handleLike = async (postId: number) => {
+    try {
+      const res = await apiFetch(`/api/posts/${postId}/like`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed to like post");
+
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                liked: !p.liked,
+                likes: p.liked ? p.likes - 1 : p.likes + 1,
+              }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error("Like error:", err);
+    }
+  };
 
   // 🖼️ UI
   if (!isVisible) return null;
 
   return (
     <div className="flex flex-col gap-6 p-4">
-      {/* Error UI */}
       {error && (
         <div className="bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-400 dark:border-red-600 p-4 rounded-lg mb-4">
           <div className="flex items-center space-x-2 mb-2">
@@ -243,7 +232,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         </div>
       )}
 
-      {/* Loading Spinner */}
       {loading && (
         <div className={`flex justify-center items-center h-64 ${themeClasses.bg}`}>
           <div
@@ -254,7 +242,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         </div>
       )}
 
-      {/* No Posts */}
       {!loading && posts.length === 0 && !error && (
         <div className={`text-center py-16 ${themeClasses.textMuted}`}>
           <div className="text-6xl mb-4">📝</div>
@@ -271,148 +258,148 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         </div>
       )}
 
-      {/* Posts List */}
       {!loading &&
-        posts.map((post) => (
-          <motion.div
-            key={post.id}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className={`${themeClasses.bg} border ${themeClasses.border} rounded-2xl p-5`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-3">
-                {/* User Avatar */}
-                {(post.user?.profilePicture || post.author?.profilePicture) && (
+        posts.map((post) => {
+          const profilePic =
+            post.user?.profilePicture || post.author?.profilePicture || "/default-avatar.png";
+
+          const displayName =
+            post.user?.name || post.author?.name || "Anonymous";
+
+          const username =
+            post.user?.username || post.author?.username || "unknown";
+
+          return (
+            <motion.div
+              key={post.id}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className={`${themeClasses.bg} border ${themeClasses.border} rounded-2xl p-5`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
                   <img
-                    src={post.user?.profilePicture || post.author?.profilePicture}
+                    src={profilePic}
                     alt="Profile"
                     className="w-10 h-10 rounded-full object-cover"
                   />
-                )}
-                <div>
-                  <h3 className={`font-semibold ${themeClasses.text}`}>
-                    {post.user?.name || post.author?.name || "Unknown User"}
-                  </h3>
-                  <p className={`text-sm ${themeClasses.textMuted}`}>
-                    @{post.user?.username || post.author?.username || "user"}
-                  </p>
-                </div>
-              </div>
-              <p className={`text-xs ${themeClasses.textMuted}`}>
-                {post.createdAt
-                  ? new Date(post.createdAt).toLocaleDateString()
-                  : ""}
-              </p>
-            </div>
-
-            <div
-              className={`cursor-pointer ${themeClasses.text}`}
-              onClick={() => router.push(`/posts/${post.id}`)}
-            >
-              {/* Post Title */}
-              {post.title && (
-                <h3 className={`font-semibold text-lg mb-2 ${themeClasses.text}`}>
-                  {post.title}
-                </h3>
-              )}
-              
-              {/* Post Content */}
-              {post.content && (
-                <p className="mb-3 whitespace-pre-wrap">
-                  {post.content}
-                </p>
-              )}
-              
-              {/* Post Images */}
-              {post.imageUrls && post.imageUrls.length > 0 && (
-                <div className="mb-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {post.imageUrls.slice(0, 4).map((imageUrl: string, index: number) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={imageUrl}
-                          alt={`Post image ${index + 1}`}
-                          className="w-full h-48 object-cover rounded-lg"
-                          loading="lazy"
-                          onError={(e) => {
-                            console.log('Image failed to load:', imageUrl);
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      </div>
-                    ))}
-                    {post.imageUrls.length > 4 && (
-                      <div className="relative">
-                        <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                          <span className="text-gray-500">+{post.imageUrls.length - 4} more</span>
-                        </div>
-                      </div>
-                    )}
+                  <div>
+                    <h3 className={`font-semibold ${themeClasses.text}`}>
+                      {displayName}
+                    </h3>
+                    <p className={`text-sm ${themeClasses.textMuted}`}>
+                      @{username}
+                    </p>
                   </div>
                 </div>
-              )}
-              
-              {/* Single Image (fallback) */}
-              {!post.imageUrls && post.imageUrl && (
-                <div className="mb-3">
-                  <img
-                    src={post.imageUrl}
-                    alt="Post image"
-                    className="w-full h-64 object-cover rounded-lg"
-                    loading="lazy"
-                    onError={(e) => {
-                      console.log('Image failed to load:', post.imageUrl);
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-              
-              {/* Video */}
-              {post.videoUrl && (
-                <div className="mb-3">
-                  <video
-                    src={post.videoUrl}
-                    controls
-                    className="w-full h-64 rounded-lg"
-                    poster={post.imageUrl}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
-              )}
-              
-              {/* Post Stats */}
-<div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mt-3">
-  <div className="flex items-center space-x-4">
-    {/* ❤️ Like Button */}
-    <button
-      onClick={() => handleLike(post.id)}
-      className="flex items-center hover:text-red-500 transition-colors"
-    >
-      <span className="mr-1">{post.liked ? "❤️" : "🤍"}</span>
-      {post.likes || 0}
-    </button>
+                <p className={`text-xs ${themeClasses.textMuted}`}>
+                  {post.createdAt
+                    ? new Date(post.createdAt).toLocaleDateString()
+                    : ""}
+                </p>
+              </div>
 
-    {/* 💬 Comment Button */}
-    <button
-      onClick={() => router.push(`/posts/${post.id}#comments`)}
-      className="flex items-center hover:text-blue-500 transition-colors"
-    >
-      <span className="mr-1">💬</span>
-      {post.comments || 0}
-    </button>
-  </div>
+              <div
+                className={`cursor-pointer ${themeClasses.text}`}
+                onClick={() => router.push(`/posts/${post.id}`)}
+              >
+                {post.title && (
+                  <h3 className={`font-semibold text-lg mb-2 ${themeClasses.text}`}>
+                    {post.title}
+                  </h3>
+                )}
 
-  <span>
-    {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}
-  </span>
-</div>
-            </div>
-          </motion.div>
-        ))}
+                {post.content && (
+                  <p className="mb-3 whitespace-pre-wrap">{post.content}</p>
+                )}
+
+                {post.imageUrls && post.imageUrls.length > 0 && (
+                  <div className="mb-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {post.imageUrls.slice(0, 4).map((imageUrl, index) => (
+                        <div key={index} className="relative">
+                          <img
+                            src={imageUrl}
+                            alt={`Post image ${index + 1}`}
+                            className="w-full h-48 object-cover rounded-lg"
+                            loading="lazy"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        </div>
+                      ))}
+                      {post.imageUrls.length > 4 && (
+                        <div className="relative">
+                          <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                            <span className="text-gray-500">
+                              +{post.imageUrls.length - 4} more
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {!post.imageUrls && post.imageUrl && (
+                  <div className="mb-3">
+                    <img
+                      src={post.imageUrl}
+                      alt="Post image"
+                      className="w-full h-64 object-cover rounded-lg"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  </div>
+                )}
+
+                {post.videoUrl && (
+                  <div className="mb-3">
+                    <video
+                      src={post.videoUrl}
+                      controls
+                      className="w-full h-64 rounded-lg"
+                      poster={post.imageUrl}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mt-3">
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => handleLike(post.id)}
+                      className="flex items-center hover:text-red-500 transition-colors"
+                    >
+                      <span className="mr-1">{post.liked ? "❤️" : "🤍"}</span>
+                      {post.likes || 0}
+                    </button>
+                    <button
+                      onClick={() =>
+                        router.push(`/posts/${post.id}#comments`)
+                      }
+                      className="flex items-center hover:text-blue-500 transition-colors"
+                    >
+                      <span className="mr-1">💬</span>
+                      {post.comments || 0}
+                    </button>
+                  </div>
+
+                  <span>
+                    {post.createdAt
+                      ? new Date(post.createdAt).toLocaleDateString()
+                      : ""}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
     </div>
   );
 }
