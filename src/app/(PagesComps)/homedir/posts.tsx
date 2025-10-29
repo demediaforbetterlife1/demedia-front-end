@@ -151,6 +151,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     e.preventDefault();
     e.stopPropagation();
     e.nativeEvent.stopImmediatePropagation();
+    console.log("Like button clicked - propagation stopped");
     try {
       setPosts((prev) =>
         prev.map((p) =>
@@ -207,6 +208,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     e.preventDefault();
     e.stopPropagation();
     e.nativeEvent.stopImmediatePropagation();
+    console.log("Profile clicked - going to user profile");
     if (!author) return;
 
     const username = author.username;
@@ -216,7 +218,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     else alert("User profile unavailable");
   };
 
-  const goToPost = (id: number) => router.push(`/posts/${id}`);
+  const goToPost = (id: number) => {
+    console.log("Post card clicked - going to post");
+    router.push(`/posts/${id}`);
+  };
 
   if (!isVisible) return null;
 
@@ -241,13 +246,13 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               animate={{ opacity: 1, y: 0 }}
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
-              onClick={() => goToPost(post.id)}
+              onTap={() => goToPost(post.id)}
               className={`${themeClasses.bg} ${themeClasses.border} rounded-2xl p-6 cursor-pointer ${themeClasses.hover} ${themeClasses.shadow} overflow-hidden`}
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <div
-                  className="flex items-center gap-4 cursor-pointer group pointer-events-auto"
+                  className="flex items-center gap-4 cursor-pointer group pointer-events-auto z-10"
                   onClickCapture={(e) => goToUser(e, author)}
                 >
                   <img
@@ -268,13 +273,13 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               </div>
 
               {/* Content */}
-              <p className={`text-base mb-4 leading-relaxed ${themeClasses.text} font-light pointer-events-none`}>
+              <p className={`text-base mb-4 leading-relaxed ${themeClasses.text} font-light select-text`}>
                 {post.content || ""}
               </p>
 
               {/* Images */}
               {images.length > 0 && (
-                <div className="mb-4 rounded-xl overflow-hidden pointer-events-none">
+                <div className="mb-4 rounded-xl overflow-hidden">
                   {images.length === 1 ? (
                     <img src={images[0]} alt="Post image" className="w-full h-auto object-cover max-h-96" />
                   ) : (
@@ -289,7 +294,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
               {/* Actions */}
               <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: themeClasses.borderColor }}>
-                <div className="flex items-center gap-6 pointer-events-auto">
+                <div className="flex items-center gap-6 pointer-events-auto z-10">
                   <button
                     onClickCapture={(e) => handleLike(e, post.id)}
                     className={`flex items-center gap-1 text-sm font-medium transition-colors cursor-pointer ${post.liked ? themeClasses.like : themeClasses.textMuted} ${themeClasses.like}`}
@@ -302,6 +307,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                       e.preventDefault();
                       e.stopPropagation();
                       e.nativeEvent.stopImmediatePropagation();
+                      console.log("Comment button clicked");
                       router.push(`/posts/${post.id}#comments`);
                     }}
                     className={`flex items-center gap-1 text-sm font-medium transition-colors cursor-pointer ${themeClasses.textMuted} ${themeClasses.comment}`}
