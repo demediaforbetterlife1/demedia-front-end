@@ -385,21 +385,31 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               )}
               
               {/* Post Stats */}
-              <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mt-3">
-                <div className="flex items-center space-x-4">
-                  <span className="flex items-center">
-                    <span className="mr-1">❤️</span>
-                    {post.likes || 0}
-                  </span>
-                  <span className="flex items-center">
-                    <span className="mr-1">💬</span>
-                    {post.comments || 0}
-                  </span>
-                </div>
-                <span>
-                  {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ''}
-                </span>
-              </div>
+<div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mt-3">
+  <div className="flex items-center space-x-4">
+    {/* ❤️ Like Button */}
+    <button
+      onClick={() => handleLike(post.id)}
+      className="flex items-center hover:text-red-500 transition-colors"
+    >
+      <span className="mr-1">{post.liked ? "❤️" : "🤍"}</span>
+      {post.likes || 0}
+    </button>
+
+    {/* 💬 Comment Button */}
+    <button
+      onClick={() => router.push(`/posts/${post.id}#comments`)}
+      className="flex items-center hover:text-blue-500 transition-colors"
+    >
+      <span className="mr-1">💬</span>
+      {post.comments || 0}
+    </button>
+  </div>
+
+  <span>
+    {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}
+  </span>
+</div>
             </div>
           </motion.div>
         ))}
