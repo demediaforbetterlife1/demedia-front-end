@@ -108,7 +108,8 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       const res = await apiFetch(endpoint);
 
       if (!res.ok) {
-        throw new Error(`Failed to load posts: ${res.status}`);
+        const text = await res.text();
+        throw new Error(`Failed to load posts: ${res.status} ${text}`);
       }
 
       const data = await res.json();
@@ -118,7 +119,24 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         ? data.data
         : [data];
 
-      setPosts(fetched.reverse());
+      // Ensure posts have defaults to avoid undefined errors
+      const normalized = fetched.map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        content: p.content || "",
+        likes: typeof p.likes === "number" ? p.likes : p._count?.likes ?? 0,
+        comments: typeof p.comments === "number" ? p.comments : p._count?.comments ?? 0,
+        liked: typeof p.isLiked === "boolean" ? p.isLiked : Boolean(p.liked),
+        bookmarked: Boolean(p.isBookmarked),
+        imageUrl: p.imageUrl ?? null,
+        imageUrls: p.imageUrls ?? p.imageUrls ?? [],
+        videoUrl: p.videoUrl ?? null,
+        createdAt: p.createdAt ?? p.created_at ?? null,
+        user: p.user ?? p.author ?? p.owner ?? null,
+        author: p.author ?? p.user ?? null,
+      }));
+
+      setPosts(normalized.reverse());
     } catch (err: any) {
       console.error("❌ Fetch error:", err);
       setError(err.message || "Failed to load posts");
@@ -139,38 +157,110 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     return () => window.removeEventListener("post:created", handleRefresh);
   }, []);
 
-  // 🩶 Handle Like
+  // 🩶 Handle Like (optimistic + use server response if provided)
   const handleLike = async (e: React.MouseEvent, postId: number) => {
-    e.stopPropagation(); // 🛑 prevent navigation
+    e.stopPropagation(); // 🛑 prevent parent navigation
     try {
-      const res = await apiFetch(`/api/posts/${postId}/like`, { method: "POST" });
-      if (!res.ok) throw new Error("Like request failed");
-
+      // optimistic update: flip immediately
       setPosts((prev) =>
         prev.map((p) =>
           p.id === postId
             ? {
                 ...p,
                 liked: !p.liked,
-                likes: p.liked ? p.likes - 1 : p.likes + 1,
+                likes: p.liked ? Math.max(0, p.likes - 1) : p.likes + 1,
               }
             : p
         )
       );
-    } catch (err) {
+
+      const res = await apiFetch(`/api/posts/${postId}/like`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        // rollback optimistic if server failed
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === postId
+              ? {
+                  ...p,
+                  liked: !p.liked,
+                  likes: p.liked ? Math.max(0, p.likes - 1) : p.likes + 1,
+                }
+              : p
+          )
+        );
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `Like failed (${res.status})`);
+      }
+
+      // use server's canonical response if provided
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+
+      if (data && (typeof data.liked === "boolean" || typeof data.likes === "number")) {
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === postId
+              ? {
+                  ...p,
+                  liked: typeof data.liked === "boolean" ? data.liked : p.liked,
+                  likes: typeof data.likes === "number" ? data.likes : p.likes,
+                }
+              : p
+          )
+        );
+      }
+    } catch (err: any) {
       console.error("❌ Like error:", err);
+      // optionally show user-friendly message
+      // alert(err.message || "Failed to like post");
     }
   };
 
-  // 🧑‍💻 Navigate to user profile
-  const goToUser = (e: React.MouseEvent, username?: string) => {
+  // 🧑‍💻 Navigate to user profile (try username, fallback to id, otherwise notify)
+  const goToUser = (e: React.MouseEvent, author: any) => {
     e.stopPropagation();
-    if (!username) return;
-    router.push(`/users/${username}`);
+    if (!author) {
+      // nothing to open
+      return;
+    }
+    const username = author.username;
+    const id = author.id;
+
+    try {
+      if (username && username !== "unknown") {
+        router.push(`/users/${encodeURIComponent(username)}`);
+      } else if (id) {
+        // fallback route — adjust if your app uses a different path for id-based profile
+        router.push(`/users/id/${id}`);
+      } else {
+        // no way to open profile
+        // you can replace alert with a toast in your UI system
+        alert("Profile unavailable");
+      }
+    } catch (err) {
+      console.error("Navigation error:", err);
+      alert("Unable to open profile");
+    }
   };
 
   // 💬 Navigate to post details
-  const goToPost = (id: number) => router.push(`/posts/${id}`);
+  const goToPost = (id: number) => {
+    try {
+      router.push(`/posts/${id}`);
+    } catch (err) {
+      console.error("Navigation error:", err);
+    }
+  };
 
   // 💡 UI
   if (!isVisible) return null;
@@ -221,9 +311,9 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       {/* 🧾 Posts List */}
       {!loading &&
         posts.map((post) => {
-          const author = post.user || post.author;
+          const author = post.user || post.author || null;
           const profilePic = author?.profilePicture || "/default-avatar.png";
-          const username = author?.username || "unknown";
+          const username = author?.username ?? null;
 
           return (
             <motion.div
@@ -238,33 +328,34 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               <div className="flex items-center justify-between mb-3">
                 <div
                   className="flex items-center space-x-3 cursor-pointer"
-                  onClick={(e) => goToUser(e, username)}
+                  onClick={(e) => goToUser(e, author)}
+                  role="button"
+                  aria-label={author?.username ? `Open ${author.username} profile` : "Open profile"}
                 >
                   <img
                     src={profilePic}
-                    alt="Profile"
+                    alt={author?.name ? `${author.name} avatar` : "Profile"}
                     className="w-10 h-10 rounded-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "/default-avatar.png";
+                    }}
                   />
                   <div>
                     <h3 className={`font-semibold ${themeClasses.text}`}>
                       {author?.name || "Unknown User"}
                     </h3>
                     <p className={`text-sm ${themeClasses.textMuted}`}>
-                      @{username}
+                      @{username ?? "user"}
                     </p>
                   </div>
                 </div>
                 <p className={`text-xs ${themeClasses.textMuted}`}>
-                  {post.createdAt
-                    ? new Date(post.createdAt).toLocaleDateString()
-                    : ""}
+                  {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}
                 </p>
               </div>
 
               {/* 📝 Post Content */}
-              <p className={`text-sm mb-3 ${themeClasses.text}`}>
-                {post.content || ""}
-              </p>
+              <p className={`text-sm mb-3 ${themeClasses.text}`}>{post.content || ""}</p>
 
               {/* ❤️ Like & 💬 Comment */}
               <div className="flex items-center justify-between mt-3">
@@ -272,9 +363,13 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   <button
                     onClick={(e) => handleLike(e, post.id)}
                     className="flex items-center hover:text-red-500 transition-colors"
+                    aria-pressed={post.liked ? "true" : "false"}
+                    aria-label={post.liked ? "Unlike" : "Like"}
                   >
-                    <span className="mr-1">{post.liked ? "❤️" : "🤍"}</span>
-                    {post.likes || 0}
+                    <span className="mr-1" aria-hidden>
+                      {post.liked ? "❤️" : "🤍"}
+                    </span>
+                    <span>{post.likes ?? 0}</span>
                   </button>
 
                   <button
@@ -285,7 +380,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                     className="flex items-center hover:text-blue-500 transition-colors"
                   >
                     <span className="mr-1">💬</span>
-                    {post.comments || 0}
+                    <span>{post.comments ?? 0}</span>
                   </button>
                 </div>
               </div>
