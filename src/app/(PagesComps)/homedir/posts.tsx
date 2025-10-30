@@ -260,36 +260,98 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                 )}
               </div>
             )}
+           {/* ❤️💬🔖 Actions */}
+<div
+  className="flex items-center justify-between pt-3 border-t mt-3"
+  style={{ borderColor: themeClasses.accentColor + "40" }}
+>
+  <div className="flex items-center gap-6">
+    {/* ❤️ Like */}
+    <motion.button
+      whileTap={{ scale: 0.85 }}
+      whileHover={{ scale: 1.15 }}
+      onClick={(e) => handleLike(e, post.id)}
+      className={`flex items-center gap-2 text-sm font-semibold transition-all duration-300 ${
+        post.liked ? themeClasses.like : themeClasses.textMuted
+      }`}
+    >
+      <motion.svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill={post.liked ? "currentColor" : "none"}
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+        className="w-6 h-6"
+        animate={{
+          scale: post.liked ? [1, 1.4, 1] : 1,
+          rotate: post.liked ? [0, -10, 10, 0] : 0,
+        }}
+        transition={{ duration: 0.4 }}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 21C12 21 4 13.667 4 8.667C4 5.4 6.4 3 9.667 3C11.389 3 13 4.067 13.833 5.533C14.667 4.067 16.278 3 18 3C21.267 3 23.667 5.4 23.667 8.667C23.667 13.667 16 21 16 21H12Z"
+        />
+      </motion.svg>
+      <span>{post.likes}</span>
+    </motion.button>
 
-            {/* ❤️💬 Actions */}
-            <div
-              className="flex items-center justify-between pt-2 border-t"
-              style={{ borderColor: themeClasses.accentColor + "40" }}
-            >
-              <div className="flex items-center gap-6">
-                <button
-                  onClick={(e) => handleLike(e, post.id)}
-                  className={`flex items-center gap-1 text-sm font-medium ${
-                    post.liked ? themeClasses.like : themeClasses.textMuted
-                  }`}
-                >
-                  <span className="text-xl">
-                    {post.liked ? "❤️" : "🤍"}
-                  </span>
-                  {post.likes}
-                </button>
+    {/* 💬 Comment */}
+    <motion.button
+      whileTap={{ scale: 0.85 }}
+      whileHover={{ scale: 1.15 }}
+      onClick={(e) => {
+        e.stopPropagation();
+        router.push(`/posts/${post.id}#comments`);
+      }}
+      className={`flex items-center gap-2 text-sm font-semibold ${themeClasses.comment} transition-all duration-300`}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+        className="w-6 h-6"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M7 8h10M7 12h6m5 8a9 9 0 10-9-9c0 1.52.38 2.96 1.05 4.23L7 20l4.77-2.05A9.01 9.01 0 0018 20z"
+        />
+      </svg>
+      <span>{post.comments}</span>
+    </motion.button>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/posts/${post.id}#comments`);
-                  }}
-                  className={`flex items-center gap-1 text-sm font-medium ${themeClasses.comment}`}
-                >
-                  💬 {post.comments}
-                </button>
-              </div>
-            </div>
+    {/* 🔖 Bookmark */}
+    <motion.button
+      whileTap={{ scale: 0.85 }}
+      whileHover={{ scale: 1.15 }}
+      onClick={(e) => {
+        e.stopPropagation();
+        // ممكن تضيف هنا دالة save لاحقًا
+        alert("Bookmark feature coming soon!");
+      }}
+      className={`flex items-center gap-2 text-sm font-semibold ${themeClasses.textMuted} hover:${themeClasses.accent} transition-all duration-300`}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+        className="w-6 h-6"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v18l-7-4-7 4V5z"
+        />
+      </svg>
+    </motion.button>
+  </div>
+</div>
           </motion.div>
         );
       })}
