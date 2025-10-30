@@ -148,8 +148,9 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
         });
       }
       
-      // Handle AbortError specifically
-      if (err instanceof Error && err.name === 'AbortError') {
+      // Handle AbortError specifically (DOMException or Error)
+      const errName = (err as any)?.name || '';
+      if (errName === 'AbortError') {
         console.log('Request was aborted');
         if (attempt < maxRetries) {
           console.log(`Retrying request in ${(attempt + 1) * 1000}ms...`);
@@ -159,10 +160,11 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       }
       
       // Only retry on network errors
-      if (attempt < maxRetries && err instanceof Error && (
-        err.message.includes('Failed to fetch') || 
-        err.message.includes('NetworkError') ||
-        err.message.includes('timeout')
+      const errMsg = ((err as any)?.message || '').toString();
+      if (attempt < maxRetries && (
+        errMsg.includes('Failed to fetch') || 
+        errMsg.includes('NetworkError') ||
+        errMsg.includes('timeout')
       )) {
         console.log(`Retrying request in ${(attempt + 1) * 1000}ms...`);
         await new Promise(resolve => setTimeout(resolve, (attempt + 1) * 1000));
@@ -170,11 +172,11 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       }
       
       // If all retries failed, try direct connection as last resort
-      if (attempt === maxRetries && err instanceof Error && (
-        err.message.includes('Failed to fetch') || 
-        err.message.includes('NetworkError') ||
-        err.message.includes('timeout') ||
-        err.name === 'AbortError'
+      if (attempt === maxRetries && (
+        errMsg.includes('Failed to fetch') || 
+        errMsg.includes('NetworkError') ||
+        errMsg.includes('timeout') ||
+        errName === 'AbortError'
       )) {
         console.log('All retries failed, trying direct backend connection...');
         try {

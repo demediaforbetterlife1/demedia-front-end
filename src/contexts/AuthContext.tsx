@@ -262,20 +262,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error: unknown) {
       console.error('AuthContext: Login error:', error);
+      const name = (error as any)?.name || '';
+      const msg = ((error as any)?.message || '').toString();
       
-      if (error instanceof Error) {
-        if (error.message.includes('signal timed out') || error.name === 'AbortError' || error.message.includes('timeout')) {
-          throw new Error('Login request timed out. Please check your internet connection and try again.');
-        }
-        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-          throw new Error('Cannot connect to server. Please check your internet connection.');
-        }
-        if (error.message.includes('ERR_NETWORK') || error.message.includes('ERR_INTERNET_DISCONNECTED')) {
-          throw new Error('Network error. Please check your internet connection and try again.');
-        }
+      if (name === 'AbortError' || msg.includes('signal timed out') || msg.includes('timeout')) {
+        throw new Error('Login request timed out. Please check your internet connection and try again.');
+      }
+      if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ERR_NETWORK')) {
+        throw new Error('Cannot connect to server. Please check your internet connection.');
+      }
+      if (msg.includes('ERR_INTERNET_DISCONNECTED')) {
+        throw new Error('Network error. Please check your internet connection and try again.');
       }
       
-      throw error;
+      throw error as any;
     }
   };
 
