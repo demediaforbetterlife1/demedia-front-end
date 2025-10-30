@@ -704,7 +704,7 @@ export default function ProfilePage() {
         }
     };
 
-    if (authLoading || loading)
+    if (authLoading || loading) {
         return (
             <div className={`min-h-screen ${themeClasses.bg} pb-20 md:pb-0 flex items-center justify-center`}>
                 <div className="animate-pulse">
@@ -720,6 +720,7 @@ export default function ProfilePage() {
                 </div>
             </div>
         );
+    }
     
     if (error)
         return (
