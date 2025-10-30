@@ -170,7 +170,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       }
       
       // If all retries failed, try direct connection as last resort
-      if (!isAuthEndpoint && attempt === maxRetries && err instanceof Error && (
+      if (attempt === maxRetries && err instanceof Error && (
         err.message.includes('Failed to fetch') || 
         err.message.includes('NetworkError') ||
         err.message.includes('timeout') ||
