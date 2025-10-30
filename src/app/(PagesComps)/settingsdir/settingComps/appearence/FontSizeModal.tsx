@@ -1,6 +1,6 @@
 "use client";
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type FontSizeModalProps = {
     closeModal: () => void;
@@ -9,6 +9,16 @@ type FontSizeModalProps = {
 export default function FontSizeModal({ closeModal }: FontSizeModalProps) {
     const [fontSize, setFontSize] = useState("medium");
 
+    useEffect(() => {
+        // On mount, read from localStorage and set font size
+        const saved = localStorage.getItem("demedia-font-size");
+        if (saved && (saved === "small" || saved === "medium" || saved === "large")) {
+            setFontSize(saved);
+            document.documentElement.style.fontSize =
+                saved === "small" ? "14px" : saved === "medium" ? "16px" : "18px";
+        }
+    }, []);
+
     const applyFontSize = () => {
         document.documentElement.style.fontSize =
             fontSize === "small"
@@ -16,6 +26,7 @@ export default function FontSizeModal({ closeModal }: FontSizeModalProps) {
                 : fontSize === "medium"
                     ? "16px"
                     : "18px";
+        localStorage.setItem("demedia-font-size", fontSize);
         closeModal();
     };
 

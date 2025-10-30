@@ -792,8 +792,8 @@ export default function ProfilePage() {
     console.log('Profile picture value:', profilePicture);
     console.log('Cover picture value:', coverPicture);
 
-    const handleGoToAuthorProfile = (username: string | undefined) => {
-        if (username) router.push(`/profile/${username}`);
+    const handleGoToAuthorProfile = (username?: string) => {
+      if (username) router.push(`/profile/${username}`);
     };
 
     return (
