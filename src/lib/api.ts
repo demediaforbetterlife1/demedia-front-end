@@ -72,11 +72,16 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}cb=${cacheBuster}&v=${version}`;
   }
 
-  // Special handling for posts endpoint - use more conservative approach
+  // Special handling for certain endpoints
   const isPostsEndpoint = path.includes('/posts');
+  const isAuthEndpoint = path.includes('/auth');
   
-  // For posts, use shorter timeouts and fewer retries to avoid long waits
-  const timeouts = isPostsEndpoint ? [5000, 8000, 10000] : [15000, 25000, 35000];
+  // Use shorter timeouts and fewer retries to avoid long waits on sensitive flows
+  const timeouts = isPostsEndpoint
+    ? [5000, 8000, 10000]
+    : isAuthEndpoint
+    ? [8000] // auth: fail fast, single attempt
+    : [15000, 25000, 35000];
   const maxRetries = timeouts.length - 1;
   let lastError: unknown;
 
@@ -165,7 +170,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       }
       
       // If all retries failed, try direct connection as last resort
-      if (attempt === maxRetries && err instanceof Error && (
+      if (!isAuthEndpoint && attempt === maxRetries && err instanceof Error && (
         err.message.includes('Failed to fetch') || 
         err.message.includes('NetworkError') ||
         err.message.includes('timeout') ||
