@@ -297,20 +297,20 @@ export default function PostDetailPage() {
           {/* Actions */}
           <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-500">
             <div className="flex gap-6">
-              <button onClick={() => handleLike(post.id)} className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:scale-105 ${post.liked ? "bg-pink-50 text-pink-500" : "hover:bg-pink-50 hover:text-pink-500"}`}>
+              <button type="button" onClick={() => handleLike(post.id)} className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:scale-105 ${post.liked ? "bg-pink-50 text-pink-500" : "hover:bg-pink-50 hover:text-pink-500"}`}>
                 <Heart size={20} fill={post.liked ? "currentColor" : "none"} />
                 <span className="text-sm font-medium">{post.likes}</span>
               </button>
-              <button onClick={handleComment} className="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:scale-105 hover:bg-blue-50 hover:text-blue-500">
+              <button type="button" onClick={handleComment} className="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:scale-105 hover:bg-blue-50 hover:text-blue-500">
                 <MessageCircle size={20} />
                 <span className="text-sm font-medium">{post.comments}</span>
               </button>
-              <button onClick={handleShare} className="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:scale-105 hover:bg-green-50 hover:text-green-500">
+              <button type="button" onClick={handleShare} className="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:scale-105 hover:bg-green-50 hover:text-green-500">
                 <Share2 size={20} />
                 <span className="text-sm font-medium">Share</span>
               </button>
             </div>
-            <button onClick={() => handleBookmark(post.id)} className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:scale-105 ${post.bookmarked ? "bg-yellow-50 text-yellow-500" : "hover:bg-yellow-50 hover:text-yellow-500"}`}>
+            <button type="button" onClick={() => handleBookmark(post.id)} className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:scale-105 ${post.bookmarked ? "bg-yellow-50 text-yellow-500" : "hover:bg-yellow-50 hover:text-yellow-500"}`}>
               {post.bookmarked ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
             </button>
           </div>
