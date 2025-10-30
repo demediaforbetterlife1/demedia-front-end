@@ -105,17 +105,19 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         : [data];
 
       setPosts(
-        fetched.map((p: any) => ({
-          id: p.id,
-          content: p.content ?? "",
-          likes: p.likes ?? p._count?.likes ?? 0,
-          comments: p.comments ?? p._count?.comments ?? 0,
-          liked: Boolean(p.liked || p.isLiked),
-          imageUrl: p.imageUrl ?? null,
-          imageUrls: p.imageUrls ?? [],
-          createdAt: p.createdAt ?? p.created_at ?? null,
-          author: p.author ?? p.user ?? null,
-        })).reverse()
+        fetched
+          .map((p: any) => ({
+            id: p.id,
+            content: p.content ?? "",
+            likes: p.likes ?? p._count?.likes ?? 0,
+            comments: p.comments ?? p._count?.comments ?? 0,
+            liked: Boolean(p.liked || p.isLiked),
+            imageUrl: p.imageUrl ?? null,
+            imageUrls: p.imageUrls ?? [],
+            createdAt: p.createdAt ?? p.created_at ?? null,
+            author: p.author ?? p.user ?? null,
+          }))
+          .reverse()
       );
     } catch (err) {
       console.error("❌ Fetch posts error:", err);
@@ -161,17 +163,16 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     }
   };
 
-  // 👤 الانتقال لصفحة المستخدم
+  // 👤 الانتقال لصفحة المستخدم (باستخدام query parameter)
   const goToUser = (e: React.MouseEvent, author?: AuthorType | null) => {
     e.stopPropagation();
-    if (!author) return;
-    router.push(`/profile/${author.id}`);
+    if (!author?.id) return;
+    router.push(`/profile?id=${author.id}`);
   };
 
   // 📄 صفحة البوست
   const goToPost = (id: number) => router.push(`/posts/${id}`);
 
-  // 🌀 أثناء التحميل
   if (!isVisible) return null;
   if (loading)
     return (
@@ -183,7 +184,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       </div>
     );
 
-  // 🧱 عرض البوستات
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6 max-w-3xl mx-auto">
       {posts.map((post) => {
