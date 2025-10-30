@@ -792,6 +792,10 @@ export default function ProfilePage() {
     console.log('Profile picture value:', profilePicture);
     console.log('Cover picture value:', coverPicture);
 
+    const handleGoToAuthorProfile = (username: string | undefined) => {
+        if (username) router.push(`/profile/${username}`);
+    };
+
     return (
         <div key={userId}>
             <style jsx>{`
@@ -1914,7 +1918,7 @@ const UserPosts = ({
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => router.push(`/profile/${post.author?.username}`)}
+                                onClick={() => handleGoToAuthorProfile(post.author?.username)}
                                 className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold hover:shadow-lg transition-all duration-300 cursor-pointer ring-2 ring-cyan-500/20"
                             >
                                 {post.author?.name?.charAt(0) || 'U'}
