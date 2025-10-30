@@ -705,6 +705,10 @@ export default function ProfilePage() {
     };
 
     if (authLoading || loading)
+const handleGoToAuthorProfile = (username?: string) => {
+  if (!username) return;
+  router.push(`/profile/${username}`);
+};
         return (
             <div className={`min-h-screen ${themeClasses.bg} pb-20 md:pb-0 flex items-center justify-center`}>
                 <div className="animate-pulse">
