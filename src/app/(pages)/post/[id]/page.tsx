@@ -3,20 +3,16 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import {
-  Heart,
-  MessageCircle,
-  Share2,
-  Bookmark,
-  BookmarkCheck,
-  ArrowLeft,
-  MoreHorizontal,
-} from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useNotifications } from "@/components/NotificationProvider";
-import CommentModal from "@/components/CommentModal";
 import { apiFetch } from "@/lib/api";
+import { Heart, MessageCircle, Bookmark, Share2 } from "lucide-react";
+
+type AuthorType = {
+  id: number;
+  name: string;
+  username: string;
+  profilePicture?: string | null;
+};
 
 type PostType = {
   id: number;
@@ -25,248 +21,232 @@ type PostType = {
   comments: number;
   liked?: boolean;
   bookmarked?: boolean;
-  user?: {
-    id?: number;
-    name?: string;
-    username?: string;
-    profilePicture?: string;
-  };
+  imageUrl?: string | null;
   createdAt?: string;
-  imageUrl?: string;
-  videoUrl?: string;
+  author?: AuthorType | null;
 };
 
-export default function PostDetailPage() {
-  const params = useParams();
+type ThemeKey = "light" | "dark" | "gold" | "super-dark" | "super-light";
+
+export default function PostPage() {
+  const { id } = useParams();
   const router = useRouter();
   const { theme } = useTheme();
-  const { showSuccess, showError } = useNotifications();
   const [post, setPost] = useState<PostType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showCommentModal, setShowCommentModal] = useState(false);
 
-  const themeClasses = {
-    dark: {
-      bg: "bg-gray-900",
-      text: "text-white",
-      muted: "text-gray-400",
-      border: "border-gray-700",
-    },
+  const allThemes: Record<
+    ThemeKey,
+    {
+      bg: string;
+      text: string;
+      textMuted: string;
+      accent: string;
+      accentColor: string;
+      like: string;
+      comment: string;
+    }
+  > = {
     light: {
       bg: "bg-white",
       text: "text-gray-900",
-      muted: "text-gray-500",
-      border: "border-gray-200",
+      textMuted: "text-gray-600",
+      accent: "text-blue-600",
+      accentColor: "#2563eb",
+      like: "text-red-500 hover:text-red-600",
+      comment: "hover:text-blue-500",
+    },
+    dark: {
+      bg: "bg-gray-900",
+      text: "text-gray-100",
+      textMuted: "text-gray-400",
+      accent: "text-cyan-400",
+      accentColor: "#22d3ee",
+      like: "text-red-400 hover:text-red-500",
+      comment: "hover:text-cyan-300",
     },
     gold: {
-      bg: "bg-gradient-to-br from-yellow-900 to-black",
+      bg: "bg-gradient-to-br from-gray-900 to-black border border-yellow-600/40 shadow-[0_0_15px_rgba(234,179,8,0.3)]",
       text: "text-yellow-300",
-      muted: "text-yellow-600",
-      border: "border-yellow-600",
+      textMuted: "text-yellow-600/70",
+      accent: "text-yellow-400",
+      accentColor: "#fbbf24",
+      like: "text-red-400 hover:text-red-300",
+      comment: "hover:text-yellow-300",
     },
-  }[theme as "dark" | "light" | "gold"] || themeClasses.dark;
+    "super-dark": {
+      bg: "bg-black border border-gray-800 shadow-xl",
+      text: "text-white",
+      textMuted: "text-gray-500",
+      accent: "text-purple-400",
+      accentColor: "#a78bfa",
+      like: "text-red-500 hover:text-red-600",
+      comment: "hover:text-purple-300",
+    },
+    "super-light": {
+      bg: "bg-white border border-gray-200 shadow-md",
+      text: "text-gray-900",
+      textMuted: "text-gray-600",
+      accent: "text-green-600",
+      accentColor: "#16a34a",
+      like: "text-red-500 hover:text-red-600",
+      comment: "hover:text-green-500",
+    },
+  };
 
+  const themeClasses = allThemes[(theme as ThemeKey) || "dark"];
+
+  // 🧩 Fetch post
   useEffect(() => {
     const fetchPost = async () => {
       try {
         setLoading(true);
-        const res = await apiFetch(`/api/posts/${params.id}`);
-        if (!res.ok) throw new Error("Post not found");
+        const res = await apiFetch(`/api/posts/${id}`, { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to fetch post");
         const data = await res.json();
-        setPost(data);
-      } catch (e) {
-        console.error(e);
-        showError("Error", "Failed to load post");
+        setPost({
+          id: data.id,
+          content: data.content ?? "",
+          likes: data.likes ?? data._count?.likes ?? 0,
+          comments: data.comments ?? data._count?.comments ?? 0,
+          liked: data.liked ?? data.isLiked ?? false,
+          bookmarked: data.bookmarked ?? false,
+          imageUrl: data.imageUrl ?? null,
+          createdAt: data.createdAt ?? data.created_at ?? null,
+          author: data.author ?? data.user ?? null,
+        });
+      } catch (err) {
+        console.error("❌ Fetch post error:", err);
+        setPost(null);
       } finally {
         setLoading(false);
       }
     };
-    if (params.id) fetchPost();
-  }, [params.id]);
+
+    if (id) fetchPost();
+  }, [id]);
 
   const handleLike = async () => {
     if (!post) return;
-    setPost((p) =>
-      p ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p
-    );
+    setPost((p) => p && { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 });
     try {
-      const res = await apiFetch(`/api/posts/${post.id}/like`, { method: "POST" });
-      if (!res.ok) throw new Error("Failed to like post");
-      const data = await res.json();
-      setPost((prev) => (prev ? { ...prev, liked: data.liked, likes: data.likes } : prev));
-    } catch {
-      showError("Error", "Couldn't update like status");
+      await apiFetch(`/api/posts/${post.id}/like`, { method: "POST" });
+    } catch (err) {
+      console.error("Like error:", err);
     }
   };
 
   const handleBookmark = async () => {
     if (!post) return;
-    setPost((p) => (p ? { ...p, bookmarked: !p.bookmarked } : p));
+    setPost((p) => p && { ...p, bookmarked: !p.bookmarked });
     try {
       await apiFetch(`/api/posts/${post.id}/bookmark`, { method: "POST" });
-    } catch {
-      showError("Error", "Bookmark failed");
+    } catch (err) {
+      console.error("Bookmark error:", err);
     }
   };
 
-  const handleShare = async () => {
-    if (!post) return;
-    const url = window.location.href;
-    try {
-      if (navigator.share) await navigator.share({ title: "DeMedia Post", url });
-      else {
-        await navigator.clipboard.writeText(url);
-        showSuccess("Copied", "Post link copied to clipboard");
-      }
-    } catch {}
+  const goToUser = (author?: AuthorType | null) => {
+    if (!author?.id) return;
+    router.push(`/profile?id=${author.id}`);
   };
 
-  const goToUser = () => {
-    if (post?.user?.id) router.push(`/profile?id=${post.user.id}`);
-  };
-
-  if (loading)
+  if (loading || !post)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-16 w-16 border-b-4 border-cyan-400 rounded-full"></div>
+      <div className="flex justify-center items-center h-64">
+        <div
+          className="animate-spin h-12 w-12 rounded-full border-4 border-b-transparent"
+          style={{ borderColor: themeClasses.accentColor }}
+        ></div>
       </div>
     );
 
-  if (!post)
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400">Post not found</p>
-      </div>
-    );
+  const author = post.author;
+  const profilePic = author?.profilePicture || "/default-avatar.png";
 
   return (
-    <div className={`min-h-screen ${themeClasses.bg}`}>
-      {/* Header */}
+    <div
+      className={`${themeClasses.bg} max-w-2xl mx-auto p-6 rounded-2xl mt-10 transition-all duration-300`}
+    >
+      {/* 🧑 Header */}
       <div
-        className={`sticky top-0 z-10 p-4 flex items-center gap-2 border-b ${themeClasses.border} bg-opacity-70 backdrop-blur-md`}
+        className="flex items-center gap-4 mb-4 cursor-pointer group"
+        onClick={() => goToUser(author)}
       >
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300"
-        >
-          <ArrowLeft size={20} /> Back
-        </button>
-      </div>
-
-      <div className="max-w-2xl mx-auto p-4">
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className={`rounded-2xl border ${themeClasses.border} p-5 shadow-lg`}
-        >
-          {/* 🧑‍ User */}
-          <div
-            className="flex items-center gap-3 cursor-pointer mb-4"
-            onClick={goToUser}
-          >
-            <img
-              src={post.user?.profilePicture || "/default-avatar.png"}
-              className="w-12 h-12 rounded-full object-cover ring-2 ring-cyan-400"
-              alt="User Avatar"
-            />
-            <div>
-              <h3 className={`font-semibold ${themeClasses.text}`}>
-                {post.user?.name || "Unknown User"}
-              </h3>
-              <p className={`text-sm ${themeClasses.muted}`}>
-                @{post.user?.username || "user"}
-              </p>
-            </div>
-          </div>
-
-          {/* ✍️ Content */}
-          <p className={`text-lg leading-relaxed ${themeClasses.text} mb-4`}>
-            {post.content}
+        <img
+          src={profilePic}
+          alt="User avatar"
+          className="w-12 h-12 rounded-full object-cover ring-2 ring-transparent group-hover:ring-2 transition-all duration-300"
+          style={{ ["--tw-ring-color" as any]: themeClasses.accentColor }}
+        />
+        <div>
+          <h3 className={`font-bold text-lg ${themeClasses.text}`}>
+            {author?.name || "Unknown User"}
+          </h3>
+          <p className={`text-sm ${themeClasses.textMuted}`}>
+            @{author?.username ?? "user"} •{" "}
+            {post.createdAt ? new Date(post.createdAt).toLocaleString() : ""}
           </p>
-
-          {/* 🖼 Media */}
-          {post.imageUrl && (
-            <img
-              src={post.imageUrl}
-              className="w-full rounded-xl mb-4 object-cover max-h-96"
-            />
-          )}
-          {post.videoUrl && (
-            <video
-              src={post.videoUrl}
-              controls
-              className="w-full rounded-xl mb-4 max-h-96"
-            />
-          )}
-
-          {/* ❤️💬🔖 Interaction buttons */}
-          <div className="flex items-center justify-between border-t pt-4 mt-4">
-            <div className="flex items-center gap-6">
-              {/* Like */}
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                className={`flex items-center gap-2 font-medium ${
-                  post.liked
-                    ? "text-pink-500"
-                    : "text-gray-400 hover:text-pink-400"
-                }`}
-                onClick={handleLike}
-              >
-                <Heart
-                  size={22}
-                  fill={post.liked ? "currentColor" : "none"}
-                  strokeWidth={2}
-                />
-                {post.likes}
-              </motion.button>
-
-              {/* Comment */}
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                className="flex items-center gap-2 text-gray-400 hover:text-cyan-400 font-medium"
-                onClick={() => setShowCommentModal(true)}
-              >
-                <MessageCircle size={22} />
-                {post.comments}
-              </motion.button>
-
-              {/* Share */}
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                className="flex items-center gap-2 text-gray-400 hover:text-green-400 font-medium"
-                onClick={handleShare}
-              >
-                <Share2 size={22} />
-              </motion.button>
-            </div>
-
-            {/* Bookmark */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              className={`${
-                post.bookmarked
-                  ? "text-yellow-400 hover:text-yellow-300"
-                  : "text-gray-400 hover:text-yellow-400"
-              }`}
-              onClick={handleBookmark}
-            >
-              {post.bookmarked ? <BookmarkCheck size={22} /> : <Bookmark size={22} />}
-            </motion.button>
-          </div>
-        </motion.div>
+        </div>
       </div>
 
-      {/* 💬 Comments Modal */}
-      {showCommentModal && (
-        <CommentModal
-          isOpen={showCommentModal}
-          onClose={() => setShowCommentModal(false)}
-          postId={post.id}
-          postContent={post.content}
-          postAuthor={post.user?.name || "Unknown"}
+      {/* 📝 Content */}
+      <p className={`text-base mb-4 leading-relaxed ${themeClasses.text}`}>
+        {post.content}
+      </p>
+
+      {/* 🖼️ Image */}
+      {post.imageUrl && (
+        <motion.img
+          src={post.imageUrl}
+          alt="Post"
+          className="rounded-xl w-full object-cover max-h-96 mb-4"
+          whileHover={{ scale: 1.02 }}
         />
       )}
+
+      {/* ❤️💬🔖 Actions */}
+      <div className="flex items-center justify-around border-t pt-3 mt-3 text-sm font-medium">
+        <button
+          onClick={handleLike}
+          className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all ${
+            post.liked ? themeClasses.like : themeClasses.textMuted
+          } hover:scale-105`}
+        >
+          <Heart
+            size={20}
+            className={post.liked ? "fill-current" : "stroke-current"}
+          />
+          {post.likes}
+        </button>
+
+        <button
+          onClick={() => router.push(`/posts/${post.id}#comments`)}
+          className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all ${themeClasses.comment} hover:scale-105`}
+        >
+          <MessageCircle size={20} />
+          {post.comments}
+        </button>
+
+        <button
+          onClick={handleBookmark}
+          className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all ${
+            post.bookmarked ? themeClasses.accent : themeClasses.textMuted
+          } hover:scale-105`}
+        >
+          <Bookmark
+            size={20}
+            className={post.bookmarked ? "fill-current" : "stroke-current"}
+          />
+        </button>
+
+        <button
+          onClick={() => navigator.share?.({ url: window.location.href })}
+          className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all ${themeClasses.textMuted} hover:scale-105`}
+        >
+          <Share2 size={20} />
+        </button>
+      </div>
     </div>
   );
 }
