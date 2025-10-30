@@ -1789,7 +1789,7 @@ const UserPosts = ({
 
     useEffect(() => {
         fetchUserPosts();
-    }, [userId]);
+    }, [userId])
 
     // Listen for post creation events to refresh user posts
     useEffect(() => {
