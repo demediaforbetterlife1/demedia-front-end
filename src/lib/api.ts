@@ -93,14 +93,14 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       // Use a more reliable fetch approach without AbortController for posts
       let fetchOptions: RequestInit;
       
-      if (isPostsEndpoint) {
+      if (isPostsEndpoint || isAuthEndpoint) {
         // For posts, use a simpler approach without AbortController to avoid AbortError
         fetchOptions = {
           ...options,
           headers,
           cache: 'no-cache',
           mode: 'cors',
-          credentials: 'include'
+          credentials: isAuthEndpoint ? 'omit' : 'include'
 
         };
       } else {
