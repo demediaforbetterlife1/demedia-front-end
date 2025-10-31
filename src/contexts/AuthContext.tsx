@@ -328,25 +328,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('AuthContext: Registration response ok:', res.ok);
 
       if (res.ok) {
-        const data = await res.json();
-        console.log('AuthContext: Registration success data:', data);
-        const newUser = data.user;
-        
+        // Parse robustly
+        let parsed: any = null;
+        try {
+          const raw = await res.text();
+          parsed = raw ? JSON.parse(raw) : {};
+        } catch (e) {
+          console.log('AuthContext: Registration success but response not JSON');
+          parsed = {};
+        }
+        console.log('AuthContext: Registration success data:', parsed);
+
+        // Support multiple shapes
+        const newUser = parsed?.user ?? parsed?.data?.user ?? parsed?.data ?? parsed;
+
+        if (!newUser || typeof newUser !== 'object' || newUser.id == null) {
+          console.error('AuthContext: Missing user or id in response:', parsed);
+          throw new Error('Registration succeeded but received invalid user data. Please try logging in.');
+        }
+
         // Store auth data and proceed to setup
-        if (data.token) {
-          localStorage.setItem('token', data.token);
+        if (parsed.token) {
+          localStorage.setItem('token', parsed.token);
           console.log('AuthContext: Token stored');
         }
-        localStorage.setItem('userId', newUser.id);
+        localStorage.setItem('userId', String(newUser.id));
         console.log('AuthContext: User ID stored:', newUser.id);
-        
+
         setUser(newUser);
         console.log('AuthContext: User state updated');
-        
+
         // Redirect to setup with replace for faster navigation
         console.log('AuthContext: Redirecting to SignInSetUp');
         router.replace('/SignInSetUp');
-        
+
         return true;
       } else {
         console.log('AuthContext: Registration failed with status:', res.status);
