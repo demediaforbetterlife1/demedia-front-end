@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
 import { MapPin, Link, Save, Sparkles, Wand2, Camera } from "lucide-react";
 
+
 interface ProfileCustomizationProps {
   user: {
     id: string;
@@ -88,10 +89,14 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
     setSaving(true);
     try {
       // Use unified apiFetch and correct endpoint: PUT /api/user/:id
-      const res = await apiFetch(`/api/user/${user.id}`, {
-        method: "PUT",
-        body: JSON.stringify(customization),
-      });
+      const res = await fetch(`/api/user/${user.id}`, {
+       method: "PUT",
+         headers: {
+          "Content-Type": "application/json",
+      },
+          body: JSON.stringify(customization),
+});
+
 
       if (!res.ok) {
         const errorText = await res.text();
