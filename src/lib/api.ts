@@ -80,7 +80,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   const timeouts = isPostsEndpoint
     ? [5000, 8000, 10000]
     : isAuthEndpoint
-    ? [8000] // auth: fail fast, single attempt
+    ? [20000] // auth: allow longer time, no abort controller
     : [15000, 25000, 35000];
   const maxRetries = timeouts.length - 1;
   let lastError: unknown;
@@ -100,7 +100,8 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
           headers,
           cache: 'no-cache',
           mode: 'cors',
-          credentials: isAuthEndpoint ? 'omit' : 'include'
+          // include credentials so Set-Cookie on auth works if used
+          credentials: 'include'
 
         };
       } else {
@@ -156,6 +157,12 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
           console.log(`Retrying request in ${(attempt + 1) * 1000}ms...`);
           await new Promise(resolve => setTimeout(resolve, (attempt + 1) * 1000));
           continue;
+        }
+        // For auth endpoints, try direct connection once more to avoid failing login
+        if (isAuthEndpoint) {
+          try {
+            return await tryDirectConnection(path, { ...options, headers });
+          } catch {}
         }
       }
       
