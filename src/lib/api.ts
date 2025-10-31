@@ -122,7 +122,19 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
         };
       }
       
-      const res = await fetch(url, fetchOptions);
+      // For auth endpoints, prefer a soft timeout without aborting the network request.
+      // This prevents AbortError while still allowing the UI to proceed.
+      const res = isAuthEndpoint
+        ? await Promise.race<Promise<Response>>([
+            fetch(url, fetchOptions),
+            new Promise<Response>((resolve) => {
+              setTimeout(() => {
+                const body = JSON.stringify({ error: 'Login request timed out' });
+                resolve(new Response(body, { status: 504, headers: { 'Content-Type': 'application/json' } }));
+              }, timeout || 20000);
+            })
+          ])
+        : await fetch(url, fetchOptions);
     
       if (res.status === 401) {
         // Only auto logout if it's not an auth check request
@@ -133,6 +145,10 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
           // Dispatch a custom event to notify AuthContext
           window.dispatchEvent(new CustomEvent('auth:logout'));
         }
+      }
+      // If synthetic timeout fired for auth, throw an Error so callers can show a helpful message
+      if (isAuthEndpoint && res.status === 504) {
+        throw new Error('Login request timed out');
       }
     
       return res;
