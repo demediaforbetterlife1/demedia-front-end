@@ -215,7 +215,7 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
             formData.append('type', 'image');
             formData.append('userId', userId);
 
-            const uploadResponse = await fetch(`/api/test-upload`, {
+            const uploadResponse = await apiFetch(`/api/upload`, {
                 method: 'POST',
                 body: formData,
             });
@@ -229,7 +229,7 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
 
             try {
                 const uploadData = JSON.parse(uploadText);
-                imageUrls.push(uploadData.url);
+                imageUrls.push(uploadData.url || uploadData.imageUrl);
             } catch (err) {
                 setError(`❌ Invalid upload response: ${uploadText}`);
                 setLoading(false);

@@ -87,26 +87,18 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
 
     setSaving(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No auth token found");
-      }
-
-      const response = await fetch(`/api/user/${user.id}/profile`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+      // Use unified apiFetch and correct endpoint: PUT /api/user/:id
+      const res = await apiFetch(`/api/user/${user.id}`, {
+        method: "PUT",
         body: JSON.stringify(customization),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
+      if (!res.ok) {
+        const errorText = await res.text();
         throw new Error(`Failed to update profile: ${errorText}`);
       }
 
-      const updated = await response.json();
+      const updated = await res.json();
       onUpdate(updated);
       setIsOpen(false);
       console.log("✅ Profile updated successfully");
@@ -126,19 +118,16 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
     formData.append("file", file);
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No auth token found");
-
-      const res = await fetch(`/api/user/${user.id}/upload`, {
+      // Use unified upload route and auth via apiFetch
+      const res = await apiFetch(`/api/upload`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
       if (!res.ok) throw new Error("Failed to upload image");
 
       const data = await res.json();
-      setCustomization({ ...customization, image: data.imageUrl });
+      setCustomization({ ...customization, image: data.url || data.imageUrl });
       console.log("✅ Image uploaded successfully");
     } catch (error) {
       console.error("❌ Upload error:", error);

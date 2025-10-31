@@ -75,6 +75,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   // Special handling for certain endpoints
   const isPostsEndpoint = path.includes('/posts');
   const isAuthEndpoint = path.includes('/auth');
+  const method = (options.method || 'GET').toUpperCase();
   
   // Use shorter timeouts and fewer retries to avoid long waits on sensitive flows
   const timeouts = isPostsEndpoint
@@ -162,9 +163,9 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       lastError = err;
       console.error(`API fetch error (attempt ${attempt + 1}):`, err);
       
-      // For posts endpoint, handle errors more gracefully
-      if (isPostsEndpoint && attempt === maxRetries) {
-        console.log('Posts endpoint failed, returning empty data');
+      // For posts GET lists only, handle errors more gracefully; never mask POST/PUT/DELETE
+      if (isPostsEndpoint && method === 'GET' && attempt === maxRetries) {
+        console.log('Posts GET failed, returning empty data');
         return new Response(JSON.stringify([]), {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
@@ -212,8 +213,8 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
           return await tryDirectConnection(path, options);
         } catch (directError) {
           console.error('Direct connection also failed:', directError);
-          // For posts, return empty data instead of throwing
-          if (isPostsEndpoint) {
+          // For posts GET only, return empty data instead of throwing
+          if (isPostsEndpoint && method === 'GET') {
             return new Response(JSON.stringify([]), {
               status: 200,
               headers: { 'Content-Type': 'application/json' }
