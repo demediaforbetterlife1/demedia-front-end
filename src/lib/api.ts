@@ -146,9 +146,15 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
           window.dispatchEvent(new CustomEvent('auth:logout'));
         }
       }
-      // If synthetic timeout fired for auth, throw an Error so callers can show a helpful message
+      // If synthetic timeout fired for auth, immediately try direct backend before failing
       if (isAuthEndpoint && res.status === 504) {
-        throw new Error('Login request timed out');
+        console.log('Auth endpoint soft-timeout, trying direct backend...');
+        try {
+          const directRes = await tryDirectConnection(path, { ...options, headers });
+          return directRes;
+        } catch (e) {
+          throw new Error('Login request timed out');
+        }
       }
     
       return res;
