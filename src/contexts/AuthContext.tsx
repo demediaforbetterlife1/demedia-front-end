@@ -9,8 +9,9 @@ import { useI18n } from "@/contexts/I18nContext";
 interface User {
   id: string;
   name: string;
+  email: string;
   username: string;
-  phoneNumber: number;
+  phoneNumber: string;
   profilePicture?: string;
   coverPhoto?: string;
   bio?: string;
