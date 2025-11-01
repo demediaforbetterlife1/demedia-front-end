@@ -10,8 +10,7 @@ interface User {
   id: string;
   name: string;
   username: string;
-  email?: string;
-  phoneNumber: string;
+  phoneNumber: number;
   profilePicture?: string;
   coverPhoto?: string;
   bio?: string;
@@ -38,9 +37,6 @@ interface AuthContextType {
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   completeSetup: () => void;
-  verifyPhone: (token: string) => Promise<boolean>;
-  resendPhoneVerification: (phoneNumber: string) => Promise<boolean>;
-  sendVerificationCode: (phoneNumber: string, method: "whatsapp" | "sms") => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -182,41 +178,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const verifyPhone = async (token: string): Promise<boolean> => {
-    const res = await apiFetch("/api/auth/verify-phone", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
-    });
-
-    const data = await safeJson(res);
-    if (!res.ok) throw new Error(data.error || "Phone verification failed");
-    return true;
-  };
-
-  const resendPhoneVerification = async (phoneNumber: string): Promise<boolean> => {
-    const res = await apiFetch("/api/auth/resend-verification", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phoneNumber }),
-    });
-
-    const data = await safeJson(res);
-    if (!res.ok) throw new Error(data.error || "Failed to resend verification code");
-    return true;
-  };
-
-  const sendVerificationCode = async (phoneNumber: string, method: "whatsapp" | "sms"): Promise<boolean> => {
-    const res = await apiFetch("/api/auth/send-verification", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phoneNumber, method }),
-    });
-
-    const data = await safeJson(res);
-    if (!res.ok) throw new Error(data.error || "Failed to send verification code");
-    return true;
-  };
 
   return (
     <AuthContext.Provider
@@ -229,9 +190,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         logout,
         updateUser,
         completeSetup,
-        verifyPhone,
-        resendPhoneVerification,
-        sendVerificationCode,
       }}
     >
       {children}

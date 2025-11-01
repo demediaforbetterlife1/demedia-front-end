@@ -129,7 +129,7 @@ export default function SignUpPage() {
         phoneNumber: "",
         password: "",
     });
-    const [selectedCountryCode, setSelectedCountryCode] = useState("+1");
+    const [selectedCountryCode, setSelectedCountryCode] = useState("+20");
 
     // Country codes data - Comprehensive list with Philippines and many more countries
     const countryCodes = [
@@ -355,7 +355,7 @@ export default function SignUpPage() {
     useEffect(() => {
         if (isLoading) return;
         if (isAuthenticated && user) {
-            router.replace(user.isSetupComplete ? "/(pages)/home" : "/verify-phone");
+            router.replace(user.isSetupComplete ? "/(pages)/home" : "/SignInSetUp");
         }
     }, [isAuthenticated, isLoading, user, router]);
 
