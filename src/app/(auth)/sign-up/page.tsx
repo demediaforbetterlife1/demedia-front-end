@@ -410,7 +410,8 @@ export default function SignUpPage() {
 
         try {
             // Combine country code with phone number
-            const fullPhoneNumber = selectedCountryCode + form.phoneNumber;
+            const normalizedNumber = form.phoneNumber.replace(/^0+/, "");
+              const fullPhoneNumber = selectedCountryCode + normalizedNumber;
             const formData = { ...form, phoneNumber: fullPhoneNumber };
             
             console.log('Sign-up: Attempting registration with:', { 
