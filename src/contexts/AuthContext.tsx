@@ -134,29 +134,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const register = async (userData: { name: string; username: string; phoneNumber: string; password: string }): Promise<boolean> => {
-    try {
-      const res = await apiFetch("/api/auth/sign-up", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
-      });
+  try {
+    const res = await apiFetch("/api/auth/sign-up", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData),
+    });
 
-      const data = await safeJson(res);
+    const data = await safeJson(res);
 
-      if (!res.ok) throw new Error(data.error || "Registration failed");
-      if (!data.user) throw new Error("No user data returned");
-
-      setUser(data.user);
-      if (data.user.language) setLanguage(data.user.language);
-
-      router.replace("/SignInSetUp");
-      return true;
-    } catch (err) {
-      console.error("Registration error:", err);
-      throw err;
+    // ✅ check for non-200 responses first
+    if (!res.ok) {
+      const errorMessage = data?.error || "Registration failed. Please try again.";
+      throw new Error(errorMessage);
     }
-  };
 
+    // ✅ double-check user structure
+    if (!data.user || !data.token) {
+      console.warn("Sign-up response missing user or token:", data);
+      throw new Error("Registration incomplete — missing user data.");
+    }
+
+    setUser(data.user);
+    if (data.user.language) setLanguage(data.user.language);
+
+    router.replace("/SignInSetUp");
+    return true;
+
+  } catch (err) {
+    console.error("Registration error:", err);
+    throw err;
+  }
+};
   const logout = () => {
     setUser(null);
     router.push("/sign-up");
