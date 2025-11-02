@@ -17,10 +17,6 @@ const nextConfig = {
         return [
           // API routes only
           {
-            source: "/api/:path*",
-            destination: `${target}/api/:path*`,
-          },
-          {
             source: "/socket.io/:path*",
             destination: `${target}/socket.io/:path*`,
           },

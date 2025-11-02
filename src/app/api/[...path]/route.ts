@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Pick backend base URL depending on env
-const getBackendBase = (): string => {
-  // Always use the Fly.io backend URL
-  const backendUrl = "https://demedia-backend.fly.dev";
-  console.log("Backend URL:", backendUrl);
-  return backendUrl;
-};
-
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs"; // استخدم "edge" لو عايز سرعة أعلى ومفيش socket
 
-// Helper: resolve context.params (supports both Promise & object)
+const BACKEND_BASE = "https://demedia-backend.fly.dev";
+
+// Resolve params safely (يدعم Promise و Object)
 async function resolveParams(context: any): Promise<string[]> {
   if (!context) return [];
   const maybeParams = context.params;
@@ -19,49 +14,22 @@ async function resolveParams(context: any): Promise<string[]> {
   return (resolved?.path ?? []) as string[];
 }
 
-// Handlers
-export const GET = async (req: NextRequest, context: any) => {
+// Unified handler (لكل الميثودات)
+async function handler(req: NextRequest, context: any): Promise<Response> {
   const path = await resolveParams(context);
-  return proxy(req, path);
-};
-export const POST = async (req: NextRequest, context: any) => {
-  const path = await resolveParams(context);
-  return proxy(req, path);
-};
-export const PUT = async (req: NextRequest, context: any) => {
-  const path = await resolveParams(context);
-  return proxy(req, path);
-};
-export const PATCH = async (req: NextRequest, context: any) => {
-  const path = await resolveParams(context);
-  return proxy(req, path);
-};
-export const DELETE = async (req: NextRequest, context: any) => {
-  const path = await resolveParams(context);
-  return proxy(req, path);
-};
+  return proxyRequest(req, path);
+}
 
-// Core proxy function
-async function proxy(req: NextRequest, path: string[]): Promise<Response> {
-  const backendBase = getBackendBase();
-  if (!backendBase) {
-    return NextResponse.json(
-      { error: "Backend URL not configured" },
-      { status: 502 }
-    );
-  }
-
+// Proxy logic (الجزء الأساسي)
+async function proxyRequest(req: NextRequest, path: string[]): Promise<Response> {
   const targetUrl = joinUrl(
-    backendBase,
+    BACKEND_BASE,
     "/api/" + (path.length > 0 ? path.join("/") : "")
   );
 
   const headers = new Headers(req.headers);
-  try {
-    headers.set("host", new URL(backendBase).host);
-  } catch {
-    /* ignore */
-  }
+  // بعض السيرفرات بترفض الـ "host" header فبنحذفه
+  if (headers.has("host")) headers.delete("host");
 
   const init: RequestInit = {
     method: req.method,
@@ -75,42 +43,44 @@ async function proxy(req: NextRequest, path: string[]): Promise<Response> {
   }
 
   try {
-    // Add timeout to prevent hanging requests
+    // Timeout 30 ثانية علشان الطلب ما يعلقش
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-    
+    const timeout = setTimeout(() => controller.abort(), 30000);
     init.signal = controller.signal;
-    
-    console.log(`🔄 Proxying ${req.method} request to: ${targetUrl}`);
-    
+
+    console.log(`🔄 Proxying ${req.method} → ${targetUrl}`);
+
     const res = await fetch(targetUrl, init);
-    clearTimeout(timeoutId);
-    
-    console.log(`✅ Backend response: ${res.status} ${res.statusText}`);
-    
+    clearTimeout(timeout);
+
+    console.log(`✅ Response ${res.status} ${res.statusText}`);
+
     const resHeaders = new Headers(res.headers);
     resHeaders.delete("transfer-encoding");
     resHeaders.delete("connection");
 
-    // Use Response directly for streaming compatibility
     return new Response(res.body, {
       status: res.status,
       headers: resHeaders,
     });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`❌ Backend request failed: ${message}`);
-    
-    // Handle timeout specifically
-    if (err instanceof Error && err.name === 'AbortError') {
+  } catch (err: any) {
+    console.error(`❌ Proxy error: ${err?.message || err}`);
+
+    if (err?.name === "AbortError") {
       return NextResponse.json(
-        { error: "Request timeout - Backend took too long to respond", details: "Please try again" },
+        {
+          error: "Request timeout",
+          details: "Backend took too long to respond",
+        },
         { status: 504 }
       );
     }
-    
+
     return NextResponse.json(
-      { error: "Upstream fetch failed", details: message },
+      {
+        error: "Proxy failed",
+        details: err?.message || String(err),
+      },
       { status: 502 }
     );
   }
@@ -121,3 +91,10 @@ function joinUrl(base: string, path: string): string {
   if (base.endsWith("/")) base = base.slice(0, -1);
   return base + path;
 }
+
+// Exports for Next.js handlers
+export const GET = handler;
+export const POST = handler;
+export const PUT = handler;
+export const PATCH = handler;
+export const DELETE = handler;
