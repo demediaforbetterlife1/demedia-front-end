@@ -7,7 +7,7 @@ import { apiFetch } from "@/lib/api";
 import { useI18n } from "@/contexts/I18nContext";
 
 interface User {
-  id: string | number;
+  id: string;
   name: string;
   email: string;
   username: string;
