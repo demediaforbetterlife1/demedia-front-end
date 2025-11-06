@@ -353,7 +353,7 @@ export default function ProfilePage() {
                     name: data.name,
                     username: data.username,
                     bio: data.bio ?? "",
-                    profilePicture: data.profilePicture,
+                    profilePicture: data.profilePicture ?? null,
                     coverPicture: data.coverPhoto,
                     stories: userStories.map((story: any) => ({
                         id: story.id,
@@ -380,8 +380,8 @@ export default function ProfilePage() {
                         isLiked: deSnap.isLiked || false,
                         isBookmarked: deSnap.isBookmarked || false
                     })),
-                    followersCount: data.followersCount,
-                    followingCount: data.followingCount,
+                    followersCount: data.followersCount ?? null,
+                    followingCount: data.followingCount ?? null,
                     likesCount: data.likesCount,
                     isFollowing: false, // This will be determined by follow status
                     privacy: (data.privacy as 'public' | 'followers' | 'private') || 'public'
