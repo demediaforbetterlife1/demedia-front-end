@@ -353,7 +353,7 @@ export default function ProfilePage() {
                     name: data.name,
                     username: data.username,
                     bio: data.bio ?? "",
-                    profilePicture: data.profilePicture ?? null,
+                    profilePicture: data.profilePicture,
                     coverPicture: data.coverPhoto,
                     stories: userStories.map((story: any) => ({
                         id: story.id,
