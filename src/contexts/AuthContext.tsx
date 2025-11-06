@@ -9,7 +9,7 @@ import { useI18n } from "@/contexts/I18nContext";
 interface User {
 id: string;
 name: string;
-email?: string;
+email: string;
 username: string;
 phoneNumber: string;
 profilePicture?: string;
@@ -35,9 +35,9 @@ isLoading: boolean;
 isAuthenticated: boolean;
 login: (phoneNumber: string, password: string) => Promise<boolean>;
 register: (userData: { name: string; username: string; phoneNumber: string; password: string }) => Promise<boolean>;
-logout: () => Promise<void>;
+logout: () => void;
 updateUser: (userData: Partial<User>) => void;
-completeSetup: () => Promise<void>;
+completeSetup: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -68,16 +68,17 @@ return {};
 }
 };
 
-// ===== Fetch Current User =====
 const fetchUser = async () => {
 setIsLoading(true);
 try {
 const res = await apiFetch("/api/auth/me", {
-headers: { "Content-Type": "application/json" },
-credentials: "include",
+headers: {
+"Content-Type": "application/json",
+},
 });
 
   const data = await safeJson(res);
+
   if (res.ok && data.user) {
     setUser(data.user);
     if (data.user.language) setLanguage(data.user.language);
@@ -96,30 +97,31 @@ useEffect(() => {
 fetchUser();
 }, []);
 
-// ===== Login =====
 const login = async (phoneNumber: string, password: string): Promise<boolean> => {
 try {
 const res = await apiFetch("/api/auth/login", {
 method: "POST",
 headers: { "Content-Type": "application/json" },
 body: JSON.stringify({ phoneNumber, password }),
-credentials: "include",
 });
 
   const data = await safeJson(res);
 
   if (!res.ok) throw new Error(data.error || "Login failed");
-  if (data.requiresPhoneVerification) throw new Error(data.message || "Please verify your phone number");
+  if (!data.user) throw new Error("Invalid login response: missing user data");
 
-  await fetchUser();
-
-  router.replace(data.user?.isSetupComplete ? "/home" : "/SignInSetUp");
-
-  if (data.user?.name) {
-    setTimeout(() => {
-      notificationService.showWelcomeNotification(data.user.name);
-    }, 100);
+  if (data.requiresPhoneVerification) {
+    throw new Error(data.message || "Please verify your phone number");
   }
+
+  setUser(data.user);
+  if (data.user.language) setLanguage(data.user.language);
+
+  router.replace(data.user.isSetupComplete ? "/home" : "/SignInSetUp");
+
+  setTimeout(() => {
+    if (data.user.name) notificationService.showWelcomeNotification(data.user.name);
+  }, 100);
 
   return true;
 } catch (err) {
@@ -129,21 +131,29 @@ credentials: "include",
 
 };
 
-// ===== Register =====
-const register = async (userData: { name: string; username: string; phoneNumber: string; password: string }): Promise<boolean> => {
+const register = async (userData: {
+name: string;
+username: string;
+phoneNumber: string;
+password: string;
+}): Promise<boolean> => {
 try {
 const res = await apiFetch("/api/auth/sign-up", {
 method: "POST",
-headers: { "Content-Type": "application/json" },
+headers: {
+"Content-Type": "application/json",
+},
 body: JSON.stringify(userData),
-credentials: "include",
 });
 
   const data = await safeJson(res);
 
   if (!res.ok) throw new Error(data.error || "Registration failed");
+  if (!data.user) throw new Error("Invalid registration response: missing user data");
 
-  await fetchUser();
+  setUser(data.user);
+  if (data.user.language) setLanguage(data.user.language);
+
   router.replace("/SignInSetUp");
   return true;
 } catch (err) {
@@ -153,30 +163,22 @@ credentials: "include",
 
 };
 
-// ===== Logout =====
-const logout = async () => {
-try {
-await apiFetch("/api/auth/logout", { method: "POST", credentials: "include" });
-} catch (err) {
-console.warn("Logout error:", err);
-} finally {
+const logout = () => {
 setUser(null);
 router.push("/sign-up");
-}
 };
 
-// ===== Update User in Context =====
 const updateUser = (userData: Partial<User>) => {
 setUser((prev) => (prev ? { ...prev, ...userData } : prev));
 };
 
-// ===== Complete Setup =====
 const completeSetup = async () => {
 try {
 const res = await apiFetch("/api/user/complete-setup", {
 method: "POST",
-headers: { "Content-Type": "application/json" },
-credentials: "include",
+headers: {
+"Content-Type": "application/json",
+},
 });
 
   const data = await safeJson(res);
