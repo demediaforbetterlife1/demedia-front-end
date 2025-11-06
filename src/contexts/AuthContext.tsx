@@ -131,38 +131,40 @@ body: JSON.stringify({ phoneNumber, password }),
 
 };
 
-const register = async (userData: {
-name: string;
-username: string;
-phoneNumber: string;
-password: string;
-}): Promise<boolean> => {
-try {
-const res = await apiFetch("/api/auth/sign-up", {
-method: "POST",
-headers: {
-"Content-Type": "application/json",
-},
-body: JSON.stringify(userData),
-});
+const register = async (userData: { name: string; username: string; phoneNumber: string; password: string }): Promise<boolean> => {
+  try {
+    const res = await apiFetch("/api/auth/sign-up", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
 
-  const data = await safeJson(res);
+    const data = await safeJson(res);
 
-  if (!res.ok) throw new Error(data.error || "Registration failed");
-  if (!data.user) throw new Error("Invalid registration response: missing user data");
+    if (!res.ok) throw new Error(data.error || "Registration failed");
 
-  setUser(data.user);
-  if (data.user.language) setLanguage(data.user.language);
+    // ✅ لو الـ backend ما رجعش user أو token
+    if (!data.user) {
+      console.warn("No user data returned, fetching session user...");
+      await fetchUser();
+      router.replace("/SignInSetUp");
+      return true;
+    }
 
-  router.replace("/SignInSetUp");
-  return true;
-} catch (err) {
-  console.error("Registration error:", err);
-  throw err;
-}
+    setUser(data.user);
+    setToken(data.token);
+    if (data.user.language) setLanguage(data.user.language);
 
+    router.replace("/SignInSetUp");
+    return true;
+
+  } catch (err) {
+    console.error("Registration error:", err);
+    throw err;
+  }
 };
-
 const logout = () => {
 setUser(null);
 router.push("/sign-up");
