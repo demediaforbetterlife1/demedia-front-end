@@ -380,8 +380,8 @@ export default function ProfilePage() {
                         isLiked: deSnap.isLiked || false,
                         isBookmarked: deSnap.isBookmarked || false
                     })),
-                    followersCount: data.followersCount ?? null,
-                    followingCount: data.followingCount ?? null,
+                    followersCount: data.followersCount ?? 0,
+                    followingCount: data.followingCount ?? 0,
                     likesCount: data.likesCount,
                     isFollowing: false, // This will be determined by follow status
                     privacy: (data.privacy as 'public' | 'followers' | 'private') || 'public'
