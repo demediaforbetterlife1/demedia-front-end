@@ -98,32 +98,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // ===== Login =====
-  const login = async (phoneNumber: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const res = await axios.post("/api/auth/login", { phoneNumber, password });
-      const { token: authToken, user: userData } = res.data;
+  const login = async (phoneNumber: string, password: string): Promise<User> => {
+  setIsLoading(true);
+  try {
+    // طلب تسجيل الدخول للـ backend
+    const res = await axios.post("/api/auth/login", { phoneNumber, password });
 
-      localStorage.setItem("authToken", authToken);
-      setToken(authToken);
-      setUser(userData);
+    // استلام token وبيانات المستخدم
+    const { token: authToken, user: userData } = res.data;
 
-      if (userData.language) setLanguage(userData.language);
-      router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
+    // حفظ البيانات في state فقط
+    setToken(authToken);
+    setUser(userData);
 
-      if (userData.name) {
-        setTimeout(() => {
-          notificationService.showWelcomeNotification(userData.name);
-        }, 100);
-      }
-    } catch (error) {
-      console.error("Login failed:", error);
-      throw error;
-    } finally {
-      setIsLoading(false);
+    // ضبط اللغة لو موجودة
+    if (userData.language) setLanguage(userData.language);
+
+    // التوجيه حسب حالة setup
+    router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
+
+    // إظهار رسالة ترحيب
+    if (userData.name) {
+      notificationService.showWelcomeNotification(userData.name);
     }
-  };
 
+    // ترجع بيانات المستخدم للصفحة لو محتاج
+    return userData;
+  } catch (error) {
+    console.error("Login failed:", error);
+    throw error; // الصفحة تتعامل مع الفشل
+  } finally {
+    setIsLoading(false);
+  }
+};
   // ===== Register =====
   const register = async (data: Partial<User> & { password: string }) => {
     setIsLoading(true);
