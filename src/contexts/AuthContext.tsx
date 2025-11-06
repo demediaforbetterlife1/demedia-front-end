@@ -58,7 +58,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ chil:dren }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -124,31 +124,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // ===== Register =====
-  const register = async (data: Partial<User> & { password: string }): Promise<User> => {
-    setIsLoading(true);
-    try {
-      const res = await axios.post("/api/auth/register", data);
-      const { token: authToken, user: userData } = res.data;
+  const register = async (
+  data: Partial<User> & { password: string },
+  onSuccess?: (user: User) => void
+): Promise<User> => {
+  setIsLoading(true);
+  try {
+    const res = await axios.post("/api/auth/register", data);
+    const { token: authToken, user: userData } = res.data;
 
-      setToken(authToken);
-      setUser(userData);
+    setToken(authToken);
+    setUser(userData);
 
-      if (userData.language) setLanguage(userData.language);
-      router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
+    if (userData.language) setLanguage(userData.language);
+    if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
-      if (userData.name) {
-        notificationService.showWelcomeNotification(userData.name);
-      }
+    if (onSuccess) onSuccess(userData);
 
-      return userData;
-    } catch (error) {
-      console.error("Register failed:", error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+    return userData;
+  } catch (error) {
+    console.error("Register failed:", error);
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
+};
   // ===== Logout =====
   const logout = () => {
     setUser(null);
