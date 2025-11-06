@@ -78,7 +78,7 @@ let url = "${API_BASE}${path}";
 if (options.method === "GET" || !options.method) {
 const cacheBuster = Date.now();
 const version = "v2.3.0";
-url = "${API_BASE}${path}${path.includes("?") ? "&" : "?"}cb=${cacheBuster}&v=${version}";
+url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}cb=${cacheBuster}&v=${version}`;
 }
 
 const isPostsEndpoint = path.includes("/posts");
