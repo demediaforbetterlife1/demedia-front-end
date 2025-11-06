@@ -57,7 +57,7 @@ const [user, setUser] = useState<User | null>(null);
 const [isLoading, setIsLoading] = useState(true);
 const router = useRouter();
 const { setLanguage } = useI18n();
-
+const [token, setToken] = useState<string | null>(null);
 const isAuthenticated = !!user;
 
 const safeJson = async (res: Response) => {
