@@ -39,8 +39,8 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (phoneNumber: string, password: string) => Promise<void>;
-  register: (data: Partial<User> & { password: string }) => Promise<void>;
+  login: (phoneNumber: string, password: string) => Promise<User>;
+  register: (data: Partial<User> & { password: string }) => Promise<User>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => Promise<void>;
   completeSetup: () => Promise<void>;
@@ -60,85 +60,76 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { setLanguage } = useI18n();
 
   const isAuthenticated = !!user;
 
-  // ===== Load user from backend =====
+  // ===== Load user from backend if token exists in memory =====
+  // optional: ممكن تعمل طريقة لاسترجاع token من cookie/session لو عايز إعادة دخول
   useEffect(() => {
     const loadUser = async () => {
-      const storedToken = localStorage.getItem("authToken");
-      if (!storedToken) {
+      if (!token) {
         setIsLoading(false);
         return;
       }
 
-      setToken(storedToken);
-
       try {
         const res = await axios.get("/api/auth/me", {
-          headers: { Authorization: `Bearer ${storedToken}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
         const userData: User = res.data;
         setUser(userData);
         if (userData.language) setLanguage(userData.language);
       } catch (error) {
         console.error("Failed to load user:", error);
-        localStorage.removeItem("authToken");
         setToken(null);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadUser();
-  }, []);
+  }, [token]);
 
   // ===== Login =====
   const login = async (phoneNumber: string, password: string): Promise<User> => {
-  setIsLoading(true);
-  try {
-    // طلب تسجيل الدخول للـ backend
-    const res = await axios.post("/api/auth/login", { phoneNumber, password });
+    setIsLoading(true);
+    try {
+      const res = await axios.post("/api/auth/login", { phoneNumber, password });
+      const { token: authToken, user: userData } = res.data;
 
-    // استلام token وبيانات المستخدم
-    const { token: authToken, user: userData } = res.data;
+      // حفظ token و user في state فقط
+      setToken(authToken);
+      setUser(userData);
 
-    // حفظ البيانات في state فقط
-    setToken(authToken);
-    setUser(userData);
+      if (userData.language) setLanguage(userData.language);
 
-    // ضبط اللغة لو موجودة
-    if (userData.language) setLanguage(userData.language);
+      router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
 
-    // التوجيه حسب حالة setup
-    router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
+      if (userData.name) {
+        notificationService.showWelcomeNotification(userData.name);
+      }
 
-    // إظهار رسالة ترحيب
-    if (userData.name) {
-      notificationService.showWelcomeNotification(userData.name);
+      return userData;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    // ترجع بيانات المستخدم للصفحة لو محتاج
-    return userData;
-  } catch (error) {
-    console.error("Login failed:", error);
-    throw error; // الصفحة تتعامل مع الفشل
-  } finally {
-    setIsLoading(false);
-  }
-};
   // ===== Register =====
-  const register = async (data: Partial<User> & { password: string }) => {
+  const register = async (data: Partial<User> & { password: string }): Promise<User> => {
     setIsLoading(true);
     try {
       const res = await axios.post("/api/auth/register", data);
       const { token: authToken, user: userData } = res.data;
 
-      localStorage.setItem("authToken", authToken);
       setToken(authToken);
       setUser(userData);
 
@@ -146,10 +137,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
 
       if (userData.name) {
-        setTimeout(() => {
-          notificationService.showWelcomeNotification(userData.name);
-        }, 100);
+        notificationService.showWelcomeNotification(userData.name);
       }
+
+      return userData;
     } catch (error) {
       console.error("Register failed:", error);
       throw error;
@@ -162,18 +153,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("authToken");
     router.push("/sign-up");
   };
 
-  // ===== Update user locally + backend =====
+  // ===== Update user on backend =====
   const updateUser = async (userData: Partial<User>) => {
     if (!token) return;
     try {
       const res = await axios.put("/api/users/me", userData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const updatedUser = res.data;
+      const updatedUser: User = res.data;
       setUser(updatedUser);
     } catch (error) {
       console.error("Failed to update user:", error);
