@@ -67,8 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user;
 
-  // ===== Load user from backend if token exists in memory =====
-  // optional: ممكن تعمل طريقة لاسترجاع token من cookie/session لو عايز إعادة دخول
+  // Load user if token exists
   useEffect(() => {
     const loadUser = async () => {
       if (!token) {
@@ -95,14 +94,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loadUser();
   }, [token]);
 
-  // ===== Login =====
+  // Login
   const login = async (phoneNumber: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
       const res = await axios.post("/api/auth/login", { phoneNumber, password });
       const { token: authToken, user: userData } = res.data;
 
-      // حفظ token و user في state فقط
       setToken(authToken);
       setUser(userData);
 
@@ -110,9 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
 
-      if (userData.name) {
-        notificationService.showWelcomeNotification(userData.name);
-      }
+      if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
       return userData;
     } catch (error) {
@@ -123,48 +119,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // ===== Register =====
-  const register = async (
-  data: Partial<User> & { password: string }
-): Promise<User> => {
-  setIsLoading(true);
-  try {
-    // ارسال بيانات التسجيل للباك اند
-    const res = await axios.post("/api/auth/register", data);
+  // Register
+  const register = async (data: Partial<User> & { password: string }): Promise<User> => {
+    setIsLoading(true);
+    try {
+      const res = await axios.post("/api/auth/register", data);
+      const { token: authToken, user: userData } = res.data;
 
-    // استلام التوكن وبيانات المستخدم
-    const { token: authToken, user: userData } = res.data;
+      setToken(authToken);
+      setUser(userData);
 
-    // حفظ التوكن وبيانات المستخدم في state فقط
-    setToken(authToken);
-    setUser(userData);
+      if (userData.language) setLanguage(userData.language);
+      if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
-    // ضبط اللغة لو موجودة
-    if (userData.language) setLanguage(userData.language);
+      // Redirect after registration
+      router.replace("/SignInSetUp");
 
-    // اظهار رسالة ترحيب لو فيه اسم
-    if (userData.name) notificationService.showWelcomeNotification(userData.name);
+      console.log("Registration response:", res.data);
 
-    // توجيه المستخدم مباشرة بعد التسجيل
-    router.replace("/SignInSetUp");
+      return userData;
+    } catch (error) {
+      console.error("Register failed:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    // ترجع بيانات المستخدم لو حبيت تستخدمها بعدين
-    return userData;
-  } catch (error) {
-    console.error("Register failed:", error);
-    throw error; // عشان الصفحة تتعامل مع أي خطأ
-  } finally {
-    setIsLoading(false);
-  }
-};
-  // ===== Logout =====
+  // Logout
   const logout = () => {
     setUser(null);
     setToken(null);
-    router.push("/sign-up");
+    router.push("/sign-in");
   };
 
-  // ===== Update user on backend =====
+  // Update user
   const updateUser = async (userData: Partial<User>) => {
     if (!token) return;
     try {
@@ -178,7 +167,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // ===== Complete setup =====
+  // Complete setup
   const completeSetup = async () => {
     await updateUser({ isSetupComplete: true });
     router.push("/home");
@@ -201,32 +190,3 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     </AuthContext.Provider>
   );
 };
- register = async (
-  data: Partial<User> & { password: string },
-  onSuccess?: (user: User) => void
-): Promise<User> => {
-  setIsLoading(true);
-  try {
-    const res = await axios.post("/api/auth/register", data);
-    const { token: authToken, user: userData } = res.data;
-
-    setToken(authToken);
-    setUser(userData);
-
-    if (userData.language) setLanguage(userData.language);
-    if (userData.name) notificationService.showWelcomeNotification(userData.name);
-
-    // Redirect to SignInSetUp page after successful registration
-    router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
-
-    if (onSuccess) onSuccess(userData);
-
-    return userData;
-  } catch (error) {
-    console.error("Register failed:", error);
-    throw error;
-  } finally {
-    setIsLoading(false);
-  }
-};
-console.log("Registration response:", res.data);
