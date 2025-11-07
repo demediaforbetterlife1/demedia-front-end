@@ -127,7 +127,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       console.log("Register: Sending data to backend:", formData);
-      const res = await axios.post("/api/auth/register", formData);
+      const res = await axios.post("/api/auth/sign-up", formData);
 
       const { token: authToken, user: userData } = res.data;
 
