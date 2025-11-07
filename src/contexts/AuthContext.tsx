@@ -193,3 +193,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+ register = async (
+  data: Partial<User> & { password: string },
+  onSuccess?: (user: User) => void
+): Promise<User> => {
+  setIsLoading(true);
+  try {
+    const res = await axios.post("/api/auth/register", data);
+    const { token: authToken, user: userData } = res.data;
+
+    setToken(authToken);
+    setUser(userData);
+
+    if (userData.language) setLanguage(userData.language);
+    if (userData.name) notificationService.showWelcomeNotification(userData.name);
+
+    // Redirect to SignInSetUp page after successful registration
+    router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
+
+    if (onSuccess) onSuccess(userData);
+
+    return userData;
+  } catch (error) {
+    console.error("Register failed:", error);
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
+};
+console.log("Registration response:", res.data);
