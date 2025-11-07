@@ -190,15 +190,15 @@ export default function SignInSetUp() {
                 throw new Error("Authentication token not found. Please log in again.");
             }
 
-            const res = await fetch(`/api/users/${userId}/profile`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    'Authorization': `Bearer ${token}`,
-                    'user-id': userId.toString(),
-                },
-                body: JSON.stringify({ dob: dobIso }),
-            });
+            const res = await fetch(`/api/user/${userId}/complete-setup`, {
+       method: "POST",
+       headers: {
+         "Content-Type": "application/json",
+         "Authorization": `Bearer ${token}`,
+         "user-id": userId.toString(),
+  },
+  body: JSON.stringify({ dob: dobIso }),
+});
 
             const rawBody = await res.text();
             let data: any = null;
