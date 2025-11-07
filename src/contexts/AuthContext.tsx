@@ -38,6 +38,7 @@ interface AuthContextType {
   logout: () => void;
   updateUser: (userData: Partial<User>) => Promise<void>;
   completeSetup: () => Promise<void>;
+  token: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,36 +56,29 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
   const { setLanguage } = useI18n();
 
   const isAuthenticated = !!user;
 
-  // Load user using token from localStorage
+  // Load token from localStorage on mount
   useEffect(() => {
-    const loadUser = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const res = await axios.get("/api/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const userData = res.data.user || res.data;
-        setUser(userData);
-        if (userData.language) setLanguage(userData.language);
-      } catch (err) {
-        console.error("Failed to load user:", err);
-        setUser(null);
-        localStorage.removeItem("token");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadUser();
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      setToken(storedToken);
+      // fetch user immediately using token
+      axios.get("/api/auth/me", { headers: { Authorization: `Bearer ${storedToken}` } })
+        .then(res => {
+          const userData = res.data.user || res.data;
+          setUser(userData);
+          if (userData.language) setLanguage(userData.language);
+        })
+        .catch(() => setUser(null))
+        .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   // Login
@@ -92,16 +86,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       const res = await axios.post("/api/auth/login", { phoneNumber, password });
-      const { token, user: userData } = res.data;
-
-      localStorage.setItem("token", token); // ✅ store token in localStorage
+      const userData = res.data.user || res.data;
+      const newToken = res.data.token;
       setUser(userData);
-
+      setToken(newToken);
+      localStorage.setItem("token", newToken);
       if (userData.language) setLanguage(userData.language);
       if (userData.name) notificationService.showWelcomeNotification(userData.name);
-
       router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
-
       return userData;
     } finally {
       setIsLoading(false);
@@ -113,16 +105,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       const res = await axios.post("/api/auth/sign-up", formData);
-      const { token, user: userData } = res.data;
-
-      localStorage.setItem("token", token); // ✅ store token in localStorage
+      const userData = res.data.user || res.data;
+      const newToken = res.data.token;
       setUser(userData);
-
+      setToken(newToken);
+      localStorage.setItem("token", newToken);
       if (userData.language) setLanguage(userData.language);
       if (userData.name) notificationService.showWelcomeNotification(userData.name);
-
       router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
-
       return userData;
     } finally {
       setIsLoading(false);
@@ -132,19 +122,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Logout
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("token"); // ✅ remove token
+    setToken(null);
+    localStorage.removeItem("token");
     router.push("/sign-in");
   };
 
   // Update user
   const updateUser = async (userData: Partial<User>) => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     try {
-      const res = await axios.put("/api/users/me", userData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.put("/api/users/me", userData, { headers: { Authorization: `Bearer ${token}` } });
       setUser(res.data);
     } catch (err) {
       console.error(err);
@@ -159,7 +145,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated, login, register, logout, updateUser, completeSetup }}
+      value={{ user, isLoading, isAuthenticated, login, register, logout, updateUser, completeSetup, token }}
     >
       {children}
     </AuthContext.Provider>
