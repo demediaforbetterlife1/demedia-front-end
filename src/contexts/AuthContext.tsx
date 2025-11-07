@@ -1,9 +1,10 @@
+// src/contexts/AuthContext.tsx
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import { useI18n } from "@/contexts/I18nContext";
+import axios from "axios";
 import { notificationService } from "@/services/notificationService";
 
 interface User {
@@ -33,12 +34,12 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (phoneNumber: string, password: string) => Promise<User | null>;
-  register: (data: Partial<User> & { password: string }) => Promise<User | null>;
+  token: string | null;
+  login: (phoneNumber: string, password: string) => Promise<User>;
+  register: (data: Partial<User> & { password: string }) => Promise<User>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => Promise<void>;
   completeSetup: () => Promise<void>;
-  token: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,7 +50,11 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
@@ -58,8 +63,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isAuthenticated = !!user;
 
-  // 🔹 تحميل المستخدم من localStorage عند أول تشغيل
+  // helper to apply token to axios
+  const applyAxiosToken = (tkn: string | null) => {
+    if (tkn) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${tkn}`;
+    } else {
+      delete axios.defaults.headers.common["Authorization"];
+    }
+  };
+
+  // Load token from localStorage on mount and fetch user
   useEffect(() => {
+    if (typeof window === "undefined") {
+      setIsLoading(false);
+      return;
+    }
+
     const storedToken = localStorage.getItem("token");
     if (!storedToken) {
       setIsLoading(false);
@@ -67,106 +86,119 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setToken(storedToken);
+    applyAxiosToken(storedToken);
 
-    axios
-      .get("/api/auth/me", {
-        headers: { Authorization: `Bearer ${storedToken}` },
-        withCredentials: true,
-      })
-      .then((res) => {
-        const userData = res.data.user || res.data;
+    // fetch user
+    (async () => {
+      try {
+        const res = await axios.get("/api/auth/me", {
+          headers: { Authorization: `Bearer ${storedToken}` },
+        });
+        // backend responds { user: { ... } } or the user object — handle both
+        const userData: User = res.data.user || res.data;
         setUser(userData);
-        if (userData.language) setLanguage(userData.language);
-      })
-      .catch((err) => {
-        console.error("❌ Error loading user:", err);
+        if (userData?.language) setLanguage(userData.language);
+      } catch (err) {
+        console.warn("Failed to load user from token:", err);
+        // invalid token -> remove it
         localStorage.removeItem("token");
-      })
-      .finally(() => setIsLoading(false));
+        setToken(null);
+        setUser(null);
+        applyAxiosToken(null);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   }, []);
 
-  // 🔹 تسجيل الدخول
-  const login = async (phoneNumber: string, password: string): Promise<User | null> => {
+  // Login
+  const login = async (phoneNumber: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
-      const res = await axios.post("/api/auth/login", { phoneNumber, password }, { withCredentials: true });
-      const { token: newToken, user: userData } = res.data;
+      const res = await axios.post("/api/auth/login", { phoneNumber, password });
+      const newToken = res.data.token || (res.data.user && res.data.user.token) || null;
+      const userData: User = res.data.user || res.data;
 
-      if (!newToken) throw new Error("Token not received");
+      if (newToken && typeof window !== "undefined") {
+        localStorage.setItem("token", newToken);
+        setToken(newToken);
+        applyAxiosToken(newToken);
+      }
 
-      localStorage.setItem("token", newToken);
-      setToken(newToken);
       setUser(userData);
-
       if (userData.language) setLanguage(userData.language);
       if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
-      // ✅ Redirect without refresh
-      router.replace(userData.isSetupComplete ? "/(pages)/home" : "/SignInSetUp");
+      // redirect immediately (no refresh)
+      router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
 
       return userData;
     } catch (err) {
-      console.error("❌ Login failed:", err);
-      return null;
+      console.error("Login failed:", err);
+      throw err;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 🔹 تسجيل جديد
-  const register = async (formData: Partial<User> & { password: string }): Promise<User | null> => {
+  // Register
+  const register = async (formData: Partial<User> & { password: string }): Promise<User> => {
     setIsLoading(true);
     try {
-      const res = await axios.post("/api/auth/sign-up", formData, { withCredentials: true });
-      const { token: newToken, user: userData } = res.data;
+      const res = await axios.post("/api/auth/sign-up", formData);
+      const newToken = res.data.token || (res.data.user && res.data.user.token) || null;
+      const userData: User = res.data.user || res.data;
 
-      if (!newToken) throw new Error("Token not received");
+      if (newToken && typeof window !== "undefined") {
+        localStorage.setItem("token", newToken);
+        setToken(newToken);
+        applyAxiosToken(newToken);
+      }
 
-      localStorage.setItem("token", newToken);
-      setToken(newToken);
       setUser(userData);
-
       if (userData.language) setLanguage(userData.language);
       if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
-      // ✅ Redirect بدون refresh
-      router.replace(userData.isSetupComplete ? "/(pages)/home" : "/SignInSetUp");
+      // redirect immediately (no refresh)
+      router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
 
       return userData;
     } catch (err) {
-      console.error("❌ Register failed:", err);
-      return null;
+      console.error("Register failed:", err);
+      throw err;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 🔹 تسجيل الخروج
+  // Logout
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("token");
+    applyAxiosToken(null);
+    // call backend logout if you want to clear cookie on server
+    axios.post("/api/auth/logout").catch(() => {});
     router.push("/sign-in");
   };
 
-  // 🔹 تحديث المستخدم
+  // Update user
   const updateUser = async (userData: Partial<User>) => {
-    if (!token) return;
     try {
       const res = await axios.put("/api/users/me", userData, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
-      setUser(res.data);
+      const updated: User = res.data;
+      setUser(updated);
     } catch (err) {
-      console.error("❌ Update user failed:", err);
+      console.error("Failed to update user:", err);
     }
   };
 
-  // 🔹 إكمال الإعداد
+  // Complete setup
   const completeSetup = async () => {
     await updateUser({ isSetupComplete: true });
-    router.push("/(pages)/home");
+    router.push("/home");
   };
 
   return (
