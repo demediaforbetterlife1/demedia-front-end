@@ -1,5 +1,3 @@
-import { useAuth } from "@/contexts/AuthContext";
-
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 const API_BASE = ""; // Next.js proxy
@@ -59,21 +57,11 @@ async function tryDirectConnection(path: string, options: RequestInit = {}, auth
 }
 
 // ===== Unified API Fetch Wrapper =====
-export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+// 🔹 authToken يجب تمريره عند الاستدعاء من AuthContext
+export async function apiFetch(path: string, options: RequestInit = {}, authToken?: string): Promise<Response> {
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string> | undefined),
   };
-
-  // ===== Read token from AuthContext =====
-  let authToken: string | undefined;
-  if (typeof window !== "undefined") {
-    try {
-      const { token } = require("@/contexts/AuthContext").useAuth();
-      authToken = token || undefined;
-    } catch (err) {
-      console.warn("AuthContext not available, no token set.");
-    }
-  }
 
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
@@ -90,8 +78,6 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
 
   const isPostsEndpoint = path.includes("/posts");
   const isAuthEndpoint = path.includes("/auth");
-  const method = (options.method || "GET").toUpperCase();
-
   const timeouts = isPostsEndpoint
     ? [5000, 8000, 10000]
     : isAuthEndpoint
@@ -169,12 +155,12 @@ interface UserProfileResponse {
   }>;
 }
 
-export async function getUserProfile(userId: string | number): Promise<UserProfileResponse | null> {
+export async function getUserProfile(userId: string | number, authToken?: string): Promise<UserProfileResponse | null> {
   try {
     const res = await apiFetch(`/api/users/${userId}/profile`, {
       cache: "no-store",
       headers: { "Content-Type": "application/json" },
-    });
+    }, authToken);
 
     if (!res.ok) {
       const text = await res.text();

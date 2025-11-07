@@ -126,16 +126,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 ): Promise<User> => {
   setIsLoading(true);
   try {
+    // 🔹 إرسال البيانات للباك اند
     const res = await axios.post("/api/auth/register", data);
     const { token: authToken, user: userData } = res.data;
 
+    // 🔹 تخزين البيانات في state فقط
     setToken(authToken);
     setUser(userData);
 
     if (userData.language) setLanguage(userData.language);
     if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
-    // 🔹 بعد التسجيل دائماً ارسل المستخدم لصفحة SignInSetUp
+    // 🔹 بعد التسجيل، توجيه المستخدم لصفحة SignInSetUp
     router.replace("/SignInSetUp");
 
     if (onSuccess) onSuccess(userData);
@@ -148,7 +150,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(false);
   }
 };
-
   // Logout
   const logout = () => {
     setUser(null);
