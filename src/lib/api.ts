@@ -1,190 +1,122 @@
-export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 
-const API_BASE = ""; // Next.js proxy
-const DIRECT_API_BASE = "https://demedia-backend.fly.dev"; // Direct fallback
+// 🔹 السيرفرات
+const API_BASE = ""; // عبر Next.js API proxy
+const DIRECT_API_BASE = "https://demedia-backend.fly.dev"; // fallback مباشر
 
-// ===== Safe JSON reader =====
-export async function readJsonSafe<T = unknown>(res: Response): Promise<T | { error?: string }> {
-  try {
-    return (await res.json()) as T;
-  } catch {
-    try {
-      const txt = await res.text();
-      return { error: txt || res.statusText };
-    } catch {
-      return { error: res.statusText };
+// 🔹 إنشاء instance موحد
+const api = axios.create({
+  baseURL: API_BASE || DIRECT_API_BASE,
+  timeout: 20000,
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// ✅ إضافة التوكن تلقائيًا قبل كل طلب
+api.interceptors.request.use(
+  (config) => {
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
-  }
-}
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-// ===== Fallback to direct backend =====
-async function tryDirectConnection(path: string, options: RequestInit = {}, authToken?: string): Promise<Response> {
-  console.log("⚠️ Trying direct backend connection...");
-  const directUrl = `${DIRECT_API_BASE}${path}`;
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-
-    const response = await fetch(directUrl, {
-      ...options,
-      headers: {
-        ...(options.headers || {}),
-        "Content-Type": "application/json",
-        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-      },
-      credentials: "include",
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeout);
-
-    if (response.status === 500) {
-      return new Response(JSON.stringify([]), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+// ✅ معالجة الردود والأخطاء بدون logout
+api.interceptors.response.use(
+  (response) => {
+    // ✅ لو السيرفر رجّع توكن جديد نحفظه
+    if (response.data?.token && typeof window !== "undefined") {
+      localStorage.setItem("token", response.data.token);
     }
-
     return response;
-  } catch (error) {
-    console.error("Direct connection failed:", error);
-    return new Response(JSON.stringify([]), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-}
+  },
+  async (error) => {
+    const originalRequest = error.config;
 
-// ===== Unified API Fetch Wrapper =====
-// 🔹 authToken optional, fallback to localStorage if not provided
-export async function apiFetch(path: string, options: RequestInit = {}, authToken?: string): Promise<Response> {
-  if (!authToken && typeof window !== "undefined") {
-    authToken = localStorage.getItem("token") || undefined;
-  }
+    // ⚠️ لو Unauthorized → بس نحذر ونكمل
+    if (error.response?.status === 401) {
+      console.warn("⚠️ Token might be expired or invalid (ignored).");
+      return Promise.resolve({ data: null, error: "unauthorized" });
+    }
 
-  const headers: Record<string, string> = {
-    ...(options.headers as Record<string, string> | undefined),
-  };
-
-  if (authToken) headers.Authorization = `Bearer ${authToken}`;
-
-  if (!headers["Content-Type"] && options.body && !(options.body instanceof FormData)) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  let url = `${API_BASE}${path}`;
-  if (options.method === "GET" || !options.method) {
-    const cacheBuster = Date.now();
-    const version = "v2.3.0";
-    url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}cb=${cacheBuster}&v=${version}`;
-  }
-
-  const isPostsEndpoint = path.includes("/posts");
-  const isAuthEndpoint = path.includes("/auth");
-  const timeouts = isPostsEndpoint
-    ? [5000, 8000, 10000]
-    : isAuthEndpoint
-    ? [20000]
-    : [15000, 25000, 35000];
-
-  const maxRetries = timeouts.length - 1;
-  let lastError: unknown;
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const timeout = timeouts[attempt];
-    try {
-      console.log(`🌍 API request → ${url} (attempt ${attempt + 1})`);
-
-      const controller = new AbortController();
-      const t = setTimeout(() => controller.abort(), timeout);
-
-      const fetchOptions: RequestInit = {
-        ...options,
-        headers,
-        cache: "no-cache",
-        mode: "cors",
-        credentials: "include",
-        signal: controller.signal,
-      };
-
-      const res = await fetch(url, fetchOptions);
-      clearTimeout(t);
-
-      // ✅ تخزين التوكن تلقائيًا لو رجع من الـ API
+    // 🔄 لو السيرفر الأساسي وقع → جرب السيرفر المباشر
+    if (!error.response && !originalRequest._retry) {
       try {
-        const clone = res.clone(); // نعمل نسخة لتفادي استهلاك body
-        const data = await clone.json().catch(() => null);
-        if (data?.token && typeof window !== "undefined") {
-          localStorage.setItem("token", data.token);
-        }
-      } catch (e) {
-        // ignore JSON errors
-      }
-
-      if (res.status === 401 && typeof window !== "undefined" && !path.includes("/auth/me")) {
-        console.log("🔒 Unauthorized → auto logout event");
-        window.dispatchEvent(new CustomEvent("auth:logout"));
-      }
-
-      if (!res.ok && attempt < maxRetries) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        continue;
-      }
-
-      return res;
-    } catch (err) {
-      lastError = err;
-      console.error(`API fetch error (attempt ${attempt + 1}):`, err);
-
-      if (attempt === maxRetries) {
-        console.log("⚙️ Trying direct backend fallback...");
-        return await tryDirectConnection(path, options, authToken);
+        console.log("⚠️ Main API failed → trying direct fallback...");
+        originalRequest._retry = true;
+        const directRes = await axios({
+          ...originalRequest,
+          baseURL: DIRECT_API_BASE,
+        });
+        return directRes;
+      } catch (fallbackError) {
+        console.error("❌ Fallback API also failed:", fallbackError);
       }
     }
+
+    console.error("❌ API error:", error);
+    return Promise.resolve({ data: null, error: error.message });
   }
+);
 
-  throw lastError;
-}
-// ===== User Profile Fetcher =====
-interface UserProfileResponse {
-  id: number;
-  name: string;
-  username: string;
-  email?: string;
-  bio?: string | null;
-  location?: string | null;
-  website?: string | null;
-  profilePicture?: string | null;
-  coverPhoto?: string | null;
-  createdAt?: string;
-  followersCount?: number;
-  followingCount?: number;
-  likesCount?: number;
-  privacy?: string;
-  stories?: Array<{
-    id: number;
-    content: string;
-    createdAt: string;
-  }>;
-}
+// ===== 🧩 دوال مختصرة =====
 
-export async function getUserProfile(userId: string | number, authToken?: string): Promise<UserProfileResponse | null> {
+export async function apiGet<T>(url: string, config: AxiosRequestConfig = {}): Promise<T | null> {
   try {
-    const res = await apiFetch(
-      `/api/users/${userId}/profile`,
-      { cache: "no-store", headers: { "Content-Type": "application/json" } },
-      authToken
-    );
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Failed to fetch profile: ${res.status} ${text}`);
-    }
-
-    return (await res.json()) as UserProfileResponse;
+    const res: AxiosResponse<T> = await api.get(url, config);
+    return res.data;
   } catch (err) {
-    console.error("Error fetching user profile:", err);
+    console.error("GET error:", err);
     return null;
   }
 }
+
+export async function apiPost<T>(url: string, data?: any, config: AxiosRequestConfig = {}): Promise<T | null> {
+  try {
+    const res: AxiosResponse<T> = await api.post(url, data, config);
+    return res.data;
+  } catch (err) {
+    console.error("POST error:", err);
+    return null;
+  }
+}
+
+export async function apiPut<T>(url: string, data?: any, config: AxiosRequestConfig = {}): Promise<T | null> {
+  try {
+    const res: AxiosResponse<T> = await api.put(url, data, config);
+    return res.data;
+  } catch (err) {
+    console.error("PUT error:", err);
+    return null;
+  }
+}
+
+export async function apiDelete<T>(url: string, config: AxiosRequestConfig = {}): Promise<T | null> {
+  try {
+    const res: AxiosResponse<T> = await api.delete(url, config);
+    return res.data;
+  } catch (err) {
+    console.error("DELETE error:", err);
+    return null;
+  }
+}
+
+// ===== 📦 مثال لجلب بروفايل المستخدم =====
+export async function getUserProfile(userId: string | number) {
+  try {
+    const data = await apiGet(`/api/users/${userId}/profile`);
+    return data;
+  } catch (error) {
+    console.error("❌ Error fetching user profile:", error);
+    return null;
+  }
+}
+
+export default api;
