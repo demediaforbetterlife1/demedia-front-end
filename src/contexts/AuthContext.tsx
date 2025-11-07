@@ -121,36 +121,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Register
   const register = async (
-  data: Partial<User> & { password: string },
+  formData: Partial<User> & { password: string },
   onSuccess?: (user: User) => void
 ): Promise<User> => {
   setIsLoading(true);
   try {
     // 🔹 إرسال البيانات للباك اند
-    const res = await axios.post("/api/auth/register", data);
+    console.log("Register: Sending data to backend:", formData);
+    const res = await axios.post("/api/auth/register", formData);
+
     const { token: authToken, user: userData } = res.data;
 
-    // 🔹 تخزين البيانات في state فقط
+    // ✅ حفظ التوكن والمستخدم في state
     setToken(authToken);
     setUser(userData);
 
+    // ضبط اللغة لو موجودة
     if (userData.language) setLanguage(userData.language);
+
+    // رسالة ترحيب لو فيه اسم
     if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
-    // 🔹 بعد التسجيل، توجيه المستخدم لصفحة SignInSetUp
-    router.replace("/SignInSetUp");
+    // 🔹 التوجيه بعد التأكد من تحديث state
+    const targetRoute = userData.isSetupComplete ? "/home" : "/SignInSetUp";
+    setTimeout(() => {
+      router.replace(targetRoute);
+    }, 50);
 
+    // استدعاء callback لو موجود
     if (onSuccess) onSuccess(userData);
 
     return userData;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Register failed:", error);
+
+    // يمكن التعامل مع رسائل خطأ backend هنا لو تحب
     throw error;
   } finally {
     setIsLoading(false);
   }
-};
-  // Logout
+};};  // Logout
   const logout = () => {
     setUser(null);
     setToken(null);
