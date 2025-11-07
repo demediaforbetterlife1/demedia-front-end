@@ -121,46 +121,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Register
   const register = async (
-  formData: Partial<User> & { password: string },
-  onSuccess?: (user: User) => void
-): Promise<User> => {
-  setIsLoading(true);
-  try {
-    // 🔹 إرسال البيانات للباك اند
-    console.log("Register: Sending data to backend:", formData);
-    const res = await axios.post("/api/auth/register", formData);
+    formData: Partial<User> & { password: string },
+    onSuccess?: (user: User) => void
+  ): Promise<User> => {
+    setIsLoading(true);
+    try {
+      console.log("Register: Sending data to backend:", formData);
+      const res = await axios.post("/api/auth/register", formData);
 
-    const { token: authToken, user: userData } = res.data;
+      const { token: authToken, user: userData } = res.data;
 
-    // ✅ حفظ التوكن والمستخدم في state
-    setToken(authToken);
-    setUser(userData);
+      setToken(authToken);
+      setUser(userData);
 
-    // ضبط اللغة لو موجودة
-    if (userData.language) setLanguage(userData.language);
+      if (userData.language) setLanguage(userData.language);
+      if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
-    // رسالة ترحيب لو فيه اسم
-    if (userData.name) notificationService.showWelcomeNotification(userData.name);
+      const targetRoute = userData.isSetupComplete ? "/home" : "/SignInSetUp";
+      setTimeout(() => {
+        router.replace(targetRoute);
+      }, 50);
 
-    // 🔹 التوجيه بعد التأكد من تحديث state
-    const targetRoute = userData.isSetupComplete ? "/home" : "/SignInSetUp";
-    setTimeout(() => {
-      router.replace(targetRoute);
-    }, 50);
+      if (onSuccess) onSuccess(userData);
 
-    // استدعاء callback لو موجود
-    if (onSuccess) onSuccess(userData);
+      return userData;
+    } catch (error: any) {
+      console.error("Register failed:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    return userData;
-  } catch (error: any) {
-    console.error("Register failed:", error);
-
-    // يمكن التعامل مع رسائل خطأ backend هنا لو تحب
-    throw error;
-  } finally {
-    setIsLoading(false);
-  }
-};};  // Logout
+  // Logout
   const logout = () => {
     setUser(null);
     setToken(null);
