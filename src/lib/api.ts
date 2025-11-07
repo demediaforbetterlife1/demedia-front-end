@@ -57,8 +57,12 @@ async function tryDirectConnection(path: string, options: RequestInit = {}, auth
 }
 
 // ===== Unified API Fetch Wrapper =====
-// 🔹 authToken يجب تمريره عند الاستدعاء من AuthContext
+// 🔹 authToken optional, fallback to localStorage if not provided
 export async function apiFetch(path: string, options: RequestInit = {}, authToken?: string): Promise<Response> {
+  if (!authToken && typeof window !== "undefined") {
+    authToken = localStorage.getItem("token") || undefined;
+  }
+
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string> | undefined),
   };
@@ -157,10 +161,11 @@ interface UserProfileResponse {
 
 export async function getUserProfile(userId: string | number, authToken?: string): Promise<UserProfileResponse | null> {
   try {
-    const res = await apiFetch(`/api/users/${userId}/profile`, {
-      cache: "no-store",
-      headers: { "Content-Type": "application/json" },
-    }, authToken);
+    const res = await apiFetch(
+      `/api/users/${userId}/profile`,
+      { cache: "no-store", headers: { "Content-Type": "application/json" } },
+      authToken
+    );
 
     if (!res.ok) {
       const text = await res.text();
