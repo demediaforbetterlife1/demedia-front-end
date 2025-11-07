@@ -1,34 +1,35 @@
+// src/app/api/[...path]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs"; // استخدم "edge" لو عايز سرعة أعلى ومفيش socket
+export const runtime = "nodejs";
 
 const BACKEND_BASE = "https://demedia-backend.fly.dev";
 
-// Resolve params safely (يدعم Promise و Object)
+// ✅ حل شامل: دعم كل حالات params (Promise أو object أو undefined)
 async function resolveParams(context: any): Promise<string[]> {
-  if (!context) return [];
-  const maybeParams = context.params;
-  const resolved =
-    typeof maybeParams?.then === "function" ? await maybeParams : maybeParams;
-  return (resolved?.path ?? []) as string[];
+  try {
+    const maybeParams = await context?.params;
+    if (!maybeParams) return [];
+    if (Array.isArray(maybeParams.path)) return maybeParams.path;
+    if (typeof maybeParams.path === "string") return [maybeParams.path];
+    return [];
+  } catch {
+    return [];
+  }
 }
 
-// Unified handler (لكل الميثودات)
 async function handler(req: NextRequest, context: any): Promise<Response> {
-  const path = await resolveParams(context);
-  return proxyRequest(req, path);
+  const pathSegments = await resolveParams(context);
+  return proxyRequest(req, pathSegments);
 }
 
-// Proxy logic (الجزء الأساسي)
-async function proxyRequest(req: NextRequest, path: string[]): Promise<Response> {
-  const targetUrl = joinUrl(
-    BACKEND_BASE,
-    "/api/" + (path.length > 0 ? path.join("/") : "")
-  );
+async function proxyRequest(req: NextRequest, pathSegments: string[]): Promise<Response> {
+  // ✅ تأكد من دمج المسار صح
+  const targetUrl = `${BACKEND_BASE}/api/${pathSegments.join("/")}`.replace(/\/+$/, "");
+  console.log("🔗 Proxy →", targetUrl);
 
   const headers = new Headers(req.headers);
-  // بعض السيرفرات بترفض الـ "host" header فبنحذفه
   if (headers.has("host")) headers.delete("host");
 
   const init: RequestInit = {
@@ -43,17 +44,14 @@ async function proxyRequest(req: NextRequest, path: string[]): Promise<Response>
   }
 
   try {
-    // Timeout 30 ثانية علشان الطلب ما يعلقش
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
     init.signal = controller.signal;
 
-    console.log(`🔄 Proxying ${req.method} → ${targetUrl}`);
-
     const res = await fetch(targetUrl, init);
     clearTimeout(timeout);
 
-    console.log(`✅ Response ${res.status} ${res.statusText}`);
+    console.log(`✅ ${req.method} → ${res.status} (${targetUrl})`);
 
     const resHeaders = new Headers(res.headers);
     resHeaders.delete("transfer-encoding");
@@ -64,35 +62,16 @@ async function proxyRequest(req: NextRequest, path: string[]): Promise<Response>
       headers: resHeaders,
     });
   } catch (err: any) {
-    console.error(`❌ Proxy error: ${err?.message || err}`);
+    console.error("❌ Proxy error:", err);
 
     if (err?.name === "AbortError") {
-      return NextResponse.json(
-        {
-          error: "Request timeout",
-          details: "Backend took too long to respond",
-        },
-        { status: 504 }
-      );
+      return NextResponse.json({ error: "Timeout", details: "Backend took too long" }, { status: 504 });
     }
 
-    return NextResponse.json(
-      {
-        error: "Proxy failed",
-        details: err?.message || String(err),
-      },
-      { status: 502 }
-    );
+    return NextResponse.json({ error: "Proxy failed", details: err?.message || String(err) }, { status: 502 });
   }
 }
 
-// Join base + path safely
-function joinUrl(base: string, path: string): string {
-  if (base.endsWith("/")) base = base.slice(0, -1);
-  return base + path;
-}
-
-// Exports for Next.js handlers
 export const GET = handler;
 export const POST = handler;
 export const PUT = handler;
