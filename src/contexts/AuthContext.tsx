@@ -130,7 +130,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
       // redirect immediately (no refresh)
-      router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
+      router.push(userData.isSetupComplete ? "/home" : "/SignInSetUp");
 
       return userData;
     } catch (err) {
@@ -160,7 +160,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
       // redirect immediately (no refresh)
-      router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
+      router.push(userData.isSetupComplete ? "/home" : "/SignInSetUp");
 
       return userData;
     } catch (err) {
