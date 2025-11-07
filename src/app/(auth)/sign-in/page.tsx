@@ -150,7 +150,6 @@ export default function SignIn() {
     useEffect(() => {
         if (isLoading) return;
         if (isAuthenticated && user) {
-            router.replace(user.isSetupComplete ? "/home" : "/SignInSetUp");
         }
     }, [isAuthenticated, isLoading, user, router]);
 

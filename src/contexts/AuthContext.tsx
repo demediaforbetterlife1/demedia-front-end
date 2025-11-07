@@ -74,10 +74,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Load token from localStorage on mount and fetch user
   useEffect(() => {
-    if (typeof window === "undefined") {
+  if (typeof window === "undefined") {
+    setIsLoading(false);
+    return;
+  }
+
+  const storedToken = localStorage.getItem("token");
+  if (!storedToken) {
+    setIsLoading(false);
+    return;
+  }
+
+  // لو الـ user متسجّل بالفعل من login، بلاش نجيب نفس البيانات تاني
+  if (user) {
+    setIsLoading(false);
+    return;
+  }
+
+  setToken(storedToken);
+  applyAxiosToken(storedToken);
+
+  (async () => {
+    try {
+      const res = await axios.get("/api/auth/me", {
+        headers: { Authorization: `Bearer ${storedToken}` },
+      });
+      const userData: User = res.data.user || res.data;
+      setUser(userData);
+      if (userData?.language) setLanguage(userData.language);
+    } catch (err) {
+      console.warn("Failed to load user from token:", err);
+      // ❗️ ما تمسحش التوكن فورًا، خليه للمرة الجاية
+      // localStorage.removeItem("token");
+      // setToken(null);
+      // setUser(null);
+      applyAxiosToken(null);
+    } finally {
       setIsLoading(false);
-      return;
     }
+  })();
+}, [user]);
 
     const storedToken = localStorage.getItem("token");
     if (!storedToken) {
@@ -130,7 +166,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
       // redirect immediately (no refresh)
-      router.push(userData.isSetupComplete ? "/home" : "/SignInSetUp");
+      router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
 
       return userData;
     } catch (err) {
@@ -160,7 +196,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
       // redirect immediately (no refresh)
-      router.push(userData.isSetupComplete ? "/home" : "/SignInSetUp");
+      router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
 
       return userData;
     } catch (err) {
