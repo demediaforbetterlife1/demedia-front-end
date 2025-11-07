@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/contexts/I18nContext";
 import axios from "axios";
@@ -60,94 +54,56 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { setLanguage } = useI18n();
 
   const isAuthenticated = !!user;
 
-  // Load user if token exists
+  // Load user from HTTP-only cookie
   useEffect(() => {
     const loadUser = async () => {
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
-        const res = await axios.get("/api/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const userData: User = res.data;
+        const res = await axios.get("/api/auth/me", { withCredentials: true });
+        const userData = res.data.user || res.data;
         setUser(userData);
         if (userData.language) setLanguage(userData.language);
-      } catch (error) {
-        console.error("Failed to load user:", error);
-        setToken(null);
+      } catch (err) {
         setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
-
     loadUser();
-  }, [token]);
+  }, []);
 
   // Login
   const login = async (phoneNumber: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
-      const res = await axios.post("/api/auth/login", { phoneNumber, password });
-      const { token: authToken, user: userData } = res.data;
-
-      setToken(authToken);
+      const res = await axios.post("/api/auth/login", { phoneNumber, password }, { withCredentials: true });
+      const userData = res.data.user || res.data;
       setUser(userData);
-
       if (userData.language) setLanguage(userData.language);
-
-      router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
-
       if (userData.name) notificationService.showWelcomeNotification(userData.name);
-
+      router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
       return userData;
-    } catch (error) {
-      console.error("Login failed:", error);
-      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
   // Register
-  const register = async (
-    formData: Partial<User> & { password: string },
-    onSuccess?: (user: User) => void
-  ): Promise<User> => {
+  const register = async (formData: Partial<User> & { password: string }): Promise<User> => {
     setIsLoading(true);
     try {
-      console.log("Register: Sending data to backend:", formData);
-      const res = await axios.post("https://demedia-backend.fly.dev/api/auth/sign-up", formData);
-
-      const { token: authToken, user: userData } = res.data;
-
-      setToken(authToken);
+      const res = await axios.post("/api/auth/sign-up", formData, { withCredentials: true });
+      const userData = res.data.user || res.data;
       setUser(userData);
-
       if (userData.language) setLanguage(userData.language);
       if (userData.name) notificationService.showWelcomeNotification(userData.name);
-
-      const targetRoute = userData.isSetupComplete ? "/home" : "/SignInSetUp";
-      setTimeout(() => {
-        router.replace(targetRoute);
-      }, 50);
-
-      if (onSuccess) onSuccess(userData);
-
+      router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
       return userData;
-    } catch (error: any) {
-      console.error("Register failed:", error);
-      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -156,21 +112,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Logout
   const logout = () => {
     setUser(null);
-    setToken(null);
-    router.push("/sign-in");
+    axios.post("/api/auth/logout", {}, { withCredentials: true }).finally(() => {
+      router.push("/sign-in");
+    });
   };
 
   // Update user
   const updateUser = async (userData: Partial<User>) => {
-    if (!token) return;
     try {
-      const res = await axios.put("/api/users/me", userData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const updatedUser: User = res.data;
-      setUser(updatedUser);
-    } catch (error) {
-      console.error("Failed to update user:", error);
+      const res = await axios.put("/api/users/me", userData, { withCredentials: true });
+      setUser(res.data);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -182,16 +135,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        isAuthenticated,
-        login,
-        register,
-        logout,
-        updateUser,
-        completeSetup,
-      }}
+      value={{ user, isLoading, isAuthenticated, login, register, logout, updateUser, completeSetup }}
     >
       {children}
     </AuthContext.Provider>
