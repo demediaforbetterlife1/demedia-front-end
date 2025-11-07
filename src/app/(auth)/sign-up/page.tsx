@@ -352,12 +352,6 @@ export default function SignUpPage() {
     const { register, isAuthenticated, isLoading, user } = useAuth();
     const router = useRouter();
 
-    useEffect(() => {
-        if (isLoading) return;
-        if (isAuthenticated && user) {
-            router.replace(user.isSetupComplete ? "/(pages)/home" : "/SignInSetUp");
-        }
-    }, [isAuthenticated, isLoading, user, router]);
 
     // Form validation function
     const validateForm = () => {
