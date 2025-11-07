@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.tsx
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
@@ -10,9 +9,9 @@ import { notificationService } from "@/services/notificationService";
 interface User {
   id: string;
   name: string;
-  email?: string;
   username: string;
   phoneNumber: string;
+  email?: string;
   profilePicture?: string;
   coverPhoto?: string;
   bio?: string;
@@ -43,18 +42,13 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within an AuthProvider");
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
 };
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
@@ -63,30 +57,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user;
 
-  // helper to apply token to axios
-  const applyAxiosToken = (tkn: string | null) => {
-    if (tkn) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${tkn}`;
-    } else {
-      delete axios.defaults.headers.common["Authorization"];
-    }
+  const applyAxiosToken = (t?: string | null) => {
+    if (t) axios.defaults.headers.common["Authorization"] = `Bearer ${t}`;
+    else delete axios.defaults.headers.common["Authorization"];
   };
 
-  // ✅ Load token from localStorage on mount and fetch user
+  // ✅ Load token and user data from localStorage
   useEffect(() => {
-    if (typeof window === "undefined") {
-      setIsLoading(false);
-      return;
-    }
+    if (typeof window === "undefined") return;
 
     const storedToken = localStorage.getItem("token");
     if (!storedToken) {
-      setIsLoading(false);
-      return;
-    }
-
-    // لو الـ user متسجّل بالفعل من login، بلاش نجيب نفس البيانات تاني
-    if (user) {
       setIsLoading(false);
       return;
     }
@@ -96,61 +77,59 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     (async () => {
       try {
-        const res = await axios.get("/api/auth/me", {
-          headers: { Authorization: `Bearer ${storedToken}` },
-        });
-        const userData: User = res.data.user || res.data;
-        setUser(userData);
-        if (userData?.language) setLanguage(userData.language);
+        const res = await axios.get("/api/auth/me");
+        const u: User = res.data.user || res.data;
+        setUser(u);
+        if (u.language) setLanguage(u.language);
       } catch (err) {
-        console.warn("Failed to load user from token:", err);
+        console.warn("Token expired or invalid:", err);
+        localStorage.removeItem("token");
         applyAxiosToken(null);
       } finally {
         setIsLoading(false);
       }
     })();
-  }, [user]);
+  }, []);
 
   // ✅ Login
   const login = async (phoneNumber: string, password: string): Promise<User> => {
-  setIsLoading(true);
-  try {
-    const res = await axios.post("/api/auth/login", { phoneNumber, password });
-    const newToken = res.data.token || (res.data.user && res.data.user.token) || null;
-    const userData: User = res.data.user || res.data;
+    setIsLoading(true);
+    try {
+      const res = await axios.post("/api/auth/login", { phoneNumber, password });
+      const newToken = res.data.token;
+      const userData: User = res.data.user || res.data;
 
-    if (!newToken) throw new Error("No token returned from server.");
+      if (!newToken) throw new Error("No token returned from server.");
 
-    // ✅ خزّن التوكن فورًا قبل أي إعادة توجيه
-    localStorage.setItem("token", newToken);
-    setToken(newToken);
-    applyAxiosToken(newToken);
-    setUser(userData);
+      localStorage.setItem("token", newToken);
+      setToken(newToken);
+      applyAxiosToken(newToken);
+      setUser(userData);
 
-    if (userData.language) setLanguage(userData.language);
-    if (userData.name) notificationService.showWelcomeNotification(userData.name);
+      if (userData.language) setLanguage(userData.language);
+      if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
-    // ✅ استخدم router.push بدلاً من replace لتجنب مشاكل hydration
-    const target = userData.isSetupComplete ? "/home" : "/SignInSetUp";
-    setTimeout(() => router.push(target), 200); // تأخير بسيط عشان يضمن إن الـ state اتحفظت
+      // ✅ تأخير بسيط لتثبيت الحالة قبل التوجيه
+      setTimeout(() => router.push(userData.isSetupComplete ? "/home" : "/SignInSetUp"), 300);
 
-    return userData;
-  } catch (err: any) {
-    console.error("Login failed:", err);
-    throw err;
-  } finally {
-    setIsLoading(false);
-  }
-};
+      return userData;
+    } catch (err) {
+      console.error("Login failed:", err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // ✅ Register
   const register = async (formData: Partial<User> & { password: string }): Promise<User> => {
     setIsLoading(true);
     try {
       const res = await axios.post("/api/auth/sign-up", formData);
-      const newToken = res.data.token || (res.data.user && res.data.user.token) || null;
+      const newToken = res.data.token;
       const userData: User = res.data.user || res.data;
 
-      if (newToken && typeof window !== "undefined") {
+      if (newToken) {
         localStorage.setItem("token", newToken);
         setToken(newToken);
         applyAxiosToken(newToken);
@@ -158,9 +137,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       setUser(userData);
       if (userData.language) setLanguage(userData.language);
-      if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
-      router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
+      setTimeout(() => router.push(userData.isSetupComplete ? "/home" : "/SignInSetUp"), 300);
 
       return userData;
     } catch (err) {
@@ -173,22 +151,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // ✅ Logout
   const logout = () => {
+    localStorage.removeItem("token");
     setUser(null);
     setToken(null);
-    localStorage.removeItem("token");
     applyAxiosToken(null);
-    axios.post("/api/auth/logout").catch(() => {});
     router.push("/sign-in");
   };
 
   // ✅ Update user
   const updateUser = async (userData: Partial<User>) => {
     try {
-      const res = await axios.put("/api/users/me", userData, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
-      const updated: User = res.data;
-      setUser(updated);
+      const res = await axios.put("/api/users/me", userData);
+      setUser(res.data);
     } catch (err) {
       console.error("Failed to update user:", err);
     }
@@ -206,12 +180,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user,
         isLoading,
         isAuthenticated,
+        token,
         login,
         register,
         logout,
         updateUser,
         completeSetup,
-        token,
       }}
     >
       {children}
