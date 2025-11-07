@@ -152,7 +152,12 @@ export default function SignIn() {
         if (isAuthenticated && user) {
         }
     }, [isAuthenticated, isLoading, user, router]);
-
+// ✅ لو المستخدم بالفعل مسجّل دخول، انقله فورًا
+useEffect(() => {
+  if (!isLoading && isAuthenticated && user) {
+    router.push("/home");
+  }
+}, [isAuthenticated, isLoading, user]);
     useEffect(() => {
         try {
             const saved = localStorage.getItem('rememberPhone');
@@ -179,8 +184,7 @@ export default function SignIn() {
                 } else {
                     localStorage.removeItem('rememberPhone');
                 }
-                // Login successful - redirect will be handled by AuthGuard
-                console.log('Login successful, redirecting...');
+            
             }
         } catch (err: any) {
             console.error('Login error:', err);

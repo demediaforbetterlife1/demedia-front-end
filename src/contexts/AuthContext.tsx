@@ -113,34 +113,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // ✅ Login
   const login = async (phoneNumber: string, password: string): Promise<User> => {
-    setIsLoading(true);
-    try {
-      const res = await axios.post("/api/auth/login", { phoneNumber, password });
-      const newToken = res.data.token || (res.data.user && res.data.user.token) || null;
-      const userData: User = res.data.user || res.data;
+  setIsLoading(true);
+  try {
+    const res = await axios.post("/api/auth/login", { phoneNumber, password });
+    const newToken = res.data.token || (res.data.user && res.data.user.token) || null;
+    const userData: User = res.data.user || res.data;
 
-      if (newToken && typeof window !== "undefined") {
-        localStorage.setItem("token", newToken);
-        setToken(newToken);
-        applyAxiosToken(newToken);
-      }
+    if (!newToken) throw new Error("No token returned from server.");
 
-      setUser(userData);
-      if (userData.language) setLanguage(userData.language);
-      if (userData.name) notificationService.showWelcomeNotification(userData.name);
+    // ✅ خزّن التوكن فورًا قبل أي إعادة توجيه
+    localStorage.setItem("token", newToken);
+    setToken(newToken);
+    applyAxiosToken(newToken);
+    setUser(userData);
 
-      // redirect immediately (no refresh)
-      router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
+    if (userData.language) setLanguage(userData.language);
+    if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
-      return userData;
-    } catch (err) {
-      console.error("Login failed:", err);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    // ✅ استخدم router.push بدلاً من replace لتجنب مشاكل hydration
+    const target = userData.isSetupComplete ? "/home" : "/SignInSetUp";
+    setTimeout(() => router.push(target), 200); // تأخير بسيط عشان يضمن إن الـ state اتحفظت
 
+    return userData;
+  } catch (err: any) {
+    console.error("Login failed:", err);
+    throw err;
+  } finally {
+    setIsLoading(false);
+  }
+};
   // ✅ Register
   const register = async (formData: Partial<User> & { password: string }): Promise<User> => {
     setIsLoading(true);
