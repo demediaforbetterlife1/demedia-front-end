@@ -111,6 +111,17 @@ export async function apiFetch(path: string, options: RequestInit = {}, authToke
       const res = await fetch(url, fetchOptions);
       clearTimeout(t);
 
+      // ✅ تخزين التوكن تلقائيًا لو رجع من الـ API
+      try {
+        const clone = res.clone(); // نعمل نسخة لتفادي استهلاك body
+        const data = await clone.json().catch(() => null);
+        if (data?.token && typeof window !== "undefined") {
+          localStorage.setItem("token", data.token);
+        }
+      } catch (e) {
+        // ignore JSON errors
+      }
+
       if (res.status === 401 && typeof window !== "undefined" && !path.includes("/auth/me")) {
         console.log("🔒 Unauthorized → auto logout event");
         window.dispatchEvent(new CustomEvent("auth:logout"));
@@ -135,7 +146,6 @@ export async function apiFetch(path: string, options: RequestInit = {}, authToke
 
   throw lastError;
 }
-
 // ===== User Profile Fetcher =====
 interface UserProfileResponse {
   id: number;
