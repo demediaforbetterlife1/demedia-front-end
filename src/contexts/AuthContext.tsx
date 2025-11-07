@@ -72,48 +72,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Load token from localStorage on mount and fetch user
+  // ✅ Load token from localStorage on mount and fetch user
   useEffect(() => {
-  if (typeof window === "undefined") {
-    setIsLoading(false);
-    return;
-  }
-
-  const storedToken = localStorage.getItem("token");
-  if (!storedToken) {
-    setIsLoading(false);
-    return;
-  }
-
-  // لو الـ user متسجّل بالفعل من login، بلاش نجيب نفس البيانات تاني
-  if (user) {
-    setIsLoading(false);
-    return;
-  }
-
-  setToken(storedToken);
-  applyAxiosToken(storedToken);
-
-  (async () => {
-    try {
-      const res = await axios.get("/api/auth/me", {
-        headers: { Authorization: `Bearer ${storedToken}` },
-      });
-      const userData: User = res.data.user || res.data;
-      setUser(userData);
-      if (userData?.language) setLanguage(userData.language);
-    } catch (err) {
-      console.warn("Failed to load user from token:", err);
-      // ❗️ ما تمسحش التوكن فورًا، خليه للمرة الجاية
-      // localStorage.removeItem("token");
-      // setToken(null);
-      // setUser(null);
-      applyAxiosToken(null);
-    } finally {
+    if (typeof window === "undefined") {
       setIsLoading(false);
+      return;
     }
-  })();
-}, [user]);
 
     const storedToken = localStorage.getItem("token");
     if (!storedToken) {
@@ -121,33 +85,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return;
     }
 
+    // لو الـ user متسجّل بالفعل من login، بلاش نجيب نفس البيانات تاني
+    if (user) {
+      setIsLoading(false);
+      return;
+    }
+
     setToken(storedToken);
     applyAxiosToken(storedToken);
 
-    // fetch user
     (async () => {
       try {
         const res = await axios.get("/api/auth/me", {
           headers: { Authorization: `Bearer ${storedToken}` },
         });
-        // backend responds { user: { ... } } or the user object — handle both
         const userData: User = res.data.user || res.data;
         setUser(userData);
         if (userData?.language) setLanguage(userData.language);
       } catch (err) {
         console.warn("Failed to load user from token:", err);
-        // invalid token -> remove it
-        localStorage.removeItem("token");
-        setToken(null);
-        setUser(null);
         applyAxiosToken(null);
       } finally {
         setIsLoading(false);
       }
     })();
-  }, []);
+  }, [user]);
 
-  // Login
+  // ✅ Login
   const login = async (phoneNumber: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
@@ -177,7 +141,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Register
+  // ✅ Register
   const register = async (formData: Partial<User> & { password: string }): Promise<User> => {
     setIsLoading(true);
     try {
@@ -195,7 +159,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userData.language) setLanguage(userData.language);
       if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
-      // redirect immediately (no refresh)
       router.replace(userData.isSetupComplete ? "/home" : "/SignInSetUp");
 
       return userData;
@@ -207,18 +170,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Logout
+  // ✅ Logout
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("token");
     applyAxiosToken(null);
-    // call backend logout if you want to clear cookie on server
     axios.post("/api/auth/logout").catch(() => {});
     router.push("/sign-in");
   };
 
-  // Update user
+  // ✅ Update user
   const updateUser = async (userData: Partial<User>) => {
     try {
       const res = await axios.put("/api/users/me", userData, {
@@ -231,7 +193,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Complete setup
+  // ✅ Complete setup
   const completeSetup = async () => {
     await updateUser({ isSetupComplete: true });
     router.push("/home");
@@ -239,7 +201,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated, login, register, logout, updateUser, completeSetup, token }}
+      value={{
+        user,
+        isLoading,
+        isAuthenticated,
+        login,
+        register,
+        logout,
+        updateUser,
+        completeSetup,
+        token,
+      }}
     >
       {children}
     </AuthContext.Provider>
