@@ -125,26 +125,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // ===== Register =====
   const register = async (
-  data: Partial<User> & { password: string },
-  onSuccess?: (user: User) => void
+  data: Partial<User> & { password: string }
 ): Promise<User> => {
   setIsLoading(true);
   try {
+    // ارسال بيانات التسجيل للباك اند
     const res = await axios.post("/api/auth/register", data);
+
+    // استلام التوكن وبيانات المستخدم
     const { token: authToken, user: userData } = res.data;
 
+    // حفظ التوكن وبيانات المستخدم في state فقط
     setToken(authToken);
     setUser(userData);
 
+    // ضبط اللغة لو موجودة
     if (userData.language) setLanguage(userData.language);
+
+    // اظهار رسالة ترحيب لو فيه اسم
     if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
-    if (onSuccess) onSuccess(userData);
+    // توجيه المستخدم مباشرة بعد التسجيل
+    router.replace("/SignInSetUp");
 
+    // ترجع بيانات المستخدم لو حبيت تستخدمها بعدين
     return userData;
   } catch (error) {
     console.error("Register failed:", error);
-    throw error;
+    throw error; // عشان الصفحة تتعامل مع أي خطأ
   } finally {
     setIsLoading(false);
   }
