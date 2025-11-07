@@ -120,31 +120,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Register
-  const register = async (data: Partial<User> & { password: string }): Promise<User> => {
-    setIsLoading(true);
-    try {
-      const res = await axios.post("/api/auth/register", data);
-      const { token: authToken, user: userData } = res.data;
+  const register = async (
+  data: Partial<User> & { password: string },
+  onSuccess?: (user: User) => void
+): Promise<User> => {
+  setIsLoading(true);
+  try {
+    const res = await axios.post("/api/auth/register", data);
+    const { token: authToken, user: userData } = res.data;
 
-      setToken(authToken);
-      setUser(userData);
+    setToken(authToken);
+    setUser(userData);
 
-      if (userData.language) setLanguage(userData.language);
-      if (userData.name) notificationService.showWelcomeNotification(userData.name);
+    if (userData.language) setLanguage(userData.language);
+    if (userData.name) notificationService.showWelcomeNotification(userData.name);
 
-      // Redirect after registration
-      router.replace("/SignInSetUp");
+    // 🔹 بعد التسجيل دائماً ارسل المستخدم لصفحة SignInSetUp
+    router.replace("/SignInSetUp");
 
-      console.log("Registration response:", res.data);
+    if (onSuccess) onSuccess(userData);
 
-      return userData;
-    } catch (error) {
-      console.error("Register failed:", error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    return userData;
+  } catch (error) {
+    console.error("Register failed:", error);
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Logout
   const logout = () => {
