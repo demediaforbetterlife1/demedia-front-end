@@ -148,7 +148,7 @@ interface Profile {
 }
 
 export default function ProfilePage() {
-    const { user, isLoading: authLoading } = useAuth();
+    const { user, isLoading: authLoading, updateUser } = useAuth();
     const { theme } = useTheme();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -347,14 +347,26 @@ export default function ProfilePage() {
                     return;
                 }
 
-                // Normalize data
+                // Normalize data and format photo URLs
+                let profilePictureUrl = data.profilePicture ?? null;
+                let coverPhotoUrl = data.coverPhoto ?? null;
+                
+                // Ensure URLs are absolute if they're relative
+                if (profilePictureUrl && typeof profilePictureUrl === 'string' && !profilePictureUrl.startsWith('http')) {
+                    profilePictureUrl = `https://demedia-backend.fly.dev${profilePictureUrl}`;
+                }
+                if (coverPhotoUrl && typeof coverPhotoUrl === 'string' && !coverPhotoUrl.startsWith('http')) {
+                    coverPhotoUrl = `https://demedia-backend.fly.dev${coverPhotoUrl}`;
+                }
+                
                 const normalized: Profile = {
                     id: data.id,
                     name: data.name,
                     username: data.username,
                     bio: data.bio ?? "",
-                    profilePicture: data.profilePicture ?? null,
-                    coverPicture: data.coverPhoto,
+                    profilePicture: profilePictureUrl,
+                    coverPicture: coverPhotoUrl,
+                    coverPhoto: coverPhotoUrl,
                     stories: userStories.map((story: any) => ({
                         id: story.id,
                         content: story.content,
@@ -556,7 +568,7 @@ export default function ProfilePage() {
                 body: JSON.stringify({
                     participantId: profile.id
                 })
-            });
+            }, user.id);
 
             if (res.ok) {
                 const chatData = await res.json();
@@ -615,21 +627,22 @@ export default function ProfilePage() {
                 }
                 console.log('Formatted photo URL:', photoUrl);
                 
-                // Update profile state with new photo URL
+                // Add cache-busting query parameter to photo URL
+                const photoUrlWithCache = `${photoUrl}?t=${Date.now()}`;
+                
+                // Update profile state with new photo URL (with cache busting)
                 setProfile(prev => prev ? {
                     ...prev,
-                    [type === 'profile' ? 'profilePicture' : 'coverPicture']: photoUrl
+                    [type === 'profile' ? 'profilePicture' : 'coverPicture']: photoUrlWithCache,
+                    [type === 'profile' ? 'profilePicture' : 'coverPhoto']: photoUrlWithCache
                 } : null);
                 
                 // Also update the user context if it's the current user's profile
-                if (isOwnProfile && user) {
+                if (isOwnProfile && user && updateUser) {
                     // Update user context with new photo URL
-                    const updatedUser = {
-                        ...user,
-                        [type === 'profile' ? 'profilePicture' : 'coverPhoto']: photoUrl
-                    };
-                    // Note: You might need to add a method to update user context
-                    // This depends on how your AuthContext is implemented
+                    updateUser({
+                        [type === 'profile' ? 'profilePicture' : 'coverPhoto']: photoUrlWithCache
+                    });
                 }
                 
                 // Show success notification
@@ -644,16 +657,27 @@ export default function ProfilePage() {
                     console.log('Notification service not available');
                 }
                 
-                // Force a page refresh to ensure photo is displayed
-                if (isOwnProfile) {
-                    // Reload the profile data immediately
+                // Reload the profile data to ensure everything is in sync
+                try {
                     const profileData = await getUserProfile(userId);
                     if (profileData) {
+                        // Update profile with fresh data from server
                         setProfile(prev => prev ? {
                             ...prev,
-                            [type === 'profile' ? 'profilePicture' : 'coverPicture']: photoUrl
+                            id: profileData.id,
+                            name: profileData.name,
+                            username: profileData.username,
+                            bio: profileData.bio ?? "",
+                            profilePicture: profileData.profilePicture ? `${profileData.profilePicture}?t=${Date.now()}` : null,
+                            coverPicture: profileData.coverPhoto ? `${profileData.coverPhoto}?t=${Date.now()}` : null,
+                            coverPhoto: profileData.coverPhoto ? `${profileData.coverPhoto}?t=${Date.now()}` : null,
+                            followersCount: profileData.followersCount ?? prev?.followersCount ?? 0,
+                            followingCount: profileData.followingCount ?? prev?.followingCount ?? 0,
+                            likesCount: profileData.likesCount ?? prev?.likesCount ?? 0,
                         } : null);
                     }
+                } catch (err) {
+                    console.error('Error refreshing profile after photo upload:', err);
                 }
             } else {
                 console.error(`Failed to upload ${type} photo`);
