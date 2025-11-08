@@ -270,18 +270,20 @@ class DataService {
     return this.makeRequest<Story[]>('/api/stories');
   }
 
-  async createStory(content: File, type: 'image' | 'video'): Promise<Story> {
-    const formData = new FormData();
-    formData.append('content', content);
-    formData.append('type', type);
+  async createStory(file: File, type: string, userId?: string) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("type", type);
+  if (userId) formData.append("userId", userId);
 
-    return this.makeRequest<Story>('/api/stories', {
-      method: 'POST',
-      body: formData,
-      headers: {}, // Let browser set Content-Type for FormData
-    });
-  }
+  const res = await fetch("/api/stories", {
+    method: "POST",
+    body: formData,
+  });
 
+  if (!res.ok) throw new Error("Failed to create story");
+  return res.json();
+}
   async viewStory(storyId: string, userId?: string | number): Promise<void> {
     try {
       // userId should be passed from AuthContext, not localStorage
