@@ -105,46 +105,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     loadUser();
   }, [setLanguage]);
-
+  
+  
+.useEffect(() => {
+  if (user) {
+    const setupComplete = user.isSetupComplete ?? false;
+    router.replace(setupComplete ? '/home' : '/SignInSetUp');
+  }
+}, [user, router]);
   // =======================
   // Login
   // =======================
   const login = async (phoneNumber: string, password: string): Promise<boolean | { requiresPhoneVerification: boolean; verificationToken?: string; message?: string }> => {
-    setIsLoading(true);
-    try {
-      const res = await apiFetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber, password }),
-      });
+  setIsLoading(true);
+  try {
+    const res = await apiFetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phoneNumber, password }),
+    });
 
-      if (!res.ok) throw new Error('Login failed');
+    if (!res.ok) throw new Error('Login failed');
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (data.requiresPhoneVerification) {
-        return { requiresPhoneVerification: true, verificationToken: data.verificationToken, message: data.message };
-      }
-
-      if (data.token) localStorage.setItem('token', data.token);
-
-      setUser(data.user);
-      if (data.user.language) setLanguage(data.user.language);
-
-      if (data.user.isSetupComplete) router.replace('/home');
-      else router.replace('/SignInSetUp');
-
-      if (data.user.name) notificationService.showWelcomeNotification(data.user.name);
-
-      return true;
-    } catch (err) {
-      console.error('Login error:', err);
-      return false;
-    } finally {
-      setIsLoading(false);
+    if (data.requiresPhoneVerification) {
+      return { requiresPhoneVerification: true, verificationToken: data.verificationToken, message: data.message };
     }
-  };
 
+    if (data.token) localStorage.setItem('token', data.token);
+
+    setUser(data.user);
+    if (data.user.language) setLanguage(data.user.language);
+
+    // مش هنا redirect بعد كده، هنعمله في useEffect
+    return true;
+  } catch (err) {
+    console.error('Login error:', err);
+    return false;
+  } finally {
+    setIsLoading(false);
+  }
+};
   // =======================
   // Register
   // =======================
