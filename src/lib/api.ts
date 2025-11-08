@@ -1,54 +1,84 @@
 // src/lib/api.ts
 /* =========================================================================
-   Robust API helper for Demedia frontend
-   - All data fetched from backend (backend is source of truth)
-   - JWT stored in localStorage, auto-attached to requests
-   - Retry logic, timeouts, direct-backend fallback
-   - TypeScript types for responses
+   Central API helpers for Demedia frontend (TypeScript)
+   - All user/profile data is fetched from backend endpoints (no user data
+     retrieval from localStorage).
+   - Only the auth token (JWT) is read/written from localStorage.
+   - Robust fetch with retries, timeouts and direct-backend fallback.
    ========================================================================= */
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
-const API_BASE = ""; // Next.js /api rewrites
-const DIRECT_API_BASE = "https://demedia-backend.fly.dev";
+const API_BASE = ""; // same-origin; Next.js rewrites /api to backend in production
+const DIRECT_API_BASE = "https://demedia-backend.fly.dev"; // direct backend fallback
 
 /* ------------------------------------------------------------------------- */
 /* --------------------------- Utility helpers ----------------------------- */
 /* ------------------------------------------------------------------------- */
 
+/** Try connecting directly to the backend domain (fallback) */
 async function tryDirectConnection(path: string, options: RequestInit = {}): Promise<Response> {
-  const url = `${DIRECT_API_BASE}${path}`;
+  const directUrl = `${DIRECT_API_BASE}${path}`;
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 15000);
-    const res = await fetch(url, { ...options, signal: controller.signal, credentials: "include" });
-    clearTimeout(timer);
-    return res.status === 500
-      ? new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } })
-      : res;
-  } catch (err) {
+    const t = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch(directUrl, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        "Content-Type": "application/json",
+      },
+      signal: controller.signal,
+      credentials: "include",
+    });
+    clearTimeout(t);
+
+    // Graceful fallback for 500
+    if (response.status === 500) {
+      return new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+    return response;
+  } catch (error) {
+    console.error("[api] tryDirectConnection failed:", error);
     return new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } });
   }
 }
 
+/** Safe JSON reader that falls back to text/status message */
 export async function readJsonSafe<T = unknown>(res: Response): Promise<T | { error?: string }> {
-  try { return await res.json() as T; }
-  catch { 
-    try { const txt = await res.text(); return { error: txt || res.statusText }; } 
-    catch { return { error: res.statusText }; } 
+  try {
+    return (await res.json()) as T;
+  } catch {
+    try {
+      const txt = await res.text();
+      return { error: txt || res.statusText };
+    } catch {
+      return { error: res.statusText };
+    }
   }
 }
 
-function getToken(): string | null {
+/* ------------------------------------------------------------------------- */
+/* -------------------------- Auth helpers --------------------------------- */
+/* ------------------------------------------------------------------------- */
+
+/** Only token is stored in localStorage — everything else pulled from backend */
+export function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("token");
 }
 
-function getAuthHeaders(): Record<string, string> {
+/** Return headers including Authorization if token exists */
+export function getAuthHeaders(): Record<string, string> {
   const token = getToken();
-  const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-  return headers;
+  const base: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
+  if (token) base["Authorization"] = `Bearer ${token}`;
+  const userId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+  if (userId) base["user-id"] = userId;
+  return base;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -56,42 +86,138 @@ function getAuthHeaders(): Record<string, string> {
 /* ------------------------------------------------------------------------- */
 
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  // attach token/userId headers from localStorage if present
   const token = getToken();
-  const headers: Record<string, string> = { ...(options.headers as Record<string, string> || {}) };
+  const userId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+
+  // copy/merge headers
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string> | undefined) || {},
+  };
+
   if (token) headers["Authorization"] = `Bearer ${token}`;
-  if (options.body && !(options.body instanceof FormData) && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
+  if (userId) headers["user-id"] = userId;
 
+  // Only set Content-Type automatically if body is not FormData
+  if (!headers["Content-Type"] && options.body && !(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  // build URL (API_BASE may be empty => same-origin)
   let url = `${API_BASE}${path}`;
-  const method = ((options.method || "GET") as string).toUpperCase();
-  if (method === "GET") url += `${path.includes("?") ? "&" : "?"}cb=${Date.now()}&v=client-1`;
 
-  const isAuth = path.includes("/auth");
-  const timeouts = isAuth ? [20000] : [15000, 25000, 35000];
+  // cache-busting for GET requests
+  const method = ((options.method || "GET") as string).toUpperCase();
+  if (method === "GET") {
+    const cb = Date.now();
+    url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}cb=${cb}&v=client-1`;
+  }
+
+  const isPostsEndpoint = path.includes("/posts");
+  const isAuthEndpoint = path.includes("/auth");
+  const timeouts = isPostsEndpoint ? [5000, 8000, 10000] : isAuthEndpoint ? [20000] : [15000, 25000, 35000];
   const maxRetries = timeouts.length - 1;
+
   let lastError: any = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const timeout = timeouts[attempt];
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeouts[attempt]);
-      const res: Response = await fetch(url, { ...options, headers, signal: controller.signal, credentials: "include" });
-      clearTimeout(timer);
+      // choose fetch options
+      let fetchOptions: RequestInit;
+      if (isPostsEndpoint || isAuthEndpoint) {
+        // don't abort posts/auth requests (to avoid mid-flight aborts)
+        fetchOptions = {
+          ...options,
+          headers,
+          cache: "no-cache",
+          mode: "cors",
+          credentials: "include",
+        };
+      } else {
+        // use AbortController for non-auth/post endpoints
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeout);
 
-      if (res.status === 401 && typeof window !== "undefined") {
-        localStorage.removeItem("token");
-        window.dispatchEvent(new CustomEvent("auth:logout"));
+        fetchOptions = {
+          ...options,
+          headers,
+          signal: controller.signal,
+          cache: "no-cache",
+          mode: "cors",
+          credentials: "omit",
+        };
+
+        // Note: timer will be cleared implicitly when request finishes or caught below
       }
 
-      if (isAuth && res.status === 504) return await tryDirectConnection(path, { ...options, headers });
+      // For auth endpoints: soft timeout using Promise.race to return 504 synthetic response
+      const res: Response = isAuthEndpoint
+        ? await Promise.race<Promise<Response>>([
+            fetch(url, fetchOptions),
+            new Promise<Response>((resolve) =>
+              setTimeout(() => {
+                const body = JSON.stringify({ error: "Auth request timed out" });
+                resolve(new Response(body, { status: 504, headers: { "Content-Type": "application/json" } }));
+              }, timeout || 20000)
+            ),
+          ])
+        : await fetch(url, fetchOptions);
+
+      // handle unauthorized centrally
+      if (res.status === 401) {
+        // If it's not the auth/me check, remove token and broadcast logout
+        if (typeof window !== "undefined" && !path.includes("/auth/me")) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userId");
+          window.dispatchEvent(new CustomEvent("auth:logout"));
+        }
+      }
+
+      // if auth synthetic timeout (504), try direct backend
+      if (isAuthEndpoint && res.status === 504) {
+        try {
+          const directRes = await tryDirectConnection(path, { ...options, headers });
+          return directRes;
+        } catch (e) {
+          throw new Error("Auth request timed out");
+        }
+      }
 
       return res;
     } catch (err: any) {
       lastError = err;
+      const errName = err?.name || "";
       const msg = (err?.message || "").toString();
       const isNetworkError = msg.includes("Failed to fetch") || msg.includes("NetworkError") || msg.includes("timeout");
 
-      if (attempt < maxRetries && (isNetworkError || err?.name === "AbortError")) await new Promise(r => setTimeout(r, (attempt + 1) * 1000));
-      else if (attempt === maxRetries) return await tryDirectConnection(path, options);
+      // Retry policy
+      if (errName === "AbortError") {
+        if (attempt < maxRetries) {
+          await new Promise((r) => setTimeout(r, (attempt + 1) * 1000));
+          continue;
+        } else if (isAuthEndpoint) {
+          try {
+            return await tryDirectConnection(path, options);
+          } catch {}
+        }
+      }
+
+      if (attempt < maxRetries && isNetworkError) {
+        await new Promise((r) => setTimeout(r, (attempt + 1) * 1000));
+        continue;
+      }
+
+      // final fallback: try direct backend
+      if (attempt === maxRetries && (isNetworkError || errName === "AbortError")) {
+        try {
+          return await tryDirectConnection(path, options);
+        } catch (directErr) {
+          throw err;
+        }
+      }
+
+      throw err;
     }
   }
 
@@ -99,8 +225,10 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
 }
 
 /* ------------------------------------------------------------------------- */
-/* -------------------------- Types --------------------------------------- */
+/* ----------------------------- API wrappers ------------------------------ */
 /* ------------------------------------------------------------------------- */
+
+/* ----------------------------- Types ------------------------------------ */
 
 export interface User {
   id: string;
@@ -113,151 +241,298 @@ export interface User {
   location?: string | null;
   website?: string | null;
   dateOfBirth?: string | null;
+  dob?: string | null;
   age?: number | null;
   language?: string | null;
+  preferredLang?: string | null;
+  privacy?: string | null;
+  interests?: string[] | null;
   isSetupComplete?: boolean;
   isPhoneVerified?: boolean;
-  interests?: string[];
   createdAt?: string;
 }
 
-export interface Post {
-  id: string;
-  author: User;
-  content: string;
-  media?: string[];
-  createdAt: string;
-  updatedAt?: string;
-  likes?: number;
-  comments?: number;
+export interface AuthResponse {
+  token?: string;
+  user?: User;
+  requiresPhoneVerification?: boolean;
+  message?: string;
+  error?: string;
 }
 
-export interface Notification {
-  id: string;
-  type: string;
-  message: string;
-  read: boolean;
-  createdAt: string;
-}
+/* ----------------------------- Generic request -------------------------- */
 
-/* ------------------------------------------------------------------------- */
-/* ----------------------------- API Wrappers ----------------------------- */
-/* ------------------------------------------------------------------------- */
-
-async function requestJson<T>(path: string, opts: RequestInit = {}): Promise<T> {
+async function requestJson<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   const res = await apiFetch(path, opts);
   const parsed = await readJsonSafe<T | { error?: string }>(res);
-  if (!res.ok) throw new Error((parsed as any)?.error || (parsed as any)?.message || res.statusText);
+  if (!res.ok) {
+    const errMsg = (parsed as any)?.error || (parsed as any)?.message || res.statusText;
+    throw new Error(`Request failed ${res.status} - ${errMsg}`);
+  }
   return parsed as T;
 }
 
-/* ---------------------- Auth ---------------------- */
-export async function signUp(payload: { name: string; username: string; phoneNumber: string; password: string }): Promise<{ token?: string; user?: User; requiresPhoneVerification?: boolean }> {
-  const res = await requestJson<{ token?: string; user?: User; requiresPhoneVerification?: boolean }>("/api/auth/sign-up", { method: "POST", body: JSON.stringify(payload) });
-  if (res.token) localStorage.setItem("token", res.token);
-  if (res.user?.id) localStorage.setItem("userId", res.user.id);
+/* ----------------------------- Auth endpoints --------------------------- */
+
+/** Sign up (register using phoneNumber) */
+export async function signUp(payload: {
+  name: string;
+  username: string;
+  phoneNumber: string;
+  password: string;
+}): Promise<AuthResponse> {
+  const res = await requestJson<AuthResponse>("/api/auth/sign-up", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (res?.token) {
+    localStorage.setItem("token", res.token);
+    if (res.user?.id) localStorage.setItem("userId", String(res.user.id));
+  }
   return res;
 }
 
-export async function signIn(payload: { phoneNumber: string; password: string }): Promise<{ token?: string; user?: User; requiresPhoneVerification?: boolean }> {
-  const res = await requestJson<{ token?: string; user?: User; requiresPhoneVerification?: boolean }>("/api/auth/login", { method: "POST", body: JSON.stringify(payload) });
-  if (res.token) localStorage.setItem("token", res.token);
-  if (res.user?.id) localStorage.setItem("userId", res.user.id);
+/** Sign in (login) */
+export async function signIn(payload: { phoneNumber: string; password: string }): Promise<AuthResponse> {
+  const res = await requestJson<AuthResponse>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (res?.token) {
+    localStorage.setItem("token", res.token);
+    if (res.user?.id) localStorage.setItem("userId", String(res.user.id));
+  }
   return res;
 }
 
+/** Fetch current authenticated user from backend only */
 export async function fetchCurrentUser(): Promise<User | null> {
   try {
-    const res = await requestJson<{ user: User | null }>("/api/auth/me", { method: "GET", headers: getAuthHeaders(), cache: "no-store" });
-    return res.user || null;
-  } catch { return null; }
+    const body = await requestJson<{ user: User | null }>("/api/auth/me", {
+      method: "GET",
+      headers: getAuthHeaders(),
+      cache: "no-store",
+    });
+
+    if (!body || !body.user) return null;
+    return body.user;
+  } catch (err) {
+    console.warn("[api] fetchCurrentUser failed:", err);
+    return null;
+  }
 }
 
+/** Verify phone token (if you need it later) */
 export async function verifyPhone(token: string): Promise<boolean> {
-  const res = await requestJson<{ success: boolean }>("/api/auth/verify-phone", { method: "POST", body: JSON.stringify({ token }), headers: getAuthHeaders() });
+  const res = await requestJson<{ success: boolean; message?: string }>("/api/auth/verify-phone", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+    headers: getAuthHeaders(),
+  });
   return !!res.success;
 }
 
+/** Resend phone verification code */
 export async function resendPhoneVerification(phoneNumber: string): Promise<boolean> {
-  const res = await requestJson<{ success: boolean }>("/api/auth/resend-verification", { method: "POST", body: JSON.stringify({ phoneNumber }), headers: { "Content-Type": "application/json" } });
+  const res = await requestJson<{ success: boolean; message?: string }>("/api/auth/resend-verification", {
+    method: "POST",
+    body: JSON.stringify({ phoneNumber }),
+    headers: { "Content-Type": "application/json" },
+  });
   return !!res.success;
 }
 
+/** Send verification code (sms/whatsapp) */
 export async function sendVerificationCode(phoneNumber: string, method: "whatsapp" | "sms"): Promise<boolean> {
-  const res = await requestJson<{ success: boolean }>("/api/auth/send-verification", { method: "POST", body: JSON.stringify({ phoneNumber, method }), headers: { "Content-Type": "application/json" } });
+  const res = await requestJson<{ success: boolean }>("/api/auth/send-verification", {
+    method: "POST",
+    body: JSON.stringify({ phoneNumber, method }),
+    headers: { "Content-Type": "application/json" },
+  });
   return !!res.success;
 }
 
-export function logoutClient() {
+/** Logout (clears token on client) */
+export function logoutClient(): void {
   localStorage.removeItem("token");
   localStorage.removeItem("userId");
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("auth:logout"));
 }
 
-/* ---------------------- User ---------------------- */
-export async function getUserProfile(userId: string): Promise<User | null> {
-  try { return await requestJson<User>(`/api/users/${userId}/profile`, { method: "GET", headers: getAuthHeaders(), cache: "no-store" }); } 
-  catch { return null; }
-}
+/* ----------------------------- User endpoints --------------------------- */
 
-export async function updateUserProfile(updates: Partial<User>): Promise<User | null> {
+/** Get a user's public profile by id (pulls from backend) */
+export async function getUserProfile(userId: string | number) {
   try {
-    const res = await requestJson<{ user: User }>("/api/user/update", { method: "PATCH", body: JSON.stringify(updates), headers: getAuthHeaders() });
-    return res.user || null;
-  } catch { return null; }
+    const res = await apiFetch(`/api/users/${userId}/profile`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`Failed to get profile: ${res.status} ${txt}`);
+    }
+    const profile = await res.json();
+    return profile;
+  } catch (err) {
+    console.error("[api] getUserProfile error:", err);
+    return null;
+  }
 }
 
-/* ---------------------- Posts ---------------------- */
-export async function getPosts(params: { page?: number; limit?: number; q?: string } = {}): Promise<Post[]> {
-  const searchParams = new URLSearchParams({ page: String(params.page || 1), limit: String(params.limit || 20) });
-  if (params.q) searchParams.set("q", params.q);
-  const res = await requestJson<{ posts: Post[] }>(`/api/posts?${searchParams.toString()}`, { method: "GET", headers: getAuthHeaders(), cache: "no-store" });
-  return res.posts || [];
-}
-
-export async function getPost(postId: string): Promise<Post | null> {
-  try { return await requestJson<{ post: Post }>(`/api/posts/${postId}`, { method: "GET", headers: getAuthHeaders(), cache: "no-store" }).then(r => r.post); }
-  catch { return null; }
-}
-
-export async function createPost(payload: any): Promise<Post> {
-  const isForm = payload instanceof FormData;
-  const res = await apiFetch(`/api/posts`, { method: "POST", body: isForm ? payload : JSON.stringify(payload), headers: isForm ? { Authorization: `Bearer ${getToken()}` } : getAuthHeaders(), credentials: "include" });
-  if (!res.ok) throw new Error(await res.text());
+/** Update current user's profile (backend is source of truth) */
+export async function updateUserProfile(updates: Partial<User>) {
+  const res = await apiFetch("/api/user/update", {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Update failed: ${res.status} ${txt}`);
+  }
   return await res.json();
 }
 
-/* ---------------------- Comments ---------------------- */
-export async function postComment(postId: string, content: string) {
-  return await requestJson(`/api/comments`, { method: "POST", body: JSON.stringify({ postId, content }), headers: getAuthHeaders() });
+/* ----------------------------- Posts endpoints -------------------------- */
+
+export async function getPosts({ page = 1, limit = 20, q = "" }: { page?: number; limit?: number; q?: string } = {}) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (q) params.set("q", q);
+  const res = await apiFetch(`/api/posts?${params.toString()}`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Failed to fetch posts: ${res.status} ${txt}`);
+  }
+  const body = await res.json();
+  return body.posts || [];
 }
 
-/* ---------------------- Notifications ---------------------- */
-export async function getNotifications(params: { page?: number; limit?: number } = {}): Promise<Notification[]> {
-  const searchParams = new URLSearchParams({ page: String(params.page || 1), limit: String(params.limit || 20) });
-  const res = await requestJson<{ notifications: Notification[] }>(`/api/notifications?${searchParams.toString()}`, { method: "GET", headers: getAuthHeaders(), cache: "no-store" });
-  return res.notifications || [];
+export async function getPost(postId: string | number) {
+  const res = await apiFetch(`/api/posts/${postId}`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Failed to fetch post: ${res.status} ${txt}`);
+  }
+  return await res.json();
 }
 
-export async function markNotificationRead(notificationId: string) {
-  return await requestJson(`/api/notifications/${notificationId}/read`, { method: "POST", headers: getAuthHeaders() });
+export async function createPost(payload: any) {
+  const isForm = payload instanceof FormData;
+  const res = await apiFetch(`/api/posts`, {
+    method: "POST",
+    body: isForm ? (payload as any) : JSON.stringify(payload),
+    headers: isForm ? { Authorization: `Bearer ${getToken()}` } : getAuthHeaders(),
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(errText || `Failed to create post (${res.status})`);
+  }
+  return await res.json();
 }
 
-/* ---------------------- Misc ---------------------- */
+/* --------------------------- Comments endpoints ------------------------- */
+
+export async function postComment(postId: string | number, content: string) {
+  const res = await apiFetch(`/api/comments`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ postId, content }),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Failed to post comment: ${res.status} ${txt}`);
+  }
+  return await res.json();
+}
+
+/* ------------------------ Notifications endpoints ---------------------- */
+
+export async function getNotifications({ page = 1, limit = 20 }: { page?: number; limit?: number } = {}) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  const res = await apiFetch(`/api/notifications?${params.toString()}`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Failed to fetch notifications: ${res.status} ${txt}`);
+  }
+  const body = await res.json();
+  return body.notifications || [];
+}
+
+export async function markNotificationRead(notificationId: string | number) {
+  const res = await apiFetch(`/api/notifications/${notificationId}/read`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Failed to mark read: ${res.status} ${txt}`);
+  }
+  return await res.json();
+}
+
+/* ---------------------- Misc / Utility endpoints ----------------------- */
+
 export async function enhancedSearch(q: string, opts: { limit?: number; type?: string } = {}) {
   const params = new URLSearchParams({ q, limit: String(opts.limit || 10) });
   if (opts.type) params.set("type", opts.type);
-  return await requestJson(`/api/search?${params.toString()}`, { method: "GET", headers: getAuthHeaders(), cache: "no-store" });
+  const res = await apiFetch(`/api/search?${params.toString()}`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Search failed: ${res.status} ${txt}`);
+  }
+  return await res.json();
 }
 
-export async function pingHealth() { return await requestJson(`/api/health`, { method: "GET", headers: getAuthHeaders() }); }
+/* ---------------------- Admin / Maintenance helpers -------------------- */
 
-export async function getCurrentUserSafe(): Promise<User | null> { return await fetchCurrentUser(); }
+export async function pingHealth() {
+  try {
+    const res = await apiFetch("/api/health", { method: "GET", headers: getAuthHeaders() });
+    return await readJsonSafe(res);
+  } catch (err) {
+    console.warn("[api] pingHealth failed:", err);
+    return null;
+  }
+}
 
-export default {
+/* -------------------------- Backwards compat helpers ------------------- */
+
+export async function getCurrentUserSafe(): Promise<User | null> {
+  return await fetchCurrentUser();
+}
+
+/* ----------------------------- Exports ---------------------------------- */
+
+const api = {
   apiFetch,
+  tryDirectConnection,
+  readJsonSafe,
   getToken,
   getAuthHeaders,
+  // auth
   signUp,
   signIn,
   fetchCurrentUser,
@@ -265,15 +540,21 @@ export default {
   resendPhoneVerification,
   sendVerificationCode,
   logoutClient,
+  // user
   getUserProfile,
   updateUserProfile,
+  // posts/comments
   getPosts,
   getPost,
   createPost,
   postComment,
+  // notifications
   getNotifications,
   markNotificationRead,
+  // misc
   enhancedSearch,
   pingHealth,
   getCurrentUserSafe,
 };
+
+export default api;

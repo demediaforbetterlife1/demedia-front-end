@@ -1,20 +1,34 @@
+// src/contexts/AuthContext.tsx
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
-import { apiFetch } from '@/lib/api';
-import { notificationService } from '@/services/notificationService';
-import { useI18n } from '@/contexts/I18nContext';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useCallback,
+  useContext,
+  ReactNode,
+} from "react";
+import { useRouter } from "next/navigation";
 
-// =======================
-// Types
-// =======================
+/**
+ * AuthContext (TypeScript) — نسخة متكاملة
+ *
+ * - البيانات (user) تأتي من الباك-اند فقط (/api/auth/me).
+ * - الـ JWT مخزن في localStorage فقط (token).
+ * - لا يوجد منطق تحقق بالهاتف هنا (phone verification) — تمت إزالته حسب طلبك.
+ * - هذا ملف Client Component (use client).
+ */
+
+/* =======================
+   ✅ Types
+   ======================= */
 export interface User {
   id: string;
   name: string;
   username: string;
-  phoneNumber: string;
   email?: string;
+  phoneNumber: string;
   profilePicture?: string;
   coverPhoto?: string;
   bio?: string;
@@ -32,253 +46,262 @@ export interface User {
   createdAt?: string;
 }
 
-export interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  login: (phoneNumber: string, password: string) => Promise<boolean | { requiresPhoneVerification: boolean; verificationToken?: string; message?: string }>;
-  register: (userData: { name: string; username: string; phoneNumber: string; password: string }) => Promise<boolean | { requiresPhoneVerification: boolean; verificationToken?: string; message?: string }>;
-  logout: () => void;
-  updateUser: (userData: Partial<User>) => void;
-  completeSetup: () => void;
-  verifyPhone: (token: string) => Promise<boolean>;
-  resendPhoneVerification: (phoneNumber: string) => Promise<boolean>;
-  sendVerificationCode: (phoneNumber: string, method: 'whatsapp' | 'sms') => Promise<boolean>;
+export interface AuthResult {
+  success: boolean;
+  message?: string;
 }
 
-// =======================
-// Context
-// =======================
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export interface LoginCredentials {
+  phoneNumber: string;
+  password: string;
+}
 
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within an AuthProvider");
-  return context;
-};
+export interface RegisterData {
+  name: string;
+  username: string;
+  phoneNumber: string;
+  password: string;
+}
 
-// =======================
-// Provider
-// =======================
+/* =======================
+   ✅ Context Type
+   ======================= */
+export interface AuthContextType {
+  user: User | null;
+  token: string | null; // token exposed (matching النسخة القديمة)
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (phoneNumber: string, password: string) => Promise<AuthResult>;
+  register: (userData: RegisterData) => Promise<AuthResult>;
+  logout: () => void;
+  refreshUser: () => Promise<void>;
+}
+
+/* =======================
+   ✅ Context init
+   ======================= */
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined
+);
+
+/* =======================
+   ✅ Provider
+   ======================= */
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const { setLanguage } = useI18n();
 
-  const isAuthenticated = !!user;
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // =======================
-  // Load user from backend
-  // =======================
+  const isAuthenticated = !!user && !!token;
+
+  // Load token from localStorage on mount (only token)
   useEffect(() => {
-    const loadUser = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setUser(null);
+    try {
+      if (typeof window === "undefined") return;
+      const saved = localStorage.getItem("token");
+      if (saved) {
+        setToken(saved);
+      } else {
         setIsLoading(false);
+      }
+    } catch (err) {
+      console.error("[Auth] failed to read token:", err);
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Fetch current user from backend (source of truth)
+  const fetchUser = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch("/api/auth/me", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        // do not rely on cached user
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        // if unauthorized, remove token
+        if (res.status === 401) {
+          console.warn("[Auth] token invalid/expired, clearing token");
+          localStorage.removeItem("token");
+          setToken(null);
+        }
+        setUser(null);
         return;
       }
 
-      try {
-        const res = await apiFetch('/api/auth/me');
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.user);
-          if (data.user?.language) setLanguage(data.user.language);
-        } else {
-          localStorage.removeItem('token');
-          setUser(null);
-        }
-      } catch (err) {
-        console.error('Failed to load user:', err);
+      const body = await res.json().catch(() => null);
+      // backend may return either { user: {...} } or user object directly
+      const userObj: User | null = body?.user ?? body ?? null;
+      if (userObj) {
+        setUser(userObj);
+      } else {
         setUser(null);
-        localStorage.removeItem('token');
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    loadUser();
-  }, [setLanguage]);
-  
-  
-useEffect(() => {
-  if (user) {
-    const setupComplete = user.isSetupComplete ?? false;
-    router.replace(setupComplete ? '/home' : '/SignInSetUp');
-  }
-}, [user, router]);
-  // =======================
-  // Login
-  // =======================
-  const login = async (phoneNumber: string, password: string): Promise<boolean | { requiresPhoneVerification: boolean; verificationToken?: string; message?: string }> => {
-  setIsLoading(true);
-  try {
-    const res = await apiFetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phoneNumber, password }),
-    });
-
-    if (!res.ok) throw new Error('Login failed');
-
-    const data = await res.json();
-
-    if (data.requiresPhoneVerification) {
-      return { requiresPhoneVerification: true, verificationToken: data.verificationToken, message: data.message };
+    } catch (err) {
+      console.error("[Auth] fetchUser error:", err);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
     }
+  }, [token]);
 
-    if (data.token) localStorage.setItem('token', data.token);
+  // When token changes (e.g. login/register), fetch the user
+  useEffect(() => {
+    if (token) {
+      // immediate fetch
+      fetchUser();
+    } else {
+      // no token -> not authenticated
+      setUser(null);
+      setIsLoading(false);
+    }
+  }, [token, fetchUser]);
 
-    setUser(data.user);
-    if (data.user.language) setLanguage(data.user.language);
+  // Refresh user helper (exposed)
+  const refreshUser = async () => {
+    await fetchUser();
+  };
 
-    // مش هنا redirect بعد كده، هنعمله في useEffect
-    return true;
-  } catch (err) {
-    console.error('Login error:', err);
-    return false;
-  } finally {
-    setIsLoading(false);
-  }
-};
-  // =======================
-  // Register
-  // =======================
-  const register = async (userData: { name: string; username: string; phoneNumber: string; password: string }): Promise<boolean | { requiresPhoneVerification: boolean; verificationToken?: string; message?: string }> => {
+  /* =======================
+     ✅ login (phoneNumber + password)
+     - Save token only in localStorage
+     - Fetch user from backend (source of truth)
+     ======================= */
+  const login = async (
+    phoneNumber: string,
+    password: string
+  ): Promise<AuthResult> => {
     setIsLoading(true);
     try {
-      const res = await apiFetch('/api/auth/sign-up', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber, password }),
       });
 
-      if (!res.ok) throw new Error('Registration failed');
+      const data = await res.json().catch(() => null);
 
-      const data = await res.json();
-
-      if (data.requiresPhoneVerification) {
-        return { requiresPhoneVerification: true, verificationToken: data.verificationToken, message: data.message };
+      if (!res.ok) {
+        const msg = data?.message || data?.error || `Login failed (${res.status})`;
+        return { success: false, message: msg };
       }
 
-      if (data.token) localStorage.setItem('token', data.token);
+      // expect { token: "...", user?: {...} } but we fetch user from /api/auth/me to be safe
+      if (data?.token) {
+        localStorage.setItem("token", data.token);
+        setToken(data.token);
+        // fetchUser will run due to token change
+        return { success: true };
+      }
 
-      setUser(data.user);
-      router.replace('/SignInSetUp');
-
-      return true;
-    } catch (err) {
-      console.error('Registration error:', err);
-      throw err;
+      // If no token returned but success (rare), fallback: try to fetch user
+      await fetchUser();
+      if (user) return { success: true };
+      return { success: false, message: "Login succeeded but no token returned" };
+    } catch (err: any) {
+      console.error("[Auth] login error:", err);
+      return { success: false, message: err?.message || "Login failed" };
     } finally {
       setIsLoading(false);
     }
   };
 
-  // =======================
-  // Logout
-  // =======================
-  const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
-    router.push('/sign-up');
-    window.dispatchEvent(new CustomEvent('auth:logout'));
-  };
-
-  // =======================
-  // Update user
-  // =======================
-  const updateUser = (userData: Partial<User>) => {
-    setUser(prev => prev ? { ...prev, ...userData } : null);
-  };
-
-  // =======================
-  // Complete setup
-  // =======================
-  const completeSetup = async () => {
+  /* =======================
+     ✅ register (phoneNumber signup)
+     - store token if backend returns it
+     - load user from backend
+     ======================= */
+  const register = async (userData: RegisterData): Promise<AuthResult> => {
+    setIsLoading(true);
     try {
-      if (!user) throw new Error('User not found');
-      const res = await apiFetch(`/api/user/${user.id}/complete-setup`, { method: 'POST' });
-      if (!res.ok) throw new Error('Failed to complete setup');
-      const data = await res.json();
-      setUser(data.user);
-      router.push('/home');
-    } catch (err) {
-      console.error('Complete setup error:', err);
-      setUser(prev => prev ? { ...prev, isSetupComplete: true } : null);
-      router.push('/home');
-    }
-  };
-
-  // =======================
-  // Phone verification
-  // =======================
-  const verifyPhone = async (token: string) => {
-    try {
-      const res = await apiFetch('/api/auth/verify-phone', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
+      const res = await fetch("/api/auth/sign-up", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
       });
-      if (!res.ok) throw new Error('Phone verification failed');
-      return true;
-    } catch (err) {
-      console.error('Verify phone error:', err);
-      throw err;
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        const msg = data?.message || data?.error || `Registration failed (${res.status})`;
+        return { success: false, message: msg };
+      }
+
+      if (data?.token) {
+        localStorage.setItem("token", data.token);
+        setToken(data.token);
+        // user will be fetched automatically by fetchUser
+        return { success: true };
+      }
+
+      // if backend didn't return token, still try to fetch user
+      await fetchUser();
+      if (user) return { success: true };
+      return { success: true };
+    } catch (err: any) {
+      console.error("[Auth] register error:", err);
+      return { success: false, message: err?.message || "Registration failed" };
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const resendPhoneVerification = async (phoneNumber: string) => {
+  /* =======================
+     ✅ logout
+     ======================= */
+  const logout = (): void => {
     try {
-      const res = await apiFetch('/api/auth/resend-verification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber }),
-      });
-      if (!res.ok) throw new Error('Failed to resend verification code');
-      return true;
+      localStorage.removeItem("token");
+      setToken(null);
+      setUser(null);
+      // optional: notify other tabs
+      if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("auth:logout"));
+      router.push("/sign-up");
     } catch (err) {
-      console.error('Resend phone verification error:', err);
-      throw err;
+      console.error("[Auth] logout error:", err);
     }
   };
 
-  const sendVerificationCode = async (phoneNumber: string, method: 'whatsapp' | 'sms') => {
-    try {
-      const res = await apiFetch('/api/auth/send-verification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber, method }),
-      });
-      if (!res.ok) throw new Error('Failed to send verification code');
-      return true;
-    } catch (err) {
-      console.error('Send verification code error:', err);
-      throw err;
-    }
+  /* =======================
+     Context value
+     ======================= */
+  const value: AuthContextType = {
+    user,
+    token,
+    isLoading,
+    isAuthenticated,
+    login,
+    register,
+    logout,
+    refreshUser,
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      isLoading,
-      isAuthenticated,
-      login,
-      register,
-      logout,
-      updateUser,
-      completeSetup,
-      verifyPhone,
-      resendPhoneVerification,
-      sendVerificationCode,
-    }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!isLoading && children}
     </AuthContext.Provider>
   );
+};
+
+/* =======================
+   ✅ Custom hook
+   ======================= */
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };
