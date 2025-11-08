@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, {
   createContext,
@@ -12,11 +12,10 @@ import React, {
 // =======================
 // ✅ Types
 // =======================
-interface User {
+export interface User {
   id: string;
   name: string;
   username: string;
-  email?: string;
   phoneNumber: string;
   profilePicture?: string;
   coverPhoto?: string;
@@ -24,12 +23,10 @@ interface User {
   location?: string;
   website?: string;
   dateOfBirth?: string;
-  dob?: string;
   age?: number;
   language?: string;
-  preferredLang?: string;
   privacy?: string;
-  interests?: string[]; // <-- تأكد إن السطر ده موجود
+  interests?: string[];
   isSetupComplete?: boolean;
   isPhoneVerified?: boolean;
   createdAt?: string;
@@ -37,29 +34,21 @@ interface User {
 
 export interface AuthContextType {
   user: User | null;
-  token: string | null;
-  loading: boolean;
+  isLoading: boolean;
   isAuthenticated: boolean;
-  login: (credentials: LoginCredentials) => Promise<AuthResult>;
-  register: (info: RegisterData) => Promise<AuthResult>;
+  login: (phoneNumber: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  register: (data: {
+    name: string;
+    username: string;
+    phoneNumber: string;
+    password: string;
+  }) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
-  refreshUser: () => Promise<void>;
-}
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface RegisterData {
-  name: string;
-  email: string;
-  password: string;
-}
-
-export interface AuthResult {
-  success: boolean;
-  message?: string;
+  updateUser: (userData: Partial<User>) => void;
+  completeSetup: () => void;
+  verifyPhone: (token: string) => Promise<boolean>;
+  resendPhoneVerification: (phoneNumber: string) => Promise<boolean>;
+  sendVerificationCode: (phoneNumber: string, method: "whatsapp" | "sms") => Promise<boolean>;
 }
 
 // =======================
@@ -97,7 +86,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const res = await fetch("/api/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (!res.ok) throw new Error("Failed to fetch user");
       const data = await res.json();
       setUser(data.user || data);
@@ -111,7 +99,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [token]);
 
-  // Trigger fetchUser when token changes
   useEffect(() => {
     if (token) fetchUser();
   }, [token, fetchUser]);
@@ -119,15 +106,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // =======================
   // ✅ login
   // =======================
-  const login = async (credentials: LoginCredentials): Promise<AuthResult> => {
+  const login = async (phoneNumber: string, password: string): Promise<{ success: boolean; message?: string }> => {
     setLoading(true);
     try {
       const res = await fetch("/api/auth/sign-in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({ phoneNumber, password }),
       });
-
       const data = await res.json();
       if (!res.ok || !data.token) throw new Error(data.message || "Login failed");
 
@@ -147,7 +133,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // =======================
   // ✅ register
   // =======================
-  const register = async (info: RegisterData): Promise<AuthResult> => {
+  const register = async (info: { name: string; username: string; phoneNumber: string; password: string; }): Promise<{ success: boolean; message?: string }> => {
     setLoading(true);
     try {
       const res = await fetch("/api/auth/sign-up", {
@@ -155,7 +141,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(info),
       });
-
       const data = await res.json();
       if (!res.ok || !data.token) throw new Error(data.message || "Registration failed");
 
@@ -182,10 +167,69 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // =======================
-  // ✅ refreshUser
+  // ✅ updateUser
   // =======================
-  const refreshUser = async (): Promise<void> => {
-    if (token) await fetchUser();
+  const updateUser = (userData: Partial<User>) => {
+    setUser(prev => prev ? { ...prev, ...userData } : prev);
+  };
+
+  // =======================
+  // ✅ completeSetup
+  // =======================
+  const completeSetup = () => {
+    if (!user) return;
+    setUser({ ...user, isSetupComplete: true });
+  };
+
+  // =======================
+  // ✅ verifyPhone
+  // =======================
+  const verifyPhone = async (token: string): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/auth/verify-phone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ token }),
+      });
+      return res.ok;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  };
+
+  // =======================
+  // ✅ resendPhoneVerification
+  // =======================
+  const resendPhoneVerification = async (phoneNumber: string): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber }),
+      });
+      return res.ok;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  };
+
+  // =======================
+  // ✅ sendVerificationCode
+  // =======================
+  const sendVerificationCode = async (phoneNumber: string, method: "whatsapp" | "sms"): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/auth/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber, method }),
+      });
+      return res.ok;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
   };
 
   // =======================
@@ -193,23 +237,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // =======================
   const value: AuthContextType = {
     user,
-    token,
-    loading,
+    isLoading: loading,
     isAuthenticated: !!user && !!token,
     login,
     register,
     logout,
-    refreshUser,
+    updateUser,
+    completeSetup,
+    verifyPhone,
+    resendPhoneVerification,
+    sendVerificationCode,
   };
 
-  // =======================
-  // ✅ Render
-  // =======================
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };
 
 // =======================
@@ -217,8 +257,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 // =======================
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
 };
