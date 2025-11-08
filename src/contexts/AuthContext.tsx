@@ -12,12 +12,26 @@ import React, {
 // =======================
 // ✅ Types
 // =======================
-export interface User {
+interface User {
   id: string;
   name: string;
-  email: string;
-  avatar?: string;
-  role?: string;
+  username: string;
+  email?: string;
+  phoneNumber: string;
+  profilePicture?: string;
+  coverPhoto?: string;
+  bio?: string;
+  location?: string;
+  website?: string;
+  dateOfBirth?: string;
+  dob?: string;
+  age?: number;
+  language?: string;
+  preferredLang?: string;
+  privacy?: string;
+  interests?: string[]; // <-- تأكد إن السطر ده موجود
+  isSetupComplete?: boolean;
+  isPhoneVerified?: boolean;
   createdAt?: string;
 }
 
