@@ -7,7 +7,7 @@ import { notificationService } from '@/services/notificationService';
 import { useI18n } from '@/contexts/I18nContext';
 
 // =======================
-// ✅ Types
+// Types
 // =======================
 export interface User {
   id: string;
@@ -36,7 +36,7 @@ export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (phoneNumber: string, password: string) => Promise<boolean>;
+  login: (phoneNumber: string, password: string) => Promise<boolean | { requiresPhoneVerification: boolean; verificationToken?: string; message?: string }>;
   register: (userData: { name: string; username: string; phoneNumber: string; password: string }) => Promise<boolean | { requiresPhoneVerification: boolean; verificationToken?: string; message?: string }>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
@@ -47,7 +47,7 @@ export interface AuthContextType {
 }
 
 // =======================
-// ✅ Context
+// Context
 // =======================
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -58,7 +58,7 @@ export const useAuth = (): AuthContextType => {
 };
 
 // =======================
-// ✅ Provider
+// Provider
 // =======================
 interface AuthProviderProps {
   children: ReactNode;
@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isAuthenticated = !!user;
 
   // =======================
-  // ✅ Load user from backend
+  // Load user from backend
   // =======================
   useEffect(() => {
     const loadUser = async () => {
@@ -107,9 +107,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [setLanguage]);
 
   // =======================
-  // ✅ Login
+  // Login
   // =======================
-  const login = async (phoneNumber: string, password: string): Promise<boolean> => {
+  const login = async (phoneNumber: string, password: string): Promise<boolean | { requiresPhoneVerification: boolean; verificationToken?: string; message?: string }> => {
     setIsLoading(true);
     try {
       const res = await apiFetch('/api/auth/login', {
@@ -122,24 +122,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const data = await res.json();
 
-      // Handle phone verification requirement
       if (data.requiresPhoneVerification) {
         return { requiresPhoneVerification: true, verificationToken: data.verificationToken, message: data.message };
       }
 
-      // Store token only
       if (data.token) localStorage.setItem('token', data.token);
 
-      // Set user data from backend
       setUser(data.user);
-
       if (data.user.language) setLanguage(data.user.language);
 
-      // Redirect based on setup status
       if (data.user.isSetupComplete) router.replace('/home');
       else router.replace('/SignInSetUp');
 
-      // Optional welcome notification
       if (data.user.name) notificationService.showWelcomeNotification(data.user.name);
 
       return true;
@@ -152,7 +146,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // =======================
-  // ✅ Register
+  // Register
   // =======================
   const register = async (userData: { name: string; username: string; phoneNumber: string; password: string }): Promise<boolean | { requiresPhoneVerification: boolean; verificationToken?: string; message?: string }> => {
     setIsLoading(true);
@@ -167,17 +161,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const data = await res.json();
 
-      // Handle phone verification requirement
       if (data.requiresPhoneVerification) {
         return { requiresPhoneVerification: true, verificationToken: data.verificationToken, message: data.message };
       }
 
-      // Store token only
       if (data.token) localStorage.setItem('token', data.token);
 
-      // Set user data from backend
       setUser(data.user);
-
       router.replace('/SignInSetUp');
 
       return true;
@@ -190,7 +180,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // =======================
-  // ✅ Logout
+  // Logout
   // =======================
   const logout = () => {
     localStorage.removeItem('token');
@@ -200,14 +190,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // =======================
-  // ✅ Update user
+  // Update user
   // =======================
   const updateUser = (userData: Partial<User>) => {
     setUser(prev => prev ? { ...prev, ...userData } : null);
   };
 
   // =======================
-  // ✅ Complete Setup
+  // Complete setup
   // =======================
   const completeSetup = async () => {
     try {
@@ -219,14 +209,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       router.push('/home');
     } catch (err) {
       console.error('Complete setup error:', err);
-      // fallback: mark locally
       setUser(prev => prev ? { ...prev, isSetupComplete: true } : null);
       router.push('/home');
     }
   };
 
   // =======================
-  // ✅ Phone verification
+  // Phone verification
   // =======================
   const verifyPhone = async (token: string) => {
     try {
