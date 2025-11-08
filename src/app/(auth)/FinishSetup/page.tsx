@@ -72,10 +72,18 @@ function CameraController() {
 /* -------- Main Component -------- */
 export default function FinishSetUp() {
     const router = useRouter();
-    const { completeSetup } = useAuth();
+    const { completeSetup, user } = useAuth();
 
-    const handleComplete = () => {
-        completeSetup();
+    const handleComplete = async () => {
+        try {
+            await completeSetup();
+            // Wait a bit for state to update, then redirect
+            setTimeout(() => {
+                router.replace("/home");
+            }, 500);
+        } catch (error) {
+            console.error("Failed to complete setup:", error);
+        }
     };
 
     return (

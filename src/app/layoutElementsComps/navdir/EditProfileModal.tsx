@@ -118,12 +118,12 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
             
             console.log('EditProfileModal: Uploading file to server...');
             
-            // Upload to server using apiFetch
+            // Upload to server using apiFetch - pass userId for user-id header
             const endpoint = type === 'profile' ? '/api/upload/profile' : '/api/upload/cover';
             const response = await apiFetch(endpoint, {
                 method: 'POST',
                 body: formData
-            });
+            }, user?.id);
             
             if (!response.ok) {
                 const errorText = await response.text();
@@ -183,7 +183,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                 body: JSON.stringify({
                     ...payload
                 })
-            });
+            }, user?.id);
 
             if (!response.ok) {
                 const errorText = await response.text();

@@ -601,7 +601,7 @@ export default function ProfilePage() {
             const response = await apiFetch(endpoint, {
                 method: 'POST',
                 body: formData,
-            });
+            }, user?.id);
             
             if (response.ok) {
                 const data = await response.json();

@@ -90,13 +90,14 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
     setSaving(true);
     try {
       // Use unified apiFetch and correct endpoint: PUT /api/user/:id
+      // Pass userId as third parameter to set user-id header
       const res = await apiFetch(`/api/user/${user.id}`, {
        method: "PUT",
          headers: {
           "Content-Type": "application/json",
       },
           body: JSON.stringify(customization),
-});
+}, user.id);
 
 
       if (!res.ok) {
@@ -125,10 +126,11 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
 
     try {
       // Use unified upload route and auth via apiFetch
+      // Pass userId as third parameter to set user-id header
       const res = await apiFetch(`/api/upload`, {
         method: "POST",
         body: formData,
-      });
+      }, user.id);
 
       if (!res.ok) throw new Error("Failed to upload image");
 
