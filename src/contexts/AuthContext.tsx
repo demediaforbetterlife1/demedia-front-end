@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [setLanguage]);
   
   
-.useEffect(() => {
+useEffect(() => {
   if (user) {
     const setupComplete = user.isSetupComplete ?? false;
     router.replace(setupComplete ? '/home' : '/SignInSetUp');
