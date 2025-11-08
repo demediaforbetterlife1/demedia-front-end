@@ -372,11 +372,20 @@ export async function getUserProfile(userId: string | number) {
       headers: getAuthHeaders(),
       cache: "no-store",
     });
+    
+    const profile = await res.json();
+    
+    // Check if the response contains an error (even if status is 200)
+    if (profile && profile.error && !profile.id) {
+      console.error("[api] getUserProfile error:", profile.error);
+      return null;
+    }
+    
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
       throw new Error(`Failed to get profile: ${res.status} ${txt}`);
     }
-    const profile = await res.json();
+    
     return profile;
   } catch (err) {
     console.error("[api] getUserProfile error:", err);

@@ -43,9 +43,24 @@ export async function GET(
         return NextResponse.json(data);
       }
 
+      // Handle 404 specifically - return 200 with error message so component can handle it
+      if (backendResponse.status === 404) {
+        const text = await backendResponse.text().catch(() => 'User not found');
+        console.error(`Profile not found: ${userId}`);
+        return NextResponse.json({ 
+          error: text || 'User profile not found',
+          id: null 
+        }, { status: 200 }); // Return 200 so component can handle the error
+      }
+
       const text = await backendResponse.text();
+      console.error(`Profile fetch failed: ${backendResponse.status} - ${text}`);
       return NextResponse.json({ error: text || 'Failed to fetch profile' }, { status: backendResponse.status });
-    } catch (_) {
+    } catch (err: any) {
+      console.error('Backend fetch error:', err);
+      if (err.name === 'AbortError') {
+        return NextResponse.json({ error: 'Request timeout' }, { status: 504 });
+      }
       return NextResponse.json({ error: 'Backend unavailable' }, { status: 503 });
     }
   } catch (error) {
