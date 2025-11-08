@@ -84,10 +84,11 @@ class DataService {
 
   private async makeRequest<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    userId?: string | number
   ): Promise<T> {
     const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId');
+    // userId should be passed from AuthContext, not localStorage
 
     const defaultHeaders: HeadersInit = {
       'Content-Type': 'application/json',
@@ -95,6 +96,10 @@ class DataService {
 
     if (token) {
       defaultHeaders['Authorization'] = `Bearer ${token}`;
+    }
+    
+    if (userId) {
+      defaultHeaders['user-id'] = String(userId);
     }
 
     const response = await fetch(`${this.API_BASE}${endpoint}`, {
@@ -277,16 +282,16 @@ class DataService {
     });
   }
 
-  async viewStory(storyId: string): Promise<void> {
+  async viewStory(storyId: string, userId?: string | number): Promise<void> {
     try {
-      const userId = localStorage.getItem('userId');
+      // userId should be passed from AuthContext, not localStorage
       await this.makeRequest(`/api/stories/${storyId}/view`, {
         method: 'POST',
         body: JSON.stringify({ userId }),
         headers: {
           'Content-Type': 'application/json',
         },
-      });
+      }, userId);
     } catch (err) {
       // Backend may not implement this endpoint yet; fail silently
       console.warn('viewStory not supported by backend, ignoring');

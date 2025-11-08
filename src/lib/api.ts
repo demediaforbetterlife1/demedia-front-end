@@ -68,16 +68,17 @@ export function getToken(): string | null {
   return localStorage.getItem("token");
 }
 
-/** Return headers including Authorization if token exists */
-export function getAuthHeaders(): Record<string, string> {
+/** Return headers including Authorization if token exists
+ * userId should be passed from AuthContext, not localStorage
+ */
+export function getAuthHeaders(userId?: string | number): Record<string, string> {
   const token = getToken();
   const base: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
   };
   if (token) base["Authorization"] = `Bearer ${token}`;
-  const userId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
-  if (userId) base["user-id"] = userId;
+  if (userId) base["user-id"] = String(userId);
   return base;
 }
 
@@ -85,10 +86,9 @@ export function getAuthHeaders(): Record<string, string> {
 /* ---------------------- Robust fetch / retry logic ----------------------- */
 /* ------------------------------------------------------------------------- */
 
-export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
-  // attach token/userId headers from localStorage if present
+export async function apiFetch(path: string, options: RequestInit = {}, userId?: string | number): Promise<Response> {
+  // attach token from localStorage (userId should be passed as parameter from AuthContext)
   const token = getToken();
-  const userId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
 
   // copy/merge headers
   const headers: Record<string, string> = {
@@ -96,7 +96,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   };
 
   if (token) headers["Authorization"] = `Bearer ${token}`;
-  if (userId) headers["user-id"] = userId;
+  if (userId) headers["user-id"] = String(userId);
 
   // Only set Content-Type automatically if body is not FormData
   if (!headers["Content-Type"] && options.body && !(options.body instanceof FormData)) {
@@ -169,7 +169,6 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
         // If it's not the auth/me check, remove token and broadcast logout
         if (typeof window !== "undefined" && !path.includes("/auth/me")) {
           localStorage.removeItem("token");
-          localStorage.removeItem("userId");
           window.dispatchEvent(new CustomEvent("auth:logout"));
         }
       }
@@ -289,7 +288,7 @@ export async function signUp(payload: {
 
   if (res?.token) {
     localStorage.setItem("token", res.token);
-    if (res.user?.id) localStorage.setItem("userId", String(res.user.id));
+    // userId should come from database via AuthContext, not localStorage
   }
   return res;
 }
@@ -304,7 +303,7 @@ export async function signIn(payload: { phoneNumber: string; password: string })
 
   if (res?.token) {
     localStorage.setItem("token", res.token);
-    if (res.user?.id) localStorage.setItem("userId", String(res.user.id));
+    // userId should come from database via AuthContext, not localStorage
   }
   return res;
 }
@@ -314,7 +313,7 @@ export async function fetchCurrentUser(): Promise<User | null> {
   try {
     const body = await requestJson<{ user: User | null }>("/api/auth/me", {
       method: "GET",
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), // userId not needed for /auth/me endpoint
       cache: "no-store",
     });
 
@@ -359,7 +358,7 @@ export async function sendVerificationCode(phoneNumber: string, method: "whatsap
 /** Logout (clears token on client) */
 export function logoutClient(): void {
   localStorage.removeItem("token");
-  localStorage.removeItem("userId");
+  // userId should come from database via AuthContext, not localStorage
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("auth:logout"));
 }
 

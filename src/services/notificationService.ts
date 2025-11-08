@@ -177,11 +177,12 @@ class NotificationService {
   }
 
   async sendSubscriptionToServer(
-    subscription: PushSubscription
+    subscription: PushSubscription,
+    userId?: string | number
   ): Promise<boolean> {
     try {
       const API_BASE = "";
-      const userId = localStorage.getItem("userId");
+      // userId should be passed from AuthContext, not localStorage
 
       if (!userId) {
         console.error("No user ID found");

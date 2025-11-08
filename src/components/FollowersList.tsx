@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, UserCheck, UserX, Search } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { getThemeClasses, getButtonClasses, getModalClasses } from '@/utils/themeUtils';
 
 interface Follower {
@@ -24,6 +25,7 @@ interface FollowersListProps {
 
 export default function FollowersList({ isOpen, onClose, userId, type }: FollowersListProps) {
   const { theme } = useTheme();
+  const { user } = useAuth();
   const [followers, setFollowers] = useState<Follower[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export default function FollowersList({ isOpen, onClose, userId, type }: Followe
       const response = await fetch(endpoint, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'user-id': localStorage.getItem('userId') || '',
+          'user-id': user?.id?.toString() || '',
           'Content-Type': 'application/json',
         },
       });
@@ -87,10 +89,10 @@ export default function FollowersList({ isOpen, onClose, userId, type }: Followe
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'user-id': localStorage.getItem('userId') || '',
+          'user-id': user?.id?.toString() || '',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ followerId: parseInt(localStorage.getItem('userId') || '0') })
+        body: JSON.stringify({ followerId: user?.id ? (typeof user.id === 'string' ? parseInt(user.id) : user.id) : 0 })
       });
 
       if (response.ok) {

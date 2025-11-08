@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PageCustomizerProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ interface CustomizationSettings {
 
 export const PageCustomizer: React.FC<PageCustomizerProps> = ({ isOpen, onClose }) => {
   const { theme } = useTheme();
+  const { user } = useAuth();
   const [settings, setSettings] = useState<CustomizationSettings>({
     layout: 'grid',
     density: 'normal',
@@ -67,8 +69,8 @@ export const PageCustomizer: React.FC<PageCustomizerProps> = ({ isOpen, onClose 
   const handleSaveSettings = async () => {
     setIsLoading(true);
     try {
-      // Save to backend
-      const userId = localStorage.getItem('userId');
+      // Save to backend - get userId from AuthContext, not localStorage
+      const userId = user?.id;
       if (userId) {
         await fetch(`/api/user/${userId}/customization`, {
           method: 'PUT',

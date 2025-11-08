@@ -173,7 +173,8 @@ export default function Stories() {
 
         try {
             const type = file.type.startsWith('video/') ? 'video' : 'image';
-            const newStory = await dataService.createStory(file, type);
+            // Pass userId from AuthContext, not localStorage
+            const newStory = await dataService.createStory(file, type, user?.id);
             
             setStories(prev => [{ 
                 ...newStory, 
@@ -193,8 +194,8 @@ export default function Stories() {
 
     const handleStoryClick = async (story: Story, index: number) => {
         try {
-            // Mark story as viewed
-            await dataService.viewStory(story.id.toString());
+            // Mark story as viewed - pass userId from AuthContext
+            await dataService.viewStory(story.id.toString(), user?.id);
             setStories(prev => 
                 prev.map(s => 
                     s.id === story.id 

@@ -5,12 +5,12 @@ class ContentService {
         this.API_BASE = "";
     }
 
-    private async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    private async makeRequest<T>(endpoint: string, options: RequestInit = {}, userId?: string | number): Promise<T> {
         const token = localStorage.getItem('token');
-        const userId = localStorage.getItem('userId');
+        // userId should be passed from AuthContext, not localStorage
         const defaultHeaders: HeadersInit = { 'Content-Type': 'application/json' };
         if (token) defaultHeaders['Authorization'] = `Bearer ${token}`;
-        if (userId) defaultHeaders['user-id'] = userId;
+        if (userId) defaultHeaders['user-id'] = String(userId);
 
         const response = await fetch(`${this.API_BASE}${endpoint}`, {
             ...options,

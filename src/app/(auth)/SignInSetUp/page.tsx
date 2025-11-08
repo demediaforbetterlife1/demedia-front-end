@@ -180,7 +180,8 @@ export default function SignInSetUp() {
         setError("");
 
         try {
-            const userId = user?.id || localStorage.getItem("userId");
+            // Get userId from AuthContext - it comes from database, not localStorage
+            const userId = user?.id;
             if (!userId) {
                 throw new Error("User not authenticated");
             }

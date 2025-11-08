@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { getModalThemeClasses } from "@/utils/enhancedThemeUtils";
 import { contentModerationService } from "@/services/contentModeration";
 import { apiFetch } from "@/lib/api";
@@ -42,6 +43,7 @@ interface PrivacySettings {
 
 export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModalProps) {
     const { theme } = useTheme();
+    const { user } = useAuth();
     const themeClasses = getModalThemeClasses(theme);
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
@@ -185,7 +187,8 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
     setError(null);
 
     try {
-        const userId = localStorage.getItem("userId");
+        // Get userId from AuthContext - it comes from database, not localStorage
+        const userId = user?.id;
         if (!userId) {
             setError("⚠️ Please log in to create a post");
             return;
@@ -213,7 +216,7 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
             const formData = new FormData();
             formData.append('file', image);
             formData.append('type', 'image');
-            formData.append('userId', userId);
+            formData.append('userId', String(userId));
 
             const uploadResponse = await apiFetch(`/api/upload`, {
                 method: 'POST',
@@ -240,7 +243,7 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
         const postData = {
             title: title || null,
             content,
-            userId: parseInt(userId),
+            userId: typeof userId === 'string' ? parseInt(userId) : userId,
             privacySettings,
             hashtags,
             mentions,
@@ -252,9 +255,8 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
 
         // Verify user authentication
         const token = localStorage.getItem('token');
-        const storedUserId = localStorage.getItem('userId');
         
-        if (!token || !storedUserId) {
+        if (!token || !userId) {
             setError('❌ User not authenticated. Please log in again.');
             setLoading(false);
             return;
@@ -262,9 +264,9 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
 
         const res = await apiFetch(`/api/posts`, {
             method: "POST",
-            headers: { 'user-id': userId },
+            headers: { 'user-id': String(userId) },
             body: JSON.stringify(postData),
-        });
+        }, userId);
 
         const responseText = await res.text();
 

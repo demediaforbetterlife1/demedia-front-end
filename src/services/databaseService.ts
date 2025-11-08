@@ -1,16 +1,16 @@
 // Database service to replace localStorage usage
+// userId should be passed from AuthContext, not localStorage
 class DatabaseService {
     private baseUrl: string;
     private token: string | null;
-    private userId: string | null;
 
     constructor() {
         this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://demedia-backend.fly.dev';
         this.token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        this.userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+        // userId should come from AuthContext, not localStorage
     }
 
-    private getHeaders() {
+    private getHeaders(userId?: string | number) {
         const headers: Record<string, string> = {
             'Content-Type': 'application/json'
         };
@@ -19,8 +19,8 @@ class DatabaseService {
             headers['Authorization'] = `Bearer ${this.token}`;
         }
         
-        if (this.userId) {
-            headers['user-id'] = this.userId;
+        if (userId) {
+            headers['user-id'] = String(userId);
         }
         
         return headers;
