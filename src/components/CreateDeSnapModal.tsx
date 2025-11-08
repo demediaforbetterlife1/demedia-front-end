@@ -247,10 +247,21 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 throw new Error('Invalid upload response from server. Please try again.');
             }
             
+            // Ensure video URL is properly formatted
+            let videoUrl = uploadData.videoUrl || uploadData.videoUrl;
+            if (videoUrl && !videoUrl.startsWith('http')) {
+                videoUrl = `https://demedia-backend.fly.dev${videoUrl}`;
+            }
+            
+            let thumbnailUrl = uploadData.thumbnailUrl || uploadData.thumbnail;
+            if (thumbnailUrl && !thumbnailUrl.startsWith('http')) {
+                thumbnailUrl = `https://demedia-backend.fly.dev${thumbnailUrl}`;
+            }
+            
             // Now create the DeSnap with the uploaded video URL
             const deSnapData = {
-                content: uploadData.videoUrl,
-                thumbnail: uploadData.thumbnailUrl,
+                content: videoUrl,
+                thumbnail: thumbnailUrl || videoUrl,
                 duration: duration,
                 visibility: settings.visibility,
                 userId: user?.id

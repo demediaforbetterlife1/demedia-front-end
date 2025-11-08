@@ -240,6 +240,39 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
             }
         }
 
+        // Upload videos if any
+        let videoUrls: string[] = [];
+        for (const video of videos) {
+            const formData = new FormData();
+            formData.append('video', video);
+            formData.append('userId', String(userId));
+
+            const uploadResponse = await apiFetch(`/api/upload/video`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const uploadText = await uploadResponse.text();
+            if (!uploadResponse.ok) {
+                setError(`❌ Video upload failed: ${uploadResponse.status} - ${uploadText}`);
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const uploadData = JSON.parse(uploadText);
+                let videoUrl = uploadData.videoUrl || uploadData.url;
+                if (videoUrl && !videoUrl.startsWith('http')) {
+                    videoUrl = `https://demedia-backend.fly.dev${videoUrl}`;
+                }
+                videoUrls.push(videoUrl);
+            } catch (err) {
+                setError(`❌ Invalid video upload response: ${uploadText}`);
+                setLoading(false);
+                return;
+            }
+        }
+
         const postData = {
             title: title || null,
             content,
@@ -250,7 +283,9 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
             location,
             scheduledDate: isScheduled && scheduleDate ? new Date(scheduleDate).toISOString() : null,
             imageUrls,
-            imageUrl: imageUrls[0] || null
+            imageUrl: imageUrls[0] || null,
+            videoUrls,
+            videoUrl: videoUrls[0] || null
         };
 
         // Verify user authentication

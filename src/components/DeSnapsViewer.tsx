@@ -57,6 +57,10 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
     const [isBookmarked, setIsBookmarked] = useState(deSnap.isBookmarked || false);
     const [likes, setLikes] = useState(deSnap.likes);
     const [showComments, setShowComments] = useState(false);
+    const [comments, setComments] = useState<any[]>([]);
+    const [newComment, setNewComment] = useState("");
+    const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+    const [isLoadingComments, setIsLoadingComments] = useState(false);
     
     const videoRef = useRef<HTMLVideoElement>(null);
     const progressRef = useRef<HTMLDivElement>(null);
@@ -169,6 +173,87 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
+    // Fetch comments for this DeSnap
+    const fetchComments = async () => {
+        if (isLoadingComments) return;
+        setIsLoadingComments(true);
+        try {
+            const response = await fetch(`/api/desnaps/${deSnap.id}/comments`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setComments(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error('Error fetching comments:', error);
+        } finally {
+            setIsLoadingComments(false);
+        }
+    };
+
+    // Submit a comment
+    const handleSubmitComment = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newComment.trim() || isSubmittingComment) return;
+
+        setIsSubmittingComment(true);
+        try {
+            const response = await fetch(`/api/desnaps/${deSnap.id}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content: newComment.trim() }),
+            });
+
+            if (response.ok) {
+                const newCommentData = await response.json();
+                setComments(prev => [newCommentData, ...prev]);
+                setNewComment("");
+                // Update comment count
+                const updatedDeSnap = { ...deSnap, comments: deSnap.comments + 1 };
+                onDeSnapUpdated?.(updatedDeSnap);
+            }
+        } catch (error) {
+            console.error('Error submitting comment:', error);
+        } finally {
+            setIsSubmittingComment(false);
+        }
+    };
+
+    // Share DeSnap
+    const handleShare = async () => {
+        try {
+            const shareUrl = `${window.location.origin}/desnaps/${deSnap.id}`;
+            
+            if (navigator.share) {
+                await navigator.share({
+                    title: 'Check out this DeSnap!',
+                    text: 'Watch this DeSnap',
+                    url: shareUrl,
+                });
+            } else {
+                // Fallback: Copy to clipboard
+                await navigator.clipboard.writeText(shareUrl);
+                alert('Link copied to clipboard!');
+            }
+        } catch (error) {
+            console.error('Error sharing:', error);
+        }
+    };
+
+    // Load comments when comments section is opened
+    useEffect(() => {
+        if (showComments && comments.length === 0) {
+            fetchComments();
+        }
+    }, [showComments]);
+
     const progress = (currentTime / deSnap.duration) * 100;
     const VisibilityIcon = visibilityIcons[deSnap.visibility].icon;
     const visibilityColor = visibilityIcons[deSnap.visibility].color;
@@ -204,11 +289,19 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                     <div className="flex-1 flex items-center justify-center relative">
                         <video
                             ref={videoRef}
-                            src={deSnap.content}
+                            src={deSnap.content.startsWith('http') ? deSnap.content : `https://demedia-backend.fly.dev${deSnap.content}`}
                             className="w-full h-full object-cover"
                             muted={isMuted}
                             loop
                             onClick={togglePlayPause}
+                            onError={(e) => {
+                                console.error('Video load error:', e);
+                                // Try fallback URL
+                                const video = e.currentTarget;
+                                if (!deSnap.content.startsWith('http')) {
+                                    video.src = `https://demedia-backend.fly.dev${deSnap.content}`;
+                                }
+                            }}
                         />
                         
                         {/* Play/Pause overlay */}
@@ -314,7 +407,10 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                                     />
                                 </button>
 
-                                <button className="flex flex-col items-center gap-1 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                                <button 
+                                    onClick={handleShare}
+                                    className="flex flex-col items-center gap-1 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                                >
                                     <Share size={24} className="text-white" />
                                 </button>
                             </div>
@@ -328,14 +424,59 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 20 }}
-                                className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-md p-4 max-h-64 overflow-y-auto"
+                                className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-md p-4 max-h-64 flex flex-col"
                             >
-                                <div className="text-white text-sm">
-                                    <h4 className="font-semibold mb-2">Comments</h4>
-                                    <div className="space-y-2">
-                                        <p className="text-gray-400">No comments yet. Be the first to comment!</p>
-                                    </div>
+                                <h4 className="font-semibold mb-2 text-white text-sm">Comments ({comments.length})</h4>
+                                
+                                {/* Comments list */}
+                                <div className="flex-1 overflow-y-auto space-y-2 mb-3">
+                                    {isLoadingComments ? (
+                                        <p className="text-gray-400 text-sm">Loading comments...</p>
+                                    ) : comments.length === 0 ? (
+                                        <p className="text-gray-400 text-sm">No comments yet. Be the first to comment!</p>
+                                    ) : (
+                                        comments.map((comment) => (
+                                            <div key={comment.id} className="text-white text-sm">
+                                                <div className="flex items-start gap-2">
+                                                    {comment.user?.profilePicture ? (
+                                                        <img 
+                                                            src={comment.user.profilePicture} 
+                                                            alt={comment.user.name}
+                                                            className="w-6 h-6 rounded-full"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center">
+                                                            <span className="text-xs">{comment.user?.name?.charAt(0) || 'U'}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex-1">
+                                                        <span className="font-semibold">{comment.user?.name || 'Unknown'}</span>
+                                                        <span className="ml-2 text-gray-300">{comment.content}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
+                                
+                                {/* Comment input */}
+                                <form onSubmit={handleSubmitComment} className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={newComment}
+                                        onChange={(e) => setNewComment(e.target.value)}
+                                        placeholder="Add a comment..."
+                                        className="flex-1 bg-white/10 text-white placeholder-gray-400 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+                                        disabled={isSubmittingComment}
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={!newComment.trim() || isSubmittingComment}
+                                        className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                                    >
+                                        {isSubmittingComment ? '...' : 'Post'}
+                                    </button>
+                                </form>
                             </motion.div>
                         )}
                     </AnimatePresence>

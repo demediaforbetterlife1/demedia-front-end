@@ -626,7 +626,7 @@ export default function ProfilePage() {
                     // Update user context with new photo URL
                     const updatedUser = {
                         ...user,
-                        [type === 'profile' ? 'profilePicture' : 'coverPhoto']: data.url
+                        [type === 'profile' ? 'profilePicture' : 'coverPhoto']: photoUrl
                     };
                     // Note: You might need to add a method to update user context
                     // This depends on how your AuthContext is implemented
@@ -644,11 +644,16 @@ export default function ProfilePage() {
                     console.log('Notification service not available');
                 }
                 
-                // Refresh profile data to ensure photo is displayed
+                // Force a page refresh to ensure photo is displayed
                 if (isOwnProfile) {
-                    setTimeout(() => {
-                        refreshProfile();
-                    }, 1000);
+                    // Reload the profile data immediately
+                    const profileData = await getUserProfile(userId);
+                    if (profileData) {
+                        setProfile(prev => prev ? {
+                            ...prev,
+                            [type === 'profile' ? 'profilePicture' : 'coverPicture']: photoUrl
+                        } : null);
+                    }
                 }
             } else {
                 console.error(`Failed to upload ${type} photo`);
