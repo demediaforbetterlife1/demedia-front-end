@@ -52,6 +52,13 @@ export interface RegisterData {
   phoneNumber: string;
   password: string;
 }
+// داخل AuthContextType
+
+
+// داخل AuthProvider
+
+// ثم نضيفها في قيمة الـ context
+
 
 /* =======================
    ✅ Context Type
@@ -66,6 +73,7 @@ export interface AuthContextType {
   logout: () => void;
   refreshUser: () => Promise<void>;
   completeSetup: () => Promise<void>;
+  updateUser: (newData: Partial<User>) => void;
 }
 
 /* =======================
@@ -84,6 +92,10 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const router = useRouter();
+  const updateUser = (newData: Partial<User>) => {
+  setUser(prev => (prev ? { ...prev, ...newData } : null));
+};
+
 
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -263,6 +275,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     refreshUser,
     completeSetup,
+    updateUser,
   };
 
   return (
