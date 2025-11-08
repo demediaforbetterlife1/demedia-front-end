@@ -415,26 +415,31 @@ const handleSubmit = async (e: React.FormEvent) => {
             phoneNumber: formData.phoneNumber   
         });  
           
-        const result = await register(formData);  
-        console.log('Sign-up: Registration result:', result);  
-          
-        // Clear form on success - user will be redirected to setup by AuthContext  
-        setForm({ name: "", username: "", phoneNumber: "", password: "" });  
-        console.log('Sign-up: Registration successful, form cleared');  
-    } catch (err: any) {  
-        console.error("Sign-up: Registration error:", err);  
-        console.error("Sign-up: Error message:", err.message);  
-        console.error("Sign-up: Error type:", typeof err);  
-        console.error("Sign-up: Error string:", err.toString());  
-        console.error("Sign-up: Full error object:", err);  
-          
-        // Clear any previous errors  
-        setErrors({});  
-          
+        const result = await register(formData);
+        console.log('Sign-up: Registration result:', result);
+        
+        if (result.success) {
+            // Clear form on success
+            setForm({ name: "", username: "", phoneNumber: "", password: "" });
+            console.log('Sign-up: Registration successful, form cleared');
+            
+            // Wait a bit for auth state to update, then redirect to setup
+            // The register function already fetches the user
+            // Use replace to avoid adding to history
+            setTimeout(() => {
+                router.replace("/SignInSetUp");
+            }, 200);
+        } else {
+            // Handle registration error
+            setErrors({ general: result.message || t('auth.registrationFailed', 'Registration failed. Please try again.') });
+        }
+    } catch (err: any) {
+        console.error("Sign-up: Registration error:", err);
+        
         // Handle specific error cases with better matching  
         const errorMessage = err.message || err.toString() || "";  
         console.log("Sign-up: Error message for handling:", errorMessage);  
-          
+        
         if (errorMessage.includes("Username already in use") || errorMessage.includes("username")) {  
             setErrors({ username: t('auth.usernameTaken', 'This username is already taken') });  
         } else if (errorMessage.includes("Phone number already registered") || errorMessage.includes("phone")) {  
@@ -442,12 +447,10 @@ const handleSubmit = async (e: React.FormEvent) => {
         } else if (errorMessage.includes("2-50") && errorMessage.includes("chars") && errorMessage.includes("spaces")) {  
             // Handle the specific backend name validation error  
             setErrors({ name: t('auth.nameBackendError', 'Name must be 2-50 characters and can contain letters, spaces, and common punctuation') });  
-        } else if (errorMessage.includes("Something went wrong") || errorMessage.includes("Registration failed")) {  
-            // This is the generic error - show a setErrors({ general: t('auth.registrationFailed', 'Registration failed. Please try a different username or phone number.') });  
         } else {  
             // Show the actual error message  
             setErrors({ general: errorMessage || t('auth.registrationFailedGeneric', 'Registration failed. Please try again.') });  
-        }  
+        }
     } finally {  
         setIsSubmitting(false);  
     }  

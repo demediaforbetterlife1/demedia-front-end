@@ -181,6 +181,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (data?.token) {
         localStorage.setItem("token", data.token);
         setToken(data.token);
+        // Wait for user to be fetched before returning
+        await fetchUser();
         return { success: true };
       }
 
@@ -213,6 +215,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (data?.token) {
         localStorage.setItem("token", data.token);
         setToken(data.token);
+        // Wait for user to be fetched before returning
+        await fetchUser();
         return { success: true };
       }
 
@@ -231,7 +235,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(null);
     setUser(null);
     if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("auth:logout"));
-    router.push("/sign-up");
+    // Use replace to avoid adding logout to history
+    router.replace("/sign-up");
   };
 
   // =======================

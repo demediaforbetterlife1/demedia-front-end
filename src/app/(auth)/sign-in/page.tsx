@@ -143,21 +143,28 @@ export default function SignIn() {
     const [showPassword, setShowPassword] = useState(false);
     const { t } = useI18n();
     const [error, setError] = useState("");
+    const [loginSuccess, setLoginSuccess] = useState(false);
 
     const { login, isAuthenticated, isLoading, user } = useAuth();
     const router = useRouter();
 
+    // Handle redirect after successful login
+    // Use replace to avoid adding to history and prevent back button issues
     useEffect(() => {
-        if (isLoading) return;
-        if (isAuthenticated && user) {
+        if (loginSuccess && user && !isLoading) {
+            // Small delay to ensure state is fully updated
+            const redirectTimer = setTimeout(() => {
+                if (user.isSetupComplete) {
+                    router.replace("/home");
+                } else {
+                    router.replace("/SignInSetUp");
+                }
+                setLoginSuccess(false); // Reset flag
+            }, 100);
+            
+            return () => clearTimeout(redirectTimer);
         }
-    }, [isAuthenticated, isLoading, user, router]);
-// ✅ لو المستخدم بالفعل مسجّل دخول، انقله فورًا
-useEffect(() => {
-  if (!isLoading && isAuthenticated && user) {
-    router.push("/home");
-  }
-}, [isAuthenticated, isLoading, user]);
+    }, [loginSuccess, user, isLoading, router]);
     useEffect(() => {
         try {
             const saved = localStorage.getItem('rememberPhone');
@@ -175,16 +182,21 @@ useEffect(() => {
 
         try {
             console.log('Attempting login with:', { phoneNumber: form.phoneNumber });
-            const success = await login(form.phoneNumber, form.password);
-            console.log('Login result:', success);
+            const result = await login(form.phoneNumber, form.password);
+            console.log('Login result:', result);
             
-            if (success) {
+            if (result.success) {
                 if (remember) {
                     localStorage.setItem('rememberPhone', form.phoneNumber);
                 } else {
                     localStorage.removeItem('rememberPhone');
                 }
-            
+                
+                // Set flag to trigger redirect in useEffect
+                // The login function already fetches the user, so it should be available soon
+                setLoginSuccess(true);
+            } else {
+                setError(result.message || t('auth.loginFailed', 'Login failed. Please check your credentials and try again.'));
             }
         } catch (err: any) {
             console.error('Login error:', err);

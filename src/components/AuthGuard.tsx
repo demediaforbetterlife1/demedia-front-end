@@ -38,6 +38,13 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     // If not authenticated, redirect to sign-up unless on auth pages
     if (!isAuthenticated) {
       console.log('AuthGuard: Not authenticated, checking if should redirect');
+      // Check if there's a token in localStorage - if so, wait a bit for auth to initialize
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (token && !isAuthPage) {
+        // Token exists but not authenticated yet - wait a bit more
+        return;
+      }
+      
       if (!isAuthPage) {
         const now = Date.now();
         if (now - lastRedirectTime.current > 1000) { // Debounce redirects
@@ -51,9 +58,13 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     }
   }, [isAuthenticated, isLoading, user, pathname, router, hasRedirected]);
 
-  // Reset redirect state when pathname changes
+  // Reset redirect state when pathname changes, but with a small delay
+  // to prevent immediate re-redirects
   useEffect(() => {
-    setHasRedirected(false);
+    const timer = setTimeout(() => {
+      setHasRedirected(false);
+    }, 100);
+    return () => clearTimeout(timer);
   }, [pathname]);
 
   // Separate useEffect for authenticated user routing
@@ -74,19 +85,24 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     });
     
     // If on auth pages but already authenticated, redirect appropriately
+    // Add a small delay to allow page-level redirects to happen first
     if (isAuthPage) {
       const now = Date.now();
-      if (now - lastRedirectTime.current > 1000) { // Debounce redirects
+      if (now - lastRedirectTime.current > 1500) { // Increased debounce to allow page redirects
         console.log('AuthGuard: On auth page but authenticated, redirecting based on setup status');
         setHasRedirected(true);
         lastRedirectTime.current = now;
-        if (user.isSetupComplete) {
-          console.log('AuthGuard: Setup complete, redirecting to home');
-          router.replace('/home');
-        } else {
-          console.log('AuthGuard: Setup not complete, redirecting to SignInSetUp');
-          router.replace('/SignInSetUp');
-        }
+        
+        // Use setTimeout to allow any page-level redirects to complete first
+        setTimeout(() => {
+          if (user.isSetupComplete) {
+            console.log('AuthGuard: Setup complete, redirecting to home');
+            router.replace('/home');
+          } else {
+            console.log('AuthGuard: Setup not complete, redirecting to SignInSetUp');
+            router.replace('/SignInSetUp');
+          }
+        }, 300);
       }
       return;
     }
@@ -116,6 +132,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     }
 
     // If user is on root path and authenticated, redirect to home
+    // Note: Root page also handles this, but AuthGuard is a backup
     if (pathname === '/') {
       const now = Date.now();
       if (now - lastRedirectTime.current > 1000) { // Debounce redirects

@@ -122,11 +122,18 @@ export default function Stories() {
                 return;
             }
             
-            // Fetch stories from followed users only
-            const response = await fetch(`/api/stories/followed?userId=${user.id}`, {
+            // Fetch stories from the API
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setError("Authentication required");
+                return;
+            }
+            
+            const response = await fetch(`/api/stories`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Authorization': `Bearer ${token}`,
                     'user-id': user.id.toString(),
+                    'Content-Type': 'application/json',
                 }
             });
             
