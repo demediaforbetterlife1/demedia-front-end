@@ -1,9 +1,10 @@
 // src/lib/api.ts
 /* =========================================================================
    Central API helpers for Demedia frontend (TypeScript)
-   - Fixed authentication redirect issues
-   - Improved 401 handling to prevent redirect loops
-   - Better token validation and error handling
+   - All user/profile data is fetched from backend endpoints (no user data
+     retrieval from localStorage).
+   - Only the auth token (JWT) is read/written from localStorage.
+   - Robust fetch with retries, timeouts and direct-backend fallback.
    ========================================================================= */
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -67,36 +68,16 @@ export function getToken(): string | null {
   return localStorage.getItem("token");
 }
 
-/** Validate token format and expiration */
-function isValidToken(token: string | null): boolean {
-  if (!token) return false;
-  
-  try {
-    // Basic JWT format validation (3 parts separated by dots)
-    const parts = token.split('.');
-    if (parts.length !== 3) return false;
-    
-    // Optional: Check expiration if we want to decode JWT
-    // For now, just validate basic format
-    return token.length > 50; // Basic length check
-  } catch {
-    return false;
-  }
-}
-
-/** Return headers including Authorization if token exists and is valid */
+/** Return headers including Authorization if token exists
+ * userId should be passed from AuthContext, not localStorage
+ */
 export function getAuthHeaders(userId?: string | number): Record<string, string> {
   const token = getToken();
   const base: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
   };
-  
-  // Only add Authorization header if token exists and is valid
-  if (token && isValidToken(token)) {
-    base["Authorization"] = `Bearer ${token}`;
-  }
-  
+  if (token) base["Authorization"] = `Bearer ${token}`;
   if (userId) base["user-id"] = String(userId);
   return base;
 }
@@ -114,11 +95,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
     ...(options.headers as Record<string, string> | undefined) || {},
   };
 
-  // Only add Authorization if token exists and is valid
-  if (token && isValidToken(token)) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  
+  if (token) headers["Authorization"] = `Bearer ${token}`;
   if (userId) headers["user-id"] = String(userId);
 
   // Only set Content-Type automatically if body is not FormData
@@ -187,17 +164,13 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
           ])
         : await fetch(url, fetchOptions);
 
-      // FIXED: Improved 401 handling to prevent redirect loops
+      // handle unauthorized centrally
       if (res.status === 401) {
-        // Only remove token and logout if we have a token (avoid unnecessary logouts)
-        const currentToken = getToken();
-        if (typeof window !== "undefined" && currentToken && isValidToken(currentToken)) {
-          console.warn("[api] 401 Unauthorized - Removing invalid token");
+        // If it's not the auth/me check, remove token and broadcast logout
+        if (typeof window !== "undefined" && !path.includes("/auth/me")) {
           localStorage.removeItem("token");
           window.dispatchEvent(new CustomEvent("auth:logout"));
         }
-        // Return the 401 response instead of throwing - let the caller handle it
-        return res;
       }
 
       // if auth synthetic timeout (504), try direct backend
@@ -291,13 +264,10 @@ export interface AuthResponse {
 async function requestJson<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   const res = await apiFetch(path, opts);
   const parsed = await readJsonSafe<T | { error?: string }>(res);
-  
-  // Don't throw for 401 - let the caller handle authentication
-  if (!res.ok && res.status !== 401) {
+  if (!res.ok) {
     const errMsg = (parsed as any)?.error || (parsed as any)?.message || res.statusText;
     throw new Error(`Request failed ${res.status} - ${errMsg}`);
   }
-  
   return parsed as T;
 }
 
@@ -316,8 +286,9 @@ export async function signUp(payload: {
     headers: { "Content-Type": "application/json" },
   });
 
-  if (res?.token && isValidToken(res.token)) {
+  if (res?.token) {
     localStorage.setItem("token", res.token);
+    // userId should come from database via AuthContext, not localStorage
   }
   return res;
 }
@@ -330,49 +301,24 @@ export async function signIn(payload: { phoneNumber: string; password: string })
     headers: { "Content-Type": "application/json" },
   });
 
-  if (res?.token && isValidToken(res.token)) {
+  if (res?.token) {
     localStorage.setItem("token", res.token);
+    // userId should come from database via AuthContext, not localStorage
   }
   return res;
 }
 
 /** Fetch current authenticated user from backend only */
 export async function fetchCurrentUser(): Promise<User | null> {
-  const token = getToken();
-  
-  // Don't attempt to fetch user if no valid token
-  if (!token || !isValidToken(token)) {
-    return null;
-  }
-
   try {
-    const res = await apiFetch("/api/auth/me", {
+    const body = await requestJson<{ user: User | null }>("/api/auth/me", {
       method: "GET",
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), // userId not needed for /auth/me endpoint
       cache: "no-store",
     });
 
-    // Handle 401 specifically for auth/me
-    if (res.status === 401) {
-      console.warn("[api] fetchCurrentUser: Token invalid or expired");
-      localStorage.removeItem("token");
-      window.dispatchEvent(new CustomEvent("auth:logout"));
-      return null;
-    }
-
-    if (!res.ok) {
-      console.warn("[api] fetchCurrentUser: Request failed", res.status);
-      return null;
-    }
-
-    const body = await readJsonSafe<{ user: User | null }>(res);
-    
-    if (!body || (body as any).error) {
-      console.warn("[api] fetchCurrentUser: Invalid response body", body);
-      return null;
-    }
-
-    return body.user || null;
+    if (!body || !body.user) return null;
+    return body.user;
   } catch (err) {
     console.warn("[api] fetchCurrentUser failed:", err);
     return null;
@@ -412,9 +358,8 @@ export async function sendVerificationCode(phoneNumber: string, method: "whatsap
 /** Logout (clears token on client) */
 export function logoutClient(): void {
   localStorage.removeItem("token");
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("auth:logout"));
-  }
+  // userId should come from database via AuthContext, not localStorage
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("auth:logout"));
 }
 
 /* ----------------------------- User endpoints --------------------------- */
@@ -427,11 +372,6 @@ export async function getUserProfile(userId: string | number) {
       headers: getAuthHeaders(),
       cache: "no-store",
     });
-    
-    // Handle 401 for profile requests
-    if (res.status === 401) {
-      return null;
-    }
     
     const profile = await res.json();
     
@@ -460,12 +400,6 @@ export async function updateUserProfile(updates: Partial<User>) {
     headers: getAuthHeaders(),
     body: JSON.stringify(updates),
   });
-  
-  // Handle 401 for update requests
-  if (res.status === 401) {
-    throw new Error("Authentication required");
-  }
-  
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Update failed: ${res.status} ${txt}`);
@@ -483,12 +417,6 @@ export async function getPosts({ page = 1, limit = 20, q = "" }: { page?: number
     headers: getAuthHeaders(),
     cache: "no-store",
   });
-  
-  // Handle 401 for posts requests
-  if (res.status === 401) {
-    return [];
-  }
-  
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Failed to fetch posts: ${res.status} ${txt}`);
@@ -503,12 +431,6 @@ export async function getPost(postId: string | number) {
     headers: getAuthHeaders(),
     cache: "no-store",
   });
-  
-  // Handle 401 for single post requests
-  if (res.status === 401) {
-    throw new Error("Authentication required");
-  }
-  
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Failed to fetch post: ${res.status} ${txt}`);
@@ -518,22 +440,12 @@ export async function getPost(postId: string | number) {
 
 export async function createPost(payload: any) {
   const isForm = payload instanceof FormData;
-  const token = getToken();
-  
   const res = await apiFetch(`/api/posts`, {
     method: "POST",
     body: isForm ? (payload as any) : JSON.stringify(payload),
-    headers: isForm ? { 
-      ...(token && isValidToken(token) ? { Authorization: `Bearer ${token}` } : {})
-    } : getAuthHeaders(),
+    headers: isForm ? { Authorization: `Bearer ${getToken()}` } : getAuthHeaders(),
     credentials: "include",
   });
-  
-  // Handle 401 for post creation
-  if (res.status === 401) {
-    throw new Error("Authentication required");
-  }
-  
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
     throw new Error(errText || `Failed to create post (${res.status})`);
@@ -549,12 +461,6 @@ export async function postComment(postId: string | number, content: string) {
     headers: getAuthHeaders(),
     body: JSON.stringify({ postId, content }),
   });
-  
-  // Handle 401 for comment posts
-  if (res.status === 401) {
-    throw new Error("Authentication required");
-  }
-  
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Failed to post comment: ${res.status} ${txt}`);
@@ -571,12 +477,6 @@ export async function getNotifications({ page = 1, limit = 20 }: { page?: number
     headers: getAuthHeaders(),
     cache: "no-store",
   });
-  
-  // Handle 401 for notifications
-  if (res.status === 401) {
-    return [];
-  }
-  
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Failed to fetch notifications: ${res.status} ${txt}`);
@@ -590,12 +490,6 @@ export async function markNotificationRead(notificationId: string | number) {
     method: "POST",
     headers: getAuthHeaders(),
   });
-  
-  // Handle 401 for notification updates
-  if (res.status === 401) {
-    throw new Error("Authentication required");
-  }
-  
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Failed to mark read: ${res.status} ${txt}`);
@@ -613,15 +507,10 @@ export async function enhancedSearch(q: string, opts: { limit?: number; type?: s
     headers: getAuthHeaders(),
     cache: "no-store",
   });
-  
-  // Handle 401 for search
-  if (res.status === 401) {
-    return { users: [], posts: [] };
-  }
-  
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
-    throw new Error(`Search failed: ${res.status} ${txt}`)
+    throw new Error(`Search failed: ${res.status} ${txt}`);
+  }
   return await res.json();
 }
 
@@ -635,7 +524,7 @@ export async function pingHealth() {
     console.warn("[api] pingHealth failed:", err);
     return null;
   }
-}}
+}
 
 /* -------------------------- Backwards compat helpers ------------------- */
 
@@ -651,7 +540,6 @@ const api = {
   readJsonSafe,
   getToken,
   getAuthHeaders,
-  isValidToken,
   // auth
   signUp,
   signIn,
