@@ -1,23 +1,9 @@
-// src/components/AuthGuard.tsx
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname, useRouter } from "next/navigation";
 
-/**
- * AuthGuard (complete)
- *
- * Responsibilities:
- * - Blocks access to protected areas when user is not authenticated.
- * - Redirects authenticated users off auth pages to home or setup depending on isSetupComplete.
- * - Prevents rapid/multiple redirects (debounce).
- * - Waits for AuthContext to finish loading user (isLoading) before making redirect decisions.
- *
- * Notes:
- * - AuthContext must expose: { isAuthenticated, isLoading, user }
- * - user.isSetupComplete is used to decide setup redirection.
- */
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -63,25 +49,30 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     const isSetupPage = setupPages.includes(pathname);
     const isProtectedPage = protectedPrefixes.some((p) => pathname.startsWith(p));
 
-    // If user not authenticated OR user object is missing: redirect to sign-up (unless on auth pages)
-    if (!isAuthenticated || !user) {
-      // If token exists in localStorage but user still null, we still wait (no redirect).
-      // This prevents redirect loops on slow networks where token exists but user fetch hasn't completed.
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    // FIX: Get token from localStorage to make proper authentication decisions
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-      // If token exists but we have no authenticated user — avoid redirect until AuthContext finishes.
-      // However since isLoading is false here, AuthContext already finished; so this means user really not present.
-      if (!isAuthPage) {
-        // Redirect to sign-up if not on auth pages
+    // FIXED LOGIC: Only redirect if definitely not authenticated (no token and no user)
+    if (!token && !user) {
+      // No token and no user - definitely not authenticated
+      if (!isAuthPage && !isSetupPage) {
         safeReplace("/sign-up");
       }
       return;
     }
 
+    // FIX: If we have a token but no user yet, wait (don't redirect)
+    // This handles cases where token exists but user fetch is still completing
+    if (token && !user) {
+      return;
+    }
+
+    // From this point, we know we have both token and user (authenticated)
+
     // If authenticated & on auth pages => send to appropriate place
     if (isAuthPage) {
       // If user completed setup -> home, else -> SignInSetUp
-      if (user.isSetupComplete) {
+      if (user!.isSetupComplete) {
         safeReplace("/home");
       } else {
         safeReplace("/SignInSetUp");
@@ -90,13 +81,13 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     }
 
     // If user is authenticated but trying to access protected pages without completing setup
-    if (isProtectedPage && !user.isSetupComplete) {
+    if (isProtectedPage && !user!.isSetupComplete) {
       safeReplace("/SignInSetUp");
       return;
     }
 
     // If user has completed setup but is on setup pages, send to home
-    if (isSetupPage && user.isSetupComplete) {
+    if (isSetupPage && user!.isSetupComplete) {
       safeReplace("/home");
       return;
     }
@@ -107,7 +98,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       return;
     }
 
-    // Otherwise allow
+    // Otherwise allow access to the requested page
   }, [isAuthenticated, isLoading, user, pathname, router]);
 
   // Loading UI while authenticating (keeps behaviour like your original spinner)
