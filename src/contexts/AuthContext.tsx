@@ -52,13 +52,6 @@ export interface RegisterData {
   phoneNumber: string;
   password: string;
 }
-// داخل AuthContextType
-
-
-// داخل AuthProvider
-
-// ثم نضيفها في قيمة الـ context
-
 
 /* =======================
    ✅ Context Type
@@ -92,36 +85,24 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const router = useRouter();
-  const updateUser = (newData: Partial<User>) => {
-  setUser(prev => (prev ? { ...prev, ...newData } : null));
-};
-
-
+  
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const isAuthenticated = !!user && !!token;
 
-  // Load token from localStorage
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const saved = localStorage.getItem("token");
-    if (saved) {
-      setToken(saved);
-    } else {
-      setIsLoading(false);
-    }
-  }, []);
+  const updateUser = (newData: Partial<User>) => {
+    setUser(prev => (prev ? { ...prev, ...newData } : null));
+  };
 
   // Fetch current user from backend
-  const fetchUser = useCallback(async () => {
-    if (!token) return;
+  const fetchUser = useCallback(async (authToken: string) => {
     try {
       const res = await fetch("/api/auth/me", {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
         cache: "no-store",
@@ -131,32 +112,58 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (res.status === 401) {
           localStorage.removeItem("token");
           setToken(null);
+          setUser(null);
         }
-        setUser(null);
-        return;
+        throw new Error(`Failed to fetch user: ${res.status}`);
       }
 
-      const body = await res.json().catch(() => null);
+      const body = await res.json();
       const userObj: User | null = body?.user ?? body ?? null;
-      setUser(userObj);
+      
+      if (userObj) {
+        setUser(userObj);
+      } else {
+        setUser(null);
+      }
     } catch (err) {
       console.error("[Auth] fetchUser error:", err);
       setUser(null);
-    } finally {
-      setIsLoading(false);
     }
-  }, [token]);
+  }, []);
 
+  // Load token from localStorage and fetch user
   useEffect(() => {
-    if (token) fetchUser();
-    else {
-      setUser(null);
-      setIsLoading(false);
-    }
-  }, [token, fetchUser]);
+    const initializeAuth = async () => {
+      if (typeof window === "undefined") {
+        setIsLoading(false);
+        return;
+      }
+
+      const savedToken = localStorage.getItem("token");
+      
+      if (!savedToken) {
+        setIsLoading(false);
+        return;
+      }
+
+      setToken(savedToken);
+      
+      try {
+        await fetchUser(savedToken);
+      } catch (error) {
+        console.error("[Auth] Initialization error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, [fetchUser]);
 
   const refreshUser = async () => {
-    await fetchUser();
+    if (token) {
+      await fetchUser(token);
+    }
   };
 
   const login = async (
@@ -181,13 +188,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (data?.token) {
         localStorage.setItem("token", data.token);
         setToken(data.token);
-        // Wait for user to be fetched before returning
-        await fetchUser();
+        // Fetch user data with the new token
+        await fetchUser(data.token);
         return { success: true };
       }
 
-      await fetchUser();
-      return user ? { success: true } : { success: false, message: "Login succeeded but no token returned" };
+      return { success: false, message: "Login succeeded but no token returned" };
     } catch (err: any) {
       console.error("[Auth] login error:", err);
       return { success: false, message: err?.message || "Login failed" };
@@ -215,13 +221,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (data?.token) {
         localStorage.setItem("token", data.token);
         setToken(data.token);
-        // Wait for user to be fetched before returning
-        await fetchUser();
+        // Fetch user data with the new token
+        await fetchUser(data.token);
         return { success: true };
       }
 
-      await fetchUser();
-      return { success: true };
+      return { success: false, message: "Registration succeeded but no token returned" };
     } catch (err: any) {
       console.error("[Auth] register error:", err);
       return { success: false, message: err?.message || "Registration failed" };
@@ -234,17 +239,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
-    if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("auth:logout"));
+    setIsLoading(false);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("auth:logout"));
+    }
     // Use replace to avoid adding logout to history
     router.replace("/sign-up");
   };
 
-  // =======================
-  // ✅ completeSetup
-  // sets isSetupComplete = true in backend
-  // =======================
   const completeSetup = async (): Promise<void> => {
-    if (!token) return;
+    if (!token || !user) return;
+    
     setIsLoading(true);
     try {
       const res = await fetch("/api/auth/complete-setup", {
@@ -257,14 +262,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (res.ok) {
-        // refresh user after setup complete
-        await fetchUser();
+        // Update local state immediately for better UX
+        setUser(prev => prev ? { ...prev, isSetupComplete: true } : null);
+        // Then refresh from backend to ensure consistency
+        await refreshUser();
       } else {
         const errText = await res.text();
         console.error("[Auth] completeSetup failed:", res.status, errText);
+        throw new Error(`Setup completion failed: ${res.status}`);
       }
     } catch (err) {
       console.error("[Auth] completeSetup error:", err);
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -285,7 +294,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!isLoading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
