@@ -1,9 +1,9 @@
 // src/lib/api.ts
 /* =========================================================================
    Central API helpers for Demedia frontend (TypeScript)
+   - Updated to use cookies instead of localStorage
    - Fixed authentication redirect issues
    - Improved 401 handling to prevent redirect loops
-   - Added token validation and better error handling
    ========================================================================= */
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -58,13 +58,43 @@ export async function readJsonSafe<T = unknown>(res: Response): Promise<T | { er
 }
 
 /* ------------------------------------------------------------------------- */
+/* -------------------------- Cookie Helper Functions ---------------------- */
+/* ------------------------------------------------------------------------- */
+
+const setCookie = (name: string, value: string, days: number = 7) => {
+  if (typeof window === "undefined") return;
+  
+  const date = new Date();
+  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+  const expires = `expires=${date.toUTCString()}`;
+  document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Strict${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+};
+
+const getCookie = (name: string): string | null => {
+  if (typeof window === "undefined") return null;
+  
+  const nameEQ = name + "=";
+  const ca = document.cookie.split(';');
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+  }
+  return null;
+};
+
+const deleteCookie = (name: string) => {
+  if (typeof window === "undefined") return;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+};
+
+/* ------------------------------------------------------------------------- */
 /* -------------------------- Auth helpers --------------------------------- */
 /* ------------------------------------------------------------------------- */
 
-/** Only token is stored in localStorage — everything else pulled from backend */
+/** Only token is stored in cookies — everything else pulled from backend */
 export function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("token");
+  return getCookie("token");
 }
 
 /** Validate token format */
@@ -97,7 +127,7 @@ export function getAuthHeaders(userId?: string | number): Record<string, string>
 /* ------------------------------------------------------------------------- */
 
 export async function apiFetch(path: string, options: RequestInit = {}, userId?: string | number): Promise<Response> {
-  // attach token from localStorage (userId should be passed as parameter from AuthContext)
+  // attach token from cookies (userId should be passed as parameter from AuthContext)
   const token = getToken();
 
   // copy/merge headers
@@ -186,7 +216,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
         const currentToken = getToken();
         if (typeof window !== "undefined" && currentToken && isValidToken(currentToken) && !path.includes("/auth/")) {
           console.warn("[api] Removing invalid token and logging out");
-          localStorage.removeItem("token");
+          deleteCookie("token");
           window.dispatchEvent(new CustomEvent("auth:logout"));
         }
         
@@ -311,7 +341,7 @@ export async function signUp(payload: {
   });
 
   if (res?.token && isValidToken(res.token)) {
-    localStorage.setItem("token", res.token);
+    setCookie("token", res.token, 7);
   }
   return res;
 }
@@ -325,12 +355,11 @@ export async function signIn(payload: { phoneNumber: string; password: string })
   });
 
   if (res?.token && isValidToken(res.token)) {
-    localStorage.setItem("token", res.token);
+    setCookie("token", res.token, 7);
   }
   return res;
 }
 
-/** Fetch current authenticated user from backend only */
 /** Fetch current authenticated user from backend only */
 export async function fetchCurrentUser(): Promise<User | null> {
   const token = getToken();
@@ -412,7 +441,7 @@ export async function sendVerificationCode(phoneNumber: string, method: "whatsap
 
 /** Logout (clears token on client) */
 export function logoutClient(): void {
-  localStorage.removeItem("token");
+  deleteCookie("token");
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("auth:logout"));
   }
@@ -627,7 +656,8 @@ export async function enhancedSearch(q: string, opts: { limit?: number; type?: s
   return await res.json();
 }
 
-/* ---------------------- Admin / Maintenance helpers ------------------*/
+/* ---------------------- Admin / Maintenance helpers -------------------- */
+
 export async function pingHealth() {
   try {
     const res = await apiFetch("/api/health", { method: "GET", headers: getAuthHeaders() });
