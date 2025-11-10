@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Stars, OrbitControls } from "@react-three/drei";
+import { useAuth } from "@/contexts/AuthContext"
 import * as THREE from "three";
 import gsap from "gsap";
 import { useI18n } from "@/contexts/I18nContext";
@@ -125,6 +126,7 @@ return (
 }
 /* ----------------------------------------------- */
 // Add this useEffect to your SignUpPage component
+const { register, isAuthenticated, isLoading, user } = useAuth();
 useEffect(() => {
   if (isAuthenticated && user) {
     console.log('User authenticated, redirecting to setup');
