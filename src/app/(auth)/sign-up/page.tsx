@@ -406,7 +406,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     try {  
         // Combine country code with phone number  
         const normalizedNumber = form.phoneNumber.replace(/^0+/, "");  
-          const fullPhoneNumber = selectedCountryCode + normalizedNumber;  
+        const fullPhoneNumber = selectedCountryCode + normalizedNumber;  
         const formData = { ...form, phoneNumber: fullPhoneNumber };  
           
         console.log('Sign-up: Attempting registration with:', {   
@@ -419,16 +419,12 @@ const handleSubmit = async (e: React.FormEvent) => {
         console.log('Sign-up: Registration result:', result);
         
         if (result.success) {
-            // Clear form on success
-            setForm({ name: "", username: "", phoneNumber: "", password: "" });
-            console.log('Sign-up: Registration successful, form cleared');
+            console.log('Sign-up: Registration successful, redirecting...');
             
-            // Wait a bit for auth state to update, then redirect to setup
-            // The register function already fetches the user
-            // Use replace to avoid adding to history
+            // Use a small timeout to ensure state updates complete
             setTimeout(() => {
-                router.replace("/SignInSetUp");
-            }, 200);
+                router.push("/SignInSetUp");
+            }, 100);
         } else {
             // Handle registration error
             setErrors({ general: result.message || t('auth.registrationFailed', 'Registration failed. Please try again.') });
@@ -436,7 +432,6 @@ const handleSubmit = async (e: React.FormEvent) => {
     } catch (err: any) {
         console.error("Sign-up: Registration error:", err);
         
-        // Handle specific error cases with better matching  
         const errorMessage = err.message || err.toString() || "";  
         console.log("Sign-up: Error message for handling:", errorMessage);  
         
@@ -445,17 +440,14 @@ const handleSubmit = async (e: React.FormEvent) => {
         } else if (errorMessage.includes("Phone number already registered") || errorMessage.includes("phone")) {  
             setErrors({ phoneNumber: t('auth.phoneRegistered', 'This phone number is already registered') });  
         } else if (errorMessage.includes("2-50") && errorMessage.includes("chars") && errorMessage.includes("spaces")) {  
-            // Handle the specific backend name validation error  
             setErrors({ name: t('auth.nameBackendError', 'Name must be 2-50 characters and can contain letters, spaces, and common punctuation') });  
         } else {  
-            // Show the actual error message  
             setErrors({ general: errorMessage || t('auth.registrationFailedGeneric', 'Registration failed. Please try again.') });  
         }
     } finally {  
         setIsSubmitting(false);  
     }  
-};  
-
+};
 const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {  
     setForm({ ...form, [e.target.name]: e.target.value });  
 };  
