@@ -331,6 +331,7 @@ export async function signIn(payload: { phoneNumber: string; password: string })
 }
 
 /** Fetch current authenticated user from backend only */
+/** Fetch current authenticated user from backend only */
 export async function fetchCurrentUser(): Promise<User | null> {
   const token = getToken();
   
@@ -361,12 +362,18 @@ export async function fetchCurrentUser(): Promise<User | null> {
 
     const body = await readJsonSafe<{ user: User | null }>(res);
     
-    if (!body || (body as any).error) {
-      console.warn("[api] fetchCurrentUser: Invalid response body", body);
-      return null;
+    // FIXED: Type-safe property access
+    if (body && 'user' in body && body.user) {
+      return body.user;
     }
-
-    return body.user || null;
+    
+    // Check if it's an error response
+    if (body && 'error' in body) {
+      console.warn("[api] fetchCurrentUser: Error in response:", body.error);
+    }
+    
+    console.warn("[api] fetchCurrentUser: Invalid response body", body);
+    return null;
   } catch (err) {
     console.warn("[api] fetchCurrentUser failed:", err);
     return null;
