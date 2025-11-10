@@ -29,87 +29,91 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     router.replace(to);
   };
 
-  useEffect(() => {
-    let mounted = true;
+  const hasRedirected = useRef(false);
 
-    const checkAuth = async () => {
-      if (isLoading) return;
+useEffect(() => {
+  let mounted = true;
 
-      // determine page type
-      const isAuthPage = authPages.includes(pathname);
-      const isSetupPage = setupPages.includes(pathname);
-      const isProtectedPage = protectedPrefixes.some((p) => pathname.startsWith(p));
+  const checkAuth = async () => {
+    if (isLoading) return;
 
-      const tokenValid = await validateToken(token);
+    // determine page type
+    const isAuthPage = authPages.includes(pathname);
+    const isSetupPage = setupPages.includes(pathname);
+    const isProtectedPage = protectedPrefixes.some((p) => pathname.startsWith(p));
 
-      console.log("[AuthGuard Debug]", {
-        pathname,
-        token: token ? "exists" : "null",
-        tokenValid,
-        user: user ? `exists (id: ${user.id})` : "null",
-        isAuthPage,
-        isSetupPage,
-        isProtectedPage,
-      });
+    const tokenValid = await validateToken(token);
 
-      // If no token or invalid token => redirect to sign-up
-      if (!tokenValid) {
-        if (!isAuthPage && !isSetupPage && mounted) {
-          safeReplace("/sign-up");
-        }
-        setInitialCheckDone(true);
-        return;
+    console.log("[AuthGuard Debug]", {
+      pathname,
+      token: token ? "exists" : "null",
+      tokenValid,
+      user: user ? `exists (id: ${user.id})` : "null",
+      isAuthPage,
+      isSetupPage,
+      isProtectedPage,
+    });
+
+    if (!tokenValid) {
+      if (!isAuthPage && !isSetupPage && !hasRedirected.current && mounted) {
+        safeReplace("/sign-up");
+        hasRedirected.current = true;
       }
-
-      // token valid, but no user data yet — wait
-      if (!user) {
-        console.log("[AuthGuard] Token valid but no user data yet, waiting...");
-        return;
-      }
-
-      // User is authenticated
-      console.log("[AuthGuard] User authenticated:", user.id);
-
-      // Auth pages logic
-      if (isAuthPage) {
-        if (user.isSetupComplete) safeReplace("/home");
-        else safeReplace("/SignInSetUp");
-        setInitialCheckDone(true);
-        return;
-      }
-
-      // Setup pages logic
-      if (isSetupPage && user.isSetupComplete) {
-        safeReplace("/home");
-        setInitialCheckDone(true);
-        return;
-      }
-
-      // Protected pages logic
-      if (isProtectedPage && !user.isSetupComplete) {
-        safeReplace("/SignInSetUp");
-        setInitialCheckDone(true);
-        return;
-      }
-
-      // Root path fallback
-      if (pathname === "/") {
-        safeReplace("/home");
-        setInitialCheckDone(true);
-        return;
-      }
-
-      // All checks passed
       setInitialCheckDone(true);
-    };
+      return;
+    }
 
-    checkAuth();
+    if (!user) {
+      console.log("[AuthGuard] Token valid but no user data yet, waiting...");
+      return;
+    }
 
-    return () => {
-      mounted = false;
-    };
-  }, [user, token, isLoading, pathname, router, validateToken]);
+    // User authenticated
+    console.log("[AuthGuard] User authenticated:", user.id);
 
+    // Auth pages
+    if (isAuthPage && !hasRedirected.current) {
+      if (user.isSetupComplete) safeReplace("/home");
+      else safeReplace("/SignInSetUp");
+      hasRedirected.current = true;
+      setInitialCheckDone(true);
+      return;
+    }
+
+    // Setup pages
+    if (isSetupPage && user.isSetupComplete && !hasRedirected.current) {
+      safeReplace("/home");
+      hasRedirected.current = true;
+      setInitialCheckDone(true);
+      return;
+    }
+
+    // Protected pages
+    if (isProtectedPage && !user.isSetupComplete && !hasRedirected.current) {
+      safeReplace("/SignInSetUp");
+      hasRedirected.current = true;
+      setInitialCheckDone(true);
+      return;
+    }
+
+    // Root fallback
+    if (pathname === "/" && !hasRedirected.current) {
+      safeReplace("/home");
+      hasRedirected.current = true;
+      setInitialCheckDone(true);
+      return;
+    }
+
+    // All checks passed
+    setInitialCheckDone(true);
+  };
+
+  checkAuth();
+
+  return () => {
+    mounted = false;
+  };
+}, [user, token, isLoading, pathname, router, validateToken]);
   // show loading spinner while waiting for auth state
   if (isLoading || !initialCheckDone) {
     return (
