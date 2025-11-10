@@ -6,7 +6,7 @@ export async function PUT(
 ) {
   let userId: string = '';
   let body: any = {};
-  let authHeader: string | null = null;
+  let token: string | null = null;
   
   try {
     const resolvedParams = await params;
@@ -26,10 +26,10 @@ export async function PUT(
     
     console.log('User profile update request:', { userId, body });
 
-    // Get the authorization token
-    authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+    // Get the authorization token from cookie instead of header
+    token = request.cookies.get('token')?.value || null;
+    if (!token) {
+      return NextResponse.json({ error: 'No authentication token found' }, { status: 401 });
     }
 
     // Normalize payload: turn empty strings into nulls and validate simple shapes
@@ -61,7 +61,7 @@ export async function PUT(
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/user/${userId}`, {
         method: 'PUT',
         headers: {
-          'Authorization': authHeader,
+          'Authorization': `Bearer ${token}`, // Use token from cookie
           'Content-Type': 'application/json',
           'user-id': request.headers.get('user-id') || ''
         },
@@ -104,7 +104,7 @@ export async function PUT(
       stack: errorStack, 
       userId,
       body,
-      authHeader: !!authHeader 
+      token: !!token 
     });
     return NextResponse.json({ 
       error: 'Internal server error',

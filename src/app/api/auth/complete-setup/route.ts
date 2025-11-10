@@ -2,18 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const userId = request.headers.get('user-id');
+    // Try to get token from cookie first, then fall back to Authorization header
+    let token = request.cookies.get('token')?.value;
     
-    if (!authHeader) {
-      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+    if (!token) {
+      // Fallback to Authorization header
+      const authHeader = request.headers.get('authorization');
+      if (authHeader?.startsWith('Bearer ')) {
+        token = authHeader.replace('Bearer ', '');
+      }
+    }
+    
+    if (!token) {
+      return NextResponse.json({ error: 'No authentication token found' }, { status: 401 });
     }
 
+    const userId = request.headers.get('user-id');
+    
     // Extract userId from JWT if not provided in header
     let targetUserId = userId;
     if (!targetUserId) {
       try {
-        const token = authHeader.replace('Bearer ', '');
         const part = token.split('.')[1];
         const decoded = JSON.parse(Buffer.from(part, 'base64').toString('utf-8'));
         targetUserId = (decoded.sub || decoded.userId || decoded.id)?.toString?.() || null;
@@ -31,7 +40,7 @@ export async function POST(request: NextRequest) {
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/user/${targetUserId}/complete-setup`, {
         method: 'POST',
         headers: {
-          'Authorization': authHeader,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'user-id': targetUserId,
         },
@@ -56,4 +65,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
