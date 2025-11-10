@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Stars, OrbitControls } from "@react-three/drei";
-import { useAuth } from "@/contexts/AuthContext"
 import * as THREE from "three";
 import gsap from "gsap";
 import { useI18n } from "@/contexts/I18nContext";
