@@ -9,115 +9,83 @@ interface AuthGuardProps {
 }
 
 export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, validateToken } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
-  // state to avoid multiple redirects in quick succession
-  const [blocked, setBlocked] = useState(false);
-  const [initialCheckDone, setInitialCheckDone] = useState(false);
+  const [ready, setReady] = useState(false);
   const lastRedirectTime = useRef<number>(0);
 
-  // configuration: pages and protected prefixes
+  // Pages config
   const authPages = ["/sign-in", "/sign-up"];
   const setupPages = ["/SignInSetUp", "/interests", "/FinishSetup"];
-  const protectedPrefixes = ["/home", "/profile", "/messaging", "/messeging"];
+  const protectedPrefixes = ["/home", "/profile", "/messaging"];
 
-  // small helper to debounce navigation
-  const safeReplace = (to: string) => {
+  const safeRedirect = (to: string) => {
     const now = Date.now();
-    // skip if we redirected very recently
     if (now - lastRedirectTime.current < 700) return;
     lastRedirectTime.current = now;
     router.replace(to);
   };
 
   useEffect(() => {
-    // Always wait until auth state finished initial loading
-    if (isLoading) {
-      setBlocked(true);
-      return;
-    }
+    const checkAuth = async () => {
+      if (isLoading) return; // wait for auth state
 
-    // no longer loading
-    setBlocked(false);
-    setInitialCheckDone(true);
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-    // Normalize flags
-    const isAuthPage = authPages.includes(pathname);
-    const isSetupPage = setupPages.includes(pathname);
-    const isProtectedPage = protectedPrefixes.some((p) => pathname.startsWith(p));
-
-    // Get token from localStorage
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
-    console.log("[AuthGuard Debug]", {
-      token: token ? "exists" : "null",
-      user: user ? `exists (id: ${user.id})` : "null",
-      isAuthenticated,
-      pathname,
-      isAuthPage,
-      isSetupPage,
-      isProtectedPage
-    });
-
-    // FIXED: More robust authentication check
-    if (!token) {
-      // No token at all - definitely not authenticated
-      if (!isAuthPage && !isSetupPage) {
-        console.log("[AuthGuard] No token, redirecting to sign-up");
-        safeReplace("/sign-up");
+      // If no token, redirect to sign-up (unless already on auth pages)
+      if (!token && !authPages.includes(pathname) && !setupPages.includes(pathname)) {
+        safeRedirect("/sign-up");
+        return;
       }
-      return;
-    }
 
-    // We have a token, but no user data yet
-    if (!user) {
-      console.log("[AuthGuard] Token exists but no user data, waiting...");
-      return;
-    }
-
-    // FIXED: Now we definitely have both token and user
-    console.log("[AuthGuard] User authenticated:", user.id);
-
-    // If authenticated & on auth pages => send to appropriate place
-    if (isAuthPage) {
-      if (user.isSetupComplete) {
-        console.log("[AuthGuard] On auth page with completed setup, going home");
-        safeReplace("/home");
-      } else {
-        console.log("[AuthGuard] On auth page without setup, going to setup");
-        safeReplace("/SignInSetUp");
+      // Optional: validate token with backend
+      const isValid = token ? await validateToken(token) : false;
+      if (token && !isValid) {
+        localStorage.removeItem("token");
+        safeRedirect("/sign-up");
+        return;
       }
-      return;
-    }
 
-    // If user is authenticated but trying to access protected pages without completing setup
-    if (isProtectedPage && !user.isSetupComplete) {
-      console.log("[AuthGuard] Protected page without setup, redirecting to setup");
-      safeReplace("/SignInSetUp");
-      return;
-    }
+      // If user data not loaded yet, wait
+      if (!user && token) return;
 
-    // If user has completed setup but is on setup pages, send to home
-    if (isSetupPage && user.isSetupComplete) {
-      console.log("[AuthGuard] Setup page but setup complete, going home");
-      safeReplace("/home");
-      return;
-    }
+      // Authenticated user logic
+      if (user) {
+        const isAuthPage = authPages.includes(pathname);
+        const isSetupPage = setupPages.includes(pathname);
+        const isProtectedPage = protectedPrefixes.some((p) => pathname.startsWith(p));
 
-    // If user is authenticated and on root path — redirect to home (backup)
-    if (pathname === "/") {
-      console.log("[AuthGuard] Root path, going home");
-      safeReplace("/home");
-      return;
-    }
+        if (isAuthPage) {
+          safeRedirect(user.isSetupComplete ? "/home" : "/SignInSetUp");
+          return;
+        }
 
-    console.log("[AuthGuard] All checks passed, allowing access to:", pathname);
+        if (isProtectedPage && !user.isSetupComplete) {
+          safeRedirect("/SignInSetUp");
+          return;
+        }
+
+        if (isSetupPage && user.isSetupComplete) {
+          safeRedirect("/home");
+          return;
+        }
+
+        if (pathname === "/") {
+          safeRedirect("/home");
+          return;
+        }
+      }
+
+      setReady(true); // all checks passed
+    };
+
+    checkAuth();
   }, [isAuthenticated, isLoading, user, pathname, router]);
 
-  // FIXED: Better loading state handling
-  if (isLoading || (blocked && !initialCheckDone)) {
+  // Loading screen
+  if (!ready || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center theme-bg-primary">
         <div className="text-center">
@@ -131,7 +99,6 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     );
   }
 
-  // All checks passed — render children
   return <>{children}</>;
 };
 
