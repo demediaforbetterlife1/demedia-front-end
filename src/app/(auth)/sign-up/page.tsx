@@ -124,6 +124,13 @@ return (
 );
 }
 /* ----------------------------------------------- */
+// Add this useEffect to your SignUpPage component
+useEffect(() => {
+  if (isAuthenticated && user) {
+    console.log('User authenticated, redirecting to setup');
+    router.replace("/SignInSetUp");
+  }
+}, [isAuthenticated, user, router]);
 
 export default function SignUpPage() {
 const [form, setForm] = useState({
@@ -419,12 +426,10 @@ const handleSubmit = async (e: React.FormEvent) => {
         console.log('Sign-up: Registration result:', result);
         
         if (result.success) {
-            console.log('Sign-up: Registration successful, redirecting...');
-            
-            // Use a small timeout to ensure state updates complete
-            setTimeout(() => {
-                router.push("/SignInSetUp");
-            }, 100);
+            // Clear form on success but don't redirect here
+            setForm({ name: "", username: "", phoneNumber: "", password: "" });
+            console.log('Sign-up: Registration successful, waiting for auth state update...');
+            // The useEffect will handle the redirect when isAuthenticated becomes true
         } else {
             // Handle registration error
             setErrors({ general: result.message || t('auth.registrationFailed', 'Registration failed. Please try again.') });
@@ -432,6 +437,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     } catch (err: any) {
         console.error("Sign-up: Registration error:", err);
         
+        // Handle specific error cases with better matching  
         const errorMessage = err.message || err.toString() || "";  
         console.log("Sign-up: Error message for handling:", errorMessage);  
         
@@ -440,8 +446,10 @@ const handleSubmit = async (e: React.FormEvent) => {
         } else if (errorMessage.includes("Phone number already registered") || errorMessage.includes("phone")) {  
             setErrors({ phoneNumber: t('auth.phoneRegistered', 'This phone number is already registered') });  
         } else if (errorMessage.includes("2-50") && errorMessage.includes("chars") && errorMessage.includes("spaces")) {  
+            // Handle the specific backend name validation error  
             setErrors({ name: t('auth.nameBackendError', 'Name must be 2-50 characters and can contain letters, spaces, and common punctuation') });  
         } else {  
+            // Show the actual error message  
             setErrors({ general: errorMessage || t('auth.registrationFailedGeneric', 'Registration failed. Please try again.') });  
         }
     } finally {  

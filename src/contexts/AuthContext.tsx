@@ -273,42 +273,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const register = async (userData: RegisterData): Promise<AuthResult> => {
-    setIsLoading(true);
-    try {
-      console.log("[Auth] Attempting registration...");
-      const res = await fetch("/api/auth/sign-up", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
-      });
+  setIsLoading(true);
+  try {
+    console.log("[Auth] Attempting registration...");
+    const res = await fetch("/api/auth/sign-up", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData),
+    });
 
-      const data = await res.json().catch(() => null);
+    const data = await res.json().catch(() => null);
 
-      if (!res.ok) {
-        const msg = data?.message || data?.error || `Registration failed (${res.status})`;
-        console.error("[Auth] Registration failed:", msg);
-        return { success: false, message: msg };
-      }
-
-      if (data?.token && isValidToken(data.token)) {
-        console.log("[Auth] Registration successful, storing token in cookie");
-        setCookie("token", data.token, 7); // Store for 7 days
-        setToken(data.token);
-        // Fetch user data with the new token
-        await fetchUser(data.token);
-        return { success: true };
-      }
-
-      console.warn("[Auth] Registration succeeded but no valid token returned");
-      return { success: false, message: "Registration succeeded but no valid token returned" };
-    } catch (err: any) {
-      console.error("[Auth] register error:", err);
-      return { success: false, message: err?.message || "Registration failed" };
-    } finally {
-      setIsLoading(false);
+    if (!res.ok) {
+      const msg = data?.message || data?.error || `Registration failed (${res.status})`;
+      console.error("[Auth] Registration failed:", msg);
+      return { success: false, message: msg };
     }
-  };
 
+    if (data?.token && isValidToken(data.token)) {
+      console.log("[Auth] Registration successful, storing token in cookie");
+      setCookie("token", data.token, 7);
+      setToken(data.token);
+      
+      // IMPORTANT: Wait for user data to be fully fetched before returning
+      await fetchUser(data.token);
+      return { success: true };
+    }
+
+    console.warn("[Auth] Registration succeeded but no valid token returned");
+    return { success: false, message: "Registration succeeded but no valid token returned" };
+  } catch (err: any) {
+    console.error("[Auth] register error:", err);
+    return { success: false, message: err?.message || "Registration failed" };
+  } finally {
+    setIsLoading(false);
+  }
+};
   const logout = (): void => {
     console.log("[Auth] Logging out...");
     deleteCookie("token");
