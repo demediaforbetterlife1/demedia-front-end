@@ -89,16 +89,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [initComplete, setInitComplete] = useState<boolean>(false);
 
-  const isAuthenticated = !!user && !!token;
+  // FIXED: More accurate authentication state
+  const isAuthenticated = !!(user && token && initComplete);
 
   const updateUser = (newData: Partial<User>) => {
     setUser(prev => (prev ? { ...prev, ...newData } : null));
   };
 
+  // FIXED: Validate token format
+  const isValidToken = (token: string | null): boolean => {
+    if (!token) return false;
+    // Basic JWT validation
+    const parts = token.split('.');
+    return parts.length === 3 && token.length > 30;
+  };
+
   // Fetch current user from backend
-  const fetchUser = useCallback(async (authToken: string) => {
+  const fetchUser = useCallback(async (authToken: string): Promise<boolean> => {
     try {
+      console.log("[Auth] Fetching user with token...");
       const res = await fetch("/api/auth/me", {
         method: "GET",
         headers: {
@@ -110,9 +121,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (!res.ok) {
         if (res.status === 401) {
+          console.warn("[Auth] Token invalid, clearing auth");
           localStorage.removeItem("token");
           setToken(null);
           setUser(null);
+          return false;
         }
         throw new Error(`Failed to fetch user: ${res.status}`);
       }
@@ -120,40 +133,63 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const body = await res.json();
       const userObj: User | null = body?.user ?? body ?? null;
       
-      if (userObj) {
+      if (userObj && userObj.id) {
+        console.log("[Auth] User fetched successfully:", userObj.id);
         setUser(userObj);
+        return true;
       } else {
+        console.warn("[Auth] Invalid user data received");
         setUser(null);
+        return false;
       }
     } catch (err) {
       console.error("[Auth] fetchUser error:", err);
       setUser(null);
+      return false;
     }
   }, []);
 
-  // Load token from localStorage and fetch user
+  // FIXED: Improved initialization with better state tracking
   useEffect(() => {
     const initializeAuth = async () => {
       if (typeof window === "undefined") {
         setIsLoading(false);
+        setInitComplete(true);
         return;
       }
 
       const savedToken = localStorage.getItem("token");
+      console.log("[Auth] Initializing with token:", savedToken ? "exists" : "null");
       
-      if (!savedToken) {
+      if (!savedToken || !isValidToken(savedToken)) {
+        console.log("[Auth] No valid token found");
         setIsLoading(false);
+        setInitComplete(true);
         return;
       }
 
       setToken(savedToken);
       
       try {
-        await fetchUser(savedToken);
+        const userFetched = await fetchUser(savedToken);
+        if (!userFetched) {
+          console.warn("[Auth] Failed to fetch user with valid token");
+          localStorage.removeItem("token");
+          setToken(null);
+        }
       } catch (error) {
         console.error("[Auth] Initialization error:", error);
+        localStorage.removeItem("token");
+        setToken(null);
+        setUser(null);
       } finally {
         setIsLoading(false);
+        setInitComplete(true);
+        console.log("[Auth] Initialization complete", {
+          hasToken: !!savedToken,
+          hasUser: !!user,
+          isAuthenticated: !!(user && savedToken)
+        });
       }
     };
 
@@ -172,6 +208,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   ): Promise<AuthResult> => {
     setIsLoading(true);
     try {
+      console.log("[Auth] Attempting login...");
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -182,10 +219,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (!res.ok) {
         const msg = data?.message || data?.error || `Login failed (${res.status})`;
+        console.error("[Auth] Login failed:", msg);
         return { success: false, message: msg };
       }
 
-      if (data?.token) {
+      if (data?.token && isValidToken(data.token)) {
+        console.log("[Auth] Login successful, storing token");
         localStorage.setItem("token", data.token);
         setToken(data.token);
         // Fetch user data with the new token
@@ -193,7 +232,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: true };
       }
 
-      return { success: false, message: "Login succeeded but no token returned" };
+      console.warn("[Auth] Login succeeded but no valid token returned");
+      return { success: false, message: "Login succeeded but no valid token returned" };
     } catch (err: any) {
       console.error("[Auth] login error:", err);
       return { success: false, message: err?.message || "Login failed" };
@@ -205,6 +245,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData): Promise<AuthResult> => {
     setIsLoading(true);
     try {
+      console.log("[Auth] Attempting registration...");
       const res = await fetch("/api/auth/sign-up", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -215,10 +256,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (!res.ok) {
         const msg = data?.message || data?.error || `Registration failed (${res.status})`;
+        console.error("[Auth] Registration failed:", msg);
         return { success: false, message: msg };
       }
 
-      if (data?.token) {
+      if (data?.token && isValidToken(data.token)) {
+        console.log("[Auth] Registration successful, storing token");
         localStorage.setItem("token", data.token);
         setToken(data.token);
         // Fetch user data with the new token
@@ -226,7 +269,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: true };
       }
 
-      return { success: false, message: "Registration succeeded but no token returned" };
+      console.warn("[Auth] Registration succeeded but no valid token returned");
+      return { success: false, message: "Registration succeeded but no valid token returned" };
     } catch (err: any) {
       console.error("[Auth] register error:", err);
       return { success: false, message: err?.message || "Registration failed" };
@@ -236,10 +280,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = (): void => {
+    console.log("[Auth] Logging out...");
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
-    setIsLoading(false);
+    setInitComplete(true);
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("auth:logout"));
     }
