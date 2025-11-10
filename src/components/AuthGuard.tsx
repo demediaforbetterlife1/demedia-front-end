@@ -69,7 +69,6 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       }
     }
 
-    // If all checks passed
     setInitialCheckDone(true);
   }, [authStatus, user, pathname, router]);
 

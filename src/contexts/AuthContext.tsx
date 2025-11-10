@@ -39,7 +39,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [authStatus, setAuthStatus] = useState<"loading" | "authenticated" | "unauthenticated">("loading");
-
   const isMounted = useRef(false);
 
   const fetchUser = useCallback(async (authToken: string): Promise<boolean> => {
@@ -58,7 +57,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(data.user || data);
       setAuthStatus("authenticated");
       return true;
-    } catch (err) {
+    } catch {
       setToken(null);
       setUser(null);
       setAuthStatus("unauthenticated");
@@ -89,12 +88,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         body: JSON.stringify({ phoneNumber, password }),
       });
       const data = await res.json();
-      if (!res.ok) return false;
-      const newToken = data.token;
-      if (!newToken) return false;
-      localStorage.setItem("token", newToken);
-      setToken(newToken);
-      await fetchUser(newToken);
+      if (!res.ok || !data.token) return false;
+      localStorage.setItem("token", data.token);
+      setToken(data.token);
+      await fetchUser(data.token);
       return true;
     } catch {
       return false;
