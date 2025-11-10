@@ -77,6 +77,36 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 );
 
 /* =======================
+   ✅ Cookie Helper Functions
+   ======================= */
+const setCookie = (name: string, value: string, days: number = 7) => {
+  if (typeof window === "undefined") return;
+  
+  const date = new Date();
+  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+  const expires = `expires=${date.toUTCString()}`;
+  document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Strict${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+};
+
+const getCookie = (name: string): string | null => {
+  if (typeof window === "undefined") return null;
+  
+  const nameEQ = name + "=";
+  const ca = document.cookie.split(';');
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+  }
+  return null;
+};
+
+const deleteCookie = (name: string) => {
+  if (typeof window === "undefined") return;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+};
+
+/* =======================
    ✅ Provider
    ======================= */
 interface AuthProviderProps {
@@ -122,7 +152,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!res.ok) {
         if (res.status === 401) {
           console.warn("[Auth] Token invalid, clearing auth");
-          localStorage.removeItem("token");
+          deleteCookie("token");
           setToken(null);
           setUser(null);
           return false;
@@ -158,7 +188,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      const savedToken = localStorage.getItem("token");
+      const savedToken = getCookie("token");
       console.log("[Auth] Initializing with token:", savedToken ? "exists" : "null");
       
       if (!savedToken || !isValidToken(savedToken)) {
@@ -174,12 +204,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userFetched = await fetchUser(savedToken);
         if (!userFetched) {
           console.warn("[Auth] Failed to fetch user with valid token");
-          localStorage.removeItem("token");
+          deleteCookie("token");
           setToken(null);
         }
       } catch (error) {
         console.error("[Auth] Initialization error:", error);
-        localStorage.removeItem("token");
+        deleteCookie("token");
         setToken(null);
         setUser(null);
       } finally {
@@ -224,8 +254,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       if (data?.token && isValidToken(data.token)) {
-        console.log("[Auth] Login successful, storing token");
-        localStorage.setItem("token", data.token);
+        console.log("[Auth] Login successful, storing token in cookie");
+        setCookie("token", data.token, 7); // Store for 7 days
         setToken(data.token);
         // Fetch user data with the new token
         await fetchUser(data.token);
@@ -261,8 +291,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       if (data?.token && isValidToken(data.token)) {
-        console.log("[Auth] Registration successful, storing token");
-        localStorage.setItem("token", data.token);
+        console.log("[Auth] Registration successful, storing token in cookie");
+        setCookie("token", data.token, 7); // Store for 7 days
         setToken(data.token);
         // Fetch user data with the new token
         await fetchUser(data.token);
@@ -281,7 +311,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = (): void => {
     console.log("[Auth] Logging out...");
-    localStorage.removeItem("token");
+    deleteCookie("token");
     setToken(null);
     setUser(null);
     setInitComplete(true);
