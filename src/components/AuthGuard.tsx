@@ -8,6 +8,20 @@ interface AuthGuardProps {
   children: React.ReactNode;
 }
 
+// Cookie helper functions
+const getCookie = (name: string): string | null => {
+  if (typeof window === "undefined") return null;
+  
+  const nameEQ = name + "=";
+  const ca = document.cookie.split(';');
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+  }
+  return null;
+};
+
 export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const pathname = usePathname();
@@ -38,8 +52,8 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     // If not authenticated, redirect to sign-up unless on auth pages
     if (!isAuthenticated) {
       console.log('AuthGuard: Not authenticated, checking if should redirect');
-      // Check if there's a token in localStorage - if so, wait a bit for auth to initialize
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      // Check if there's a token in cookies - if so, wait a bit for auth to initialize
+      const token = getCookie('token');
       if (token && !isAuthPage) {
         // Token exists but not authenticated yet - wait a bit more
         return;
