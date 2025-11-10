@@ -137,47 +137,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Fetch current user from backend
-  const fetchUser = useCallback(async (authToken: string): Promise<boolean> => {
-    try {
-      console.log("[Auth] Fetching user with token...");
-      const res = await fetch("/api/auth/me", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      });
+  // Fetch current user from backend
+const fetchUser = useCallback(async (authToken: string): Promise<boolean> => {
+  try {
+    console.log("[Auth] Fetching user with token...");
+    const res = await fetch("/api/auth/me", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
 
-      if (!res.ok) {
-        if (res.status === 401) {
-          console.warn("[Auth] Token invalid, clearing auth");
-          deleteCookie("token");
-          setToken(null);
-          setUser(null);
-          return false;
-        }
-        throw new Error(`Failed to fetch user: ${res.status}`);
-      }
+    console.log("[Auth] User fetch response status:", res.status);
 
-      const body = await res.json();
-      const userObj: User | null = body?.user ?? body ?? null;
-      
-      if (userObj && userObj.id) {
-        console.log("[Auth] User fetched successfully:", userObj.id);
-        setUser(userObj);
-        return true;
-      } else {
-        console.warn("[Auth] Invalid user data received");
+    if (!res.ok) {
+      if (res.status === 401) {
+        console.warn("[Auth] Token invalid, clearing auth");
+        deleteCookie("token");
+        setToken(null);
         setUser(null);
         return false;
       }
-    } catch (err) {
-      console.error("[Auth] fetchUser error:", err);
+      const errorText = await res.text();
+      console.error("[Auth] Failed to fetch user:", res.status, errorText);
+      throw new Error(`Failed to fetch user: ${res.status} - ${errorText}`);
+    }
+
+    const body = await res.json();
+    console.log("[Auth] User data received:", body);
+    
+    const userObj: User | null = body?.user ?? body ?? null;
+    
+    if (userObj && userObj.id) {
+      console.log("[Auth] User fetched successfully:", userObj.id, userObj.username);
+      setUser(userObj);
+      return true;
+    } else {
+      console.warn("[Auth] Invalid user data received:", body);
       setUser(null);
       return false;
     }
-  }, []);
+  } catch (err) {
+    console.error("[Auth] fetchUser error:", err);
+    setUser(null);
+    return false;
+  }
+}, []);
 
   // FIXED: Improved initialization with better state tracking
   useEffect(() => {
@@ -275,18 +282,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData): Promise<AuthResult> => {
   setIsLoading(true);
   try {
-    console.log("[Auth] Attempting registration...");
+    console.log("[Auth] Attempting registration with data:", userData);
+    
     const res = await fetch("/api/auth/sign-up", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
     });
 
-    const data = await res.json().catch(() => null);
+    console.log("[Auth] Registration response status:", res.status);
+    
+    const data = await res.json().catch(async (parseError) => {
+      console.error("[Auth] Failed to parse response as JSON:", parseError);
+      // Try to get the raw text to see what the server actually returned
+      const rawText = await res.text();
+      console.error("[Auth] Raw response:", rawText);
+      return null;
+    });
 
     if (!res.ok) {
       const msg = data?.message || data?.error || `Registration failed (${res.status})`;
-      console.error("[Auth] Registration failed:", msg);
+      console.error("[Auth] Registration failed:", msg, "Full response:", data);
       return { success: false, message: msg };
     }
 
@@ -296,11 +312,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken(data.token);
       
       // IMPORTANT: Wait for user data to be fully fetched before returning
-      await fetchUser(data.token);
-      return { success: true };
+      console.log("[Auth] Fetching user data with new token...");
+      const userFetched = await fetchUser(data.token);
+      
+      if (userFetched) {
+        console.log("[Auth] User data fetched successfully, registration complete");
+        return { success: true };
+      } else {
+        console.error("[Auth] Failed to fetch user data after registration");
+        return { success: false, message: "Registration complete but failed to load user data" };
+      }
     }
 
-    console.warn("[Auth] Registration succeeded but no valid token returned");
+    console.warn("[Auth] Registration succeeded but no valid token returned. Data:", data);
     return { success: false, message: "Registration succeeded but no valid token returned" };
   } catch (err: any) {
     console.error("[Auth] register error:", err);

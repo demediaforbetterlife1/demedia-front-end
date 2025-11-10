@@ -410,6 +410,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       
     // Validate form  
     if (!validateForm()) {  
+        console.log('Form validation failed');
         return;  
     }  
 
@@ -427,16 +428,19 @@ const handleSubmit = async (e: React.FormEvent) => {
             phoneNumber: formData.phoneNumber   
         });  
           
+        console.log('Before calling register function');
         const result = await register(formData);
-        console.log('Sign-up: Registration result:', result);
+        console.log('After register call, result:', result);
         
         if (result.success) {
             // Clear form on success but don't redirect here
             setForm({ name: "", username: "", phoneNumber: "", password: "" });
             console.log('Sign-up: Registration successful, waiting for auth state update...');
+            console.log('Current auth state - isAuthenticated:', isAuthenticated, 'user:', user);
             // The useEffect will handle the redirect when isAuthenticated becomes true
         } else {
             // Handle registration error
+            console.log('Registration failed with message:', result.message);
             setErrors({ general: result.message || t('auth.registrationFailed', 'Registration failed. Please try again.') });
         }
     } catch (err: any) {
