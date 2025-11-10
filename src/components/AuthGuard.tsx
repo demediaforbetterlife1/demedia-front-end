@@ -1,3 +1,4 @@
+// src/components/AuthGuard.tsx
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -9,19 +10,19 @@ interface AuthGuardProps {
 }
 
 export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
-  const { isAuthenticated, isLoading, user, validateToken } = useAuth();
+  const { user, token, isLoading, validateToken } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
-  const [ready, setReady] = useState(false);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
   const lastRedirectTime = useRef<number>(0);
 
-  // Pages config
+  // configuration: pages and protected prefixes
   const authPages = ["/sign-in", "/sign-up"];
   const setupPages = ["/SignInSetUp", "/interests", "/FinishSetup"];
-  const protectedPrefixes = ["/home", "/profile", "/messaging"];
+  const protectedPrefixes = ["/home", "/profile", "/messaging", "/messeging"];
 
-  const safeRedirect = (to: string) => {
+  const safeReplace = (to: string) => {
     const now = Date.now();
     if (now - lastRedirectTime.current < 700) return;
     lastRedirectTime.current = now;
@@ -29,63 +30,88 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   };
 
   useEffect(() => {
+    let mounted = true;
+
     const checkAuth = async () => {
-      if (isLoading) return; // wait for auth state
+      if (isLoading) return;
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      // determine page type
+      const isAuthPage = authPages.includes(pathname);
+      const isSetupPage = setupPages.includes(pathname);
+      const isProtectedPage = protectedPrefixes.some((p) => pathname.startsWith(p));
 
-      // If no token, redirect to sign-up (unless already on auth pages)
-      if (!token && !authPages.includes(pathname) && !setupPages.includes(pathname)) {
-        safeRedirect("/sign-up");
+      const tokenValid = await validateToken(token);
+
+      console.log("[AuthGuard Debug]", {
+        pathname,
+        token: token ? "exists" : "null",
+        tokenValid,
+        user: user ? `exists (id: ${user.id})` : "null",
+        isAuthPage,
+        isSetupPage,
+        isProtectedPage,
+      });
+
+      // If no token or invalid token => redirect to sign-up
+      if (!tokenValid) {
+        if (!isAuthPage && !isSetupPage && mounted) {
+          safeReplace("/sign-up");
+        }
+        setInitialCheckDone(true);
         return;
       }
 
-      // Optional: validate token with backend
-      const isValid = token ? await validateToken(token) : false;
-      if (token && !isValid) {
-        localStorage.removeItem("token");
-        safeRedirect("/sign-up");
+      // token valid, but no user data yet — wait
+      if (!user) {
+        console.log("[AuthGuard] Token valid but no user data yet, waiting...");
         return;
       }
 
-      // If user data not loaded yet, wait
-      if (!user && token) return;
+      // User is authenticated
+      console.log("[AuthGuard] User authenticated:", user.id);
 
-      // Authenticated user logic
-      if (user) {
-        const isAuthPage = authPages.includes(pathname);
-        const isSetupPage = setupPages.includes(pathname);
-        const isProtectedPage = protectedPrefixes.some((p) => pathname.startsWith(p));
-
-        if (isAuthPage) {
-          safeRedirect(user.isSetupComplete ? "/home" : "/SignInSetUp");
-          return;
-        }
-
-        if (isProtectedPage && !user.isSetupComplete) {
-          safeRedirect("/SignInSetUp");
-          return;
-        }
-
-        if (isSetupPage && user.isSetupComplete) {
-          safeRedirect("/home");
-          return;
-        }
-
-        if (pathname === "/") {
-          safeRedirect("/home");
-          return;
-        }
+      // Auth pages logic
+      if (isAuthPage) {
+        if (user.isSetupComplete) safeReplace("/home");
+        else safeReplace("/SignInSetUp");
+        setInitialCheckDone(true);
+        return;
       }
 
-      setReady(true); // all checks passed
+      // Setup pages logic
+      if (isSetupPage && user.isSetupComplete) {
+        safeReplace("/home");
+        setInitialCheckDone(true);
+        return;
+      }
+
+      // Protected pages logic
+      if (isProtectedPage && !user.isSetupComplete) {
+        safeReplace("/SignInSetUp");
+        setInitialCheckDone(true);
+        return;
+      }
+
+      // Root path fallback
+      if (pathname === "/") {
+        safeReplace("/home");
+        setInitialCheckDone(true);
+        return;
+      }
+
+      // All checks passed
+      setInitialCheckDone(true);
     };
 
     checkAuth();
-  }, [isAuthenticated, isLoading, user, pathname, router]);
 
-  // Loading screen
-  if (!ready || isLoading) {
+    return () => {
+      mounted = false;
+    };
+  }, [user, token, isLoading, pathname, router, validateToken]);
+
+  // show loading spinner while waiting for auth state
+  if (isLoading || !initialCheckDone) {
     return (
       <div className="min-h-screen flex items-center justify-center theme-bg-primary">
         <div className="text-center">
