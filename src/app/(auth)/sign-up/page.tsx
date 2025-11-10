@@ -125,13 +125,7 @@ return (
 }
 /* ----------------------------------------------- */
 // Add this useEffect to your SignUpPage component
-const { register, isAuthenticated, isLoading, user } = useAuth();
-useEffect(() => {
-  if (isAuthenticated && user) {
-    console.log('User authenticated, redirecting to setup');
-    router.replace("/SignInSetUp");
-  }
-}, [isAuthenticated, user, router]);
+
 
 export default function SignUpPage() {
 const [form, setForm] = useState({
@@ -365,6 +359,16 @@ const router = useRouter();
 
 const validateForm = () => {
 const newErrors: {[key: string]: string} = {};
+
+const { register, isAuthenticated, isLoading, user } = useAuth();
+useEffect(() => {
+  if (isAuthenticated && user) {
+    console.log('User authenticated, redirecting to setup');
+    router.replace("/SignInSetUp");
+  }
+}, [isAuthenticated, user, router]);
+
+
 
 if (!form.name.trim()) {  
         newErrors.name = t('auth.nameRequired', 'Full name is required');  
