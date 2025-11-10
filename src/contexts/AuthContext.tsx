@@ -279,47 +279,61 @@ const fetchUser = useCallback(async (authToken: string): Promise<boolean> => {
     }
   };
 
-  const register = async (formData: {
-  name: string;
-  username: string;
-  phoneNumber: string;
-  password: string;
-}) => {
+  const register = async (userData: RegisterData): Promise<AuthResult> => {
+  setIsLoading(true);
   try {
-    console.log("[Auth] Sending signup request...");
+    console.log("[Auth] Attempting registration with data:", userData);
+    
     const res = await fetch("/api/auth/sign-up", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-      // ⚠️ مهم جدًا عشان الكوكي يترسل ويتخزن
-      credentials: "include",
+      body: JSON.stringify(userData),
     });
 
-    const data = await res.json();
-    console.log("[Auth] Signup response:", data);
+    console.log("[Auth] Registration response status:", res.status);
+    
+    const data = await res.json().catch(async (parseError) => {
+      console.error("[Auth] Failed to parse response as JSON:", parseError);
+      // Try to get the raw text to see what the server actually returned
+      const rawText = await res.text();
+      console.error("[Auth] Raw response:", rawText);
+      return null;
+    });
 
     if (!res.ok) {
-      throw new Error(data?.error || "Signup failed");
+      const msg = data?.message || data?.error || `Registration failed (${res.status})`;
+      console.error("[Auth] Registration failed:", msg, "Full response:", data);
+      return { success: false, message: msg };
     }
 
-    // ✅ بعد التسجيل الناجح، نطلب بيانات المستخدم (الكوكي فيه التوكن)
-    const userRes = await fetch("/api/auth/me", {
-      method: "GET",
-      credentials: "include", // ضروري جدًا
-    });
-
-    const userData = await userRes.json();
-    if (userRes.ok && userData?.user) {
-      console.log("[Auth] User fetched after signup:", userData.user);
-      setUser(userData.user);
-      setIsAuthenticated(true);
-    } else {
-      console.error("[Auth] Failed to fetch user after signup", userData);
+    if (data?.token && isValidToken(data.token)) {
+      console.log("[Auth] Registration successful, storing token in cookie");
+      setCookie("token", data.token, 7);
+      setToken(data.token);
+      
+      // IMPORTANT: Wait for user data to be fully fetched before returning
+      console.log("[Auth] Fetching user data with new token...");
+      const userFetched = await fetchUser(data.token);
+      
+      if (userFetched) {
+        console.log("[Auth] User data fetched successfully, registration complete");
+        return { success: true };
+      } else {
+        console.error("[Auth] Failed to fetch user data after registration");
+        return { success: false, message: "Registration complete but failed to load user data" };
+      }
     }
-  } catch (err) {
-    console.error("[Auth] Register error:", err);
+
+    console.warn("[Auth] Registration succeeded but no valid token returned. Data:", data);
+    return { success: false, message: "Registration succeeded but no valid token returned" };
+  } catch (err: any) {
+    console.error("[Auth] register error:", err);
+    return { success: false, message: err?.message || "Registration failed" };
+  } finally {
+    setIsLoading(false);
   }
 };
+
   const logout = (): void => {
     console.log("[Auth] Logging out...");
     deleteCookie("token");
