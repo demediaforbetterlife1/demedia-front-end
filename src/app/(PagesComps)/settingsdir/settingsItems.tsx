@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ChevronRight, X } from "lucide-react";
 import gsap from "gsap";
-import AccountInfo from "@/app/(PagesComps)/settingsdir/settingComps/account/AccountInfo";
+//import AccountInfo from "@/app/(PagesComps)/settingsdir/settingComps/account/AccountInfo";
 import TwoFactorSettings from "@/app/(PagesComps)/settingsdir/settingComps/2FA/TwoFactorAuthSettings";
 import LoginActivity from "@/app/(PagesComps)/settingsdir/settingComps/2FA/LoginActivity";
 import TrustedDevicesModal from "@/app/(PagesComps)/settingsdir/settingComps/2FA/TrustedDevices";
