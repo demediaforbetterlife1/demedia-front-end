@@ -210,7 +210,7 @@ export default function SettingsItems() {
             {/* === Modals === */}
 
             {/* Account & Security */}
-            {activeModal === "account" && user && <AccountInfo user={{...user, id: parseInt(user.id), privacy: user.privacy || 'public'}} closeModal={closeActiveModal} />}
+        
             {activeModal === "2fa" && <TwoFactorSettings closeModal={closeActiveModal} />}
             {activeModal === "loginactivity" && <LoginActivity closeModal={closeActiveModal} />}
             {activeModal === "trusteddevices" && <TrustedDevicesModal closeModal={closeActiveModal} />}
