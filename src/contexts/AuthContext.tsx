@@ -18,6 +18,7 @@ export interface User {
   id: string;
   name?: string;
   username?: string;
+  email?: string;           // مهم لتجنب الخطأ في EditProfileModal
   phoneNumber?: string;
   profilePicture?: string | null;
   coverPhoto?: string | null;
@@ -35,7 +36,6 @@ export interface User {
   isPhoneVerified?: boolean;
   createdAt?: string;
 }
-
 
 export interface AuthResult {
   success: boolean;
