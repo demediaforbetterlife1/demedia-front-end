@@ -1,3 +1,4 @@
+// src/contexts/AuthContext.tsx
 "use client";
 
 import React, {
@@ -83,8 +84,14 @@ if (typeof window === "undefined") return;
 
 const date = new Date();
 date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-const expires = `expires=${date.toUTCString()}`;
-document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Strict${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+const setCookie = (name: string, value: string, days: number) => {
+  if (typeof window === "undefined") return;
+  const date = new Date();
+  date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+  const expires = `expires=${date.toUTCString()}`;
+  document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Strict${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+};
+};
 
 const getCookie = (name: string): string | null => {
 if (typeof window === "undefined") return null;
@@ -101,8 +108,8 @@ return null;
 
 const deleteCookie = (name: string) => {
 if (typeof window === "undefined") return;
-document.cookie = ${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;;
-};
+document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;;
+}`;
 
 /* =======================
 ✅ Provider
@@ -142,7 +149,7 @@ console.log("[Auth] Fetching user with token...");
 const res = await fetch("/api/auth/me", {
 method: "GET",
 headers: {
-Authorization: Bearer ${authToken},
+Authorization: Bearer `${authToken}`,
 "Content-Type": "application/json",
 },
 cache: "no-store",
