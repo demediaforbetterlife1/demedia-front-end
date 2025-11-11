@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 
 type User = {
   id: number;
-  phoneNumber: string;
+  phoneNumber?: string;
   username: string;
   name: string;
   bio?: string;
