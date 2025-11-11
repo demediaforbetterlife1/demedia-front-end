@@ -271,8 +271,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (userData: RegisterData): Promise<AuthResult> => {
   setIsLoading(true);
+
   try {
-    console.log("[Auth] register attempt...", userData);
+    console.log("[Auth] register attempt with:", userData);
 
     const res = await fetch("/api/auth/sign-up", {
       method: "POST",
@@ -281,44 +282,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       credentials: "include",
     });
 
-    const data = await res.json().catch(() => null);
+    // حاول تقرأ body سواء كان JSON أو نص عادي
+    let data: any = null;
+    try {
+      data = await res.json();
+    } catch {
+      try {
+        data = await res.text();
+      } catch {
+        data = null;
+      }
+    }
+
+    console.log("[Auth] register response:", res.status, data);
 
     if (!res.ok) {
-      const msg = data?.error || data?.message || `Registration failed (${res.status})`;
-      console.error("[Auth] register failed:", msg, "body:", data);
+      const msg = data?.error || data?.message || data || `Registration failed (${res.status})`;
+      console.error("[Auth] register failed:", msg);
       return { success: false, message: msg };
     }
 
-    // إذا الباك إند رجع token في body
+    // لو السيرفر رجّع user في body
     if (data?.user) {
-  setUser(data.user);
-  setToken(data?.token || getCookie("token") || null); // token لو موجود في response
-  return { success: true };
-}
-
-    // محاولة fetchUser للتأكد من جلب بيانات المستخدم
-    const tokenToUse = data?.token || getCookie("token") || "";
-    const userOk = tokenToUse ? await fetchUser(tokenToUse) : false;
-
-    if (!userOk && data?.user) {
       setUser(data.user);
+      const tokenFromCookie = getCookie("token");
+      if (tokenFromCookie) setToken(tokenFromCookie);
+      return { success: true };
     }
 
-    // بعد النجاح، redirect للصفحة الرئيسية أو الداشبورد
-    if (userOk || data?.user) {
-      router.push("/dashboard"); // عدّل حسب الصفحة اللي عايزها
+    // fallback
+    const tokenFromCookie = getCookie("token");
+    const userOk = tokenFromCookie ? await fetchUser(tokenFromCookie) : false;
+    if (userOk) {
+      setToken(tokenFromCookie);
       return { success: true };
     }
 
     return { success: false, message: "Registration succeeded but failed to load user" };
+
   } catch (err: any) {
-    console.error("[Auth] register error:", err);
-    return { success: false, message: err?.message || "Registration failed" };
+    console.error("[Auth] register exception:", err);
+    return { success: false, message: err?.message || err?.toString() || "Registration failed" };
   } finally {
     setIsLoading(false);
   }
 };
-
   const logout = (): void => {
     try {
       deleteCookie("token");
