@@ -25,6 +25,22 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
+const getCookie = (name: string): string | null => {
+    if (typeof document === "undefined") return null;
+
+    const nameEQ = `${name}=`;
+    const cookies = document.cookie.split(";");
+
+    for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(nameEQ)) {
+            return cookie.substring(nameEQ.length);
+        }
+    }
+
+    return null;
+};
+
 /* ---------------- Shooting Stars ---------------- */
 function ShootingStar() {
     const meshRef = useRef<THREE.Mesh | null>(null);
@@ -186,7 +202,9 @@ export default function SignInSetUp() {
                 throw new Error("User not authenticated");
             }
 
-            const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
+            const token = typeof window !== 'undefined'
+                ? getCookie("token") || localStorage.getItem("token")
+                : null;
             if (!token) {
                 throw new Error("Authentication token not found. Please log in again.");
             }

@@ -243,20 +243,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, message: msg };
       }
 
-      // Backend sets cookie; some backends also return user in body
-      // Try to fetch user from /me (cookie will be sent)
-      const userOk = await fetchUser(getCookie("token") || "");
-      if (userOk) {
-        const savedToken = getCookie("token");
-        if (savedToken) setToken(savedToken);
-        return { success: true };
+      const tokenFromResponse = data?.token;
+
+      if (tokenFromResponse) {
+        setCookie("token", tokenFromResponse, 7);
+        setToken(tokenFromResponse);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("token", tokenFromResponse);
+        }
       }
 
-      // Fallback: if response body includes user, set it
       if (data?.user) {
         setUser(data.user);
-        const savedToken = getCookie("token");
-        if (savedToken) setToken(savedToken);
+      }
+
+      const tokenForFetch = tokenFromResponse || getCookie("token");
+      if (tokenForFetch) {
+        const userOk = await fetchUser(tokenForFetch);
+        if (userOk) {
+          setToken(tokenForFetch);
+          return { success: true };
+        }
+      }
+
+      if (data?.user) {
         return { success: true };
       }
 
@@ -270,66 +280,79 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const register = async (userData: RegisterData): Promise<AuthResult> => {
-  setIsLoading(true);
+    setIsLoading(true);
 
-  try {
-    console.log("[Auth] register attempt with:", userData);
-
-    const res = await fetch("/api/auth/sign-up", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userData),
-      credentials: "include",
-    });
-
-    // حاول تقرأ body سواء كان JSON أو نص عادي
-    let data: any = null;
     try {
-      data = await res.json();
-    } catch {
+      console.log("[Auth] register attempt with:", userData);
+
+      const res = await fetch("/api/auth/sign-up", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+        credentials: "include",
+      });
+
+      // حاول تقرأ body سواء كان JSON أو نص عادي
+      let data: any = null;
       try {
-        data = await res.text();
+        data = await res.json();
       } catch {
-        data = null;
+        try {
+          data = await res.text();
+        } catch {
+          data = null;
+        }
       }
+
+      console.log("[Auth] register response:", res.status, data);
+
+      if (!res.ok) {
+        const msg = data?.error || data?.message || data || `Registration failed (${res.status})`;
+        console.error("[Auth] register failed:", msg);
+        return { success: false, message: msg };
+      }
+
+      const tokenFromResponse = data?.token;
+
+      if (tokenFromResponse) {
+        setCookie("token", tokenFromResponse, 7);
+        setToken(tokenFromResponse);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("token", tokenFromResponse);
+        }
+      }
+
+      if (data?.user) {
+        setUser(data.user);
+      }
+
+      const tokenForFetch = tokenFromResponse || getCookie("token");
+      if (tokenForFetch) {
+        const userOk = await fetchUser(tokenForFetch);
+        if (userOk) {
+          setToken(tokenForFetch);
+          return { success: true };
+        }
+      }
+
+      if (data?.user) {
+        return { success: true };
+      }
+
+      return { success: false, message: "Registration succeeded but failed to load user" };
+    } catch (err: any) {
+      console.error("[Auth] register exception:", err);
+      return { success: false, message: err?.message || err?.toString() || "Registration failed" };
+    } finally {
+      setIsLoading(false);
     }
-
-    console.log("[Auth] register response:", res.status, data);
-
-    if (!res.ok) {
-      const msg = data?.error || data?.message || data || `Registration failed (${res.status})`;
-      console.error("[Auth] register failed:", msg);
-      return { success: false, message: msg };
-    }
-
-    // لو السيرفر رجّع user في body
-    if (data?.user) {
-      setUser(data.user);
-      const tokenFromCookie = getCookie("token");
-      if (tokenFromCookie) setToken(tokenFromCookie);
-      return { success: true };
-    }
-
-    // fallback
-    const tokenFromCookie = getCookie("token");
-    const userOk = tokenFromCookie ? await fetchUser(tokenFromCookie) : false;
-    if (userOk) {
-      setToken(tokenFromCookie);
-      return { success: true };
-    }
-
-    return { success: false, message: "Registration succeeded but failed to load user" };
-
-  } catch (err: any) {
-    console.error("[Auth] register exception:", err);
-    return { success: false, message: err?.message || err?.toString() || "Registration failed" };
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
   const logout = (): void => {
     try {
       deleteCookie("token");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+      }
       setToken(null);
       setUser(null);
       setInitComplete(true);

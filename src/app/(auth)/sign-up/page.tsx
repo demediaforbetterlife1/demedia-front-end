@@ -357,20 +357,17 @@ const [errors, setErrors] = useState<{[key: string]: string}>({});
 const { register, isAuthenticated, isLoading, user } = useAuth();  
 const router = useRouter();
 
-const validateForm = () => {
-const newErrors: {[key: string]: string} = {};
-
-const { register, isAuthenticated, isLoading, user } = useAuth();
 useEffect(() => {
-  if (isAuthenticated && user) {
-    console.log('User authenticated, redirecting to setup');
-    router.replace("/SignInSetUp");
-  }
-}, [isAuthenticated, user, router]);
+    if (!isLoading && isAuthenticated && user) {
+        console.log('User authenticated, redirecting to setup');
+        router.replace("/SignInSetUp");
+    }
+}, [isLoading, isAuthenticated, user, router]);
 
+const validateForm = () => {
+    const newErrors: {[key: string]: string} = {};
 
-
-if (!form.name.trim()) {  
+    if (!form.name.trim()) {  
         newErrors.name = t('auth.nameRequired', 'Full name is required');  
     } else if (form.name.trim().length < 2) {  
         newErrors.name = t('auth.nameMinLength', 'Name must be at least 2 characters');  
