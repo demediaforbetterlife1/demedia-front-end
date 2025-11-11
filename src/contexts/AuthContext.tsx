@@ -16,10 +16,9 @@ import { useRouter } from "next/navigation";
    ======================= */
 export interface User {
   id: string;
-  name: string;
-  username: string;
-  email?: string;
-  phoneNumber: string;
+  name?: string;
+  username?: string;
+  phoneNumber?: string;
   profilePicture?: string | null;
   coverPhoto?: string | null;
   bio?: string | null;
@@ -33,8 +32,10 @@ export interface User {
   privacy?: string | null;
   interests?: string[] | null;
   isSetupComplete?: boolean;
-  createdAt?: string | null;
+  isPhoneVerified?: boolean;
+  createdAt?: string;
 }
+
 
 export interface AuthResult {
   success: boolean;
