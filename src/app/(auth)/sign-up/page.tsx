@@ -432,11 +432,16 @@ const handleSubmit = async (e: React.FormEvent) => {
         console.log('After register call, result:', result);
         
         if (result.success) {
-            // Clear form on success but don't redirect here
+            // Clear form on success
             setForm({ name: "", username: "", phoneNumber: "", password: "" });
-            console.log('Sign-up: Registration successful, waiting for auth state update...');
+            console.log('Sign-up: Registration successful');
             console.log('Current auth state - isAuthenticated:', isAuthenticated, 'user:', user);
-            // The useEffect will handle the redirect when isAuthenticated becomes true
+            
+            // Small delay to ensure state is updated, then redirect
+            setTimeout(() => {
+                console.log('Sign-up: Redirecting to SignInSetUp');
+                router.replace("/SignInSetUp");
+            }, 100);
         } else {
             // Handle registration error
             console.log('Registration failed with message:', result.message);

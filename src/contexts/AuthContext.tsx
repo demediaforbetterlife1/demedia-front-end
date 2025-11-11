@@ -314,28 +314,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const tokenFromResponse = data?.token;
 
-      if (tokenFromResponse) {
-        setCookie("token", tokenFromResponse, 7);
-        setToken(tokenFromResponse);
-        if (typeof window !== "undefined") {
-          localStorage.setItem("token", tokenFromResponse);
-        }
+      if (!tokenFromResponse) {
+        console.error("[Auth] No token in response");
+        return { success: false, message: "Registration succeeded but no token received" };
       }
 
-      if (data?.user) {
-        setUser(data.user);
+      // Set token first
+      setCookie("token", tokenFromResponse, 7);
+      setToken(tokenFromResponse);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", tokenFromResponse);
       }
 
-      const tokenForFetch = tokenFromResponse || getCookie("token");
-      if (tokenForFetch) {
-        const userOk = await fetchUser(tokenForFetch);
-        if (userOk) {
-          setToken(tokenForFetch);
-          return { success: true };
-        }
+      // Set user from response if available (faster)
+      if (data?.user && data.user.id) {
+        // Ensure ID is string
+        const userWithStringId = { ...data.user, id: String(data.user.id) };
+        setUser(userWithStringId);
+        console.log("[Auth] User set from response:", userWithStringId);
       }
 
-      if (data?.user) {
+      // Also fetch user to ensure we have complete data
+      const userOk = await fetchUser(tokenFromResponse);
+      if (userOk) {
+        console.log("[Auth] User fetched successfully after registration");
+        // Ensure initComplete is set so isAuthenticated becomes true
+        setInitComplete(true);
+        return { success: true };
+      }
+
+      // If fetchUser failed but we have user from response, still return success
+      if (data?.user && data.user.id) {
+        console.log("[Auth] Using user from response (fetchUser failed)");
+        setInitComplete(true);
         return { success: true };
       }
 
