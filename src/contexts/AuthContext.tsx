@@ -270,46 +270,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const register = async (userData: RegisterData): Promise<AuthResult> => {
-    setIsLoading(true);
-    try {
-      console.log("[Auth] register attempt...");
-      const res = await fetch("/api/auth/sign-up", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
-        credentials: "include", // important so browser accepts cookie from server
-      });
+  setIsLoading(true);
+  try {
+    console.log("[Auth] register attempt...", userData);
 
-      const data = await res.json().catch(() => null);
+    const res = await fetch("/api/auth/sign-up", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData),
+      credentials: "include",
+    });
 
-      if (!res.ok) {
-        const msg = data?.error || data?.message || `Registration failed (${res.status})`;
-        console.error("[Auth] register failed:", msg, "body:", data);
-        return { success: false, message: msg };
-      }
+    const data = await res.json().catch(() => null);
 
-      // After successful sign-up, backend sets cookie. Fetch /me to populate user.
-      const tokenFromCookie = getCookie("token");
-      const userOk = tokenFromCookie ? await fetchUser(tokenFromCookie) : false;
-
-      // If server returned user directly in body, we can use it as fallback
-      if (userOk) {
-        setToken(tokenFromCookie);
-        return { success: true };
-      } else if (data?.user) {
-        setUser(data.user);
-        if (tokenFromCookie) setToken(tokenFromCookie);
-        return { success: true };
-      }
-
-      return { success: false, message: "Registration succeeded but failed to load user" };
-    } catch (err: any) {
-      console.error("[Auth] register error:", err);
-      return { success: false, message: err?.message || "Registration failed" };
-    } finally {
-      setIsLoading(false);
+    if (!res.ok) {
+      const msg = data?.error || data?.message || `Registration failed (${res.status})`;
+      console.error("[Auth] register failed:", msg, "body:", data);
+      return { success: false, message: msg };
     }
-  };
+
+    // إذا الباك إند رجع token في body
+    if (data?.user) {
+  setUser(data.user);
+  setToken(data?.token || getCookie("token") || null); // token لو موجود في response
+  return { success: true };
+}
+
+    // محاولة fetchUser للتأكد من جلب بيانات المستخدم
+    const tokenToUse = data?.token || getCookie("token") || "";
+    const userOk = tokenToUse ? await fetchUser(tokenToUse) : false;
+
+    if (!userOk && data?.user) {
+      setUser(data.user);
+    }
+
+    // بعد النجاح، redirect للصفحة الرئيسية أو الداشبورد
+    if (userOk || data?.user) {
+      router.push("/dashboard"); // عدّل حسب الصفحة اللي عايزها
+      return { success: true };
+    }
+
+    return { success: false, message: "Registration succeeded but failed to load user" };
+  } catch (err: any) {
+    console.error("[Auth] register error:", err);
+    return { success: false, message: err?.message || "Registration failed" };
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const logout = (): void => {
     try {
