@@ -1,7 +1,9 @@
-export const AccountInfo = () => {
+const AccountInfo = () => {
   return (
-    <dev>
-      
-    </dev>
-  )
-}
+    <div>
+      {/* المحتوى هنا */}
+    </div>
+  );
+};
+
+export default AccountInfo; // مهم جدًا
