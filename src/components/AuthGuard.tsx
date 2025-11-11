@@ -49,17 +49,25 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     const isSetupPage = setupPages.includes(pathname);
     const isProtectedPage = protectedPrefixes.some(p => pathname.startsWith(p));
 
-    // If not authenticated, redirect to sign-up unless on auth pages
+    // If not authenticated, redirect to sign-up unless on auth pages or setup pages
     if (!isAuthenticated) {
       console.log('AuthGuard: Not authenticated, checking if should redirect');
       // Check if there's a token in cookies - if so, wait a bit for auth to initialize
       const token = getCookie('token');
-      if (token && !isAuthPage) {
-        // Token exists but not authenticated yet - wait a bit more
-        return;
+      if (token) {
+        // Token exists but not authenticated yet - allow access to setup pages while auth initializes
+        if (isSetupPage) {
+          console.log('AuthGuard: Token exists, allowing access to setup page while auth initializes');
+          return;
+        }
+        if (!isAuthPage) {
+          // Token exists but not on auth page - wait a bit more for auth to initialize
+          return;
+        }
       }
       
-      if (!isAuthPage) {
+      // No token or on protected page - redirect to sign-up
+      if (!isAuthPage && !isSetupPage) {
         const now = Date.now();
         if (now - lastRedirectTime.current > 1000) { // Debounce redirects
           console.log('AuthGuard: Redirecting to sign-up');

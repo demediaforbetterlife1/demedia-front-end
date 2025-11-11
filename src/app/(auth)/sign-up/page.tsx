@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Stars, OrbitControls } from "@react-three/drei";
@@ -356,13 +356,15 @@ const [errors, setErrors] = useState<{[key: string]: string}>({});
 
 const { register, isAuthenticated, isLoading, user } = useAuth();  
 const router = useRouter();
+const pathname = usePathname();
 
 useEffect(() => {
-    if (!isLoading && isAuthenticated && user) {
+    // Only redirect if we're still on the sign-up page
+    if (!isLoading && isAuthenticated && user && pathname === '/sign-up') {
         console.log('User authenticated, redirecting to setup');
         router.replace("/SignInSetUp");
     }
-}, [isLoading, isAuthenticated, user, router]);
+}, [isLoading, isAuthenticated, user, router, pathname]);
 
 const validateForm = () => {
     const newErrors: {[key: string]: string} = {};

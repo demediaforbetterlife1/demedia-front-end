@@ -152,7 +152,7 @@ export default function SignInSetUp() {
     const [error, setError] = useState("");
     const cardWrapRef = useRef<HTMLDivElement | null>(null);
     
-    const { user, updateUser } = useAuth();
+    const { user, updateUser, isLoading: authLoading, isAuthenticated } = useAuth();
     const { setLanguage: setAppLanguage, supportedLocales } = useI18n();
     const { t } = useI18n();
 
@@ -181,6 +181,30 @@ export default function SignInSetUp() {
     }, []);
 
     const router = useRouter();
+
+    // Show loading while auth is initializing
+    if (authLoading) {
+        return (
+            <div className="relative min-h-screen w-screen overflow-hidden flex items-center justify-center">
+                <SpaceBackground />
+                <div className="relative z-10 text-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+                    <p className="text-cyan-400 text-lg">Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // If auth finished loading and no user/token, redirect to sign-up
+    useEffect(() => {
+        if (!authLoading && !isAuthenticated && !user) {
+            const token = getCookie("token") || (typeof window !== 'undefined' ? localStorage.getItem("token") : null);
+            if (!token) {
+                console.log('SignInSetUp: No token found, redirecting to sign-up');
+                router.replace('/sign-up');
+            }
+        }
+    }, [authLoading, isAuthenticated, user, router]);
 
     const handleSave = async () => {
         if (!day || !month || !year) {
