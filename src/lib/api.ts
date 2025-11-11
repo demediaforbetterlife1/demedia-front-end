@@ -1,19 +1,10 @@
-// src/lib/api.ts
-/* =========================================================================
-   Central API helpers for Demedia frontend (TypeScript)
-   - Updated to use cookies instead of localStorage
-   - Fixed authentication redirect issues
-   - Improved 401 handling to prevent redirect loops
-   ========================================================================= */
-
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 const API_BASE = ""; // same-origin; Next.js rewrites /api to backend in production
 const DIRECT_API_BASE = "https://demedia-backend.fly.dev"; // direct backend fallback
 
-/* ------------------------------------------------------------------------- */
+
 /* --------------------------- Utility helpers ----------------------------- */
-/* ------------------------------------------------------------------------- */
 
 /** Try connecting directly to the backend domain (fallback) */
 async function tryDirectConnection(path: string, options: RequestInit = {}): Promise<Response> {
@@ -56,11 +47,7 @@ export async function readJsonSafe<T = unknown>(res: Response): Promise<T | { er
     }
   }
 }
-
-/* ------------------------------------------------------------------------- */
 /* -------------------------- Cookie Helper Functions ---------------------- */
-/* ------------------------------------------------------------------------- */
-
 const setCookie = (name: string, value: string, days: number = 7) => {
   if (typeof window === "undefined") return;
   
@@ -273,12 +260,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
 
   throw lastError;
 }
-
-/* ------------------------------------------------------------------------- */
 /* ----------------------------- API wrappers ------------------------------ */
-/* ------------------------------------------------------------------------- */
-
-/* ----------------------------- Types ------------------------------------ */
 
 export interface User {
   id: string;
@@ -309,9 +291,7 @@ export interface AuthResponse {
   message?: string;
   error?: string;
 }
-
 /* ----------------------------- Generic request -------------------------- */
-
 async function requestJson<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   const res = await apiFetch(path, opts);
   const parsed = await readJsonSafe<T | { error?: string }>(res);
@@ -324,8 +304,7 @@ async function requestJson<T = any>(path: string, opts: RequestInit = {}): Promi
   
   return parsed as T;
 }
-
-/* ----------------------------- Auth endpoints --------------------------- */
+/*----------------------------- Auth endpoints --------------------------- */
 
 /** Sign up (register using phoneNumber) */
 export async function signUp(payload: {
@@ -601,7 +580,6 @@ export async function getNotifications({ page = 1, limit = 20 }: { page?: number
     headers: getAuthHeaders(),
     cache: "no-store",
   });
-  
   // Handle 401 for notifications
   if (res.status === 401) {
     return [];
@@ -675,7 +653,6 @@ export async function getCurrentUserSafe(): Promise<User | null> {
 }
 
 /* ----------------------------- Exports ---------------------------------- */
-
 const api = {
   apiFetch,
   tryDirectConnection,
