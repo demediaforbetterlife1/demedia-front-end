@@ -39,9 +39,10 @@ export interface User {
 export interface AuthResult {
   success: boolean;
   message?: string;
+  user?: User;
 }
 
-export interface RegisterData {
+export interface FormData {
   name: string;
   username: string;
   phoneNumber: string;
@@ -93,7 +94,6 @@ const deleteCookie = (name: string) => {
   if (typeof window === "undefined") return;
   const domain = window.location.hostname;
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain};`;
-  // Also clear without domain for local development
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 };
 
@@ -117,16 +117,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser((prev) => (prev ? { ...prev, ...newData } : null));
   };
 
+  // Enhanced fetch with retry logic for 502 errors
+  const apiFetch = async (url: string, options: RequestInit = {}, retries = 2): Promise<Response> => {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+        credentials: 'include',
+      });
+
+      // Retry on 502 Bad Gateway
+      if (response.status === 502 && retries > 0) {
+        console.warn(`[Auth] 502 error, retrying... (${retries} retries left)`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return apiFetch(url, options, retries - 1);
+      }
+
+      return response;
+    } catch (error: any) {
+      if (retries > 0 && error.name === 'TypeError') {
+        console.warn(`[Auth] Network error, retrying... (${retries} retries left)`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return apiFetch(url, options, retries - 1);
+      }
+      throw error;
+    }
+  };
+
   // Fetch current user from backend (/api/auth/me) using cookies
   const fetchUser = useCallback(async (): Promise<boolean> => {
     try {
       console.log("[Auth] Fetching user with cookies...");
-      const res = await fetch("/api/auth/me", {
+      const res = await apiFetch("/api/auth/me", {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // This sends cookies automatically
       });
 
       console.log("[Auth] User fetch status:", res.status);  
@@ -138,6 +164,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(null);  
           return false;  
         }  
+        
+        // For server errors, don't clear user - might be temporary
+        if (res.status >= 500) {
+          console.error("[Auth] Server error during fetchUser:", res.status);
+          return false;
+        }
+        
         const errText = await res.text().catch(() => "");  
         console.error("[Auth] fetchUser failed:", res.status, errText);  
         return false;  
@@ -157,7 +190,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }  
     } catch (err) {  
       console.error("[Auth] fetchUser error:", err);  
-      setUser(null);  
+      // Don't clear user on network errors
       return false;  
     }
   }, []);
@@ -174,15 +207,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log("[Auth] Initializing auth from cookies...");  
 
       try {  
-        const ok = await fetchUser();  
-        if (!ok) {  
-          // Clear any potentially invalid token
-          deleteCookie("token");  
-        }  
+        await fetchUser();  
       } catch (err) {  
         console.error("[Auth] initialization error:", err);  
-        deleteCookie("token");  
-        setUser(null);  
       } finally {  
         setIsLoading(false);  
         setInitComplete(true);  
@@ -204,11 +231,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       console.log("[Auth] login attempt...");
-      const res = await fetch("/api/auth/login", {
+      const res = await apiFetch("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber, password }),
-        credentials: "include", // Important for cookies
       });
 
       const data = await res.json().catch(() => null);  
@@ -219,14 +244,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, message: msg };  
       }  
 
-      // After successful login, fetch the user data using cookies
-      const userOk = await fetchUser();
-      if (userOk) {
-        console.log("[Auth] Login successful, user loaded");
-        return { success: true };
+      // SUCCESS: Use user data from response immediately
+      if (data.user) {
+        console.log("[Auth] Login successful, setting user from response");
+        setUser(data.user);
+        return { 
+          success: true, 
+          user: data.user 
+        };
       }
 
-      return { success: false, message: "Login succeeded but failed to load user" };  
+      // Fallback: try to fetch user if not in response
+      console.log("[Auth] No user in response, trying to fetch user...");
+      const userOk = await fetchUser();
+      if (userOk && user) {
+        console.log("[Auth] User fetched successfully after login");
+        return { 
+          success: true, 
+          user 
+        };
+      }
+
+      return { 
+        success: false, 
+        message: "Login succeeded but failed to load user" 
+      };  
     } catch (err: any) {  
       console.error("[Auth] login error:", err);  
       return { success: false, message: err?.message || "Login failed" };  
@@ -235,17 +277,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (userData: RegisterData): Promise<AuthResult> => {
+  const register = async (formData: FormData): Promise<AuthResult> => {
     setIsLoading(true);
 
     try {
-      console.log("[Auth] register attempt with:", userData);
+      console.log("[Auth] register attempt with:", formData);
 
-      const res = await fetch("/api/auth/sign-up", {  
+      const res = await apiFetch("/api/auth/sign-up", {  
         method: "POST",  
-        headers: { "Content-Type": "application/json" },  
-        body: JSON.stringify(userData),  
-        credentials: "include", // Important for cookies
+        body: JSON.stringify(formData),  
       });  
 
       const data = await res.json().catch(() => null);
@@ -258,15 +298,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, message: msg };  
       }  
 
-      // After successful registration, fetch the user data using cookies
+      // SUCCESS: Use user data from response immediately
+      if (data.user) {
+        console.log("[Auth] Registration successful, setting user from response");
+        setUser(data.user);
+        return { 
+          success: true, 
+          user: data.user 
+        };
+      }
+
+      // Fallback: try to fetch user if not in response
+      console.log("[Auth] No user in response, trying to fetch user...");
       const userOk = await fetchUser();
-      if (userOk) {
-        console.log("[Auth] Registration successful, user loaded");
-        return { success: true };
+      if (userOk && user) {
+        console.log("[Auth] User fetched successfully after registration");
+        return { 
+          success: true, 
+          user 
+        };
       }
 
       console.warn("[Auth] Registration succeeded but no user data available");
-      return { success: false, message: "Registration succeeded but failed to load user" };
+      return { 
+        success: false, 
+        message: "Registration succeeded but we're having trouble loading your profile. Please try logging in." 
+      };
     } catch (err: any) {
       console.error("[Auth] register exception:", err);
       return { success: false, message: err?.message || "Registration failed" };
@@ -282,9 +339,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setInitComplete(true);
       
       // Call backend logout endpoint to clear server-side session
-      fetch("/api/auth/logout", {
+      apiFetch("/api/auth/logout", {
         method: "POST",
-        credentials: "include",
       }).catch(err => console.error("[Auth] Backend logout error:", err));
       
       // Clear cookies
@@ -306,12 +362,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) return;
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/complete-setup", {
+      const res = await apiFetch("/api/auth/complete-setup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // Cookies will be sent automatically
         body: JSON.stringify({}),
       });
 
