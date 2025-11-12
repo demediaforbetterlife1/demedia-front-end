@@ -17,7 +17,7 @@ export interface User {
   id: string;
   name?: string;
   username?: string;
-  email?: string;           // مهم لتجنب الخطأ في EditProfileModal
+  email?: string;           
   phoneNumber?: string;
   profilePicture?: string | null;
   coverPhoto?: string | null;
@@ -97,7 +97,6 @@ const getCookie = (name: string): string | null => {
 
 const deleteCookie = (name: string) => {
   if (typeof window === "undefined") return;
-  // Set expired cookie to remove it
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 };
 
@@ -116,7 +115,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [initComplete, setInitComplete] = useState<boolean>(false);
 
-  // Consider authenticated only when init finished and we have both user & token
   const isAuthenticated = !!(user && token && initComplete);
 
   const updateUser = (newData: Partial<User>) => {
@@ -140,7 +138,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           "Content-Type": "application/json",
         },
         cache: "no-store",
-        credentials: "include", // important for cookie-based auth or same-origin
+        credentials: "include",
       });
 
       console.log("[Auth] User fetch status:", res.status);  
@@ -231,7 +229,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber, password }),
-        credentials: "include", // important to receive/send cookie
+        credentials: "include",
       });
 
       const data = await res.json().catch(() => null);  
@@ -242,20 +240,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, message: msg };  
       }  
 
-      // Backend sets cookie; some backends also return user in body  
-      // Try to fetch user from /me (cookie will be sent)  
-      const userOk = await fetchUser(getCookie("token") || "");  
-      if (userOk) {  
-        const savedToken = getCookie("token");  
-        if (savedToken) setToken(savedToken);  
-        return { success: true };  
-      }  
+      // Get token from cookie after login
+      const savedToken = getCookie("token");
+      if (savedToken) {
+        setToken(savedToken);
+        const userOk = await fetchUser(savedToken);
+        if (userOk) {
+          return { success: true };
+        }
+      }
 
-      // Fallback: if response body includes user, set it  
+      // Fallback: if response includes user, set it
       if (data?.user) {  
-        setUser(data.user);  
-        const savedToken = getCookie("token");  
-        if (savedToken) setToken(savedToken);  
+        setUser(data.user);
+        if (savedToken) setToken(savedToken);
         return { success: true };  
       }  
 
@@ -281,7 +279,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         credentials: "include",  
       });  
 
-      // حاول تقرأ body سواء كان JSON أو نص عادي  
       let data: any = null;  
       try {  
         data = await res.json();  
@@ -301,22 +298,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, message: msg };  
       }  
 
-      // لو السيرفر رجّع user في body  
+      // Get token from cookie after registration
+      const tokenFromCookie = getCookie("token");
+      console.log("[Auth] Token from cookie after registration:", !!tokenFromCookie);
+
+      if (tokenFromCookie) {
+        setToken(tokenFromCookie);
+        
+        // Try to fetch user with the new token
+        const userOk = await fetchUser(tokenFromCookie);
+        if (userOk) {
+          console.log("[Auth] User fetched successfully after registration");
+          return { success: true };
+        }
+      }
+
+      // Fallback: if response includes user, use it directly
       if (data?.user) {  
-        setUser(data.user);  
-        const tokenFromCookie = getCookie("token");  
-        if (tokenFromCookie) setToken(tokenFromCookie);  
+        console.log("[Auth] Using user data from response");
+        setUser(data.user);
+        if (tokenFromCookie) setToken(tokenFromCookie);
         return { success: true };  
       }  
 
-      // fallback  
-      const tokenFromCookie = getCookie("token");  
-      const userOk = tokenFromCookie ? await fetchUser(tokenFromCookie) : false;  
-      if (userOk) {  
-        setToken(tokenFromCookie);  
-        return { success: true };  
-      }  
-
+      console.warn("[Auth] Registration succeeded but no user data available");
       return { success: false, message: "Registration succeeded but failed to load user" };
     } catch (err: any) {
       console.error("[Auth] register exception:", err);
@@ -328,12 +333,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = (): void => {
     try {
+      // Call backend logout endpoint to clear server-side session
+      fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      }).catch(err => console.error("[Auth] Backend logout error:", err));
+      
+      // Clear client-side state
       deleteCookie("token");
       setToken(null);
       setUser(null);
       setInitComplete(true);
-      if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("auth:logout"));
-      // Optionally call backend logout endpoint if needed (not required for cookie removal client side)
+      
+      // Dispatch logout event for other components
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("auth:logout"));
+      }
+      
       router.replace("/sign-up");
     } catch (err) {
       console.error("[Auth] logout error:", err);
