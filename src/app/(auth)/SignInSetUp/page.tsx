@@ -206,12 +206,14 @@ export default function SignInSetUp() {
         }
     }, [authLoading, isAuthenticated, user, router]);
 
+    
     const handleSave = async () => {
         if (!day || !month || !year) {
             gsap.timeline()
                 .to(cardWrapRef.current, { x: -8, duration: 0.08 })
                 .to(cardWrapRef.current, { x: 8, duration: 0.08 })
                 .to(cardWrapRef.current, { x: 0, duration: 0.1 });
+            setError("Please select your date of birth");
             return;
         }
     
@@ -220,56 +222,44 @@ export default function SignInSetUp() {
         setError("");
     
         try {
-            const token = typeof window !== 'undefined'
-                ? getCookie("token") || localStorage.getItem("token")
-                : null;
-            
-            if (!token) {
-                throw new Error("Authentication token not found. Please log in again.");
-            }
-    
-            // Use the correct auth endpoint and include both DOB and setup completion
+            // Call the complete-setup endpoint - cookies are sent automatically
             const res = await fetch("/api/auth/complete-setup", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`,
                 },
+                credentials: 'include', // This sends cookies automatically
                 body: JSON.stringify({ 
-                    dob: dobIso,
-                    // You might want to send the date of birth here if needed
+                    dob: dobIso 
                 }),
             });
     
-            const rawBody = await res.text();
-            let data: any = null;
-            try {
-                data = rawBody ? JSON.parse(rawBody) : null;
-            } catch (_e) {
-                // ignore JSON parse errors
-            }
+            const data = await res.json();
     
             if (!res.ok) {
-                const message = (data && (data.error || data.message)) || rawBody || "Failed to save profile info";
-                throw new Error(message);
+                throw new Error(data.error || "Failed to save profile information");
             }
     
-            // Update user context with the new DOB
-            updateUser({ 
-                dob: dobIso,
-                isSetupComplete: true 
-            });
+            // Update user context with the real data from backend
+            if (data.user) {
+                updateUser(data.user);
+            }
             
-            console.log("Setup completed:", data);
+            console.log("Setup completed successfully:", data);
             router.push("/interests");
+    
         } catch (err: any) {
-            console.error(err);
-            setError(err.message || "Error saving profile");
+            console.error("Setup error:", err);
+            setError(err.message || "Error saving profile information");
+            
+            // If it's an authentication error, suggest re-login
+            if (err.message.includes("token") || err.message.includes("authentication")) {
+                setError(`${err.message} Please try signing in again.`);
+            }
         } finally {
             setIsLoading(false);
         }
     };
-
     return (
         <div className="relative min-h-screen w-screen overflow-hidden flex items-center justify-center">
             <SpaceBackground />

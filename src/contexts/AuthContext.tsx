@@ -53,7 +53,6 @@ Context Type
 ======================= */
 export interface AuthContextType {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (phoneNumber: string, password: string) => Promise<AuthResult>;
@@ -74,29 +73,27 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 /* =======================
 Cookie Helpers
 ======================= */
-const setCookie = (name: string, value: string, days: number = 7) => {
-  if (typeof window === "undefined") return;
-  const date = new Date();
-  date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-  const expires = `expires=${date.toUTCString()}`;
-  const sameSite = process.env.NODE_ENV === "production" ? "Strict" : "Lax";
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
-  document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=${sameSite}${secure}`;
-};
-
 const getCookie = (name: string): string | null => {
-  if (typeof window === "undefined") return null;
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(";");
-  for (let c of ca) {
-    c = c.trim();
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length);
+  if (typeof document === "undefined") return null;
+
+  const nameEQ = `${name}=`;
+  const cookies = document.cookie.split(";");
+
+  for (let cookie of cookies) {
+    cookie = cookie.trim();
+    if (cookie.startsWith(nameEQ)) {
+      return decodeURIComponent(cookie.substring(nameEQ.length));
+    }
   }
+
   return null;
 };
 
 const deleteCookie = (name: string) => {
   if (typeof window === "undefined") return;
+  const domain = window.location.hostname;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain};`;
+  // Also clear without domain for local development
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 };
 
@@ -111,43 +108,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const router = useRouter();
 
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [initComplete, setInitComplete] = useState<boolean>(false);
 
-  const isAuthenticated = !!(user && token && initComplete);
+  const isAuthenticated = !!(user && initComplete);
 
   const updateUser = (newData: Partial<User>) => {
     setUser((prev) => (prev ? { ...prev, ...newData } : null));
   };
 
-  const isValidToken = (t: string | null): boolean => {
-    if (!t) return false;
-    const parts = t.split(".");
-    return parts.length === 3 && t.length > 30;
-  };
-
-  // Fetch current user from backend (/api/auth/me)
-  const fetchUser = useCallback(async (authToken: string): Promise<boolean> => {
+  // Fetch current user from backend (/api/auth/me) using cookies
+  const fetchUser = useCallback(async (): Promise<boolean> => {
     try {
-      console.log("[Auth] Fetching user with token...");
+      console.log("[Auth] Fetching user with cookies...");
       const res = await fetch("/api/auth/me", {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        cache: "no-store",
-        credentials: "include",
+        credentials: "include", // This sends cookies automatically
       });
 
       console.log("[Auth] User fetch status:", res.status);  
 
       if (!res.ok) {  
         if (res.status === 401) {  
-          console.warn("[Auth] Token invalid, clearing");  
+          console.warn("[Auth] Token invalid, clearing cookies");  
           deleteCookie("token");  
-          setToken(null);  
           setUser(null);  
           return false;  
         }  
@@ -156,14 +143,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return false;  
       }  
 
-      const body = await res.json().catch(() => null);  
-      const userObj: User | null = body?.user ?? body ?? null;  
+      const data = await res.json().catch(() => null);  
+      const userObj: User | null = data?.user ?? null;  
 
-      if (userObj && (userObj as any).id) {  
+      if (userObj && userObj.id) {  
+        console.log("[Auth] User fetched successfully:", userObj.id);
         setUser(userObj);  
         return true;  
       } else {  
-        console.warn("[Auth] fetchUser: invalid body", body);  
+        console.warn("[Auth] fetchUser: invalid user data", data);  
         setUser(null);  
         return false;  
       }  
@@ -174,7 +162,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Initialization: read cookie token then fetch user
+  // Initialization: check if user is authenticated via cookies
   useEffect(() => {
     const initializeAuth = async () => {
       if (typeof window === "undefined") {
@@ -183,31 +171,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      const savedToken = getCookie("token");  
-      console.log("[Auth] initialize - token exists?", !!savedToken);  
-
-      if (!savedToken || !isValidToken(savedToken)) {  
-        setIsLoading(false);  
-        setInitComplete(true);  
-        return;  
-      }  
-
-      setToken(savedToken);  
+      console.log("[Auth] Initializing auth from cookies...");  
 
       try {  
-        const ok = await fetchUser(savedToken);  
+        const ok = await fetchUser();  
         if (!ok) {  
+          // Clear any potentially invalid token
           deleteCookie("token");  
-          setToken(null);  
         }  
       } catch (err) {  
         console.error("[Auth] initialization error:", err);  
         deleteCookie("token");  
-        setToken(null);  
         setUser(null);  
       } finally {  
         setIsLoading(false);  
         setInitComplete(true);  
+        console.log("[Auth] Auth initialization complete, authenticated:", isAuthenticated);
       }  
     };  
 
@@ -215,7 +194,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [fetchUser]);
 
   const refreshUser = async () => {
-    if (token) await fetchUser(token);
+    await fetchUser();
   };
 
   const login = async (
@@ -229,7 +208,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber, password }),
-        credentials: "include",
+        credentials: "include", // Important for cookies
       });
 
       const data = await res.json().catch(() => null);  
@@ -240,22 +219,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, message: msg };  
       }  
 
-      // Get token from cookie after login
-      const savedToken = getCookie("token");
-      if (savedToken) {
-        setToken(savedToken);
-        const userOk = await fetchUser(savedToken);
-        if (userOk) {
-          return { success: true };
-        }
+      // After successful login, fetch the user data using cookies
+      const userOk = await fetchUser();
+      if (userOk) {
+        console.log("[Auth] Login successful, user loaded");
+        return { success: true };
       }
-
-      // Fallback: if response includes user, set it
-      if (data?.user) {  
-        setUser(data.user);
-        if (savedToken) setToken(savedToken);
-        return { success: true };  
-      }  
 
       return { success: false, message: "Login succeeded but failed to load user" };  
     } catch (err: any) {  
@@ -276,56 +245,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         method: "POST",  
         headers: { "Content-Type": "application/json" },  
         body: JSON.stringify(userData),  
-        credentials: "include",  
+        credentials: "include", // Important for cookies
       });  
 
-      let data: any = null;  
-      try {  
-        data = await res.json();  
-      } catch {  
-        try {  
-          data = await res.text();  
-        } catch {  
-          data = null;  
-        }  
-      }  
+      const data = await res.json().catch(() => null);
 
       console.log("[Auth] register response:", res.status, data);  
 
       if (!res.ok) {  
-        const msg = data?.error || data?.message || data || `Registration failed (${res.status})`;  
+        const msg = data?.error || data?.message || `Registration failed (${res.status})`;  
         console.error("[Auth] register failed:", msg);  
         return { success: false, message: msg };  
       }  
 
-      // Get token from cookie after registration
-      const tokenFromCookie = getCookie("token");
-      console.log("[Auth] Token from cookie after registration:", !!tokenFromCookie);
-
-      if (tokenFromCookie) {
-        setToken(tokenFromCookie);
-        
-        // Try to fetch user with the new token
-        const userOk = await fetchUser(tokenFromCookie);
-        if (userOk) {
-          console.log("[Auth] User fetched successfully after registration");
-          return { success: true };
-        }
+      // After successful registration, fetch the user data using cookies
+      const userOk = await fetchUser();
+      if (userOk) {
+        console.log("[Auth] Registration successful, user loaded");
+        return { success: true };
       }
-
-      // Fallback: if response includes user, use it directly
-      if (data?.user) {  
-        console.log("[Auth] Using user data from response");
-        setUser(data.user);
-        if (tokenFromCookie) setToken(tokenFromCookie);
-        return { success: true };  
-      }  
 
       console.warn("[Auth] Registration succeeded but no user data available");
       return { success: false, message: "Registration succeeded but failed to load user" };
     } catch (err: any) {
       console.error("[Auth] register exception:", err);
-      return { success: false, message: err?.message || err?.toString() || "Registration failed" };
+      return { success: false, message: err?.message || "Registration failed" };
     } finally {
       setIsLoading(false);
     }
@@ -333,23 +277,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = (): void => {
     try {
+      // Clear client-side state first
+      setUser(null);
+      setInitComplete(true);
+      
       // Call backend logout endpoint to clear server-side session
       fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
       }).catch(err => console.error("[Auth] Backend logout error:", err));
       
-      // Clear client-side state
+      // Clear cookies
       deleteCookie("token");
-      setToken(null);
-      setUser(null);
-      setInitComplete(true);
       
       // Dispatch logout event for other components
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("auth:logout"));
       }
       
+      console.log("[Auth] Logout successful");
       router.replace("/sign-up");
     } catch (err) {
       console.error("[Auth] logout error:", err);
@@ -357,16 +303,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const completeSetup = async (): Promise<void> => {
-    if (!token || !user) return;
+    if (!user) return;
     setIsLoading(true);
     try {
       const res = await fetch("/api/auth/complete-setup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
+        credentials: "include", // Cookies will be sent automatically
         body: JSON.stringify({}),
       });
 
@@ -386,7 +331,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const value: AuthContextType = {
     user,
-    token,
     isLoading,
     isAuthenticated,
     login,
