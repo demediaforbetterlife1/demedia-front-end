@@ -60,7 +60,8 @@ export interface AuthContextType {
   register: (userData: FormData) => Promise<AuthResult>;
   logout: () => void;
   refreshUser: () => Promise<void>;
-  completeSetup: () => Promise<void>;
+  completeSetup: () => Promise<AuthResult>;
+  updateUserProfile: (userData: { dob?: string; interests?: string[] }) => Promise<AuthResult>;
   updateUser: (newData: Partial<User>) => void;
 }
 
@@ -332,6 +333,84 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Update user profile with date of birth and interests
+  const updateUserProfile = async (userData: { dob?: string; interests?: string[] }): Promise<AuthResult> => {
+    setIsLoading(true);
+    try {
+      console.log("[Auth] Updating user profile:", userData);
+      
+      const res = await apiFetch("/api/auth/update-profile", {
+        method: "POST",
+        body: JSON.stringify(userData),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        const msg = data?.error || data?.message || `Profile update failed (${res.status})`;
+        console.error("[Auth] updateUserProfile failed:", msg);
+        return { success: false, message: msg };
+      }
+
+      // Update user state with new data
+      if (data.user) {
+        console.log("[Auth] Profile updated successfully");
+        setUser(data.user);
+        return {
+          success: true,
+          user: data.user
+        };
+      }
+
+      return { success: false, message: "Profile update failed" };
+    } catch (err: any) {
+      console.error("[Auth] updateUserProfile error:", err);
+      return { success: false, message: err?.message || "Profile update failed" };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Mark setup as complete
+  const completeSetup = async (): Promise<AuthResult> => {
+    setIsLoading(true);
+    try {
+      console.log("[Auth] Completing setup...");
+      
+      const res = await apiFetch("/api/auth/complete-setup", {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        const msg = data?.error || data?.message || `Setup completion failed (${res.status})`;
+        console.error("[Auth] completeSetup failed:", msg);
+        return { success: false, message: msg };
+      }
+
+      // Update user state
+      if (data.user) {
+        console.log("[Auth] Setup completed successfully");
+        setUser(data.user);
+        return {
+          success: true,
+          user: data.user
+        };
+      }
+
+      // Fallback: update local state
+      setUser((prev) => (prev ? { ...prev, isSetupComplete: true } : null));
+      return { success: true };
+    } catch (err: any) {
+      console.error("[Auth] completeSetup error:", err);
+      return { success: false, message: err?.message || "Setup completion failed" };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = (): void => {
     try {
       // Clear client-side state first
@@ -358,29 +437,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const completeSetup = async (): Promise<void> => {
-    if (!user) return;
-    setIsLoading(true);
-    try {
-      const res = await apiFetch("/api/auth/complete-setup", {
-        method: "POST",
-        body: JSON.stringify({}),
-      });
-
-      if (res.ok) {  
-        setUser((prev) => (prev ? { ...prev, isSetupComplete: true } : null));  
-        await refreshUser();  
-      } else {  
-        const txt = await res.text().catch(() => "");  
-        console.error("[Auth] completeSetup failed:", res.status, txt);  
-      }  
-    } catch (err) {  
-      console.error("[Auth] completeSetup error:", err);  
-    } finally {  
-      setIsLoading(false);  
-    }
-  };
-
   const value: AuthContextType = {
     user,
     isLoading,
@@ -390,6 +446,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     refreshUser,
     completeSetup,
+    updateUserProfile,
     updateUser,
   };
 
