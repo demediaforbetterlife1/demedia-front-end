@@ -14,7 +14,6 @@ export interface User {
   id: string;
   name?: string;
   username?: string;
-  email?: string;
   phoneNumber?: string;
   profilePicture?: string | null;
   coverPhoto?: string | null;
@@ -22,10 +21,16 @@ export interface User {
   location?: string | null;
   website?: string | null;
   dateOfBirth?: string | null;
+  dob?: string | null;
+  age?: number | null;
+  language?: string | null;
+  preferredLang?: string | null;
+  privacy?: string | null;
+  interests?: string[] | null;
   isSetupComplete?: boolean;
+  isPhoneVerified?: boolean;
   createdAt?: string;
 }
-
 export interface AuthResult {
   success: boolean;
   message?: string;
