@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.tsx
 "use client";
 
 import React, {
@@ -83,7 +82,7 @@ const expires = expires=`${date.toUTCString()}`;
 const sameSite = process.env.NODE_ENV === "production" ? "Strict" : "Lax";
 const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
 document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=${sameSite}${secure};
-}`;
+`};
 
 const getCookie = (name: string): string | null => {
 if (typeof window === "undefined") return null;
