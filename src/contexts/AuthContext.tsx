@@ -57,7 +57,7 @@ export interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (phoneNumber: string, password: string) => Promise<AuthResult>;
-  register: (userData: RegisterData) => Promise<AuthResult>;
+  register: (userData: FormData) => Promise<AuthResult>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   completeSetup: () => Promise<void>;
