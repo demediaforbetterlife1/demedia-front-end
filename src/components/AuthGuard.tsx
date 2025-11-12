@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -8,169 +8,73 @@ interface AuthGuardProps {
   children: React.ReactNode;
 }
 
-// Cookie helper functions
-const getCookie = (name: string): string | null => {
-  if (typeof window === "undefined") return null;
-  
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-};
-
 export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
-  const [hasRedirected, setHasRedirected] = useState(false);
-  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastRedirectTime = useRef<number>(0);
+  const [isChecking, setIsChecking] = useState(true);
+
+  // Public routes that don't require authentication
+  const publicRoutes = ['/sign-in', '/sign-up'];
+  // Setup routes that require authentication but not setup completion
+  const setupRoutes = ['/SignInSetUp', '/interests', '/FinishSetup'];
+  // Protected routes that require both authentication and setup completion
+  const protectedRoutes = ['/home', '/profile', '/messaging', '/messeging'];
+
+  const isPublicRoute = publicRoutes.includes(pathname);
+  const isSetupRoute = setupRoutes.includes(pathname);
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
   useEffect(() => {
-    // Only redirect if not loading and not already redirected
-    if (isLoading || hasRedirected) return;
+    // Wait for auth to initialize
+    if (isLoading) return;
 
     console.log('AuthGuard Debug:', {
       isAuthenticated,
       isLoading,
       user: user ? { id: user.id, isSetupComplete: user.isSetupComplete } : null,
-      pathname
+      pathname,
+      isPublicRoute,
+      isSetupRoute,
+      isProtectedRoute
     });
 
-    const authPages = ['/sign-in', '/sign-up'];
-    const setupPages = ['/SignInSetUp', '/interests', '/FinishSetup'];
-    const protectedPrefixes = ['/home', '/profile', '/messaging', '/messeging'];
-
-    const isAuthPage = authPages.includes(pathname);
-    const isSetupPage = setupPages.includes(pathname);
-    const isProtectedPage = protectedPrefixes.some(p => pathname.startsWith(p));
-
-    // If not authenticated, redirect to sign-up unless on auth pages or setup pages
+    // If not authenticated and trying to access protected routes
     if (!isAuthenticated) {
-      console.log('AuthGuard: Not authenticated, checking if should redirect');
-      // Check if there's a token in cookies - if so, wait a bit for auth to initialize
-      const token = getCookie('token');
-      if (token) {
-        // Token exists but not authenticated yet - allow access to setup pages while auth initializes
-        if (isSetupPage) {
-          console.log('AuthGuard: Token exists, allowing access to setup page while auth initializes');
-          return;
-        }
-        if (!isAuthPage) {
-          // Token exists but not on auth page - wait a bit more for auth to initialize
-          return;
-        }
+      if (!isPublicRoute && !isSetupRoute) {
+        console.log('AuthGuard: Not authenticated, redirecting to sign-up');
+        router.replace('/sign-up');
+        return;
       }
-      
-      // No token or on protected page - redirect to sign-up
-      if (!isAuthPage && !isSetupPage) {
-        const now = Date.now();
-        if (now - lastRedirectTime.current > 1000) { // Debounce redirects
-          console.log('AuthGuard: Redirecting to sign-up');
-          setHasRedirected(true);
-          lastRedirectTime.current = now;
-          router.replace('/sign-up');
-        }
+    } else {
+      // User is authenticated
+      if (isPublicRoute) {
+        // Redirect away from auth pages if already authenticated
+        const redirectPath = user?.isSetupComplete ? '/home' : '/SignInSetUp';
+        console.log('AuthGuard: Authenticated on auth page, redirecting to:', redirectPath);
+        router.replace(redirectPath);
+        return;
       }
-      return;
-    }
-  }, [isAuthenticated, isLoading, user, pathname, router, hasRedirected]);
 
-  // Reset redirect state when pathname changes, but with a small delay
-  // to prevent immediate re-redirects
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setHasRedirected(false);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [pathname]);
-
-  // Separate useEffect for authenticated user routing
-  useEffect(() => {
-    if (isLoading || !isAuthenticated || !user || hasRedirected) return;
-
-    const authPages = ['/sign-in', '/sign-up'];
-    const setupPages = ['/SignInSetUp', '/interests', '/FinishSetup'];
-    const protectedPrefixes = ['/home', '/profile', '/messaging', '/messeging'];
-
-    const isAuthPage = authPages.includes(pathname);
-    const isSetupPage = setupPages.includes(pathname);
-    const isProtectedPage = protectedPrefixes.some(p => pathname.startsWith(p));
-
-    console.log('AuthGuard: Authenticated, checking setup status:', { 
-      isSetupComplete: user.isSetupComplete,
-      pathname
-    });
-    
-    // If on auth pages but already authenticated, redirect appropriately
-    // Add a small delay to allow page-level redirects to happen first
-    if (isAuthPage) {
-      const now = Date.now();
-      if (now - lastRedirectTime.current > 1500) { // Increased debounce to allow page redirects
-        console.log('AuthGuard: On auth page but authenticated, redirecting based on setup status');
-        setHasRedirected(true);
-        lastRedirectTime.current = now;
-        
-        // Use setTimeout to allow any page-level redirects to complete first
-        setTimeout(() => {
-          if (user.isSetupComplete) {
-            console.log('AuthGuard: Setup complete, redirecting to home');
-            router.replace('/home');
-          } else {
-            console.log('AuthGuard: Setup not complete, redirecting to SignInSetUp');
-            router.replace('/SignInSetUp');
-          }
-        }, 300);
-      }
-      return;
-    }
-
-    // If trying to access protected pages without completing setup
-    if (isProtectedPage && !user.isSetupComplete) {
-      const now = Date.now();
-      if (now - lastRedirectTime.current > 1000) { // Debounce redirects
-        console.log('AuthGuard: Trying to access protected page without setup, redirecting to SignInSetUp');
-        setHasRedirected(true);
-        lastRedirectTime.current = now;
+      if (isProtectedRoute && !user?.isSetupComplete) {
+        console.log('AuthGuard: Trying to access protected route without setup, redirecting to setup');
         router.replace('/SignInSetUp');
+        return;
       }
-      return;
-    }
 
-    // If setup is complete but on setup pages, redirect to home
-    if (isSetupPage && user.isSetupComplete) {
-      const now = Date.now();
-      if (now - lastRedirectTime.current > 1000) { // Debounce redirects
+      if (isSetupRoute && user?.isSetupComplete) {
         console.log('AuthGuard: Setup complete but on setup page, redirecting to home');
-        setHasRedirected(true);
-        lastRedirectTime.current = now;
         router.replace('/home');
+        return;
       }
-      return;
     }
 
-    // If user is on root path and authenticated, redirect to home
-    // Note: Root page also handles this, but AuthGuard is a backup
-    if (pathname === '/') {
-      const now = Date.now();
-      if (now - lastRedirectTime.current > 1000) { // Debounce redirects
-        console.log('AuthGuard: On root path, redirecting to home');
-        setHasRedirected(true);
-        lastRedirectTime.current = now;
-        router.replace('/home');
-      }
-      return;
-    }
+    // All checks passed, allow access
+    setIsChecking(false);
+  }, [isAuthenticated, isLoading, user, pathname, router, isPublicRoute, isSetupRoute, isProtectedRoute]);
 
-    console.log('AuthGuard: All checks passed, allowing access to:', pathname);
-  }, [isAuthenticated, isLoading, user, pathname, router, hasRedirected]);
-
-  // Show loading spinner while checking auth
-  if (isLoading) {
+  // Show loading while checking auth
+  if (isLoading || isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center theme-bg-primary">
         <div className="text-center">

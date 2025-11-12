@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.tsx
 "use client";
 
 import React, {
@@ -12,13 +11,13 @@ import React, {
 import { useRouter } from "next/navigation";
 
 /* =======================
-   Types
-   ======================= */
+Types
+======================= */
 export interface User {
   id: string;
   name?: string;
   username?: string;
-  email?: string;           // مهم لتجنب الخطأ في EditProfileModal
+  email?: string;           
   phoneNumber?: string;
   profilePicture?: string | null;
   coverPhoto?: string | null;
@@ -50,8 +49,8 @@ export interface RegisterData {
 }
 
 /* =======================
-   Context Type
-   ======================= */
+Context Type
+======================= */
 export interface AuthContextType {
   user: User | null;
   token: string | null;
@@ -66,15 +65,15 @@ export interface AuthContextType {
 }
 
 /* =======================
-   Context init
-   ======================= */
+Context init
+======================= */
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
 );
 
 /* =======================
-   Cookie Helpers
-   ======================= */
+Cookie Helpers
+======================= */
 const setCookie = (name: string, value: string, days: number = 7) => {
   if (typeof window === "undefined") return;
   const date = new Date();
@@ -98,13 +97,12 @@ const getCookie = (name: string): string | null => {
 
 const deleteCookie = (name: string) => {
   if (typeof window === "undefined") return;
-  // Set expired cookie to remove it
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 };
 
 /* =======================
-   Provider
-   ======================= */
+Provider
+======================= */
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -117,7 +115,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [initComplete, setInitComplete] = useState<boolean>(false);
 
-  // Consider authenticated only when init finished and we have both user & token
   const isAuthenticated = !!(user && token && initComplete);
 
   const updateUser = (newData: Partial<User>) => {
@@ -141,39 +138,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           "Content-Type": "application/json",
         },
         cache: "no-store",
-        credentials: "include", // important for cookie-based auth or same-origin
+        credentials: "include",
       });
 
-      console.log("[Auth] User fetch status:", res.status);
+      console.log("[Auth] User fetch status:", res.status);  
 
-      if (!res.ok) {
-        if (res.status === 401) {
-          console.warn("[Auth] Token invalid, clearing");
-          deleteCookie("token");
-          setToken(null);
-          setUser(null);
-          return false;
-        }
-        const errText = await res.text().catch(() => "");
-        console.error("[Auth] fetchUser failed:", res.status, errText);
-        return false;
-      }
+      if (!res.ok) {  
+        if (res.status === 401) {  
+          console.warn("[Auth] Token invalid, clearing");  
+          deleteCookie("token");  
+          setToken(null);  
+          setUser(null);  
+          return false;  
+        }  
+        const errText = await res.text().catch(() => "");  
+        console.error("[Auth] fetchUser failed:", res.status, errText);  
+        return false;  
+      }  
 
-      const body = await res.json().catch(() => null);
-      const userObj: User | null = body?.user ?? body ?? null;
+      const body = await res.json().catch(() => null);  
+      const userObj: User | null = body?.user ?? body ?? null;  
 
-      if (userObj && (userObj as any).id) {
-        setUser(userObj);
-        return true;
-      } else {
-        console.warn("[Auth] fetchUser: invalid body", body);
-        setUser(null);
-        return false;
-      }
-    } catch (err) {
-      console.error("[Auth] fetchUser error:", err);
-      setUser(null);
-      return false;
+      if (userObj && (userObj as any).id) {  
+        setUser(userObj);  
+        return true;  
+      } else {  
+        console.warn("[Auth] fetchUser: invalid body", body);  
+        setUser(null);  
+        return false;  
+      }  
+    } catch (err) {  
+      console.error("[Auth] fetchUser error:", err);  
+      setUser(null);  
+      return false;  
     }
   }, []);
 
@@ -186,33 +183,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      const savedToken = getCookie("token");
-      console.log("[Auth] initialize - token exists?", !!savedToken);
+      const savedToken = getCookie("token");  
+      console.log("[Auth] initialize - token exists?", !!savedToken);  
 
-      if (!savedToken || !isValidToken(savedToken)) {
-        setIsLoading(false);
-        setInitComplete(true);
-        return;
-      }
+      if (!savedToken || !isValidToken(savedToken)) {  
+        setIsLoading(false);  
+        setInitComplete(true);  
+        return;  
+      }  
 
-      setToken(savedToken);
+      setToken(savedToken);  
 
-      try {
-        const ok = await fetchUser(savedToken);
-        if (!ok) {
-          deleteCookie("token");
-          setToken(null);
-        }
-      } catch (err) {
-        console.error("[Auth] initialization error:", err);
-        deleteCookie("token");
-        setToken(null);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-        setInitComplete(true);
-      }
-    };
+      try {  
+        const ok = await fetchUser(savedToken);  
+        if (!ok) {  
+          deleteCookie("token");  
+          setToken(null);  
+        }  
+      } catch (err) {  
+        console.error("[Auth] initialization error:", err);  
+        deleteCookie("token");  
+        setToken(null);  
+        setUser(null);  
+      } finally {  
+        setIsLoading(false);  
+        setInitComplete(true);  
+      }  
+    };  
 
     initializeAuth();
   }, [fetchUser]);
@@ -232,50 +229,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber, password }),
-        credentials: "include", // important to receive/send cookie
+        credentials: "include",
       });
 
-      const data = await res.json().catch(() => null);
+      const data = await res.json().catch(() => null);  
 
-      if (!res.ok) {
-        const msg = data?.error || data?.message || `Login failed (${res.status})`;
-        console.error("[Auth] login failed:", msg);
-        return { success: false, message: msg };
-      }
+      if (!res.ok) {  
+        const msg = data?.error || data?.message || `Login failed (${res.status})`;  
+        console.error("[Auth] login failed:", msg);  
+        return { success: false, message: msg };  
+      }  
 
-      const tokenFromResponse = data?.token;
-
-      if (tokenFromResponse) {
-        setCookie("token", tokenFromResponse, 7);
-        setToken(tokenFromResponse);
-        if (typeof window !== "undefined") {
-          localStorage.setItem("token", tokenFromResponse);
-        }
-      }
-
-      if (data?.user) {
-        setUser(data.user);
-      }
-
-      const tokenForFetch = tokenFromResponse || getCookie("token");
-      if (tokenForFetch) {
-        const userOk = await fetchUser(tokenForFetch);
+      // Get token from cookie after login
+      const savedToken = getCookie("token");
+      if (savedToken) {
+        setToken(savedToken);
+        const userOk = await fetchUser(savedToken);
         if (userOk) {
-          setToken(tokenForFetch);
           return { success: true };
         }
       }
 
-      if (data?.user) {
-        return { success: true };
-      }
+      // Fallback: if response includes user, set it
+      if (data?.user) {  
+        setUser(data.user);
+        if (savedToken) setToken(savedToken);
+        return { success: true };  
+      }  
 
-      return { success: false, message: "Login succeeded but failed to load user" };
-    } catch (err: any) {
-      console.error("[Auth] login error:", err);
-      return { success: false, message: err?.message || "Login failed" };
-    } finally {
-      setIsLoading(false);
+      return { success: false, message: "Login succeeded but failed to load user" };  
+    } catch (err: any) {  
+      console.error("[Auth] login error:", err);  
+      return { success: false, message: err?.message || "Login failed" };  
+    } finally {  
+      setIsLoading(false);  
     }
   };
 
@@ -285,71 +272,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log("[Auth] register attempt with:", userData);
 
-      const res = await fetch("/api/auth/sign-up", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
-        credentials: "include",
-      });
+      const res = await fetch("/api/auth/sign-up", {  
+        method: "POST",  
+        headers: { "Content-Type": "application/json" },  
+        body: JSON.stringify(userData),  
+        credentials: "include",  
+      });  
 
-      // حاول تقرأ body سواء كان JSON أو نص عادي
-      let data: any = null;
-      try {
-        data = await res.json();
-      } catch {
-        try {
-          data = await res.text();
-        } catch {
-          data = null;
+      let data: any = null;  
+      try {  
+        data = await res.json();  
+      } catch {  
+        try {  
+          data = await res.text();  
+        } catch {  
+          data = null;  
+        }  
+      }  
+
+      console.log("[Auth] register response:", res.status, data);  
+
+      if (!res.ok) {  
+        const msg = data?.error || data?.message || data || `Registration failed (${res.status})`;  
+        console.error("[Auth] register failed:", msg);  
+        return { success: false, message: msg };  
+      }  
+
+      // Get token from cookie after registration
+      const tokenFromCookie = getCookie("token");
+      console.log("[Auth] Token from cookie after registration:", !!tokenFromCookie);
+
+      if (tokenFromCookie) {
+        setToken(tokenFromCookie);
+        
+        // Try to fetch user with the new token
+        const userOk = await fetchUser(tokenFromCookie);
+        if (userOk) {
+          console.log("[Auth] User fetched successfully after registration");
+          return { success: true };
         }
       }
 
-      console.log("[Auth] register response:", res.status, data);
+      // Fallback: if response includes user, use it directly
+      if (data?.user) {  
+        console.log("[Auth] Using user data from response");
+        setUser(data.user);
+        if (tokenFromCookie) setToken(tokenFromCookie);
+        return { success: true };  
+      }  
 
-      if (!res.ok) {
-        const msg = data?.error || data?.message || data || `Registration failed (${res.status})`;
-        console.error("[Auth] register failed:", msg);
-        return { success: false, message: msg };
-      }
-
-      const tokenFromResponse = data?.token;
-
-      if (!tokenFromResponse) {
-        console.error("[Auth] No token in response");
-        return { success: false, message: "Registration succeeded but no token received" };
-      }
-
-      // Set token first
-      setCookie("token", tokenFromResponse, 7);
-      setToken(tokenFromResponse);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("token", tokenFromResponse);
-      }
-
-      // Set user from response if available (faster)
-      if (data?.user && data.user.id) {
-        // Ensure ID is string
-        const userWithStringId = { ...data.user, id: String(data.user.id) };
-        setUser(userWithStringId);
-        console.log("[Auth] User set from response:", userWithStringId);
-      }
-
-      // Also fetch user to ensure we have complete data
-      const userOk = await fetchUser(tokenFromResponse);
-      if (userOk) {
-        console.log("[Auth] User fetched successfully after registration");
-        // Ensure initComplete is set so isAuthenticated becomes true
-        setInitComplete(true);
-        return { success: true };
-      }
-
-      // If fetchUser failed but we have user from response, still return success
-      if (data?.user && data.user.id) {
-        console.log("[Auth] Using user from response (fetchUser failed)");
-        setInitComplete(true);
-        return { success: true };
-      }
-
+      console.warn("[Auth] Registration succeeded but no user data available");
       return { success: false, message: "Registration succeeded but failed to load user" };
     } catch (err: any) {
       console.error("[Auth] register exception:", err);
@@ -358,17 +330,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(false);
     }
   };
+
   const logout = (): void => {
     try {
+      // Call backend logout endpoint to clear server-side session
+      fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      }).catch(err => console.error("[Auth] Backend logout error:", err));
+      
+      // Clear client-side state
       deleteCookie("token");
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
-      }
       setToken(null);
       setUser(null);
       setInitComplete(true);
-      if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("auth:logout"));
-      // Optionally call backend logout endpoint if needed (not required for cookie removal client side)
+      
+      // Dispatch logout event for other components
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("auth:logout"));
+      }
+      
       router.replace("/sign-up");
     } catch (err) {
       console.error("[Auth] logout error:", err);
@@ -389,17 +370,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         body: JSON.stringify({}),
       });
 
-      if (res.ok) {
-        setUser((prev) => (prev ? { ...prev, isSetupComplete: true } : null));
-        await refreshUser();
-      } else {
-        const txt = await res.text().catch(() => "");
-        console.error("[Auth] completeSetup failed:", res.status, txt);
-      }
-    } catch (err) {
-      console.error("[Auth] completeSetup error:", err);
-    } finally {
-      setIsLoading(false);
+      if (res.ok) {  
+        setUser((prev) => (prev ? { ...prev, isSetupComplete: true } : null));  
+        await refreshUser();  
+      } else {  
+        const txt = await res.text().catch(() => "");  
+        console.error("[Auth] completeSetup failed:", res.status, txt);  
+      }  
+    } catch (err) {  
+      console.error("[Auth] completeSetup error:", err);  
+    } finally {  
+      setIsLoading(false);  
     }
   };
 
