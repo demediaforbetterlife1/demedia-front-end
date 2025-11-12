@@ -214,52 +214,53 @@ export default function SignInSetUp() {
                 .to(cardWrapRef.current, { x: 0, duration: 0.1 });
             return;
         }
-
+    
         const dobIso = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
         setIsLoading(true);
         setError("");
-
+    
         try {
-            // Get userId from AuthContext - it comes from database, not localStorage
-            const userId = user?.id;
-            if (!userId) {
-                throw new Error("User not authenticated");
-            }
-
             const token = typeof window !== 'undefined'
                 ? getCookie("token") || localStorage.getItem("token")
                 : null;
+            
             if (!token) {
                 throw new Error("Authentication token not found. Please log in again.");
             }
-
-            const res = await fetch(`/api/user/${userId}/complete-setup`, {
-       method: "POST",
-       headers: {
-         "Content-Type": "application/json",
-         "Authorization": `Bearer ${token}`,
-         "user-id": userId.toString(),
-  },
-  body: JSON.stringify({ dob: dobIso }),
-});
-
+    
+            // Use the correct auth endpoint and include both DOB and setup completion
+            const res = await fetch("/api/auth/complete-setup", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify({ 
+                    dob: dobIso,
+                    // You might want to send the date of birth here if needed
+                }),
+            });
+    
             const rawBody = await res.text();
             let data: any = null;
             try {
                 data = rawBody ? JSON.parse(rawBody) : null;
             } catch (_e) {
-                // ignore JSON parse errors; we'll fall back to raw text
+                // ignore JSON parse errors
             }
-
+    
             if (!res.ok) {
                 const message = (data && (data.error || data.message)) || rawBody || "Failed to save profile info";
                 throw new Error(message);
             }
-
-            // Update user context
-            updateUser({ dob: dobIso });
+    
+            // Update user context with the new DOB
+            updateUser({ 
+                dob: dobIso,
+                isSetupComplete: true 
+            });
             
-            console.log("Saved profile:", data);
+            console.log("Setup completed:", data);
             router.push("/interests");
         } catch (err: any) {
             console.error(err);
