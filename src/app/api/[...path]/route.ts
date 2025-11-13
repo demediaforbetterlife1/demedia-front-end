@@ -32,6 +32,19 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]): Promise<R
   const headers = new Headers(req.headers);
   if (headers.has("host")) headers.delete("host");
 
+  // Forward cookies explicitly
+  const cookies = req.cookies.getAll();
+  const cookieHeader = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+  if (cookieHeader) {
+    headers.set('Cookie', cookieHeader);
+  }
+
+  // Also forward Authorization header if present (for token fallback)
+  const authHeader = req.headers.get('authorization');
+  if (authHeader) {
+    headers.set('Authorization', authHeader);
+  }
+
   const init: RequestInit = {
     method: req.method,
     headers,

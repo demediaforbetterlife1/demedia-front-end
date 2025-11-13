@@ -123,18 +123,14 @@ export default function Stories() {
             }
             
             // Fetch stories from the API
-            const token = localStorage.getItem('token');
-            if (!token) {
-                setError("Authentication required");
-                return;
-            }
-            
+            // Cookies (httpOnly) are sent automatically via credentials: 'include'
+            // The API route will extract the token from cookies
             const response = await fetch(`/api/stories`, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
                     'user-id': user.id.toString(),
                     'Content-Type': 'application/json',
-                }
+                },
+                credentials: 'include', // This automatically sends httpOnly cookies
             });
             
             if (!response.ok) {
