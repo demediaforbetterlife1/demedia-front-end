@@ -25,11 +25,22 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
   useEffect(() => {
-    // CRITICAL FIX: Only proceed with redirect logic when auth is fully initialized
-    if (isLoading || !initComplete) {
-      console.log('AuthGuard: Auth not ready, waiting...', { 
+    // Only wait for initial auth initialization, not ongoing auth operations
+    if (!initComplete) {
+      console.log('AuthGuard: Auth initialization not complete, waiting...', { 
         isLoading, 
         initComplete, 
+        pathname 
+      });
+      return;
+    }
+
+    // If we're in the middle of auth initialization (not user operations), wait
+    if (isLoading && !user) {
+      console.log('AuthGuard: Auth still initializing user state, waiting...', { 
+        isLoading, 
+        initComplete, 
+        user: user ? 'exists' : 'null',
         pathname 
       });
       return;
