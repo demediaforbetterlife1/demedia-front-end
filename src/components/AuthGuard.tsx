@@ -26,8 +26,9 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
   useEffect(() => {
-    // Wait for auth to initialize
+    // Wait for auth to initialize completely
     if (isLoading || !initComplete) {
+      console.log('AuthGuard: Waiting for auth initialization...', { isLoading, initComplete });
       setIsChecking(true);
       return;
     }
@@ -35,6 +36,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     console.log('AuthGuard Debug:', {
       isAuthenticated,
       isLoading,
+      initComplete,
       user: user ? { id: user.id, isSetupComplete: user.isSetupComplete } : null,
       pathname,
       isPublicRoute,
@@ -42,49 +44,52 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       isProtectedRoute
     });
 
-    // If not authenticated and trying to access protected routes
+    // FIX: Simplified logic - handle unauthenticated users first
     if (!isAuthenticated) {
-      if (!isPublicRoute && !isSetupRoute) {
-        // Add a small delay to allow login state to propagate
-        const redirectTimer = setTimeout(() => {
-          // Double-check auth state before redirecting
-          if (!isAuthenticated && !user && initComplete) {
-            console.log('AuthGuard: Not authenticated after delay, redirecting to sign-up');
-            router.replace('/sign-up');
-          }
-        }, 300);
-        
-        return () => clearTimeout(redirectTimer);
-      }
-    } else {
-      // User is authenticated
       if (isPublicRoute) {
-        // Redirect away from auth pages if already authenticated
-        const redirectPath = user?.isSetupComplete ? '/home' : '/SignInSetUp';
-        console.log('AuthGuard: Authenticated on auth page, redirecting to:', redirectPath);
-        router.replace(redirectPath);
-        return;
+        // Allow access to public routes
+        console.log('AuthGuard: Allowing access to public route');
+        setIsChecking(false);
+      } else {
+        // Redirect to sign-in for non-public routes
+        console.log('AuthGuard: Not authenticated, redirecting to sign-in');
+        router.replace('/sign-in');
       }
-
-      if (isProtectedRoute && !user?.isSetupComplete) {
-        console.log('AuthGuard: Trying to access protected route without setup, redirecting to setup');
-        router.replace('/SignInSetUp');
-        return;
-      }
-
-      if (isSetupRoute && user?.isSetupComplete) {
-        console.log('AuthGuard: Setup complete but on setup page, redirecting to home');
-        router.replace('/home');
-        return;
-      }
+      return;
     }
 
-    // All checks passed, allow access
+    // From this point, user is definitely authenticated
+    console.log('AuthGuard: User is authenticated, checking route permissions');
+
+    // Redirect away from auth pages if already authenticated
+    if (isPublicRoute) {
+      const redirectPath = user?.isSetupComplete ? '/home' : '/SignInSetUp';
+      console.log('AuthGuard: Authenticated on auth page, redirecting to:', redirectPath);
+      router.replace(redirectPath);
+      return;
+    }
+
+    // Check setup completion for protected routes
+    if (isProtectedRoute && !user?.isSetupComplete) {
+      console.log('AuthGuard: Setup not complete for protected route, redirecting to setup');
+      router.replace('/SignInSetUp');
+      return;
+    }
+
+    // Redirect away from setup pages if setup is already complete
+    if (isSetupRoute && user?.isSetupComplete) {
+      console.log('AuthGuard: Setup already complete, redirecting to home');
+      router.replace('/home');
+      return;
+    }
+
+    // All checks passed - allow access
+    console.log('AuthGuard: All checks passed, allowing access');
     setIsChecking(false);
   }, [isAuthenticated, isLoading, initComplete, user, pathname, router, isPublicRoute, isSetupRoute, isProtectedRoute]);
 
   // Show loading while checking auth
-  if (isLoading || isChecking) {
+  if (isLoading || !initComplete || isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center theme-bg-primary">
         <div className="text-center">

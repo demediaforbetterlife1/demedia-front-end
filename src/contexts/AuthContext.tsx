@@ -113,7 +113,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [initComplete, setInitComplete] = useState<boolean>(false);
 
-  const isAuthenticated = !!(user && initComplete);
+  // FIX: Simplified authentication state - only depends on user existence
+  const isAuthenticated = !!user;
 
   const updateUser = (newData: Partial<User>) => {
     setUser((prev) => (prev ? { ...prev, ...newData } : null));
@@ -197,7 +198,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Initialization: check if user is authenticated via cookies
+  // FIX: Improved initialization - only runs once
   useEffect(() => {
     const initializeAuth = async () => {
       if (typeof window === "undefined") {
@@ -211,23 +212,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {  
         const success = await fetchUser();
         console.log("[Auth] fetchUser result:", success);
+        
         if (success) {
           console.log("[Auth] User authenticated successfully");
         } else {
           console.log("[Auth] No user found or authentication failed");
+          setUser(null); // Explicitly set to null
         }
       } catch (err) {  
         console.error("[Auth] initialization error:", err);  
-        // Don't set user to null on network errors - might be temporary
+        setUser(null); // Explicitly set to null on error
       } finally {  
         setIsLoading(false);  
         setInitComplete(true);  
-        console.log("[Auth] Auth initialization complete, user:", user ? user.id : "null", "authenticated:", !!(user && initComplete));
+        console.log("[Auth] Auth initialization complete - user:", user ? user.id : "null");
       }  
     };  
 
     initializeAuth();
-  }, [fetchUser]);
+  }, []); // FIX: Remove fetchUser dependency to prevent loops
 
   const refreshUser = async () => {
     await fetchUser();
@@ -257,8 +260,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (data.user) {
         console.log("[Auth] Login successful, setting user from response");
         setUser(data.user);
-        // Ensure initComplete is set so isAuthenticated becomes true
-        setInitComplete(true);
         // Small delay to ensure cookies are set by the browser
         await new Promise(resolve => setTimeout(resolve, 100));
         return { 
@@ -272,7 +273,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const userOk = await fetchUser();
       if (userOk && user) {
         console.log("[Auth] User fetched successfully after login");
-        setInitComplete(true);
         return { 
           success: true, 
           user 
