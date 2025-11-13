@@ -149,10 +149,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Get token from either storage method
       const token = getCookie("token") || getLocalStorageToken();
       
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      };
+      const headers: Record<string, string> = {
+  "Content-Type": "application/json",
+};
 
       // Add token to headers for backup (in case cookies don't work)
       if (token) {
