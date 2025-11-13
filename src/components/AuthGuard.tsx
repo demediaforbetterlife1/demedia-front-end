@@ -27,7 +27,10 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
   useEffect(() => {
     // Wait for auth to initialize
-    if (isLoading) return;
+    if (isLoading) {
+      setIsChecking(true);
+      return;
+    }
 
     console.log('AuthGuard Debug:', {
       isAuthenticated,
@@ -42,9 +45,16 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     // If not authenticated and trying to access protected routes
     if (!isAuthenticated) {
       if (!isPublicRoute && !isSetupRoute) {
-        console.log('AuthGuard: Not authenticated, redirecting to sign-up');
-        router.replace('/sign-up');
-        return;
+        // Add a small delay to allow login state to propagate
+        const redirectTimer = setTimeout(() => {
+          // Double-check auth state before redirecting
+          if (!isAuthenticated && !user) {
+            console.log('AuthGuard: Not authenticated after delay, redirecting to sign-up');
+            router.replace('/sign-up');
+          }
+        }, 300);
+        
+        return () => clearTimeout(redirectTimer);
       }
     } else {
       // User is authenticated

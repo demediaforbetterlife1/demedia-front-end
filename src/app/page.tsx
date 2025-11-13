@@ -34,11 +34,16 @@ export default function Index() {
             }
         } else {
             // Only redirect to sign-up if we're sure user is not authenticated
-            // Give it a small delay to ensure cookies are checked
+            // Give it a longer delay to ensure cookies are checked and login state is propagated
             const redirectTimer = setTimeout(() => {
-                console.log('Root page: Not authenticated, redirecting to sign-up');
-                router.replace("/sign-up");
-            }, 500);
+                // Double-check auth state before redirecting
+                if (!isAuthenticated && !user) {
+                    console.log('Root page: Not authenticated after delay, redirecting to sign-up');
+                    router.replace("/sign-up");
+                } else {
+                    console.log('Root page: Auth state changed during delay, user:', user ? user.id : 'null');
+                }
+            }, 1000); // Increased delay to allow login state to propagate
             
             return () => clearTimeout(redirectTimer);
         }

@@ -151,20 +151,21 @@ export default function SignIn() {
     // Handle redirect after successful login
     // Use replace to avoid adding to history and prevent back button issues
     useEffect(() => {
-        if (loginSuccess && user && !isLoading) {
-            // Small delay to ensure state is fully updated
+        if (loginSuccess && user && !isLoading && isAuthenticated) {
+            // Longer delay to ensure cookies are set and state is fully propagated
             const redirectTimer = setTimeout(() => {
+                console.log('Sign-in: Redirecting after successful login, user:', user.id, 'setupComplete:', user.isSetupComplete);
                 if (user.isSetupComplete) {
                     router.replace("/home");
                 } else {
                     router.replace("/SignInSetUp");
                 }
                 setLoginSuccess(false); // Reset flag
-            }, 100);
+            }, 500); // Increased delay to ensure cookies are set
             
             return () => clearTimeout(redirectTimer);
         }
-    }, [loginSuccess, user, isLoading, router]);
+    }, [loginSuccess, user, isLoading, isAuthenticated, router]);
     useEffect(() => {
         try {
             const saved = localStorage.getItem('rememberPhone');
