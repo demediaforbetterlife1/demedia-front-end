@@ -148,24 +148,13 @@ export default function SignIn() {
     const { login, isAuthenticated, isLoading, user } = useAuth();
     const router = useRouter();
 
-    // Handle redirect after successful login
-    // Use replace to avoid adding to history and prevent back button issues
+    // Let AuthGuard handle authentication-based redirects after successful login
     useEffect(() => {
         if (loginSuccess && user && !isLoading && isAuthenticated) {
-            // Longer delay to ensure cookies are set and state is fully propagated
-            const redirectTimer = setTimeout(() => {
-                console.log('Sign-in: Redirecting after successful login, user:', user.id, 'setupComplete:', user.isSetupComplete);
-                if (user.isSetupComplete) {
-                    router.replace("/home");
-                } else {
-                    router.replace("/SignInSetUp");
-                }
-                setLoginSuccess(false); // Reset flag
-            }, 500); // Increased delay to ensure cookies are set
-            
-            return () => clearTimeout(redirectTimer);
+            console.log('Sign-in: Login successful - AuthGuard will handle redirect');
+            setLoginSuccess(false); // Reset flag
         }
-    }, [loginSuccess, user, isLoading, isAuthenticated, router]);
+    }, [loginSuccess, user, isLoading, isAuthenticated]);
     useEffect(() => {
         try {
             const saved = localStorage.getItem('rememberPhone');

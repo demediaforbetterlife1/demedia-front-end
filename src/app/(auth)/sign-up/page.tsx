@@ -358,13 +358,7 @@ const { register, isAuthenticated, isLoading, user } = useAuth();
 const router = useRouter();
 const pathname = usePathname();
 
-useEffect(() => {
-    // Only redirect if we're still on the sign-up page
-    if (!isLoading && isAuthenticated && user && pathname === '/sign-up') {
-        console.log('User authenticated, redirecting to setup');
-        router.replace("/SignInSetUp");
-    }
-}, [isLoading, isAuthenticated, user, router, pathname]);
+// Removed redundant redirect logic - let AuthGuard handle authentication-based redirects
 
 const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
@@ -434,14 +428,8 @@ const handleSubmit = async (e: React.FormEvent) => {
         if (result.success) {
             // Clear form on success
             setForm({ name: "", username: "", phoneNumber: "", password: "" });
-            console.log('Sign-up: Registration successful');
-            console.log('Current auth state - isAuthenticated:', isAuthenticated, 'user:', user);
-            
-            // Small delay to ensure state is updated, then redirect
-            setTimeout(() => {
-                console.log('Sign-up: Redirecting to SignInSetUp');
-                router.replace("/SignInSetUp");
-            }, 100);
+            console.log('Sign-up: Registration successful - AuthGuard will handle redirect');
+            // Let AuthGuard handle the redirect to SignInSetUp based on authentication state
         } else {
             // Handle registration error
             console.log('Registration failed with message:', result.message);
@@ -645,4 +633,3 @@ return (
 );
 
 }
-          
