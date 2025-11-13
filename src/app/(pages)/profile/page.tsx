@@ -201,18 +201,29 @@ export default function ProfilePage() {
         });
     }
     
-    // Ensure userId is always valid
+    // Ensure userId is always valid (only after auth finished loading)
     if (!userId || userId === 'undefined' || userId === 'null') {
         console.error('❌ Invalid userId detected:', userId);
+
+        if (authLoading) {
+            return (
+                <div className="min-h-screen flex items-center justify-center theme-bg-primary">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+                        <p className="text-cyan-400 text-lg">Loading profile...</p>
+                    </div>
+                </div>
+            );
+        }
+
         if (user?.id) {
             console.log('🔄 Redirecting to own profile');
-            window.location.href = '/profile';
-            return null;
+            router.replace('/profile');
         } else {
-            console.log('🔄 Redirecting to login');
-            window.location.href = '/login';
-            return null;
+            console.log('🔄 Redirecting to sign-in');
+            router.replace('/sign-in');
         }
+        return null;
     }
 
     const themeClasses = getEnhancedThemeClasses(theme);

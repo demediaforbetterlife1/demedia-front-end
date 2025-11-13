@@ -9,7 +9,7 @@ interface AuthGuardProps {
 }
 
 export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, initComplete, user } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
@@ -27,7 +27,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
   useEffect(() => {
     // Wait for auth to initialize
-    if (isLoading) {
+    if (isLoading || !initComplete) {
       setIsChecking(true);
       return;
     }
@@ -48,7 +48,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         // Add a small delay to allow login state to propagate
         const redirectTimer = setTimeout(() => {
           // Double-check auth state before redirecting
-          if (!isAuthenticated && !user) {
+          if (!isAuthenticated && !user && initComplete) {
             console.log('AuthGuard: Not authenticated after delay, redirecting to sign-up');
             router.replace('/sign-up');
           }
@@ -81,7 +81,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
     // All checks passed, allow access
     setIsChecking(false);
-  }, [isAuthenticated, isLoading, user, pathname, router, isPublicRoute, isSetupRoute, isProtectedRoute]);
+  }, [isAuthenticated, isLoading, initComplete, user, pathname, router, isPublicRoute, isSetupRoute, isProtectedRoute]);
 
   // Show loading while checking auth
   if (isLoading || isChecking) {

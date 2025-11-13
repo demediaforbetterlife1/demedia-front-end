@@ -55,6 +55,7 @@ Context Type
 export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  initComplete: boolean;
   isAuthenticated: boolean;
   login: (phoneNumber: string, password: string) => Promise<AuthResult>;
   register: (userData: FormData) => Promise<AuthResult>;
@@ -452,6 +453,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     user,
     isLoading,
+    initComplete,
     isAuthenticated,
     login,
     register,
