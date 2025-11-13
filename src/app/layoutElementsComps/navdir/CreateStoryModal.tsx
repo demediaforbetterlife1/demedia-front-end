@@ -160,9 +160,9 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem('token')}`,
                     "user-id": user?.id?.toString() || "",
                 },
+                credentials: 'include', // Automatically sends httpOnly cookies
                 body: JSON.stringify({
                     userId: user?.id,
                     content: content.trim(),

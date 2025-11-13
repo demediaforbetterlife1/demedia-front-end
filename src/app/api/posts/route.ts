@@ -13,11 +13,23 @@ export async function GET(request: NextRequest) {
   try {
     const backendUrl = "https://demedia-backend.fly.dev/api/posts";
     const userId = request.headers.get("user-id");
-    const authHeader = request.headers.get("authorization");
+    
+    // Try to get token from cookie first, then fall back to Authorization header
+    let token = request.cookies.get('token')?.value;
+    
+    if (!token) {
+      const authHeader = request.headers.get("authorization");
+      if (authHeader?.startsWith('Bearer ')) {
+        token = authHeader.replace('Bearer ', '');
+      }
+    }
 
     const headers: HeadersInit = {};
     if (userId) headers["user-id"] = userId;
-    if (authHeader) headers["Authorization"] = authHeader;
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+      headers["Cookie"] = `token=${token}`; // Forward cookie for backend auth
+    }
 
     const res = await fetch(backendUrl, {
       cache: "no-store", // مهم جدًا علشان يمنع التخزين المؤقت
@@ -50,9 +62,18 @@ export async function POST(request: NextRequest) {
     const backendUrl = "https://demedia-backend.fly.dev/api/posts";
     const body = await request.json();
     const userId = request.headers.get("user-id");
-    const authHeader = request.headers.get("authorization");
+    
+    // Try to get token from cookie first, then fall back to Authorization header
+    let token = request.cookies.get('token')?.value;
+    
+    if (!token) {
+      const authHeader = request.headers.get("authorization");
+      if (authHeader?.startsWith('Bearer ')) {
+        token = authHeader.replace('Bearer ', '');
+      }
+    }
 
-    if (!authHeader || !userId) {
+    if (!token || !userId) {
       return NextResponse.json(
         { error: true, message: "Authentication required" },
         { status: 401 }
@@ -62,7 +83,8 @@ export async function POST(request: NextRequest) {
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       "user-id": userId,
-      Authorization: authHeader,
+      "Authorization": `Bearer ${token}`,
+      "Cookie": `token=${token}`, // Forward cookie for backend auth
     };
 
     const res = await fetch(backendUrl, {

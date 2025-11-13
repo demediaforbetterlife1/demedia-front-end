@@ -17,11 +17,20 @@ export const config = {
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
+    // Try to get token from cookie first, then fall back to Authorization header
+    let token = request.cookies.get('token')?.value;
+    
+    if (!token) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader?.startsWith('Bearer ')) {
+        token = authHeader.replace('Bearer ', '');
+      }
+    }
+    
     const userId = request.headers.get('user-id');
 
-    if (!authHeader || !userId) {
-      return NextResponse.json({ error: 'No authorization header or user ID' }, { status: 401 });
+    if (!token || !userId) {
+      return NextResponse.json({ error: 'No authorization token or user ID' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -36,7 +45,8 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': authHeader,
+          'Authorization': `Bearer ${token}`,
+          'Cookie': `token=${token}`, // Forward cookie for backend auth
           'user-id': userId,
         },
         body: JSON.stringify(body),
@@ -77,13 +87,22 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
+    // Try to get token from cookie first, then fall back to Authorization header
+    let token = request.cookies.get('token')?.value;
+    
+    if (!token) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader?.startsWith('Bearer ')) {
+        token = authHeader.replace('Bearer ', '');
+      }
+    }
+    
     const userId = request.headers.get('user-id');
     
     console.log('Fetching DeSnaps via backend, userId:', userId);
 
-    if (!authHeader) {
-      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+    if (!token) {
+      return NextResponse.json({ error: 'No authorization token' }, { status: 401 });
     }
 
     // Forward request to backend
@@ -94,7 +113,8 @@ export async function GET(request: NextRequest) {
       const response = await fetch(`${backendUrl}/api/desnaps`, {
         method: 'GET',
         headers: {
-          'Authorization': authHeader,
+          'Authorization': `Bearer ${token}`,
+          'Cookie': `token=${token}`, // Forward cookie for backend auth
           'user-id': userId || '',
           'Content-Type': 'application/json',
         },

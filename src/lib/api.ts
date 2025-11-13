@@ -176,7 +176,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
           signal: controller.signal,
           cache: "no-cache",
           mode: "cors",
-          credentials: "omit",
+          credentials: "include", // Always include credentials to send httpOnly cookies
         };
 
         // Note: timer will be cleared implicitly when request finishes or caught below

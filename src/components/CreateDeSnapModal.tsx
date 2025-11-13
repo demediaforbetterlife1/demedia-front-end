@@ -271,9 +271,9 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem('token')}`,
                     "user-id": user?.id?.toString() || ""
                 },
+                credentials: 'include', // Automatically sends httpOnly cookies
                 body: JSON.stringify(deSnapData)
             });
 

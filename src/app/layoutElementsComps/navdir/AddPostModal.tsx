@@ -80,9 +80,9 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
             try {
                 const response = await fetch(`/api/suggestions/users`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'include', // Automatically sends httpOnly cookies
                 });
                 if (response.ok) {
                     const users = await response.json();
@@ -289,14 +289,13 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
         };
 
         // Verify user authentication
-        const token = localStorage.getItem('token');
-        
-        if (!token || !userId) {
+        if (!userId) {
             setError('❌ User not authenticated. Please log in again.');
             setLoading(false);
             return;
         }
 
+        // Use apiFetch which handles cookies automatically via credentials: 'include'
         const res = await apiFetch(`/api/posts`, {
             method: "POST",
             headers: { 'user-id': String(userId) },
