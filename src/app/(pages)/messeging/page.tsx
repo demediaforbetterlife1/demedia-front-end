@@ -203,9 +203,9 @@ export default function MessagingPage() {
         try {
             const directResponse = await fetch('https://demedia-backend.fly.dev/api/conversations', {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include', // Automatically sends httpOnly cookies
             });
 
             if (directResponse.ok) {
@@ -221,9 +221,9 @@ export default function MessagingPage() {
             try {
                 const altResponse = await fetch('https://demedia-backend.fly.dev/api/chat', {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'include', // Automatically sends httpOnly cookies
                 });
 
                 if (altResponse.ok) {
@@ -278,9 +278,9 @@ export default function MessagingPage() {
             try {
                 const directResponse = await fetch(`https://demedia-backend.fly.dev/api/conversations/${conversationId}/messages`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'include', // Automatically sends httpOnly cookies
                 });
                 
                 if (directResponse.ok) {

@@ -208,13 +208,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log("[Auth] Initializing auth from cookies...");  
 
       try {  
-        await fetchUser();  
+        const success = await fetchUser();
+        console.log("[Auth] fetchUser result:", success);
+        if (success) {
+          console.log("[Auth] User authenticated successfully");
+        } else {
+          console.log("[Auth] No user found or authentication failed");
+        }
       } catch (err) {  
         console.error("[Auth] initialization error:", err);  
+        // Don't set user to null on network errors - might be temporary
       } finally {  
         setIsLoading(false);  
         setInitComplete(true);  
-        console.log("[Auth] Auth initialization complete, authenticated:", isAuthenticated);
+        console.log("[Auth] Auth initialization complete, user:", user ? user.id : "null", "authenticated:", !!(user && initComplete));
       }  
     };  
 

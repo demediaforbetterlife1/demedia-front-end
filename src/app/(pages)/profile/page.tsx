@@ -315,10 +315,10 @@ export default function ProfilePage() {
                 // Fetch stories for this user
                 const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'user-id': user?.id?.toString() || '',
                         'Content-Type': 'application/json',
-                    }
+                    },
+                    credentials: 'include', // Automatically sends httpOnly cookies
                 });
                 
                 let userStories = [];
@@ -329,10 +329,10 @@ export default function ProfilePage() {
                 // Fetch DeSnaps for this user
                 const deSnapsResponse = await fetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'user-id': user?.id?.toString() || '',
                         'Content-Type': 'application/json',
-                    }
+                    },
+                    credentials: 'include', // Automatically sends httpOnly cookies
                 });
                 
                 let userDeSnaps = [];
@@ -425,10 +425,10 @@ export default function ProfilePage() {
             // Refresh stories
             const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'user-id': user?.id?.toString() || '',
                     'Content-Type': 'application/json',
-                }
+                },
+                credentials: 'include', // Automatically sends httpOnly cookies
             });
             
             let userStories = [];
@@ -439,10 +439,10 @@ export default function ProfilePage() {
             // Refresh DeSnaps
             const deSnapsResponse = await fetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'user-id': user?.id?.toString() || '',
                     'Content-Type': 'application/json',
-                }
+                },
+                credentials: 'include', // Automatically sends httpOnly cookies
             });
             
             let userDeSnaps = [];
@@ -522,9 +522,9 @@ export default function ProfilePage() {
                 method: "POST",
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'user-id': user?.id?.toString() || '',
                 },
+                credentials: 'include', // Automatically sends httpOnly cookies
                 body: JSON.stringify({
                     followerId: user?.id
                 })
@@ -1852,9 +1852,9 @@ const UserPosts = ({
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'user-id': user?.id?.toString() || '',
-                }
+                },
+                credentials: 'include', // Automatically sends httpOnly cookies
             });
 
             if (response.ok) {

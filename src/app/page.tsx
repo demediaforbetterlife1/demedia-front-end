@@ -11,21 +11,36 @@ export default function Index() {
     const { t } = useI18n();
 
     useEffect(() => {
-        if (isLoading) return;
+        // Wait for auth to finish loading
+        if (isLoading) {
+            console.log('Root page: Waiting for auth initialization...');
+            return;
+        }
 
-        console.log('Root page: Auth state:', { isAuthenticated, user: user ? { id: user.id, isSetupComplete: user.isSetupComplete } : null });
+        console.log('Root page: Auth state:', { 
+            isAuthenticated, 
+            isLoading,
+            user: user ? { id: user.id, isSetupComplete: user.isSetupComplete } : null 
+        });
 
+        // Only redirect after auth has finished initializing
         if (isAuthenticated && user) {
             if (user.isSetupComplete) {
-                console.log('Root page: Redirecting to home');
+                console.log('Root page: User authenticated and setup complete, redirecting to home');
                 router.replace("/home");
             } else {
-                console.log('Root page: Redirecting to SignInSetUp');
+                console.log('Root page: User authenticated but setup incomplete, redirecting to SignInSetUp');
                 router.replace("/SignInSetUp");
             }
         } else {
-            console.log('Root page: Redirecting to sign-up');
-            router.replace("/sign-up");
+            // Only redirect to sign-up if we're sure user is not authenticated
+            // Give it a small delay to ensure cookies are checked
+            const redirectTimer = setTimeout(() => {
+                console.log('Root page: Not authenticated, redirecting to sign-up');
+                router.replace("/sign-up");
+            }, 500);
+            
+            return () => clearTimeout(redirectTimer);
         }
     }, [isAuthenticated, isLoading, user, router]);
 
