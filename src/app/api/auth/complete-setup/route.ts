@@ -31,20 +31,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!targetUserId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
-    }
+    // Get request body to forward dob if provided
+    const body = await request.json().catch(() => ({}));
 
-    // Call backend complete-setup endpoint
+    // Call backend complete-setup endpoint (auth route, not user route)
     try {
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/user/${targetUserId}/complete-setup`, {
+      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/auth/complete-setup`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
-          'user-id': targetUserId,
+          'Cookie': `token=${token}`, // Forward cookie for backend auth
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify(body), // Forward the request body (may contain dob)
         signal: AbortSignal.timeout(10000)
       });
 

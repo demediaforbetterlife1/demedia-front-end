@@ -245,7 +245,7 @@ export default function SignInSetUp() {
                 updateUser(data.user);
             }
             
-            console.log("Setup completed successfully:", data);
+            console.log("Date of birth saved successfully:", data);
             router.push("/interests");
     
         } catch (err: any) {
