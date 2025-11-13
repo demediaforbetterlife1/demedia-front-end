@@ -310,7 +310,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = await res.json();
 
       if (!res.ok) {
-        const msg = data?.error || `Login failed (${res.status})`;
+        let msg = data?.error || `Login failed (${res.status})`;
+        
+        // Provide better error messages for common backend issues
+        if (res.status === 504) {
+          msg = "Backend service is temporarily unavailable. Please try again in a few minutes.";
+        } else if (res.status === 502) {
+          msg = "Unable to connect to backend service. Please check your internet connection and try again.";
+        } else if (res.status === 404) {
+          msg = "Login service is currently unavailable. Please contact support.";
+        }
+        
         console.error("[Auth] login failed:", msg);
         return { success: false, message: msg };
       }
@@ -360,7 +370,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log("[Auth] register response:", res.status, data);
 
       if (!res.ok) {
-        const msg = data?.error || `Registration failed (${res.status})`;
+        let msg = data?.error || `Registration failed (${res.status})`;
+        
+        // Provide better error messages for common backend issues
+        if (res.status === 504) {
+          msg = "Backend service is temporarily unavailable. Please try again in a few minutes.";
+        } else if (res.status === 502) {
+          msg = "Unable to connect to backend service. Please check your internet connection and try again.";
+        } else if (res.status === 404) {
+          msg = "Registration service is currently unavailable. Please contact support.";
+        }
+        
         console.error("[Auth] register failed:", msg);
         return { success: false, message: msg };
       }
