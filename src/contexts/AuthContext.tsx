@@ -56,7 +56,7 @@ export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  initComplete: boolean; // Add this to the context type
+  initComplete: boolean;
   login: (phoneNumber: string, password: string) => Promise<AuthResult>;
   register: (userData: FormData) => Promise<AuthResult>;
   logout: () => void;
@@ -74,7 +74,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 );
 
 /* =======================
-Cookie Helpers
+Storage Helpers - DUAL STORAGE (Cookies + localStorage)
 ======================= */
 const getCookie = (name: string): string | null => {
   if (typeof document === "undefined") return null;
@@ -92,11 +92,35 @@ const getCookie = (name: string): string | null => {
   return null;
 };
 
+const setCookie = (name: string, value: string, days: number = 365) => {
+  if (typeof window === "undefined") return;
+  
+  const date = new Date();
+  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+  const expires = `expires=${date.toUTCString()}`;
+  
+  document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Lax`;
+};
+
 const deleteCookie = (name: string) => {
   if (typeof window === "undefined") return;
-  const domain = window.location.hostname;
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain};`;
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+};
+
+// localStorage helpers
+const getLocalStorageToken = (): string | null => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("auth_token");
+};
+
+const setLocalStorageToken = (token: string) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("auth_token", token);
+};
+
+const removeLocalStorageToken = () => {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("auth_token");
 };
 
 /* =======================
@@ -111,7 +135,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [initComplete, setInitComplete] = useState<boolean>(false); // Fixed typo: initComplete
+  const [initComplete, setInitComplete] = useState<boolean>(false);
 
   const isAuthenticated = !!(user && initComplete);
 
@@ -119,16 +143,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser((prev) => (prev ? { ...prev, ...newData } : null));
   };
 
-  // Enhanced fetch with better error handling
+  // Enhanced fetch with dual token support
   const apiFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
     try {
+      // Get token from either storage method
+      const token = getCookie("token") || getLocalStorageToken();
+      
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      };
+
+      // Add token to headers for backup (in case cookies don't work)
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(url, {
         ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        credentials: 'include',
+        headers,
+        credentials: 'include', // Still try cookies first
       });
 
       return response;
@@ -138,10 +172,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Fetch current user from backend (/api/auth/me) using cookies
+  // Fetch current user from backend (/api/auth/me)
   const fetchUser = useCallback(async (): Promise<boolean> => {
     try {
-      console.log("[Auth] Fetching user with cookies...");
+      console.log("[Auth] Fetching user...");
+      
+      // Check both storage methods
+      const cookieToken = getCookie("token");
+      const storageToken = getLocalStorageToken();
+      console.log("[Auth] Token - Cookie:", !!cookieToken, "LocalStorage:", !!storageToken);
+
       const res = await apiFetch("/api/auth/me", {
         method: "GET",
       });
@@ -149,8 +189,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log("[Auth] User fetch status:", res.status);  
 
       if (res.status === 401) {
-        console.warn("[Auth] Token invalid or expired");
-        // Don't clear cookies immediately - let the user try to refresh
+        console.warn("[Auth] Token invalid, clearing all storage");
+        deleteCookie("token");
+        removeLocalStorageToken();
+        setUser(null);
         return false;
       }
 
@@ -168,41 +210,55 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return true;
       } else {
         console.warn("[Auth] fetchUser: invalid user data", data);
+        setUser(null);
         return false;
       }
     } catch (err) {
       console.error("[Auth] fetchUser error:", err);
+      setUser(null);
       return false;
     }
   }, []);
 
-  // Initialization: check if user is authenticated via cookies
+  // Initialization: check if user is authenticated
   useEffect(() => {
     const initializeAuth = async () => {
       if (typeof window === "undefined") {
         setIsLoading(false);
-        setInitComplete(true); // Fixed typo: setInitComplete
+        setInitComplete(true);
         return;
       }
 
-      console.log("[Auth] Initializing auth from cookies...");
+      console.log("[Auth] Initializing auth...");
 
       try {
-        const hasToken = !!getCookie("token");
-        console.log("[Auth] Token exists in cookies:", hasToken);
+        // Check if we have any token stored
+        const hasCookieToken = !!getCookie("token");
+        const hasStorageToken = !!getLocalStorageToken();
+        
+        console.log("[Auth] Tokens found - Cookie:", hasCookieToken, "LocalStorage:", hasStorageToken);
 
-        if (hasToken) {
-          const userOk = await fetchUser();
-          if (!userOk) {
-            console.warn("[Auth] Failed to fetch user with existing token");
-            // Don't clear token immediately - it might be a temporary issue
+        // If we have localStorage token but no cookie, restore the cookie
+        if (hasStorageToken && !hasCookieToken) {
+          const token = getLocalStorageToken();
+          if (token) {
+            console.log("[Auth] Restoring token from localStorage to cookie");
+            setCookie("token", token);
           }
+        }
+
+        // If we have any token, try to fetch user
+        if (hasCookieToken || hasStorageToken) {
+          console.log("[Auth] Token found, fetching user...");
+          await fetchUser();
+        } else {
+          console.log("[Auth] No token found");
         }
       } catch (err) {
         console.error("[Auth] initialization error:", err);
       } finally {
         setIsLoading(false);
-        setInitComplete(true); // Fixed typo: setInitComplete
+        setInitComplete(true);
         console.log("[Auth] Auth initialization complete, user:", user ? user.id : "null");
       }
     };
@@ -234,7 +290,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, message: msg };
       }
 
-      // SUCCESS: Use user data from response immediately
+      // Store token in both cookie and localStorage
+      if (data.token) {
+        console.log("[Auth] Storing token in both cookie and localStorage");
+        setCookie("token", data.token);
+        setLocalStorageToken(data.token);
+      }
+
+      // Use user data from response
       if (data.user) {
         console.log("[Auth] Login successful, setting user from response");
         setUser(data.user);
@@ -277,7 +340,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, message: msg };
       }
 
-      // SUCCESS: Use user data from response immediately
+      // Store token in both cookie and localStorage
+      if (data.token) {
+        console.log("[Auth] Storing token in both cookie and localStorage");
+        setCookie("token", data.token);
+        setLocalStorageToken(data.token);
+      }
+
+      // Use user data from response
       if (data.user) {
         console.log("[Auth] Registration successful, setting user from response");
         setUser(data.user);
@@ -375,17 +445,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = (): void => {
     try {
-      // Clear client-side state first
+      // Clear all storage methods
+      deleteCookie("token");
+      removeLocalStorageToken();
+      
+      // Clear client-side state
       setUser(null);
-      setInitComplete(true); // Fixed typo: setInitComplete
+      setInitComplete(true);
 
       // Call backend logout endpoint
       apiFetch("/api/auth/logout", {
         method: "POST",
       }).catch(err => console.error("[Auth] Backend logout error:", err));
-
-      // Clear cookies
-      deleteCookie("token");
 
       // Dispatch logout event
       if (typeof window !== "undefined") {
@@ -403,7 +474,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     isLoading,
     isAuthenticated,
-    initComplete, // Add this to the context value
+    initComplete,
     login,
     register,
     logout,
