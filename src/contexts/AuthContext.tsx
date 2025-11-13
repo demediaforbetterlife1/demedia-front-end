@@ -139,6 +139,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!(user && initComplete);
 
+  // Debug authentication state changes
+  useEffect(() => {
+    console.log('[Auth] State change:', {
+      user: user ? { id: user.id, isSetupComplete: user.isSetupComplete } : null,
+      isLoading,
+      initComplete,
+      isAuthenticated
+    });
+  }, [user, isLoading, initComplete, isAuthenticated]);
+
   const updateUser = (newData: Partial<User>) => {
     setUser((prev) => (prev ? { ...prev, ...newData } : null));
   };
@@ -228,14 +238,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      console.log("[Auth] Initializing auth...");
+      console.log("[Auth] Starting authentication initialization...");
+      setIsLoading(true);
+      setInitComplete(false);
 
       try {
         // Check if we have any token stored
         const hasCookieToken = !!getCookie("token");
         const hasStorageToken = !!getLocalStorageToken();
         
-        console.log("[Auth] Tokens found - Cookie:", hasCookieToken, "LocalStorage:", hasStorageToken);
+        console.log("[Auth] Token check - Cookie:", hasCookieToken, "LocalStorage:", hasStorageToken);
 
         // If we have localStorage token but no cookie, restore the cookie
         if (hasStorageToken && !hasCookieToken) {
@@ -248,17 +260,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // If we have any token, try to fetch user
         if (hasCookieToken || hasStorageToken) {
-          console.log("[Auth] Token found, fetching user...");
-          await fetchUser();
+          console.log("[Auth] Token found, attempting to fetch user data...");
+          const userFetched = await fetchUser();
+          if (userFetched) {
+            console.log("[Auth] User data fetched successfully");
+          } else {
+            console.log("[Auth] Failed to fetch user data - token may be invalid");
+            // Clear invalid tokens
+            deleteCookie("token");
+            removeLocalStorageToken();
+            setUser(null);
+          }
         } else {
-          console.log("[Auth] No token found");
+          console.log("[Auth] No authentication token found - user is not logged in");
+          setUser(null);
         }
       } catch (err) {
-        console.error("[Auth] initialization error:", err);
+        console.error("[Auth] Authentication initialization error:", err);
+        // Clear potentially corrupted auth state
+        deleteCookie("token");
+        removeLocalStorageToken();
+        setUser(null);
       } finally {
         setIsLoading(false);
         setInitComplete(true);
-        console.log("[Auth] Auth initialization complete, user:", user ? user.id : "null");
+        console.log("[Auth] Authentication initialization complete. User state:", user ? `authenticated (${user.id})` : "not authenticated");
       }
     };
 

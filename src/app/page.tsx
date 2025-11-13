@@ -11,41 +11,26 @@ export default function Index() {
     const { t } = useI18n();
 
     useEffect(() => {
-        // Wait for auth to finish loading
+        // Let AuthGuard handle all authentication-based redirects
+        // This component should only handle the initial redirect from root
         if (isLoading) {
             console.log('Root page: Waiting for auth initialization...');
             return;
         }
 
-        console.log('Root page: Auth state:', { 
+        console.log('Root page: Auth initialized, redirecting from root...', { 
             isAuthenticated, 
-            isLoading,
             user: user ? { id: user.id, isSetupComplete: user.isSetupComplete } : null 
         });
 
-        // Only redirect after auth has finished initializing
+        // Simple redirect logic - let AuthGuard handle the complex authentication checks
         if (isAuthenticated && user) {
-            if (user.isSetupComplete) {
-                console.log('Root page: User authenticated and setup complete, redirecting to home');
-                router.replace("/home");
-            } else {
-                console.log('Root page: User authenticated but setup incomplete, redirecting to SignInSetUp');
-                router.replace("/SignInSetUp");
-            }
+            const redirectPath = user.isSetupComplete ? "/home" : "/SignInSetUp";
+            console.log('Root page: Authenticated user, redirecting to:', redirectPath);
+            router.replace(redirectPath);
         } else {
-            // Only redirect to sign-up if we're sure user is not authenticated
-            // Give it a longer delay to ensure cookies are checked and login state is propagated
-            const redirectTimer = setTimeout(() => {
-                // Double-check auth state before redirecting
-                if (!isAuthenticated && !user) {
-                    console.log('Root page: Not authenticated after delay, redirecting to sign-up');
-                    router.replace("/sign-up");
-                } else {
-                    console.log('Root page: Auth state changed during delay, user:', user ? user.id : 'null');
-                }
-            }, 1000); // Increased delay to allow login state to propagate
-            
-            return () => clearTimeout(redirectTimer);
+            console.log('Root page: Unauthenticated user, redirecting to sign-up');
+            router.replace("/sign-up");
         }
     }, [isAuthenticated, isLoading, user, router]);
 
