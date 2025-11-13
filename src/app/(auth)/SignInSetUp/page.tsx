@@ -222,13 +222,15 @@ export default function SignInSetUp() {
         setError("");
     
         try {
-            // Call the complete-setup endpoint - cookies are sent automatically
+            // Call the complete-setup endpoint
+            // Cookies (httpOnly) are sent automatically via credentials: 'include'
+            // The Next.js API route will extract the token from cookies and forward it to the backend
             const res = await fetch("/api/auth/complete-setup", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                credentials: 'include', // This sends cookies automatically
+                credentials: 'include', // This automatically sends httpOnly cookies
                 body: JSON.stringify({ 
                     dob: dobIso 
                 }),

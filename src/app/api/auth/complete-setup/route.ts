@@ -5,16 +5,20 @@ export async function POST(request: NextRequest) {
     // Try to get token from cookie first, then fall back to Authorization header
     let token = request.cookies.get('token')?.value;
     
+    console.log('[complete-setup] Token from cookie:', token ? 'Found' : 'Not found');
+    
     if (!token) {
       // Fallback to Authorization header
       const authHeader = request.headers.get('authorization');
       if (authHeader?.startsWith('Bearer ')) {
         token = authHeader.replace('Bearer ', '');
+        console.log('[complete-setup] Token from Authorization header:', token ? 'Found' : 'Not found');
       }
     }
     
     if (!token) {
-      return NextResponse.json({ error: 'No authentication token found' }, { status: 401 });
+      console.error('[complete-setup] No token found in cookies or Authorization header');
+      return NextResponse.json({ error: 'No authentication token found. Please log in again.' }, { status: 401 });
     }
 
     const userId = request.headers.get('user-id');
@@ -36,6 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Call backend complete-setup endpoint (auth route, not user route)
     try {
+      console.log('[complete-setup] Calling backend with token:', token.substring(0, 20) + '...');
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/auth/complete-setup`, {
         method: 'POST',
         headers: {
@@ -46,6 +51,8 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify(body), // Forward the request body (may contain dob)
         signal: AbortSignal.timeout(10000)
       });
+      
+      console.log('[complete-setup] Backend response status:', backendResponse.status);
 
       if (backendResponse.ok) {
         const data = await backendResponse.json();
