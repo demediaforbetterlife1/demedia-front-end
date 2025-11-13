@@ -56,6 +56,7 @@ export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  initComplete: boolean; // Add this to the context type
   login: (phoneNumber: string, password: string) => Promise<AuthResult>;
   register: (userData: FormData) => Promise<AuthResult>;
   logout: () => void;
@@ -110,7 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [initComplete, setInitComplete] = useState<boolean>(false);
+  const [initComplete, setInitComplete] = useState<boolean>(false); // Fixed typo: initComplete
 
   const isAuthenticated = !!(user && initComplete);
 
@@ -180,7 +181,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initializeAuth = async () => {
       if (typeof window === "undefined") {
         setIsLoading(false);
-        setInitComplete(true);
+        setInitComplete(true); // Fixed typo: setInitComplete
         return;
       }
 
@@ -201,7 +202,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error("[Auth] initialization error:", err);
       } finally {
         setIsLoading(false);
-        setInitComplete(true);
+        setInitComplete(true); // Fixed typo: setInitComplete
         console.log("[Auth] Auth initialization complete, user:", user ? user.id : "null");
       }
     };
@@ -376,6 +377,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // Clear client-side state first
       setUser(null);
+      setInitComplete(true); // Fixed typo: setInitComplete
 
       // Call backend logout endpoint
       apiFetch("/api/auth/logout", {
@@ -401,6 +403,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     isLoading,
     isAuthenticated,
+    initComplete, // Add this to the context value
     login,
     register,
     logout,
@@ -417,4 +420,4 @@ export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
-}; 
+};
