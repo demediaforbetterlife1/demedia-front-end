@@ -373,13 +373,10 @@ export default function ProfilePage() {
                 }
 
                 // Fetch DeSnaps for this user
-                const deSnapsResponse = await fetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
-                    headers: {
-                        'user-id': user?.id?.toString() || '',
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include', // Automatically sends httpOnly cookies
-                });
+                const deSnapsResponse = await apiFetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
+                    method: 'GET',
+                    headers: getAuthHeaders(user?.id),
+                }, user?.id);
                 
                 let userDeSnaps = [];
                 if (deSnapsResponse.ok) {

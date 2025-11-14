@@ -19,7 +19,7 @@ import {
     Zap
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, getAuthHeaders } from "@/lib/api";
 import { contentModerationService } from "@/services/contentModeration";
 import AIFeatures from "./AIFeatures";
 import CollaborativeFeatures from "./CollaborativeFeatures";
@@ -267,15 +267,12 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 userId: user?.id
             };
 
-            const response = await fetch("/api/desnaps", {
+            // Use apiFetch which automatically handles token from cookies
+            const response = await apiFetch("/api/desnaps", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "user-id": user?.id?.toString() || ""
-                },
-                credentials: 'include', // Automatically sends httpOnly cookies
+                headers: getAuthHeaders(user?.id),
                 body: JSON.stringify(deSnapData)
-            });
+            }, user?.id);
 
             if (!response.ok) {
                 let errorMessage = "Failed to create DeSnap";

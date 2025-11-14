@@ -196,34 +196,76 @@ export default function SignInSetUp() {
     }
 
     // If auth finished loading and no user/token, redirect to sign-up
-    // But be patient if token exists - user might still be loading
+    // But be very patient if token exists - user might still be loading after registration
     useEffect(() => {
+        // Don't do anything while auth is loading
         if (authLoading) {
-            // Still loading, wait
             return;
         }
         
         const token = getCookie("token") || (typeof window !== 'undefined' ? localStorage.getItem("token") : null);
         
-        // If no token at all, redirect to sign-up
-        if (!token) {
-            console.log('SignInSetUp: No token found, redirecting to sign-up');
-            router.replace('/sign-up');
+        // If user is authenticated, we're good - don't redirect
+        if (isAuthenticated && user) {
             return;
         }
         
-        // If token exists but user not loaded yet, wait a bit for auth state to update
-        if (!isAuthenticated && !user) {
-            console.log('SignInSetUp: Token found but user not loaded, waiting for auth state...');
+        // If no token at all, redirect to sign-up (but wait a bit to avoid race conditions)
+        if (!token) {
             const timeout = setTimeout(() => {
-                // Check again after delay
-                if (!user && !authLoading) {
-                    console.log('SignInSetUp: User still not loaded after delay, redirecting to sign-up');
+                // Double-check - if user became authenticated, don't redirect
+                if (isAuthenticated && user) {
+                    return;
+                }
+                
+                const tokenCheck = getCookie("token") || (typeof window !== 'undefined' ? localStorage.getItem("token") : null);
+                if (!tokenCheck && !authLoading) {
+                    console.log('SignInSetUp: No token found after delay, redirecting to sign-up');
                     router.replace('/sign-up');
                 }
-            }, 1000);
+            }, 2000); // Wait 2 seconds before redirecting
             
             return () => clearTimeout(timeout);
+        }
+        
+        // If token exists but user not loaded yet, wait longer for auth state to update
+        // This is common right after registration - be very patient
+        if (!isAuthenticated && !user) {
+            console.log('SignInSetUp: Token found but user not loaded, waiting for auth state...');
+            
+            // Use a polling approach to check if user becomes authenticated
+            let checkCount = 0;
+            const maxChecks = 10; // Check 10 times over 5 seconds
+            const checkInterval = 500; // Check every 500ms
+            
+            const interval = setInterval(() => {
+                checkCount++;
+                
+                // If user became authenticated, stop checking
+                if (isAuthenticated && user) {
+                    console.log('SignInSetUp: User authenticated, stopping redirect check');
+                    clearInterval(interval);
+                    return;
+                }
+                
+                // If we've checked enough times and still no user, redirect
+                if (checkCount >= maxChecks) {
+                    const tokenCheck = getCookie("token") || (typeof window !== 'undefined' ? localStorage.getItem("token") : null);
+                    if (!user && !authLoading) {
+                        if (tokenCheck) {
+                            console.log('SignInSetUp: Token exists but user still not loaded after extended wait - this might be an auth issue');
+                            // Don't redirect if token exists - might be a temporary auth state issue
+                            // Let the user stay on the page
+                        } else {
+                            console.log('SignInSetUp: Token disappeared, redirecting to sign-up');
+                            router.replace('/sign-up');
+                        }
+                    }
+                    clearInterval(interval);
+                }
+            }, checkInterval);
+            
+            return () => clearInterval(interval);
         }
     }, [authLoading, isAuthenticated, user, router]);
 

@@ -10,11 +10,32 @@ export async function GET(
 ) {
   try {
     const { id: userId } = await params;
-    const authHeader = request.headers.get('authorization');
-    const currentUserId = request.headers.get('user-id');
-
+    
+    // Get the authorization token from header or cookie
+    let authHeader = request.headers.get('authorization');
+    
+    // If no auth header, try to get token from cookie
     if (!authHeader) {
-      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+      const cookies = request.cookies;
+      const token = cookies.get('token')?.value;
+      if (token) {
+        authHeader = `Bearer ${token}`;
+      }
+    }
+    
+    if (!authHeader) {
+      return NextResponse.json({ error: 'No authorization header or token' }, { status: 401 });
+    }
+    
+    // Extract current user id from JWT for like status checking
+    let currentUserId = request.headers.get('user-id');
+    if (!currentUserId) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const part = token.split('.')[1];
+        const decoded = JSON.parse(Buffer.from(part, 'base64').toString('utf-8'));
+        currentUserId = (decoded.sub || decoded.userId || decoded.id)?.toString?.() || null;
+      } catch (_) {}
     }
 
     console.log('Fetching DeSnaps for user:', userId);

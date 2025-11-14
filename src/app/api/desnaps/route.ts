@@ -19,18 +19,28 @@ export async function POST(request: NextRequest) {
   try {
     // Try to get token from cookie first, then fall back to Authorization header
     let token = request.cookies.get('token')?.value;
+    let authHeader = request.headers.get('authorization');
     
-    if (!token) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        token = authHeader.replace('Bearer ', '');
-      }
+    if (!token && authHeader?.startsWith('Bearer ')) {
+      token = authHeader.replace('Bearer ', '');
     }
     
-    const userId = request.headers.get('user-id');
+    if (!token) {
+      return NextResponse.json({ error: 'No authorization token' }, { status: 401 });
+    }
+    
+    // Extract user ID from token if not provided in headers
+    let userId = request.headers.get('user-id');
+    if (!userId) {
+      try {
+        const part = token.split('.')[1];
+        const decoded = JSON.parse(Buffer.from(part, 'base64').toString('utf-8'));
+        userId = (decoded.sub || decoded.userId || decoded.id)?.toString?.() || null;
+      } catch (_) {}
+    }
 
-    if (!token || !userId) {
-      return NextResponse.json({ error: 'No authorization token or user ID' }, { status: 401 });
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID required' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -89,21 +99,27 @@ export async function GET(request: NextRequest) {
   try {
     // Try to get token from cookie first, then fall back to Authorization header
     let token = request.cookies.get('token')?.value;
+    let authHeader = request.headers.get('authorization');
     
-    if (!token) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        token = authHeader.replace('Bearer ', '');
-      }
+    if (!token && authHeader?.startsWith('Bearer ')) {
+      token = authHeader.replace('Bearer ', '');
     }
     
-    const userId = request.headers.get('user-id');
-    
-    console.log('Fetching DeSnaps via backend, userId:', userId);
-
     if (!token) {
       return NextResponse.json({ error: 'No authorization token' }, { status: 401 });
     }
+    
+    // Extract user ID from token if not provided in headers
+    let userId = request.headers.get('user-id');
+    if (!userId) {
+      try {
+        const part = token.split('.')[1];
+        const decoded = JSON.parse(Buffer.from(part, 'base64').toString('utf-8'));
+        userId = (decoded.sub || decoded.userId || decoded.id)?.toString?.() || null;
+      } catch (_) {}
+    }
+    
+    console.log('Fetching DeSnaps via backend, userId:', userId);
 
     // Forward request to backend
     const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
