@@ -76,7 +76,7 @@ import {
     Badge,
     Crown as CrownIcon
 } from "lucide-react";
-import { getUserProfile, apiFetch } from "../../../lib/api";
+import { getUserProfile, apiFetch, getAuthHeaders } from "../../../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getEnhancedThemeClasses } from "@/utils/enhancedThemeUtils";
@@ -1846,7 +1846,11 @@ const UserPosts = ({
         
         try {
             setLoading(true);
-            const response = await apiFetch(`/api/posts/user/${userId}`);
+            // Pass user ID to apiFetch so it can be included in headers for like status checking
+            const response = await apiFetch(`/api/posts/user/${userId}`, {
+                method: 'GET',
+                headers: getAuthHeaders(user?.id),
+            }, user?.id);
             
             if (!response.ok) {
                 throw new Error('Failed to fetch posts');
@@ -1854,7 +1858,13 @@ const UserPosts = ({
             
             const data = await response.json();
             // Handle both direct array and wrapped response formats
-            setPosts(Array.isArray(data) ? data : (data.posts || []));
+            const postsData = Array.isArray(data) ? data : (data.posts || []);
+            
+            // Ensure liked status is preserved
+            setPosts(postsData.map((post: any) => ({
+                ...post,
+                liked: Boolean(post.liked || post.isLiked),
+            })));
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load posts');
         } finally {
@@ -2107,9 +2117,51 @@ const UserPosts = ({
                             <motion.button 
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="flex items-center space-x-2 text-gray-400 hover:text-red-400 transition-colors"
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const prevLiked = post.liked;
+                                    const prevLikes = post.likes || 0;
+                                    
+                                    // Optimistic update
+                                    setPosts(prev => prev.map(p => 
+                                        p.id === post.id 
+                                            ? { ...p, liked: !prevLiked, likes: prevLiked ? prevLikes - 1 : prevLikes + 1 }
+                                            : p
+                                    ));
+                                    
+                                    try {
+                                        const response = await apiFetch(`/api/posts/${post.id}/like`, {
+                                            method: 'POST',
+                                            headers: getAuthHeaders(user?.id),
+                                        }, user?.id);
+                                        
+                                        if (!response.ok) throw new Error('Like request failed');
+                                        
+                                        const data = await response.json();
+                                        
+                                        // Update with server response
+                                        setPosts(prev => prev.map(p => 
+                                            p.id === post.id 
+                                                ? { ...p, liked: data.liked ?? !prevLiked, likes: data.likes ?? (prevLiked ? prevLikes - 1 : prevLikes + 1) }
+                                                : p
+                                        ));
+                                    } catch (err) {
+                                        console.error('Like error:', err);
+                                        // Revert on error
+                                        setPosts(prev => prev.map(p => 
+                                            p.id === post.id 
+                                                ? { ...p, liked: prevLiked, likes: prevLikes }
+                                                : p
+                                        ));
+                                    }
+                                }}
+                                className={`flex items-center space-x-2 transition-colors ${
+                                    post.liked 
+                                        ? 'text-red-500 hover:text-red-600' 
+                                        : 'text-gray-400 hover:text-red-400'
+                                }`}
                             >
-                                <Heart size={20} />
+                                <Heart size={20} fill={post.liked ? 'currentColor' : 'none'} />
                                 <span className="font-medium">{post.likes || 0}</span>
                             </motion.button>
                             <motion.button 

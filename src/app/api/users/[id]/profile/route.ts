@@ -7,10 +7,20 @@ export async function GET(
   try {
     const { id: userId } = await params;
 
-    // Get the authorization token
-    const authHeader = request.headers.get('authorization');
+    // Get the authorization token from header or cookie
+    let authHeader = request.headers.get('authorization');
+    
+    // If no auth header, try to get token from cookie
     if (!authHeader) {
-      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+      const cookies = request.cookies;
+      const token = cookies.get('token')?.value;
+      if (token) {
+        authHeader = `Bearer ${token}`;
+      }
+    }
+    
+    if (!authHeader) {
+      return NextResponse.json({ error: 'No authorization header or token' }, { status: 401 });
     }
 
     // Extract current user id from JWT (server-safe)
