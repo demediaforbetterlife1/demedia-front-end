@@ -431,18 +431,30 @@ export function logoutClient(): void {
 /** Get a user's public profile by id (pulls from backend) */
 export async function getUserProfile(userId: string | number) {
   try {
+    // Ensure userId is valid
+    if (!userId || userId === 'undefined' || userId === 'null') {
+      console.error("[api] getUserProfile: Invalid userId provided:", userId);
+      return null;
+    }
+
+    console.log("[api] getUserProfile: Fetching profile for userId:", userId, "type:", typeof userId);
+    
     const res = await apiFetch(`/api/users/${userId}/profile`, {
       method: "GET",
       headers: getAuthHeaders(),
       cache: "no-store",
     });
     
+    console.log("[api] getUserProfile: Response status:", res.status);
+    
     // Handle 401 for profile requests
     if (res.status === 401) {
+      console.warn("[api] getUserProfile: Unauthorized (401)");
       return null;
     }
     
     const profile = await res.json();
+    console.log("[api] getUserProfile: Response data:", profile);
     
     // Check if the response contains an error (even if status is 200)
     if (profile && profile.error && !profile.id) {
@@ -451,8 +463,15 @@ export async function getUserProfile(userId: string | number) {
     }
     
     if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      throw new Error(`Failed to get profile: ${res.status} ${txt}`);
+      const errorMsg = profile?.error || `Failed to get profile: ${res.status}`;
+      console.error("[api] getUserProfile: Request failed:", errorMsg);
+      throw new Error(errorMsg);
+    }
+    
+    // Ensure profile has required fields
+    if (!profile || !profile.id) {
+      console.error("[api] getUserProfile: Invalid profile data returned");
+      return null;
     }
     
     return profile;

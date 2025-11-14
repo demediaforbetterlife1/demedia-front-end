@@ -220,8 +220,8 @@ export default function ProfilePage() {
             console.log('🔄 Redirecting to own profile');
             router.replace('/profile');
         } else {
-            console.log('🔄 Redirecting to sign-in');
-            router.replace('/sign-in');
+            console.log('🔄 Redirecting to sign-up');
+            router.replace('/sign-up');
         }
         return null;
     }
@@ -304,14 +304,49 @@ export default function ProfilePage() {
                 setError(null);
                 console.log('Loading profile for userId:', userId, 'type:', typeof userId);
                 console.log('About to call getUserProfile with:', userId);
+                console.log('Current user from auth:', user);
+                console.log('Is own profile:', isOwnProfile);
+                
+                // Ensure userId is valid before making the request
+                if (!userId || userId === 'undefined' || userId === 'null') {
+                    console.error('❌ Invalid userId before API call:', userId);
+                    setError("Invalid user ID. Please try again.");
+                    setLoading(false);
+                    return;
+                }
+                
                 const data = await getUserProfile(userId);
                 console.log('getUserProfile returned:', data);
                 
-                if (!data) {
-                    console.error('getUserProfile returned null');
+                if (!data || !data.id) {
+                    console.error('getUserProfile returned null or invalid data');
                     console.log('Profile fetch failed for userId:', userId);
                     console.log('Is own profile:', isOwnProfile);
                     console.log('Current user ID:', user?.id);
+                    
+                    // If it's the user's own profile and they're authenticated, try to use their auth data
+                    if (isOwnProfile && user && user.id) {
+                        console.log('🔄 Using auth user data as fallback for own profile');
+                        const userIdNum = typeof user.id === 'string' ? parseInt(user.id) : user.id;
+                        const fallbackProfile: Profile = {
+                            id: userIdNum || 0,
+                            name: user.name || '',
+                            username: user.username || '',
+                            bio: user.bio || '',
+                            profilePicture: user.profilePicture || null,
+                            coverPicture: user.coverPhoto || null,
+                            coverPhoto: user.coverPhoto || null,
+                            followersCount: 0,
+                            followingCount: 0,
+                            likesCount: 0,
+                            stories: [],
+                            deSnaps: []
+                        };
+                        if (!mounted) return;
+                        setProfile(fallbackProfile);
+                        setLoading(false);
+                        return;
+                    }
                     
                     setError("Profile not found - User may not exist or has been deleted");
                     setLoading(false);

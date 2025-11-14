@@ -51,9 +51,9 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         console.log('AuthGuard: Allowing access to public route');
         setIsChecking(false);
       } else {
-        // Redirect to sign-in for non-public routes
-        console.log('AuthGuard: Not authenticated, redirecting to sign-in');
-        router.replace('/sign-in');
+        // Redirect to sign-up for non-public routes
+        console.log('AuthGuard: Not authenticated, redirecting to sign-up');
+        router.replace('/sign-up');
       }
       return;
     }
