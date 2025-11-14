@@ -196,13 +196,34 @@ export default function SignInSetUp() {
     }
 
     // If auth finished loading and no user/token, redirect to sign-up
+    // But be patient if token exists - user might still be loading
     useEffect(() => {
-        if (!authLoading && !isAuthenticated && !user) {
-            const token = getCookie("token") || (typeof window !== 'undefined' ? localStorage.getItem("token") : null);
-            if (!token) {
-                console.log('SignInSetUp: No token found, redirecting to sign-up');
-                router.replace('/sign-up');
-            }
+        if (authLoading) {
+            // Still loading, wait
+            return;
+        }
+        
+        const token = getCookie("token") || (typeof window !== 'undefined' ? localStorage.getItem("token") : null);
+        
+        // If no token at all, redirect to sign-up
+        if (!token) {
+            console.log('SignInSetUp: No token found, redirecting to sign-up');
+            router.replace('/sign-up');
+            return;
+        }
+        
+        // If token exists but user not loaded yet, wait a bit for auth state to update
+        if (!isAuthenticated && !user) {
+            console.log('SignInSetUp: Token found but user not loaded, waiting for auth state...');
+            const timeout = setTimeout(() => {
+                // Check again after delay
+                if (!user && !authLoading) {
+                    console.log('SignInSetUp: User still not loaded after delay, redirecting to sign-up');
+                    router.replace('/sign-up');
+                }
+            }, 1000);
+            
+            return () => clearTimeout(timeout);
         }
     }, [authLoading, isAuthenticated, user, router]);
 

@@ -359,12 +359,13 @@ const router = useRouter();
 const pathname = usePathname();
 
 useEffect(() => {
-    // Only redirect if we're still on the sign-up page
-    if (!isLoading && isAuthenticated && user && pathname === '/sign-up') {
+    // Only redirect if we're still on the sign-up page and user is authenticated
+    // But don't redirect if we just registered (let the handleSubmit handle that)
+    if (!isLoading && isAuthenticated && user && pathname === '/sign-up' && !isSubmitting) {
         console.log('User authenticated, redirecting to setup');
         router.replace("/SignInSetUp");
     }
-}, [isLoading, isAuthenticated, user, router, pathname]);
+}, [isLoading, isAuthenticated, user, router, pathname, isSubmitting]);
 
 const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
@@ -431,17 +432,14 @@ const handleSubmit = async (e: React.FormEvent) => {
         const result = await register(formData);
         console.log('After register call, result:', result);
         
-        if (result.success) {
+        if (result.success && result.user) {
             // Clear form on success
             setForm({ name: "", username: "", phoneNumber: "", password: "" });
-            console.log('Sign-up: Registration successful');
-            console.log('Current auth state - isAuthenticated:', isAuthenticated, 'user:', user);
+            console.log('Sign-up: Registration successful, redirecting to SignInSetUp');
             
-            // Small delay to ensure state is updated, then redirect
-            setTimeout(() => {
-                console.log('Sign-up: Redirecting to SignInSetUp');
-                router.replace("/SignInSetUp");
-            }, 100);
+            // Redirect immediately after successful registration
+            // The user state is already set in the AuthContext
+            router.replace("/SignInSetUp");
         } else {
             // Handle registration error
             console.log('Registration failed with message:', result.message);
