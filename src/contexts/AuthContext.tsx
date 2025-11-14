@@ -335,7 +335,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log("[Auth] register response:", res.status, data);
 
       if (!res.ok) {
-        const msg = data?.error || `Registration failed (${res.status})`;
+        let msg = data?.error || `Registration failed (${res.status})`;
+        
+        // Handle timeout errors with user-friendly message
+        if (res.status === 504 || (data?.error === "Timeout" || data?.details === "Backend took too long")) {
+          msg = "Backend service is temporarily unavailable. Please try again in a few minutes.";
+        }
+        
         console.error("[Auth] register failed:", msg);
         return { success: false, message: msg };
       }
