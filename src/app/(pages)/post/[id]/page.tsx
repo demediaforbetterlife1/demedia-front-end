@@ -249,7 +249,6 @@ export default function PostDetailPage() {
     try {
       const response = await apiFetch("/api/chat/create-or-find", {
         method: "POST",
-        headers: getAuthHeaders(user.id),
         body: JSON.stringify({ participantId: postUserId })
       }, user.id);
 

@@ -167,12 +167,9 @@ export default function DeSnapsPage() {
             
         // Final fallback: Direct fetch to backend with multiple endpoints
         try {
-            const directResponse = await fetch('https://demedia-backend.fly.dev/api/desnaps', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json',
-                },
-            });
+            const directResponse = await apiFetch('/api/desnaps', {
+                method: 'GET'
+            }, user?.id);
 
             if (directResponse.ok) {
                 data = await directResponse.json();

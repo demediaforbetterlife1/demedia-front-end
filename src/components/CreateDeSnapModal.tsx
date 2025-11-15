@@ -209,7 +209,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             const uploadResponse = await apiFetch("/api/upload/video", {
                 method: "POST",
                 body: formData
-            });
+            }, user?.id);
 
             if (!uploadResponse.ok) {
                 let errorMessage = "Failed to upload video";
@@ -276,10 +276,6 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             
             const response = await apiFetch("/api/desnaps", {
                 method: "POST",
-                headers: {
-                    ...getAuthHeaders(user?.id),
-                    "Content-Type": "application/json"
-                },
                 body: JSON.stringify(deSnapData)
             }, user?.id);
 

@@ -80,6 +80,7 @@ import { getUserProfile, apiFetch, getAuthHeaders } from "../../../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getEnhancedThemeClasses } from "@/utils/enhancedThemeUtils";
+import { apiFetch } from "@/lib/api";
 import { notificationService } from "@/services/notificationService";
 import { useSearchParams, useRouter } from "next/navigation";
 import EditProfileModal from "@/app/layoutElementsComps/navdir/EditProfileModal";
@@ -360,12 +361,7 @@ export default function ProfilePage() {
                 
                 // Fetch stories for this user
                 const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
-                    headers: {
-                        'user-id': user?.id?.toString() || '',
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include', // Automatically sends httpOnly cookies
-                });
+                }, user?.id);
                 
                 let userStories = [];
                 if (storiesResponse.ok) {
@@ -467,12 +463,7 @@ export default function ProfilePage() {
         try {
             // Refresh stories
             const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
-                headers: {
-                    'user-id': user?.id?.toString() || '',
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include', // Automatically sends httpOnly cookies
-            });
+            }, user?.id);
             
             let userStories = [];
             if (storiesResponse.ok) {
@@ -480,13 +471,9 @@ export default function ProfilePage() {
             }
 
             // Refresh DeSnaps
-            const deSnapsResponse = await fetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
-                headers: {
-                    'user-id': user?.id?.toString() || '',
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include', // Automatically sends httpOnly cookies
-            });
+            const deSnapsResponse = await apiFetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
+                method: 'GET'
+            }, user?.id);
             
             let userDeSnaps = [];
             if (deSnapsResponse.ok) {
@@ -561,17 +548,12 @@ export default function ProfilePage() {
                 ? `/api/user/${profile.id}/unfollow`
                 : `/api/user/${profile.id}/follow`;
 
-            const res = await fetch(endpoint, { 
+            const res = await apiFetch(endpoint, { 
                 method: "POST",
-                headers: {
-                    'Content-Type': 'application/json',
-                    'user-id': user?.id?.toString() || '',
-                },
-                credentials: 'include', // Automatically sends httpOnly cookies
                 body: JSON.stringify({
                     followerId: user?.id
                 })
-            });
+            }, user?.id);
             if (!res.ok) throw new Error("Follow request failed");
 
             const payload = await res.json().catch(() => null);
@@ -605,9 +587,6 @@ export default function ProfilePage() {
             // Create or find existing chat with this user
             const res = await apiFetch('/api/chat/create-or-find', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({
                     participantId: profile.id
                 })
@@ -624,7 +603,7 @@ export default function ProfilePage() {
                     title: 'Chat Error',
                     body: 'Failed to start chat. Please try again.',
                     tag: 'chat_error'
-                });
+                }, user?.id);
                 // Fallback: try to navigate to messaging page
                 router.push('/messeging');
             }
@@ -635,7 +614,7 @@ export default function ProfilePage() {
                 title: 'Chat Error',
                 body: 'Failed to start chat. Please try again.',
                 tag: 'chat_error'
-            });
+            }, user?.id);
             // Fallback: try to navigate to messaging page
             router.push('/messeging');
         }
@@ -685,7 +664,7 @@ export default function ProfilePage() {
                     // Update user context with new photo URL
                     updateUser({
                         [type === 'profile' ? 'profilePicture' : 'coverPhoto']: photoUrlWithCache
-                    });
+                    }, user?.id);
                 }
                 
                 // Show success notification
@@ -695,7 +674,7 @@ export default function ProfilePage() {
                         title: 'Photo Updated',
                         body: `${type === 'profile' ? 'Profile' : 'Cover'} photo updated successfully!`,
                         tag: 'photo_updated'
-                    });
+                    }, user?.id);
                 } catch (error) {
                     console.log('Notification service not available');
                 }
@@ -733,7 +712,7 @@ export default function ProfilePage() {
                         title: 'Upload Failed',
                         body: `Failed to upload ${type} photo. Please try again.`,
                         tag: 'upload_error'
-                    });
+                    }, user?.id);
                 } catch (error) {
                     alert(`Failed to upload ${type} photo. Please try again.`);
                 }
@@ -747,7 +726,7 @@ export default function ProfilePage() {
                     title: 'Upload Error',
                     body: `Error uploading ${type} photo. Please try again.`,
                     tag: 'upload_error'
-                });
+                }, user?.id);
             } catch (error) {
                 alert(`Error uploading ${type} photo. Please try again.`);
             }
@@ -1903,12 +1882,7 @@ const UserPosts = ({
         try {
             const response = await fetch(`/api/posts/${postToDelete.id}`, {
                 method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'user-id': user?.id?.toString() || '',
-                },
-                credentials: 'include', // Automatically sends httpOnly cookies
-            });
+            }, user?.id);
 
             if (response.ok) {
                 const result = await response.json();
@@ -1925,7 +1899,7 @@ const UserPosts = ({
                     title: 'Post Deleted',
                     body: 'Your post has been successfully deleted',
                     tag: 'post_deleted'
-                });
+                }, user?.id);
             } else {
                 const errorText = await response.text();
                 console.error('Delete failed:', response.status, errorText);
@@ -1943,7 +1917,7 @@ const UserPosts = ({
                     title: 'Delete Failed',
                     body: errorMessage,
                     tag: 'delete_error'
-                });
+                }, user?.id);
             }
         } catch (error) {
             console.error('Error deleting post:', error);
@@ -1951,7 +1925,7 @@ const UserPosts = ({
                 title: 'Network Error',
                 body: `Network error: ${error instanceof Error ? error.message : 'Unable to connect to server'}`,
                 tag: 'network_error'
-            });
+            }, user?.id);
         } finally {
             setIsDeleting(false);
         }
