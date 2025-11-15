@@ -361,7 +361,7 @@ export default function ProfilePage() {
                 // Fetch stories for this user
                 const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
                     headers: getAuthHeaders(user?.id),
-                    },
+                    
                     credentials: 'include', // Automatically sends httpOnly cookies
                 });
                 
@@ -466,7 +466,7 @@ export default function ProfilePage() {
             // Refresh stories
             const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
                 headers: getAuthHeaders(user?.id),
-                },
+                
                 credentials: 'include', // Automatically sends httpOnly cookies
             });
             
@@ -478,7 +478,7 @@ export default function ProfilePage() {
             // Refresh DeSnaps
             const deSnapsResponse = await fetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
                 headers: getAuthHeaders(user?.id),
-                },
+                
                 credentials: 'include', // Automatically sends httpOnly cookies
             });
             
@@ -598,7 +598,7 @@ export default function ProfilePage() {
             const res = await apiFetch('/api/chat/create-or-find', {
                 method: 'POST',
                 headers: getAuthHeaders(user?.id),
-                },
+                
                 body: JSON.stringify({
                     participantId: profile.id
                 })
@@ -1895,7 +1895,7 @@ const UserPosts = ({
             const response = await fetch(`/api/posts/${postToDelete.id}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders(user?.id),
-                },
+                
                 credentials: 'include', // Automatically sends httpOnly cookies
             });
 
