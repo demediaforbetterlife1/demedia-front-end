@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Camera, User, Mail, Calendar, MapPin, Link, Phone, Globe, Lock, Users, UserCheck, Save } from "lucide-react";
+import { X, Camera, Mail, Calendar, MapPin, Link, Phone, Globe, Lock, Users, UserCheck, Save } from "lucide-react";
 import { useAuth, type User } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useI18n } from "@/contexts/I18nContext";
