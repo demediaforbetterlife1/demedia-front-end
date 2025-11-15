@@ -80,7 +80,6 @@ import { getUserProfile, apiFetch, getAuthHeaders } from "../../../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getEnhancedThemeClasses } from "@/utils/enhancedThemeUtils";
-import { apiFetch } from "@/lib/api";
 import { notificationService } from "@/services/notificationService";
 import { useSearchParams, useRouter } from "next/navigation";
 import EditProfileModal from "@/app/layoutElementsComps/navdir/EditProfileModal";
