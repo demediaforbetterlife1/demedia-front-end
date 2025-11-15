@@ -25,7 +25,7 @@ export default function TwoFactorSettings({
     return (
         <AnimatePresence>
             <motion.div
-                className="fixed inset-0 flex items-center justify-center z-50 bg-black/40 backdrop-blur-sm"
+                className="fixed inset-0 flex items-center justify-center z-[9999] bg-black/60 backdrop-blur-md"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}

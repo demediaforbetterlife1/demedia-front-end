@@ -56,7 +56,7 @@ export default function ThemeModal({ closeModal }: ThemeModalProps) {
     ];
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
             <div className="theme-bg-secondary theme-text-primary rounded-2xl p-6 max-w-md w-full theme-shadow border theme-border">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold theme-text-primary">Choose Theme</h2>

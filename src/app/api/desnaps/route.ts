@@ -17,34 +17,53 @@ export const config = {
 
 export async function POST(request: NextRequest) {
   try {
-    // Try to get token from cookie first, then fall back to Authorization header
-    let token = request.cookies.get('token')?.value;
+    // Try to get token from Authorization header first, then fall back to cookie
+    let token = null;
     let authHeader = request.headers.get('authorization');
     
-    if (!token && authHeader?.startsWith('Bearer ')) {
+    if (authHeader?.startsWith('Bearer ')) {
       token = authHeader.replace('Bearer ', '');
     }
     
+    // If no token in header, try cookie
     if (!token) {
-      return NextResponse.json({ error: 'No authorization token' }, { status: 401 });
+      token = request.cookies.get('token')?.value || null;
     }
     
-    // Extract user ID from token if not provided in headers
+    if (!token) {
+      console.error('❌ No authorization token found in header or cookie');
+      return NextResponse.json({ 
+        error: 'Authorization header is required. Please include a valid Bearer token in the Authorization header.' 
+      }, { status: 401 });
+    }
+    
+    // Extract user ID from token if not provided in headers or body
     let userId = request.headers.get('user-id');
+    const body = await request.json();
+    
+    // Also check body for userId
+    if (!userId && body.userId) {
+      userId = body.userId.toString();
+    }
+    
     if (!userId) {
       try {
         const part = token.split('.')[1];
         const decoded = JSON.parse(Buffer.from(part, 'base64').toString('utf-8'));
         userId = (decoded.sub || decoded.userId || decoded.id)?.toString?.() || null;
-      } catch (_) {}
+      } catch (err) {
+        console.error('❌ Failed to decode token:', err);
+      }
     }
 
     if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 401 });
+      console.error('❌ User ID not found in token or request');
+      return NextResponse.json({ 
+        error: 'User ID required. Unable to extract user ID from token.' 
+      }, { status: 401 });
     }
 
-    const body = await request.json();
-    console.log('Creating new DeSnap via backend:', body);
+    console.log('Creating new DeSnap via backend:', { ...body, userId });
 
     // Forward request to backend
     const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
@@ -67,7 +86,9 @@ export async function POST(request: NextRequest) {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Backend error:', response.status, errorText);
-        throw new Error(`Backend responded with ${response.status}: ${errorText}`);
+        return NextResponse.json({ 
+          error: errorText || `Backend responded with ${response.status}` 
+        }, { status: response.status });
       }
 
       const data = await response.json();
@@ -75,23 +96,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(data);
     } catch (backendError) {
       console.error('❌ Backend connection failed for DeSnap creation:', backendError);
-      
-      // Fallback: Return mock DeSnap creation
-      console.log('🔄 Using fallback: returning mock DeSnap creation');
-      return NextResponse.json({
-        id: Date.now(),
-        content: body.content,
-        imageUrl: body.imageUrl,
-        videoUrl: body.videoUrl,
-        userId: parseInt(userId),
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
-        message: 'DeSnap created successfully (development mode)'
-      });
+      return NextResponse.json({ 
+        error: `Backend connection failed: ${backendError instanceof Error ? backendError.message : 'Unknown error'}` 
+      }, { status: 500 });
     }
   } catch (error) {
     console.error('❌ Error creating DeSnap:', error);
-    return NextResponse.json({ error: 'Failed to create DeSnap' }, { status: 500 });
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Failed to create DeSnap' 
+    }, { status: 500 });
   }
 }
 
