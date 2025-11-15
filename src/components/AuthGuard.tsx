@@ -18,7 +18,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   // Setup routes that require authentication but not setup completion
   const setupRoutes = ['/SignInSetUp', '/interests', '/FinishSetup'];
   // Protected routes that require both authentication and setup completion
-  const protectedRoutes = ['/home', '/profile', '/messaging', '/messeging'];
+  const protectedRoutes = ['/home', '/profile', '/messeging'];
 
   const isPublicRoute = publicRoutes.includes(pathname);
   const isSetupRoute = setupRoutes.includes(pathname);
