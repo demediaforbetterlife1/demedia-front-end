@@ -170,10 +170,11 @@ export default function PostDetailPage() {
   // Actions
   const handleLike = async (postId: number) => {
     if (!post) return;
-    const previousLiked = post.liked;
-    const previousLikes = post.likes;
+    const currentPost = post;
+    const previousLiked = currentPost.liked;
+    const previousLikes = currentPost.likes;
 
-    setPost({ ...post, liked: !post.liked, likes: post.liked ? post.likes - 1 : post.likes + 1 });
+    setPost({ ...currentPost, liked: !currentPost.liked, likes: currentPost.liked ? currentPost.likes - 1 : currentPost.likes + 1 });
 
     try {
       const response = await apiFetch(`/api/posts/${postId}/like`, { method: "POST" });
@@ -182,15 +183,16 @@ export default function PostDetailPage() {
       setPost((prev) => (prev ? { ...prev, liked: data.liked, likes: data.likes } : prev));
     } catch (err) {
       console.error(err);
-      setPost({ ...post, liked: previousLiked, likes: previousLikes });
+      setPost({ ...currentPost, liked: previousLiked, likes: previousLikes });
       showError("Like Failed", "Failed to like post");
     }
   };
 
   const handleBookmark = async (postId: number) => {
     if (!post) return;
-    const previousBookmarked = post.bookmarked;
-    setPost({ ...post, bookmarked: !post.bookmarked });
+    const currentPost = post;
+    const previousBookmarked = currentPost.bookmarked;
+    setPost({ ...currentPost, bookmarked: !currentPost.bookmarked });
 
     try {
       const response = await apiFetch(`/api/posts/${postId}/bookmark`, { method: "POST" });
@@ -199,14 +201,15 @@ export default function PostDetailPage() {
       setPost((prev) => (prev ? { ...prev, bookmarked: data.bookmarked } : prev));
     } catch (err) {
       console.error(err);
-      setPost({ ...post, bookmarked: previousBookmarked });
+      setPost({ ...currentPost, bookmarked: previousBookmarked });
       showError("Bookmark Failed", "Failed to bookmark post");
     }
   };
 
   const handleShare = async () => {
     if (!post) return;
-    const shareData = { title: "Check out this post", text: post.content, url: window.location.href };
+    const currentPost = post;
+    const shareData = { title: "Check out this post", text: currentPost.content, url: window.location.href };
     try {
       if (navigator.share) await navigator.share(shareData);
       else {
@@ -228,9 +231,11 @@ export default function PostDetailPage() {
 
   const handleChat = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!post.user?.id || !user?.id) return;
+    if (!post?.user?.id || !user?.id) return;
     
-    const postUserId = typeof post.user.id === 'string' ? parseInt(post.user.id) : post.user.id;
+    // At this point, post and post.user are guaranteed to exist
+    const currentPost = post;
+    const postUserId = typeof currentPost.user.id === 'string' ? parseInt(currentPost.user.id) : currentPost.user.id;
     const currentUserId = typeof user.id === 'string' ? parseInt(user.id) : parseInt(user.id);
     
     if (postUserId === currentUserId) {
@@ -288,6 +293,9 @@ export default function PostDetailPage() {
     );
   }
 
+  // At this point, post is guaranteed to be non-null
+  const currentPost = post;
+
   return (
     <div className={`min-h-screen ${themeClasses.bg}`}>
       {/* Header */}
@@ -307,15 +315,15 @@ export default function PostDetailPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`${themeClasses.bgSecondary} rounded-2xl ${themeClasses.shadow} p-6`}>
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={(e) => goToUser(e, post.user?.username)}>
-              <img src={post.user?.profilePicture || "/default-avatar.png"} alt="avatar" className="w-12 h-12 rounded-full object-cover border-2 border-gray-300" />
+            <div className="flex items-center gap-3 cursor-pointer" onClick={(e) => goToUser(e, currentPost.user?.username)}>
+              <img src={currentPost.user?.profilePicture || "/default-avatar.png"} alt="avatar" className="w-12 h-12 rounded-full object-cover border-2 border-gray-300" />
               <div>
-                <h3 className={`font-semibold ${themeClasses.text}`}>{post.user?.name || "Unknown User"}</h3>
-                <p className={`text-sm ${themeClasses.textMuted}`}>@{post.user?.username || "user"}</p>
+                <h3 className={`font-semibold ${themeClasses.text}`}>{currentPost.user?.name || "Unknown User"}</h3>
+                <p className={`text-sm ${themeClasses.textMuted}`}>@{currentPost.user?.username || "user"}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {post.user?.id && (typeof post.user.id === 'string' ? parseInt(post.user.id) : post.user.id) !== (user?.id ? parseInt(user.id) : 0) && (
+              {currentPost.user?.id && (typeof currentPost.user.id === 'string' ? parseInt(currentPost.user.id) : currentPost.user.id) !== (user?.id ? parseInt(user.id) : 0) && (
                 <button
                   onClick={handleChat}
                   className={`p-2 rounded-full ${themeClasses.hover} transition-colors`}
@@ -331,43 +339,43 @@ export default function PostDetailPage() {
           </div>
 
           {/* Content */}
-          <p className={`${themeClasses.textSecondary} text-lg mb-4`}>{post.content}</p>
+          <p className={`${themeClasses.textSecondary} text-lg mb-4`}>{currentPost.content}</p>
 
           {/* Media */}
-          {post.imageUrl && <img src={post.imageUrl} className="w-full rounded-xl max-h-96 object-cover mb-4" alt="post media" />}
-          {post.videoUrl && <video src={post.videoUrl} controls className="w-full rounded-xl max-h-96 mb-4" />}
+          {currentPost.imageUrl && <img src={currentPost.imageUrl} className="w-full rounded-xl max-h-96 object-cover mb-4" alt="post media" />}
+          {currentPost.videoUrl && <video src={currentPost.videoUrl} controls className="w-full rounded-xl max-h-96 mb-4" />}
 
           {/* Actions */}
           <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-500">
             <div className="flex gap-6">
-              <button type="button" onClick={() => handleLike(post.id)} className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:scale-105 ${post.liked ? "bg-pink-50 text-pink-500" : "hover:bg-pink-50 hover:text-pink-500"}`}>
-                <Heart size={20} fill={post.liked ? "currentColor" : "none"} />
-                <span className="text-sm font-medium">{post.likes}</span>
+              <button type="button" onClick={() => handleLike(currentPost.id)} className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:scale-105 ${currentPost.liked ? "bg-pink-50 text-pink-500" : "hover:bg-pink-50 hover:text-pink-500"}`}>
+                <Heart size={20} fill={currentPost.liked ? "currentColor" : "none"} />
+                <span className="text-sm font-medium">{currentPost.likes}</span>
               </button>
               <button type="button" onClick={handleComment} className="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:scale-105 hover:bg-blue-50 hover:text-blue-500">
                 <MessageCircle size={20} />
-                <span className="text-sm font-medium">{post.comments}</span>
+                <span className="text-sm font-medium">{currentPost.comments}</span>
               </button>
               <button type="button" onClick={handleShare} className="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:scale-105 hover:bg-green-50 hover:text-green-500">
                 <Share2 size={20} />
                 <span className="text-sm font-medium">Share</span>
               </button>
             </div>
-            <button type="button" onClick={() => handleBookmark(post.id)} className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:scale-105 ${post.bookmarked ? "bg-yellow-50 text-yellow-500" : "hover:bg-yellow-50 hover:text-yellow-500"}`}>
-              {post.bookmarked ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
+            <button type="button" onClick={() => handleBookmark(currentPost.id)} className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:scale-105 ${currentPost.bookmarked ? "bg-yellow-50 text-yellow-500" : "hover:bg-yellow-50 hover:text-yellow-500"}`}>
+              {currentPost.bookmarked ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
             </button>
           </div>
         </motion.div>
       </div>
 
       {/* Comment Modal */}
-      {showCommentModal && post && (
+      {showCommentModal && currentPost && (
         <CommentModal
           isOpen={showCommentModal}
           onClose={() => setShowCommentModal(false)}
-          postId={post.id}
-          postContent={post.content}
-          postAuthor={post.user?.name || "Unknown User"}
+          postId={currentPost.id}
+          postContent={currentPost.content}
+          postAuthor={currentPost.user?.name || "Unknown User"}
         />
       )}
     </div>
