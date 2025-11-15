@@ -358,26 +358,7 @@ const { register, isAuthenticated, isLoading, user } = useAuth();
 const router = useRouter();
 const pathname = usePathname();
 
-// Track if we've already redirected to prevent loops
-const hasRedirectedRef = useRef(false);
-
-useEffect(() => {
-    // Only redirect if we're still on the sign-up page and user is authenticated
-    // But don't redirect if we just registered (let the handleSubmit handle that)
-    // And don't redirect if we've already redirected once
-    if (!isLoading && isAuthenticated && user && pathname === '/sign-up' && !isSubmitting && !hasRedirectedRef.current) {
-        console.log('User authenticated, redirecting to setup');
-        hasRedirectedRef.current = true;
-        router.replace("/SignInSetUp");
-    }
-}, [isLoading, isAuthenticated, user, router, pathname, isSubmitting]);
-
-// Reset redirect flag when component unmounts or pathname changes away from sign-up
-useEffect(() => {
-    if (pathname !== '/sign-up') {
-        hasRedirectedRef.current = false;
-    }
-}, [pathname]);
+// Removed redundant redirect logic - let AuthGuard handle authentication-based redirects
 
 const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
@@ -447,14 +428,8 @@ const handleSubmit = async (e: React.FormEvent) => {
         if (result.success && result.user) {
             // Clear form on success
             setForm({ name: "", username: "", phoneNumber: "", password: "" });
-            console.log('Sign-up: Registration successful, redirecting to SignInSetUp');
-            
-            // Mark that we've redirected to prevent the useEffect from redirecting again
-            hasRedirectedRef.current = true;
-            
-            // Redirect immediately after successful registration
-            // The user state is already set in the AuthContext
-            router.replace("/SignInSetUp");
+            console.log('Sign-up: Registration successful - AuthGuard will handle redirect');
+            // Let AuthGuard handle the redirect to SignInSetUp based on authentication state
         } else {
             // Handle registration error
             console.log('Registration failed with message:', result.message);
@@ -658,4 +633,3 @@ return (
 );
 
 }
-          

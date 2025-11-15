@@ -139,6 +139,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!(user && initComplete);
 
+  // Debug authentication state changes
+  useEffect(() => {
+    console.log('[Auth] State change:', {
+      user: user ? { id: user.id, isSetupComplete: user.isSetupComplete } : null,
+      isLoading,
+      initComplete,
+      isAuthenticated
+    });
+  }, [user, isLoading, initComplete, isAuthenticated]);
+
   const updateUser = (newData: Partial<User>) => {
     setUser((prev) => (prev ? { ...prev, ...newData } : null));
   };
@@ -228,14 +238,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      console.log("[Auth] Initializing auth...");
+      console.log("[Auth] Starting authentication initialization...");
+      setIsLoading(true);
+      setInitComplete(false);
 
       try {
         // Check if we have any token stored
         const hasCookieToken = !!getCookie("token");
         const hasStorageToken = !!getLocalStorageToken();
         
-        console.log("[Auth] Tokens found - Cookie:", hasCookieToken, "LocalStorage:", hasStorageToken);
+        console.log("[Auth] Token check - Cookie:", hasCookieToken, "LocalStorage:", hasStorageToken);
 
         // If we have localStorage token but no cookie, restore the cookie
         if (hasStorageToken && !hasCookieToken) {
@@ -248,17 +260,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // If we have any token, try to fetch user
         if (hasCookieToken || hasStorageToken) {
-          console.log("[Auth] Token found, fetching user...");
-          await fetchUser();
+          console.log("[Auth] Token found, attempting to fetch user data...");
+          const userFetched = await fetchUser();
+          if (userFetched) {
+            console.log("[Auth] User data fetched successfully");
+          } else {
+            console.log("[Auth] Failed to fetch user data - token may be invalid");
+            // Clear invalid tokens
+            deleteCookie("token");
+            removeLocalStorageToken();
+            setUser(null);
+          }
         } else {
-          console.log("[Auth] No token found");
+          console.log("[Auth] No authentication token found - user is not logged in");
+          setUser(null);
         }
       } catch (err) {
-        console.error("[Auth] initialization error:", err);
+        console.error("[Auth] Authentication initialization error:", err);
+        // Clear potentially corrupted auth state
+        deleteCookie("token");
+        removeLocalStorageToken();
+        setUser(null);
       } finally {
         setIsLoading(false);
         setInitComplete(true);
-        console.log("[Auth] Auth initialization complete, user:", user ? user.id : "null");
+        console.log("[Auth] Authentication initialization complete. User state:", user ? `authenticated (${user.id})` : "not authenticated");
       }
     };
 
@@ -284,7 +310,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = await res.json();
 
       if (!res.ok) {
-        const msg = data?.error || `Login failed (${res.status})`;
+        let msg = data?.error || `Login failed (${res.status})`;
+        
+        // Provide better error messages for common backend issues
+        if (res.status === 504) {
+          msg = "Backend service is temporarily unavailable. Please try again in a few minutes.";
+        } else if (res.status === 502) {
+          msg = "Unable to connect to backend service. Please check your internet connection and try again.";
+        } else if (res.status === 404) {
+          msg = "Login service is currently unavailable. Please contact support.";
+        }
+        
         console.error("[Auth] login failed:", msg);
         return { success: false, message: msg };
       }
@@ -336,9 +372,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!res.ok) {
         let msg = data?.error || `Registration failed (${res.status})`;
         
-        // Handle timeout errors with user-friendly message
-        if (res.status === 504 || (data?.error === "Timeout" || data?.details === "Backend took too long")) {
+        // Provide better error messages for common backend issues
+        if (res.status === 504) {
           msg = "Backend service is temporarily unavailable. Please try again in a few minutes.";
+        } else if (res.status === 502) {
+          msg = "Unable to connect to backend service. Please check your internet connection and try again.";
+        } else if (res.status === 404) {
+          msg = "Registration service is currently unavailable. Please contact support.";
         }
         
         console.error("[Auth] register failed:", msg);
