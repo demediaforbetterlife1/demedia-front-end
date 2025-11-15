@@ -47,7 +47,9 @@ const AccountInfo: React.FC<AccountInfoProps> = ({ closeModal }) => {
     location: user?.location || "",
     website: user?.website || "",
     preferredLang: user?.preferredLang || user?.language || "en",
+    //@ts-ignore
     profilePicture: user?.profilePicture || "",
+        //@ts-ignore
     coverPhoto: user?.coverPhoto || user?.coverPicture || ""
   });
   
