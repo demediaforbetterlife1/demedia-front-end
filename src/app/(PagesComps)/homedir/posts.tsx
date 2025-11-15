@@ -169,13 +169,9 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   // 👤 الانتقال لصفحة المستخدم (باستخدام username)
   const goToUser = (e: React.MouseEvent, author?: AuthorType | null) => {
     e.stopPropagation();
-    if (!author?.username && !author?.id) return;
-    // Use username if available, otherwise use id
-    if (author.username) {
-      router.push(`/profile/${author.username}`);
-    } else if (author.id) {
-      router.push(`/profile?userId=${author.id}`);
-    }
+    if (!author?.id) return;
+    // Always use userId-based navigation since profile page only handles userId query parameter
+    router.push(`/profile?userId=${author.id}`);
   };
 
   // 📄 صفحة البوست

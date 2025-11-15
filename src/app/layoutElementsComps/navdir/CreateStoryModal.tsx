@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
     X, Camera, Globe, Users, Lock, Clock, Settings, 
@@ -105,6 +106,7 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
     const [showSettings, setShowSettings] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
+    const [mounted, setMounted] = useState(false);
     const [activeTab, setActiveTab] = useState<"content" | "settings" | "effects">("content");
     
     const [settings, setSettings] = useState<StorySettings>({
@@ -125,6 +127,10 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
     const videoInputRef = useRef<HTMLInputElement>(null);
 
     // Reset form when modal opens
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     useEffect(() => {
         if (isOpen) {
             setContent("");
@@ -280,9 +286,9 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
         }));
     };
 
-    if (!isOpen) return null;
+    if (!isOpen || !mounted) return null;
 
-    return (
+    const modalContent = (
         <AnimatePresence>
             <motion.div
                 initial={{ opacity: 0 }}
@@ -694,4 +700,6 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
             </motion.div>
         </AnimatePresence>
     );
+
+    return createPortal(modalContent, document.body);
 }
