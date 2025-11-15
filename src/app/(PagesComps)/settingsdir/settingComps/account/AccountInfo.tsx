@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Camera, Mail, Calendar, MapPin, Link, Phone, Globe, Lock, Users, UserCheck, Save } from "lucide-react";
+import { X, Camera, User as UserIcon, Mail, Calendar, MapPin, Link, Phone, Globe, Lock, Users, UserCheck, Save } from "lucide-react";
 import { useAuth, type User } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useI18n } from "@/contexts/I18nContext";
@@ -205,7 +205,7 @@ const AccountInfo: React.FC<AccountInfoProps> = ({ closeModal }) => {
           <div className={`flex items-center justify-between p-6 border-b ${themeClasses.border}`}>
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-white" />
+                <UserIcon className="w-5 h-5 text-white" />
               </div>
               <div>
                 <h2 className={`text-xl font-bold ${themeClasses.text}`}>Account Information</h2>
@@ -290,7 +290,7 @@ const AccountInfo: React.FC<AccountInfoProps> = ({ closeModal }) => {
               {/* Name */}
               <div>
                 <label className={`block text-sm font-medium ${themeClasses.text} mb-2`}>
-                  <User className="w-4 h-4 inline mr-2" />
+                  <UserIcon className="w-4 h-4 inline mr-2" />
                   Name
                 </label>
                 <input
@@ -305,7 +305,7 @@ const AccountInfo: React.FC<AccountInfoProps> = ({ closeModal }) => {
               {/* Username */}
               <div>
                 <label className={`block text-sm font-medium ${themeClasses.text} mb-2`}>
-                  <User className="w-4 h-4 inline mr-2" />
+                  <UserIcon className="w-4 h-4 inline mr-2" />
                   Username
                 </label>
                 <input
