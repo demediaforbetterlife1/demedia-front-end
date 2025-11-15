@@ -9,7 +9,7 @@ type VisibilityModalProps = {
 };
 
 export default function VisibilityModal({ closeModal }: VisibilityModalProps) {
-    const { user, setUser } = useAuth();
+    const { user, updateUser } = useAuth();
     const [visibility, setVisibility] = useState(user?.privacy || "public");
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState("");
