@@ -235,7 +235,10 @@ export default function PostDetailPage() {
     
     // At this point, post and post.user are guaranteed to exist
     const currentPost = post;
-    const postUserId = typeof currentPost.user.id === 'string' ? parseInt(currentPost.user.id) : currentPost.user.id;
+    const currentPostUser = currentPost.user;
+    if (!currentPostUser?.id) return;
+    
+    const postUserId = typeof currentPostUser.id === 'string' ? parseInt(currentPostUser.id) : currentPostUser.id;
     const currentUserId = typeof user.id === 'string' ? parseInt(user.id) : parseInt(user.id);
     
     if (postUserId === currentUserId) {
