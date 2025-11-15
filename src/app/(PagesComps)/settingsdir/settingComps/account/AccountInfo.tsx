@@ -49,7 +49,7 @@ const AccountInfo: React.FC<AccountInfoProps> = ({ closeModal }) => {
     preferredLang: user?.preferredLang || user?.language || "en",
     //@ts-ignore
     profilePicture: user?.profilePicture || "",
-        //@ts-ignore
+    //@ts-ignore
     coverPhoto: user?.coverPhoto || user?.coverPicture || ""
   });
   
