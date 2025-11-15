@@ -76,7 +76,7 @@ import {
     Badge,
     Crown as CrownIcon
 } from "lucide-react";
-import { getUserProfile, apiFetch } from "../../../lib/api";
+import { getUserProfile, apiFetch, getAuthHeaders } from "../../../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getEnhancedThemeClasses } from "@/utils/enhancedThemeUtils";
@@ -220,8 +220,8 @@ export default function ProfilePage() {
             console.log('🔄 Redirecting to own profile');
             router.replace('/profile');
         } else {
-            console.log('🔄 Redirecting to sign-in');
-            router.replace('/sign-in');
+            console.log('🔄 Redirecting to sign-up');
+            router.replace('/sign-up');
         }
         return null;
     }
@@ -304,14 +304,49 @@ export default function ProfilePage() {
                 setError(null);
                 console.log('Loading profile for userId:', userId, 'type:', typeof userId);
                 console.log('About to call getUserProfile with:', userId);
+                console.log('Current user from auth:', user);
+                console.log('Is own profile:', isOwnProfile);
+                
+                // Ensure userId is valid before making the request
+                if (!userId || userId === 'undefined' || userId === 'null') {
+                    console.error('❌ Invalid userId before API call:', userId);
+                    setError("Invalid user ID. Please try again.");
+                    setLoading(false);
+                    return;
+                }
+                
                 const data = await getUserProfile(userId);
                 console.log('getUserProfile returned:', data);
                 
-                if (!data) {
-                    console.error('getUserProfile returned null');
+                if (!data || !data.id) {
+                    console.error('getUserProfile returned null or invalid data');
                     console.log('Profile fetch failed for userId:', userId);
                     console.log('Is own profile:', isOwnProfile);
                     console.log('Current user ID:', user?.id);
+                    
+                    // If it's the user's own profile and they're authenticated, try to use their auth data
+                    if (isOwnProfile && user && user.id) {
+                        console.log('🔄 Using auth user data as fallback for own profile');
+                        const userIdNum = typeof user.id === 'string' ? parseInt(user.id) : user.id;
+                        const fallbackProfile: Profile = {
+                            id: userIdNum || 0,
+                            name: user.name || '',
+                            username: user.username || '',
+                            bio: user.bio || '',
+                            profilePicture: user.profilePicture || null,
+                            coverPicture: user.coverPhoto || null,
+                            coverPhoto: user.coverPhoto || null,
+                            followersCount: 0,
+                            followingCount: 0,
+                            likesCount: 0,
+                            stories: [],
+                            deSnaps: []
+                        };
+                        if (!mounted) return;
+                        setProfile(fallbackProfile);
+                        setLoading(false);
+                        return;
+                    }
                     
                     setError("Profile not found - User may not exist or has been deleted");
                     setLoading(false);
@@ -338,13 +373,10 @@ export default function ProfilePage() {
                 }
 
                 // Fetch DeSnaps for this user
-                const deSnapsResponse = await fetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
-                    headers: {
-                        'user-id': user?.id?.toString() || '',
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include', // Automatically sends httpOnly cookies
-                });
+                const deSnapsResponse = await apiFetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
+                    method: 'GET',
+                    headers: getAuthHeaders(user?.id),
+                }, user?.id);
                 
                 let userDeSnaps = [];
                 if (deSnapsResponse.ok) {
@@ -833,9 +865,9 @@ export default function ProfilePage() {
     console.log('Profile picture value:', profilePicture);
     console.log('Cover picture value:', coverPicture);
 
-    const handleGoToAuthorProfile = (username?: string) => {
-      if (!username) return;
-      router.push(`/profile/${username}`);
+    const handleGoToAuthorProfile = (userId?: number | string) => {
+      if (!userId) return;
+      router.push(`/profile?userId=${userId}`);
     };
 
     return (
@@ -1801,9 +1833,9 @@ const UserPosts = ({
     const { user } = useAuth();
 	const router = useRouter();
 
-	const handleGoToAuthorProfile = (username?: string) => {
-		if (!username) return;
-		router.push(`/profile/${username}`);
+	const handleGoToAuthorProfile = (userId?: number | string) => {
+		if (!userId) return;
+		router.push(`/profile?userId=${userId}`);
 	};
 
     const fetchUserPosts = async () => {
@@ -1811,7 +1843,11 @@ const UserPosts = ({
         
         try {
             setLoading(true);
-            const response = await apiFetch(`/api/posts/user/${userId}`);
+            // Pass user ID to apiFetch so it can be included in headers for like status checking
+            const response = await apiFetch(`/api/posts/user/${userId}`, {
+                method: 'GET',
+                headers: getAuthHeaders(user?.id),
+            }, user?.id);
             
             if (!response.ok) {
                 throw new Error('Failed to fetch posts');
@@ -1819,7 +1855,13 @@ const UserPosts = ({
             
             const data = await response.json();
             // Handle both direct array and wrapped response formats
-            setPosts(Array.isArray(data) ? data : (data.posts || []));
+            const postsData = Array.isArray(data) ? data : (data.posts || []);
+            
+            // Ensure liked status is preserved
+            setPosts(postsData.map((post: any) => ({
+                ...post,
+                liked: Boolean(post.liked || post.isLiked),
+            })));
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load posts');
         } finally {
@@ -1966,7 +2008,7 @@ const UserPosts = ({
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => { const u = post.author?.username; if (u) router.push(`/profile/${u}`); }}
+                                onClick={() => { const id = post.author?.id; if (id) router.push(`/profile?userId=${id}`); }}
                                 className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold hover:shadow-lg transition-all duration-300 cursor-pointer ring-2 ring-cyan-500/20"
                             >
                                 {post.author?.name?.charAt(0) || 'U'}
@@ -2072,9 +2114,51 @@ const UserPosts = ({
                             <motion.button 
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="flex items-center space-x-2 text-gray-400 hover:text-red-400 transition-colors"
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const prevLiked = post.liked;
+                                    const prevLikes = post.likes || 0;
+                                    
+                                    // Optimistic update
+                                    setPosts(prev => prev.map(p => 
+                                        p.id === post.id 
+                                            ? { ...p, liked: !prevLiked, likes: prevLiked ? prevLikes - 1 : prevLikes + 1 }
+                                            : p
+                                    ));
+                                    
+                                    try {
+                                        const response = await apiFetch(`/api/posts/${post.id}/like`, {
+                                            method: 'POST',
+                                            headers: getAuthHeaders(user?.id),
+                                        }, user?.id);
+                                        
+                                        if (!response.ok) throw new Error('Like request failed');
+                                        
+                                        const data = await response.json();
+                                        
+                                        // Update with server response
+                                        setPosts(prev => prev.map(p => 
+                                            p.id === post.id 
+                                                ? { ...p, liked: data.liked ?? !prevLiked, likes: data.likes ?? (prevLiked ? prevLikes - 1 : prevLikes + 1) }
+                                                : p
+                                        ));
+                                    } catch (err) {
+                                        console.error('Like error:', err);
+                                        // Revert on error
+                                        setPosts(prev => prev.map(p => 
+                                            p.id === post.id 
+                                                ? { ...p, liked: prevLiked, likes: prevLikes }
+                                                : p
+                                        ));
+                                    }
+                                }}
+                                className={`flex items-center space-x-2 transition-colors ${
+                                    post.liked 
+                                        ? 'text-red-500 hover:text-red-600' 
+                                        : 'text-gray-400 hover:text-red-400'
+                                }`}
                             >
-                                <Heart size={20} />
+                                <Heart size={20} fill={post.liked ? 'currentColor' : 'none'} />
                                 <span className="font-medium">{post.likes || 0}</span>
                             </motion.button>
                             <motion.button 

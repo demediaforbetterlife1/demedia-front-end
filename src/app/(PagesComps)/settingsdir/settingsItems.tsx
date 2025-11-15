@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ChevronRight, X } from "lucide-react";
 import gsap from "gsap";
-//import AccountInfo from "@/app/(PagesComps)/settingsdir/settingComps/account/AccountInfo";
+import AccountInfo from "@/app/(PagesComps)/settingsdir/settingComps/account/AccountInfo";
 import TwoFactorSettings from "@/app/(PagesComps)/settingsdir/settingComps/2FA/TwoFactorAuthSettings";
 import LoginActivity from "@/app/(PagesComps)/settingsdir/settingComps/2FA/LoginActivity";
 import TrustedDevicesModal from "@/app/(PagesComps)/settingsdir/settingComps/2FA/TrustedDevices";
@@ -210,7 +210,7 @@ export default function SettingsItems() {
             {/* === Modals === */}
 
             {/* Account & Security */}
-        
+            {activeModal === "account" && <AccountInfo closeModal={closeActiveModal} />}
             {activeModal === "2fa" && <TwoFactorSettings closeModal={closeActiveModal} />}
             {activeModal === "loginactivity" && <LoginActivity closeModal={closeActiveModal} />}
             {activeModal === "trusteddevices" && <TrustedDevicesModal closeModal={closeActiveModal} />}

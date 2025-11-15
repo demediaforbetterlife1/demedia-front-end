@@ -425,7 +425,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         const result = await register(formData);
         console.log('After register call, result:', result);
         
-        if (result.success) {
+        if (result.success && result.user) {
             // Clear form on success
             setForm({ name: "", username: "", phoneNumber: "", password: "" });
             console.log('Sign-up: Registration successful - AuthGuard will handle redirect');

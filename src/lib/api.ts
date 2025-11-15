@@ -93,6 +93,7 @@ function isValidToken(token: string | null): boolean {
 }
 
 /** Return headers including Authorization if token exists and is valid */
+// lib/api.ts
 export function getAuthHeaders(userId?: string | number): Record<string, string> {
   const token = getToken();
   const base: Record<string, string> = {
@@ -100,11 +101,13 @@ export function getAuthHeaders(userId?: string | number): Record<string, string>
     Accept: "application/json",
   };
   
-  // Only add Authorization if token exists and is valid
-  if (token && isValidToken(token)) {
+  // Always add Authorization if token exists - remove the isValidToken check
+  // This is likely where your issue is - isValidToken might be returning false
+  if (token) {
     base["Authorization"] = `Bearer ${token}`;
   }
   
+  // Use consistent header name - make sure it matches what backend expects
   if (userId) base["user-id"] = String(userId);
   return base;
 }
@@ -117,14 +120,21 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
   // attach token from cookies (userId should be passed as parameter from AuthContext)
   const token = getToken();
 
-  // copy/merge headers
+  // copy/merge headers - prioritize Authorization from options.headers if provided
+  const providedHeaders = (options.headers as Record<string, string> | undefined) || {};
   const headers: Record<string, string> = {
-    ...(options.headers as Record<string, string> | undefined) || {},
+    ...providedHeaders,
   };
 
   // Only add Authorization if token exists and is valid
-  if (token && isValidToken(token)) {
+  // But don't overwrite if it's already in providedHeaders
+  if (token && isValidToken(token) && !headers["Authorization"]) {
     headers["Authorization"] = `Bearer ${token}`;
+  }
+  
+  // If Authorization is in providedHeaders, use it (it might be more up-to-date)
+  if (providedHeaders["Authorization"]) {
+    headers["Authorization"] = providedHeaders["Authorization"];
   }
   
   if (userId) headers["user-id"] = String(userId);
@@ -431,18 +441,30 @@ export function logoutClient(): void {
 /** Get a user's public profile by id (pulls from backend) */
 export async function getUserProfile(userId: string | number) {
   try {
+    // Ensure userId is valid
+    if (!userId || userId === 'undefined' || userId === 'null') {
+      console.error("[api] getUserProfile: Invalid userId provided:", userId);
+      return null;
+    }
+
+    console.log("[api] getUserProfile: Fetching profile for userId:", userId, "type:", typeof userId);
+    
     const res = await apiFetch(`/api/users/${userId}/profile`, {
       method: "GET",
       headers: getAuthHeaders(),
       cache: "no-store",
     });
     
+    console.log("[api] getUserProfile: Response status:", res.status);
+    
     // Handle 401 for profile requests
     if (res.status === 401) {
+      console.warn("[api] getUserProfile: Unauthorized (401)");
       return null;
     }
     
     const profile = await res.json();
+    console.log("[api] getUserProfile: Response data:", profile);
     
     // Check if the response contains an error (even if status is 200)
     if (profile && profile.error && !profile.id) {
@@ -451,8 +473,15 @@ export async function getUserProfile(userId: string | number) {
     }
     
     if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      throw new Error(`Failed to get profile: ${res.status} ${txt}`);
+      const errorMsg = profile?.error || `Failed to get profile: ${res.status}`;
+      console.error("[api] getUserProfile: Request failed:", errorMsg);
+      throw new Error(errorMsg);
+    }
+    
+    // Ensure profile has required fields
+    if (!profile || !profile.id) {
+      console.error("[api] getUserProfile: Invalid profile data returned");
+      return null;
     }
     
     return profile;

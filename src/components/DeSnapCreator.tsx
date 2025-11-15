@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, getAuthHeaders } from '@/lib/api';
 
 interface DeSnapCreatorProps {
     isOpen: boolean;
@@ -35,20 +35,17 @@ export default function DeSnapCreator({ isOpen, onClose, onDeSnapCreated }: DeSn
             setLoading(true);
             setError(null);
 
-            const response = await fetch('/api/desnaps', {
+            // Use apiFetch which automatically handles token from cookies
+            const response = await apiFetch('/api/desnaps', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'user-id': user.id.toString()
-                },
+                headers: getAuthHeaders(user?.id),
                 body: JSON.stringify({
                     content: content.trim(),
                     duration,
                     visibility,
                     userId: user.id
                 })
-            });
+            }, user?.id);
 
             console.log('DeSnap creation response status:', response.status);
 

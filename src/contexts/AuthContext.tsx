@@ -163,7 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   "Content-Type": "application/json",
 };
 
-      // Add token to headers for backup (in case cookies don't work)
+      // Add token to headers for backup (in case cookies don't work
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }

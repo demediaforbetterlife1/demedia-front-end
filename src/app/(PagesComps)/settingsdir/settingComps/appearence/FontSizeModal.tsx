@@ -31,7 +31,7 @@ export default function FontSizeModal({ closeModal }: FontSizeModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-white dark:bg-neutral-900 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[9999]">
             <div className="w-[90%] max-w-lg bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-6 relative">
                 {/* Close */}
                 <button

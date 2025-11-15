@@ -7,7 +7,7 @@ type TermsModalProps = {
 
 export default function TermsModal({ closeModal }: TermsModalProps) {
     return (
-        <div className="fixed inset-0 bg-white dark:bg-neutral-900 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[9999]">
             <div className="w-[90%] max-w-3xl h-[85%] bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-6 relative overflow-hidden">
                 {/* Close */}
                 <button
