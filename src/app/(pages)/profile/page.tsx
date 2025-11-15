@@ -76,7 +76,7 @@ import {
     Badge,
     Crown as CrownIcon
 } from "lucide-react";
-import { getUserProfile, apiFetch, getAuthHeaders } from "../../../lib/api";
+import { getUserProfile, apiFetch, getAuthHeaders } from "../../../lib/api"; // Fixed duplicate import
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getEnhancedThemeClasses } from "@/utils/enhancedThemeUtils";
