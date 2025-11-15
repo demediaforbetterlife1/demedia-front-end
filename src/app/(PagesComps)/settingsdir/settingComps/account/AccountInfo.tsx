@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Camera, User, Mail, Calendar, MapPin, Link, Phone, Globe, Lock, Users, UserCheck, Save } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, type User } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { getModalThemeClasses } from "@/utils/enhancedThemeUtils";
@@ -37,48 +37,47 @@ const AccountInfo: React.FC<AccountInfoProps> = ({ closeModal }) => {
   const { theme } = useTheme();
   const { t } = useI18n();
   const themeClasses = getModalThemeClasses(theme);
+  // Type assertion to ensure TypeScript recognizes all User fields
+  const typedUser = user as User | null;
   
   const [profileData, setProfileData] = useState<ProfileData>({
-    name: user?.name || "",
-    username: user?.username || "",
-    bio: user?.bio || "",
-    email: user?.email || "",
-    dateOfBirth: user?.dateOfBirth || user?.dob || "",
-    location: user?.location || "",
-    website: user?.website || "",
-    preferredLang: user?.preferredLang || user?.language || "en",
-    //@ts-ignore
-    profilePicture: user?.profilePicture || "",
-    //@ts-ignore
-    coverPhoto: user?.coverPhoto || user?.coverPicture || ""
+    name: typedUser?.name || "",
+    username: typedUser?.username || "",
+    bio: typedUser?.bio || "",
+    email: typedUser?.email || "",
+    dateOfBirth: typedUser?.dateOfBirth || typedUser?.dob || "",
+    location: typedUser?.location || "",
+    website: typedUser?.website || "",
+    preferredLang: typedUser?.preferredLang || typedUser?.language || "en",
+    profilePicture: (typedUser?.profilePicture ?? "") || "",
+    coverPhoto: (typedUser?.coverPhoto ?? "") || ""
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [privacy, setPrivacy] = useState(user?.privacy || "public");
+  const [privacy, setPrivacy] = useState(typedUser?.privacy || "public");
   
   const profilePictureRef = useRef<HTMLInputElement>(null);
   const coverPhotoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (user) {
+    if (typedUser) {
       setProfileData({
-        name: user.name || "",
-        username: user.username || "",
-        bio: user.bio || "",
-        email: user.email || "",
-        dateOfBirth: user.dateOfBirth || user.dob || "",
-        location: user.location || "",
-        website: user.website || "",
-        preferredLang: user.preferredLang || user.language || "en",
-        //@ts-ignore
-        profilePicture: user.profilePicture || "",
-        coverPhoto: user.coverPhoto || user.coverPicture || ""
+        name: typedUser.name || "",
+        username: typedUser.username || "",
+        bio: typedUser.bio || "",
+        email: typedUser.email || "",
+        dateOfBirth: typedUser.dateOfBirth || typedUser.dob || "",
+        location: typedUser.location || "",
+        website: typedUser.website || "",
+        preferredLang: typedUser.preferredLang || typedUser.language || "en",
+        profilePicture: (typedUser.profilePicture ?? "") || "",
+        coverPhoto: (typedUser.coverPhoto ?? "") || ""
       });
-      setPrivacy(user.privacy || "public");
+      setPrivacy(typedUser.privacy || "public");
     }
-  }, [user]);
+  }, [typedUser]);
 
   const handleInputChange = (field: keyof ProfileData, value: string) => {
     setProfileData(prev => ({ ...prev, [field]: value }));
@@ -232,7 +231,7 @@ const AccountInfo: React.FC<AccountInfoProps> = ({ closeModal }) => {
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                     <img
-                      src={profileData.profilePicture || user?.profilePicture || "/default-avatar.png"}
+                      src={profileData.profilePicture || (typedUser?.profilePicture ?? "") || "/default-avatar.png"}
                       alt="Profile"
                       className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
                     />
@@ -264,7 +263,7 @@ const AccountInfo: React.FC<AccountInfoProps> = ({ closeModal }) => {
                 </label>
                 <div className="relative">
                   <img
-                    src={profileData.coverPhoto || user?.coverPhoto || user?.coverPicture || "/default-cover.jpg"}
+                    src={profileData.coverPhoto || (typedUser?.coverPhoto ?? "") || "/default-cover.jpg"}
                     alt="Cover"
                     className="w-full h-32 object-cover rounded-lg"
                   />
