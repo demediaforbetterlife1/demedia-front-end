@@ -223,10 +223,10 @@ export default function PostDetailPage() {
 
   const handleComment = () => setShowCommentModal(true);
 
-  const goToUser = (e: React.MouseEvent, username?: string) => {
+  const goToUser = (e: React.MouseEvent, userId?: number | string) => {
     e.stopPropagation();
-    if (!username) return;
-    router.push(`/profile/${username}`);
+    if (!userId) return;
+    router.push(`/profile?userId=${userId}`);
   };
 
   const handleChat = async (e: React.MouseEvent) => {
@@ -318,7 +318,7 @@ export default function PostDetailPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`${themeClasses.bgSecondary} rounded-2xl ${themeClasses.shadow} p-6`}>
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={(e) => goToUser(e, currentPost.user?.username)}>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={(e) => goToUser(e, currentPost.user?.id)}>
               <img src={currentPost.user?.profilePicture || "/default-avatar.png"} alt="avatar" className="w-12 h-12 rounded-full object-cover border-2 border-gray-300" />
               <div>
                 <h3 className={`font-semibold ${themeClasses.text}`}>{currentPost.user?.name || "Unknown User"}</h3>
