@@ -117,14 +117,21 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
   // attach token from cookies (userId should be passed as parameter from AuthContext)
   const token = getToken();
 
-  // copy/merge headers
+  // copy/merge headers - prioritize Authorization from options.headers if provided
+  const providedHeaders = (options.headers as Record<string, string> | undefined) || {};
   const headers: Record<string, string> = {
-    ...(options.headers as Record<string, string> | undefined) || {},
+    ...providedHeaders,
   };
 
   // Only add Authorization if token exists and is valid
-  if (token && isValidToken(token)) {
+  // But don't overwrite if it's already in providedHeaders
+  if (token && isValidToken(token) && !headers["Authorization"]) {
     headers["Authorization"] = `Bearer ${token}`;
+  }
+  
+  // If Authorization is in providedHeaders, use it (it might be more up-to-date)
+  if (providedHeaders["Authorization"]) {
+    headers["Authorization"] = providedHeaders["Authorization"];
   }
   
   if (userId) headers["user-id"] = String(userId);
