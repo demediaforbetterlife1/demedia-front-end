@@ -360,9 +360,7 @@ export default function ProfilePage() {
                 
                 // Fetch stories for this user
                 const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
-                    headers: {
-                        'user-id': user?.id?.toString() || '',
-                        'Content-Type': 'application/json',
+                    headers: getAuthHeaders(user?.id),
                     },
                     credentials: 'include', // Automatically sends httpOnly cookies
                 });
@@ -467,9 +465,7 @@ export default function ProfilePage() {
         try {
             // Refresh stories
             const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
-                headers: {
-                    'user-id': user?.id?.toString() || '',
-                    'Content-Type': 'application/json',
+                headers: getAuthHeaders(user?.id),
                 },
                 credentials: 'include', // Automatically sends httpOnly cookies
             });
@@ -481,9 +477,7 @@ export default function ProfilePage() {
 
             // Refresh DeSnaps
             const deSnapsResponse = await fetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
-                headers: {
-                    'user-id': user?.id?.toString() || '',
-                    'Content-Type': 'application/json',
+                headers: getAuthHeaders(user?.id),
                 },
                 credentials: 'include', // Automatically sends httpOnly cookies
             });
@@ -563,10 +557,8 @@ export default function ProfilePage() {
 
             const res = await fetch(endpoint, { 
                 method: "POST",
-                headers: {
-                    'Content-Type': 'application/json',
-                    'user-id': user?.id?.toString() || '',
-                },
+                headers: getAuthHeaders(user?.id),
+                
                 credentials: 'include', // Automatically sends httpOnly cookies
                 body: JSON.stringify({
                     followerId: user?.id
@@ -605,8 +597,7 @@ export default function ProfilePage() {
             // Create or find existing chat with this user
             const res = await apiFetch('/api/chat/create-or-find', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
+                headers: getAuthHeaders(user?.id),
                 },
                 body: JSON.stringify({
                     participantId: profile.id
@@ -1903,9 +1894,7 @@ const UserPosts = ({
         try {
             const response = await fetch(`/api/posts/${postToDelete.id}`, {
                 method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'user-id': user?.id?.toString() || '',
+                headers: getAuthHeaders(user?.id),
                 },
                 credentials: 'include', // Automatically sends httpOnly cookies
             });

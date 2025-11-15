@@ -27,7 +27,7 @@ export default function ChatButton({ targetUserId, targetUserName, className = "
             
             if (existingChatResponse.ok) {
                 const existingChat = await existingChatResponse.json();
-                router.push(`/messaging/chat/${existingChat.id}`);
+                router.push(`/messeging/chat/${existingChat.id}`);
                 return;
             }
 
@@ -42,7 +42,7 @@ export default function ChatButton({ targetUserId, targetUserName, className = "
 
             if (response.ok) {
                 const newChat = await response.json();
-                router.push(`/messaging/chat/${newChat.id}`);
+                router.push(`/messeging/chat/${newChat.id}`);
             } else {
                 alert('Failed to start chat. Please try again.');
             }

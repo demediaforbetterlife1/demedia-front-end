@@ -126,9 +126,9 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
     ...providedHeaders,
   };
 
-  // Only add Authorization if token exists and is valid
+  // Only add Authorization if token exists
   // But don't overwrite if it's already in providedHeaders
-  if (token && isValidToken(token) && !headers["Authorization"]) {
+  if (token && !headers["Authorization"]) {
     headers["Authorization"] = `Bearer ${token}`;
   }
   
@@ -329,7 +329,7 @@ export async function signUp(payload: {
     headers: { "Content-Type": "application/json" },
   });
 
-  if (res?.token && isValidToken(res.token)) {
+  if (res?.token) {
     setCookie("token", res.token, 7);
   }
   return res;
@@ -343,7 +343,7 @@ export async function signIn(payload: { phoneNumber: string; password: string })
     headers: { "Content-Type": "application/json" },
   });
 
-  if (res?.token && isValidToken(res.token)) {
+  if (res?.token) {
     setCookie("token", res.token, 7);
   }
   return res;
@@ -353,9 +353,9 @@ export async function signIn(payload: { phoneNumber: string; password: string })
 export async function fetchCurrentUser(): Promise<User | null> {
   const token = getToken();
   
-  // Don't attempt to fetch user if no valid token
-  if (!token || !isValidToken(token)) {
-    console.warn("[api] fetchCurrentUser: No valid token");
+  // Don't attempt to fetch user if no token
+  if (!token) {
+    console.warn("[api] fetchCurrentUser: No token");
     return null;
   }
 
@@ -562,7 +562,7 @@ export async function createPost(payload: any) {
     method: "POST",
     body: isForm ? (payload as any) : JSON.stringify(payload),
     headers: isForm ? { 
-      ...(token && isValidToken(token) ? { Authorization: `Bearer ${token}` } : {})
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
     } : getAuthHeaders(),
     credentials: "include",
   });

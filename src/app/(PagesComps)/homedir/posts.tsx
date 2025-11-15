@@ -336,7 +336,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       whileHover={{ scale: 1.15 }}
       onClick={(e) => {
         e.stopPropagation();
-        router.push(`/posts/${post.id}#comments`);
+        router.push(`/post/${post.id}#comments`);
       }}
       className={`flex items-center gap-2 text-sm font-semibold ${themeClasses.comment} transition-all duration-300`}
     >
