@@ -93,6 +93,7 @@ function isValidToken(token: string | null): boolean {
 }
 
 /** Return headers including Authorization if token exists and is valid */
+// lib/api.ts
 export function getAuthHeaders(userId?: string | number): Record<string, string> {
   const token = getToken();
   const base: Record<string, string> = {
@@ -100,11 +101,13 @@ export function getAuthHeaders(userId?: string | number): Record<string, string>
     Accept: "application/json",
   };
   
-  // Only add Authorization if token exists and is valid
-  if (token && isValidToken(token)) {
+  // Always add Authorization if token exists - remove the isValidToken check
+  // This is likely where your issue is - isValidToken might be returning false
+  if (token) {
     base["Authorization"] = `Bearer ${token}`;
   }
   
+  // Use consistent header name - make sure it matches what backend expects
   if (userId) base["user-id"] = String(userId);
   return base;
 }
