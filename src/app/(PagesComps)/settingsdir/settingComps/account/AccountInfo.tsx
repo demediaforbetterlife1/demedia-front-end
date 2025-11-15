@@ -33,7 +33,7 @@ const privacyOptions = [
 ];
 
 const AccountInfo: React.FC<AccountInfoProps> = ({ closeModal }) => {
-  const { user, setUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const { theme } = useTheme();
   const { t } = useI18n();
   const themeClasses = getModalThemeClasses(theme);
@@ -167,8 +167,8 @@ const AccountInfo: React.FC<AccountInfoProps> = ({ closeModal }) => {
 
       const updatedProfile = await response.json();
       
-      if (setUser && updatedProfile) {
-        setUser(updatedProfile);
+      if (updateUser && updatedProfile) {
+        updateUser(updatedProfile);
       }
       
       setSuccess("Profile updated successfully!");

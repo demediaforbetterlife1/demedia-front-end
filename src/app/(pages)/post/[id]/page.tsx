@@ -17,7 +17,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { useNotifications } from "@/components/NotificationProvider";
 import CommentModal from "@/components/CommentModal";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, getAuthHeaders } from "@/lib/api";
 
 type PostType = {
   id: number;
@@ -27,6 +27,7 @@ type PostType = {
   liked?: boolean;
   bookmarked?: boolean;
   user?: {
+    id?: number | string;
     name?: string;
     username?: string;
     profilePicture?: string;
@@ -225,6 +226,37 @@ export default function PostDetailPage() {
     router.push(`/profile/${username}`);
   };
 
+  const handleChat = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!post.user?.id || !user?.id) return;
+    
+    const postUserId = typeof post.user.id === 'string' ? parseInt(post.user.id) : post.user.id;
+    const currentUserId = typeof user.id === 'string' ? parseInt(user.id) : parseInt(user.id);
+    
+    if (postUserId === currentUserId) {
+      alert("You cannot chat with yourself!");
+      return;
+    }
+
+    try {
+      const response = await apiFetch("/api/chat/create-or-find", {
+        method: "POST",
+        headers: getAuthHeaders(user.id),
+        body: JSON.stringify({ participantId: postUserId })
+      }, user.id);
+
+      if (!response.ok) {
+        throw new Error("Failed to create/find chat");
+      }
+
+      const chatData = await response.json();
+      router.push(`/messeging/chat/${chatData.id}`);
+    } catch (err) {
+      console.error("Chat error:", err);
+      alert("Failed to open chat. Please try again.");
+    }
+  };
+
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const diff = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -282,9 +314,20 @@ export default function PostDetailPage() {
                 <p className={`text-sm ${themeClasses.textMuted}`}>@{post.user?.username || "user"}</p>
               </div>
             </div>
-            <button className={`p-2 rounded-full ${themeClasses.hover} transition-colors`}>
-              <MoreHorizontal size={16} className={themeClasses.textMuted} />
-            </button>
+            <div className="flex items-center gap-2">
+              {post.user?.id && (typeof post.user.id === 'string' ? parseInt(post.user.id) : post.user.id) !== (user?.id ? parseInt(user.id) : 0) && (
+                <button
+                  onClick={handleChat}
+                  className={`p-2 rounded-full ${themeClasses.hover} transition-colors`}
+                  title="Send message"
+                >
+                  <MessageCircle size={16} className={themeClasses.textMuted} />
+                </button>
+              )}
+              <button className={`p-2 rounded-full ${themeClasses.hover} transition-colors`}>
+                <MoreHorizontal size={16} className={themeClasses.textMuted} />
+              </button>
+            </div>
           </div>
 
           {/* Content */}
