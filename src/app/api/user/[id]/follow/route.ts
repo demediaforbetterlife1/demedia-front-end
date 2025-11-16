@@ -6,7 +6,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const authHeader = request.headers.get('authorization');
     const currentUserId = request.headers.get('user-id');
     
+    // Debug logging
+    console.log('🔍 Follow API Debug:', {
+      targetUserId,
+      hasAuthHeader: !!authHeader,
+      authHeaderPreview: authHeader ? `${authHeader.substring(0, 20)}...` : 'null',
+      currentUserId,
+      allHeaders: Object.fromEntries(request.headers.entries())
+    });
+    
     if (!authHeader || !currentUserId) {
+      console.error('❌ Authentication failed:', { authHeader: !!authHeader, currentUserId });
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
