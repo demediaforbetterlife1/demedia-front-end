@@ -1878,7 +1878,7 @@ const UserPosts = ({
             const response = await fetch(`/api/posts/${postToDelete.id}`, {
                 method: 'DELETE',
                 
-            }, user?.id);
+            });
 
             if (response.ok) {
                 const result = await response.json();
