@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'Cookie': `token=${token}`, // Forward cookie for backend auth
-          'user-id': userId,
+          'user-id': userId || '',
         },
         body: JSON.stringify(body),
       });

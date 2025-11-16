@@ -63,7 +63,7 @@ export async function POST(
         method: 'POST',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId,
+          'user-id': userId || '',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ content: body.content.trim() }),
@@ -85,4 +85,3 @@ export async function POST(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-

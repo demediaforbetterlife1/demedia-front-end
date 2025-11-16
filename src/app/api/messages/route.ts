@@ -29,12 +29,12 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId,
+          'user-id': userId || '',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           chatId: parseInt(chatId),
-          senderId: parseInt(userId),
+          senderId: parseInt(userId || '0'),
           content,
           type
         })
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const mockMessage = {
       id: `msg_${Date.now()}`,
       chatId: parseInt(chatId),
-      senderId: parseInt(userId),
+      senderId: parseInt(userId || '0'),
       content,
       type,
       createdAt: new Date().toISOString(),

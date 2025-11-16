@@ -31,7 +31,7 @@ export async function GET(
         method: 'GET',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId,
+          'user-id': userId || '',
           'Content-Type': 'application/json',
         },
         // Add timeout to prevent hanging

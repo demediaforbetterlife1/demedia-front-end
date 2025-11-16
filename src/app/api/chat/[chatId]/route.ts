@@ -32,7 +32,7 @@ export async function GET(
         method: 'GET',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId,
+          'user-id': userId || '',
           'Content-Type': 'application/json',
         },
         // Add timeout to prevent hanging
@@ -103,7 +103,7 @@ export async function DELETE(
         method: 'DELETE',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId,
+          'user-id': userId || '',
           'Content-Type': 'application/json',
         }
       });

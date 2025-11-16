@@ -87,7 +87,7 @@ export async function POST(
         method: 'POST',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId,
+          'user-id': userId || '',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
@@ -114,7 +114,7 @@ export async function POST(
         content: body.content,
         createdAt: new Date().toISOString(),
         user: {
-          id: parseInt(userId),
+          id: parseInt(userId || '0'),
           name: 'User',
           username: 'user',
           profilePicture: null,
