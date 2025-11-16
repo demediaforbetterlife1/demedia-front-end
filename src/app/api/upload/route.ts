@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       const backendFormData = new FormData();
       backendFormData.append('file', file);
       backendFormData.append('type', type);
-      backendFormData.append('userId', userId);
+      backendFormData.append('userId', userId || '');
 
       const backendResponse = await fetch('https://demedia-backend.fly.dev/api/upload', {
         method: 'POST',
