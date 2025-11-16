@@ -599,7 +599,7 @@ export default function ProfilePage() {
                     title: 'Chat Error',
                     body: 'Failed to start chat. Please try again.',
                     tag: 'chat_error'
-                }, user?.id);
+                });
                 // Fallback: try to navigate to messaging page
                 router.push('/messeging');
             }
@@ -610,7 +610,7 @@ export default function ProfilePage() {
                 title: 'Chat Error',
                 body: 'Failed to start chat. Please try again.',
                 tag: 'chat_error'
-            }, user?.id);
+            });
             // Fallback: try to navigate to messaging page
             router.push('/messeging');
         }
@@ -670,7 +670,7 @@ export default function ProfilePage() {
                         title: 'Photo Updated',
                         body: `${type === 'profile' ? 'Profile' : 'Cover'} photo updated successfully!`,
                         tag: 'photo_updated'
-                    }, user?.id);
+                    });
                 } catch (error) {
                     console.log('Notification service not available');
                 }
@@ -708,7 +708,7 @@ export default function ProfilePage() {
                         title: 'Upload Failed',
                         body: `Failed to upload ${type} photo. Please try again.`,
                         tag: 'upload_error'
-                    }, user?.id);
+                    });
                 } catch (error) {
                     alert(`Failed to upload ${type} photo. Please try again.`);
                 }
@@ -722,7 +722,7 @@ export default function ProfilePage() {
                     title: 'Upload Error',
                     body: `Error uploading ${type} photo. Please try again.`,
                     tag: 'upload_error'
-                }, user?.id);
+                });
             } catch (error) {
                 alert(`Error uploading ${type} photo. Please try again.`);
             }
@@ -1895,7 +1895,7 @@ const UserPosts = ({
                     title: 'Post Deleted',
                     body: 'Your post has been successfully deleted',
                     tag: 'post_deleted'
-                }, user?.id);
+                });
             } else {
                 const errorText = await response.text();
                 console.error('Delete failed:', response.status, errorText);
@@ -1913,7 +1913,7 @@ const UserPosts = ({
                     title: 'Delete Failed',
                     body: errorMessage,
                     tag: 'delete_error'
-                }, user?.id);
+                });
             }
         } catch (error) {
             console.error('Error deleting post:', error);
@@ -1921,7 +1921,7 @@ const UserPosts = ({
                 title: 'Network Error',
                 body: `Network error: ${error instanceof Error ? error.message : 'Unable to connect to server'}`,
                 tag: 'network_error'
-            }, user?.id);
+            });
         } finally {
             setIsDeleting(false);
         }
