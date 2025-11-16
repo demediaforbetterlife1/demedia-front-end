@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           chatId: parseInt(chatId),
-          senderId: parseInt(userId),
+          senderId: parseInt(userId || '0'),
           content,
           type
         })
