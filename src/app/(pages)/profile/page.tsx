@@ -660,7 +660,7 @@ export default function ProfilePage() {
                     // Update user context with new photo URL
                     updateUser({
                         [type === 'profile' ? 'profilePicture' : 'coverPhoto']: photoUrlWithCache
-                    }, user?.id);
+                    });
                 }
                 
                 // Show success notification
