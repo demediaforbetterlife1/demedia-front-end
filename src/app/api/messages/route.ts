@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const mockMessage = {
       id: `msg_${Date.now()}`,
       chatId: parseInt(chatId),
-      senderId: parseInt(userId),
+      senderId: parseInt(userId || '0'),
       content,
       type,
       createdAt: new Date().toISOString(),
