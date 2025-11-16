@@ -11,9 +11,25 @@ export async function GET(
       return NextResponse.json({ error: "Missing post ID" }, { status: 400 });
     }
 
+    // Extract token from cookies or Authorization header
+    const token = request.cookies.get('token')?.value || 
+                  request.headers.get('authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    const authHeader = `Bearer ${token}`;
+    const userId = request.headers.get('user-id');
+
     const backendUrl = "https://demedia-backend.fly.dev";
     const res = await fetch(`${backendUrl}/api/posts/${id}`, {
       cache: "no-store",
+      headers: {
+        'Authorization': authHeader,
+        'user-id': userId || '',
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!res.ok) {
@@ -53,17 +69,16 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
     }
     
-    // Get the authorization token and user ID
-    const authHeader = request.headers.get('authorization');
-    const userId = request.headers.get('user-id');
-    
-    if (!authHeader) {
-      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+    // Extract token from cookies or Authorization header
+    const token = request.cookies.get('token')?.value || 
+                  request.headers.get('authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 401 });
-    }
+    const authHeader = `Bearer ${token}`;
+    const userId = request.headers.get('user-id');
 
     console.log('Post update request:', { postId, body, userId });
 
@@ -75,7 +90,7 @@ export async function PUT(
         method: 'PUT',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId,
+          'user-id': userId || '',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
@@ -114,17 +129,16 @@ export async function DELETE(
   try {
     const { id: postId } = await params;
     
-    // Get the authorization token and user ID
-    const authHeader = request.headers.get('authorization');
-    const userId = request.headers.get('user-id');
-    
-    if (!authHeader) {
-      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+    // Extract token from cookies or Authorization header
+    const token = request.cookies.get('token')?.value || 
+                  request.headers.get('authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 401 });
-    }
+    const authHeader = `Bearer ${token}`;
+    const userId = request.headers.get('user-id');
 
     console.log('Post delete request:', { postId, userId });
 
@@ -135,7 +149,7 @@ export async function DELETE(
         method: 'DELETE',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId,
+          'user-id': userId || '',
           'Content-Type': 'application/json',
         },
       });
