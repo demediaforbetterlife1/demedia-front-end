@@ -110,17 +110,34 @@ const deleteCookie = (name: string) => {
 // localStorage helpers
 const getLocalStorageToken = (): string | null => {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("auth_token");
+  return localStorage.getItem("token");
 };
 
 const setLocalStorageToken = (token: string) => {
   if (typeof window === "undefined") return;
-  localStorage.setItem("auth_token", token);
+  localStorage.setItem("token", token);
 };
 
 const removeLocalStorageToken = () => {
   if (typeof window === "undefined") return;
+  localStorage.removeItem("token");
+  // Also remove old key for cleanup
   localStorage.removeItem("auth_token");
+};
+
+// Migration helper: move old "auth_token" to new "token" key
+const migrateTokenStorage = () => {
+  if (typeof window === "undefined") return;
+  
+  const oldToken = localStorage.getItem("auth_token");
+  const newToken = localStorage.getItem("token");
+  
+  // If we have old token but no new token, migrate it
+  if (oldToken && !newToken) {
+    console.log("[Auth] Migrating token from old storage key");
+    localStorage.setItem("token", oldToken);
+    localStorage.removeItem("auth_token");
+  }
 };
 
 /* =======================
@@ -243,6 +260,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setInitComplete(false);
 
       try {
+        // Migrate old token storage if needed
+        migrateTokenStorage();
+        
         // Check if we have any token stored
         const hasCookieToken = !!getCookie("token");
         const hasStorageToken = !!getLocalStorageToken();

@@ -191,7 +191,7 @@ export default function ProfilePage() {
         isOwnProfile,
         url: window.location.href,
         searchParams: Object.fromEntries(searchParams.entries())
-    });
+    }, user?.id);
     
     // Additional validation to prevent wrong profile loading
     if (userIdFromUrl && userIdFromUrl !== user?.id?.toString()) {
@@ -199,7 +199,7 @@ export default function ProfilePage() {
             requestedUserId: userIdFromUrl,
             currentUserId: user?.id,
             isDifferentUser: true
-        });
+        }, user?.id);
     }
     
     // Ensure userId is always valid (only after auth finished loading)
@@ -360,11 +360,7 @@ export default function ProfilePage() {
                 console.log('Profile data loaded:', data);
                 
                 // Fetch stories for this user
-                const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
-                    headers: getAuthHeaders(user?.id),
-                    
-                    credentials: 'include', // Automatically sends httpOnly cookies
-                });
+                const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`);
                 
                 let userStories = [];
                 if (storiesResponse.ok) {
@@ -374,7 +370,6 @@ export default function ProfilePage() {
                 // Fetch DeSnaps for this user
                 const deSnapsResponse = await apiFetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
                     method: 'GET',
-                    headers: getAuthHeaders(user?.id),
                 }, user?.id);
                 
                 let userDeSnaps = [];
@@ -465,11 +460,7 @@ export default function ProfilePage() {
         setIsRefreshing(true);
         try {
             // Refresh stories
-            const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
-                headers: getAuthHeaders(user?.id),
-                
-                credentials: 'include', // Automatically sends httpOnly cookies
-            });
+            const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`);
             
             let userStories = [];
             if (storiesResponse.ok) {
@@ -477,11 +468,7 @@ export default function ProfilePage() {
             }
 
             // Refresh DeSnaps
-            const deSnapsResponse = await fetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
-                headers: getAuthHeaders(user?.id),
-                
-                credentials: 'include', // Automatically sends httpOnly cookies
-            });
+            const deSnapsResponse = await fetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`);
             
             let userDeSnaps = [];
             if (deSnapsResponse.ok) {
@@ -583,7 +570,6 @@ async function handleFollowToggle() {
             // Create or find existing chat with this user
             const res = await apiFetch('/api/chat/create-or-find', {
                 method: 'POST',
-                headers: getAuthHeaders(user?.id),
                 
                 body: JSON.stringify({
                     participantId: profile.id
@@ -1823,7 +1809,6 @@ const UserPosts = ({
             // Pass user ID to apiFetch so it can be included in headers for like status checking
             const response = await apiFetch(`/api/posts/user/${userId}`, {
                 method: 'GET',
-                headers: getAuthHeaders(user?.id),
             }, user?.id);
             
             if (!response.ok) {
@@ -1880,9 +1865,7 @@ const UserPosts = ({
         try {
             const response = await fetch(`/api/posts/${postToDelete.id}`, {
                 method: 'DELETE',
-                headers: getAuthHeaders(user?.id),
                 
-                credentials: 'include', // Automatically sends httpOnly cookies
             });
 
             if (response.ok) {
@@ -2104,7 +2087,6 @@ const UserPosts = ({
                                     try {
                                         const response = await apiFetch(`/api/posts/${post.id}/like`, {
                                             method: 'POST',
-                                            headers: getAuthHeaders(user?.id),
                                         }, user?.id);
                                         
                                         if (!response.ok) throw new Error('Like request failed');
