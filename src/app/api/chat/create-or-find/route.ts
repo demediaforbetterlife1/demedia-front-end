@@ -3,12 +3,17 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     const { participantId } = await request.json();
-    const authHeader = request.headers.get('authorization');
-    const userId = request.headers.get('user-id');
-
-    if (!authHeader || !userId) {
+    
+    // Get the auth token from cookies or Authorization header
+    const token = request.cookies.get('token')?.value || 
+                  request.headers.get('authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+    
+    const authHeader = `Bearer ${token}`;
+    const userId = request.headers.get('user-id');
 
     if (!participantId) {
       return NextResponse.json({ error: 'Participant ID required' }, { status: 400 });
