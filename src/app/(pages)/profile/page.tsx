@@ -359,9 +359,7 @@ export default function ProfilePage() {
                 console.log('Profile data loaded:', data);
                 
                 // Fetch stories for this user
-                const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
-                    
-                }, user?.id);
+                const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`);
                 
                 let userStories = [];
                 if (storiesResponse.ok) {
