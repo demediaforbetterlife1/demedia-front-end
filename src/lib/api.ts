@@ -58,15 +58,18 @@ const setCookie = (name: string, value: string, days: number = 7) => {
 };
 
 const getCookie = (name: string): string | null => {
-  if (typeof window === "undefined") return null;
-  
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+  if (typeof document === "undefined") return null;
+
+  const nameEQ = `${name}=`;
+  const cookies = document.cookie.split(";");
+
+  for (let cookie of cookies) {
+    cookie = cookie.trim();
+    if (cookie.startsWith(nameEQ)) {
+      return decodeURIComponent(cookie.substring(nameEQ.length));
+    }
   }
+
   return null;
 };
 
@@ -79,9 +82,26 @@ const deleteCookie = (name: string) => {
 /* -------------------------- Auth helpers --------------------------------- */
 /* ------------------------------------------------------------------------- */
 
-/** Only token is stored in cookies — everything else pulled from backend */
+/** Get token from cookies first, then localStorage as fallback (matches AuthContext behavior) */
 export function getToken(): string | null {
-  return getCookie("token");
+  // First try cookies (primary storage)
+  const cookieToken = getCookie("token");
+  if (cookieToken) {
+    console.log('🔑 Token retrieved from cookies');
+    return cookieToken;
+  }
+  
+  // Fallback to localStorage (secondary storage)
+  if (typeof window !== "undefined") {
+    const localToken = localStorage.getItem("token");
+    if (localToken) {
+      console.log('🔑 Token retrieved from localStorage (fallback)');
+      return localToken;
+    }
+  }
+  
+  console.warn('⚠️ No token found in cookies or localStorage');
+  return null;
 }
 
 /** Validate token format */
@@ -105,10 +125,25 @@ export function getAuthHeaders(userId?: string | number): Record<string, string>
   // This is likely where your issue is - isValidToken might be returning false
   if (token) {
     base["Authorization"] = `Bearer ${token}`;
+    console.log('✅ Authorization header added to request');
+  } else {
+    console.error('❌ No token available for Authorization header');
   }
   
   // Use consistent header name - make sure it matches what backend expects
-  if (userId) base["user-id"] = String(userId);
+  if (userId) {
+    base["user-id"] = String(userId);
+    console.log(`✅ User-ID header added: ${userId}`);
+  } else {
+    console.warn('⚠️ No userId provided for user-id header');
+  }
+  
+  console.log('🔍 Final auth headers:', { 
+    hasAuth: !!base["Authorization"], 
+    hasUserId: !!base["user-id"],
+    userId: base["user-id"]
+  });
+  
   return base;
 }
 
