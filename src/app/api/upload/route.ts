@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const userId = request.headers.get('user-id');
-    
-    if (!authHeader || !userId) {
+    // Extract token from cookies or Authorization header
+    const token = request.cookies.get('token')?.value || 
+                  request.headers.get('authorization')?.replace('Bearer ', '');
+
+    if (!token) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+
+    const authHeader = `Bearer ${token}`;
+    const userId = request.headers.get('user-id');
 
     const formData = await request.formData();
     const file = formData.get('file') as File;

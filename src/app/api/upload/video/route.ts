@@ -4,17 +4,16 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     
-    // Get the authorization token and user ID
-    const authHeader = request.headers.get('authorization');
-    const userId = request.headers.get('user-id');
-    
-    if (!authHeader) {
-      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+    // Extract token from cookies or Authorization header
+    const token = request.cookies.get('token')?.value || 
+                  request.headers.get('authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 401 });
-    }
+    const authHeader = `Bearer ${token}`;
+    const userId = request.headers.get('user-id');
 
     // Try to connect to the actual backend first
     try {
@@ -22,7 +21,7 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId,
+          'user-id': userId || '',
         },
         body: formData,
       });
