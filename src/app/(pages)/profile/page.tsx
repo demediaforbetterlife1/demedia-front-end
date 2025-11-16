@@ -360,7 +360,7 @@ export default function ProfilePage() {
                 console.log('Profile data loaded:', data);
                 
                 // Fetch stories for this user
-                const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`);
+                const storiesResponse = await apiFetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, { method: "GET" }, user?.id);
                 
                 let userStories = [];
                 if (storiesResponse.ok) {
@@ -460,7 +460,7 @@ export default function ProfilePage() {
         setIsRefreshing(true);
         try {
             // Refresh stories
-            const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`);
+            const storiesResponse = await apiFetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, { method: "GET" }, user?.id);
             
             let userStories = [];
             if (storiesResponse.ok) {
@@ -468,7 +468,7 @@ export default function ProfilePage() {
             }
 
             // Refresh DeSnaps
-            const deSnapsResponse = await fetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`);
+            const deSnapsResponse = await apiFetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, { method: "GET" }, user?.id);
             
             let userDeSnaps = [];
             if (deSnapsResponse.ok) {
@@ -1863,7 +1863,7 @@ const UserPosts = ({
 
         setIsDeleting(true);
         try {
-            const response = await fetch(`/api/posts/${postToDelete.id}`, {
+            const response = await apiFetch(`/api/posts/${postToDelete.id}`, {
                 method: 'DELETE',
                 
             });
