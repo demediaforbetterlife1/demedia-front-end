@@ -459,9 +459,7 @@ export default function ProfilePage() {
         setIsRefreshing(true);
         try {
             // Refresh stories
-            const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
-                
-            }, user?.id);
+            const storiesResponse = await fetch(`/api/stories/user/${userId}?viewerId=${user?.id}`);
             
             let userStories = [];
             if (storiesResponse.ok) {
@@ -469,9 +467,7 @@ export default function ProfilePage() {
             }
 
             // Refresh DeSnaps
-            const deSnapsResponse = await fetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
-                
-            }, user?.id);
+            const deSnapsResponse = await fetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`);
             
             let userDeSnaps = [];
             if (deSnapsResponse.ok) {
