@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           chatId: parseInt(chatId),
-          senderId: parseInt(userId),
+          senderId: parseInt(userId || '0'),
           content,
           type
         })
@@ -57,13 +57,13 @@ export async function POST(request: NextRequest) {
     const mockMessage = {
       id: `msg_${Date.now()}`,
       chatId: parseInt(chatId),
-      senderId: parseInt(userId),
+      senderId: parseInt(userId || '0'),
       content,
       type,
       createdAt: new Date().toISOString(),
       status: 'sent',
       sender: {
-        id: userId,
+        id: userId || '0',
         name: "You",
         username: "you",
         profilePicture: null
