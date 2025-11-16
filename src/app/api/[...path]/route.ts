@@ -32,9 +32,8 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]): Promise<R
   const headers = new Headers(req.headers);
   if (headers.has("host")) headers.delete("host");
 
-  // Forward cookies explicitly
-  const cookies = req.cookies.getAll();
-  const cookieHeader = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+  // Forward cookies explicitly - FIXED: Remove duplicate cookie declarations
+  const cookieHeader = req.headers.get('cookie');
   if (cookieHeader) {
     headers.set('Cookie', cookieHeader);
   }

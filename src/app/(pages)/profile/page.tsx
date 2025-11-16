@@ -101,6 +101,7 @@ import ProfileCustomization from "@/components/ProfileCustomization";
 import PremiumUserIndicator from "@/components/PremiumUserIndicator";
 import PhotoUploadModal from "@/components/PhotoUploadModal";
 import { getThemeClasses, getButtonClasses, getCardClasses } from "@/utils/themeUtils";
+import { followUser, unfollowUser } from '@/lib/api';
 
 interface Story {
     id: number;
@@ -521,59 +522,46 @@ export default function ProfilePage() {
         return () => clearInterval(interval);
     }, [refreshProfile, isOwnProfile]);
 
-    async function handleFollowToggle() {
-        if (!profile || busyFollow) return;
-        setBusyFollow(true);
 
-        const prevIsFollowing = isFollowing;
-        const prevFollowers = profile.followersCount;
+async function handleFollowToggle() {
+    if (!profile || busyFollow) return;
+    setBusyFollow(true);
 
-        // Optimistic update
-        setIsFollowing(!prevIsFollowing);
+    const prevIsFollowing = isFollowing;
+    const prevFollowers = profile.followersCount;
+
+    // Optimistic update
+    setIsFollowing(!prevIsFollowing);
+    setProfile((p) => p ? ({
+        ...p,
+        followersCount: prevIsFollowing ? prevFollowers - 1 : prevFollowers + 1,
+    }) : null);
+
+    try {
+        if (prevIsFollowing) {
+            await unfollowUser(profile.id);
+        } else {
+            await followUser(profile.id);
+        }
+        
+        // Refresh profile data to get accurate counts
+        const updatedProfile = await getUserProfile(profile.id);
+        if (updatedProfile) {
+            setProfile(updatedProfile);
+            setIsFollowing(updatedProfile.isFollowing || false);
+        }
+    } catch (err) {
+        console.error("Follow toggle error:", err);
+        // Revert optimistic update
+        setIsFollowing(prevIsFollowing);
         setProfile((p) => p ? ({
             ...p,
-            followersCount: prevIsFollowing
-                ? prevFollowers - 1
-                : prevFollowers + 1,
+            followersCount: prevFollowers,
         }) : null);
-
-        try {
-            const endpoint = prevIsFollowing
-                ? `/api/user/${profile.id}/unfollow`
-                : `/api/user/${profile.id}/follow`;
-
-            const res = await apiFetch(endpoint, { 
-                method: "POST",
-                
-                body: JSON.stringify({
-                    followerId: user?.id
-                })
-            }, user?.id);
-            if (!res.ok) throw new Error("Follow request failed");
-
-            const payload = await res.json().catch(() => null);
-            if (payload) {
-                setProfile((p) => p ? ({
-                    ...p,
-                    followersCount:
-                        payload.followersCount ??
-                        p.followersCount,
-                }) : null);
-                if (typeof payload.isFollowing !== "undefined") {
-                    setIsFollowing(Boolean(payload.isFollowing));
-                }
-            }
-        } catch (err) {
-            console.error("Follow toggle error:", err);
-            setIsFollowing(prevIsFollowing);
-            setProfile((p) => p ? ({
-                ...p,
-                followersCount: prevFollowers,
-            }) : null);
-        } finally {
-            setBusyFollow(false);
-        }
+    } finally {
+        setBusyFollow(false);
     }
+}
 
     async function handleStartChat() {
         if (!profile || !user?.id) return;
