@@ -537,10 +537,10 @@ export default function ProfilePage() {
     async function handleFollowToggle() {
         if (!profile || busyFollow) return;
         setBusyFollow(true);
-
+    
         const prevIsFollowing = isFollowing;
         const prevFollowers = profile.followersCount;
-
+    
         // Optimistic update
         setIsFollowing(!prevIsFollowing);
         setProfile((p) => p ? ({
@@ -549,30 +549,29 @@ export default function ProfilePage() {
                 ? prevFollowers - 1
                 : prevFollowers + 1,
         }) : null);
-
+    
         try {
             const endpoint = prevIsFollowing
                 ? `/api/user/${profile.id}/unfollow`
                 : `/api/user/${profile.id}/follow`;
-
+    
             const res = await fetch(endpoint, { 
                 method: "POST",
-                headers: getAuthHeaders(user?.id),
-                
-                credentials: 'include', // Automatically sends httpOnly cookies
-                body: JSON.stringify({
-                    followerId: user?.id
-                })
+                credentials: 'include', // This sends cookies automatically
+                // Remove getAuthHeaders() - backend uses cookies, not headers
             });
-            if (!res.ok) throw new Error("Follow request failed");
-
+    
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error(`Follow error ${res.status}:`, errorText);
+                throw new Error("Follow request failed");
+            }
+    
             const payload = await res.json().catch(() => null);
             if (payload) {
                 setProfile((p) => p ? ({
                     ...p,
-                    followersCount:
-                        payload.followersCount ??
-                        p.followersCount,
+                    followersCount: payload.followersCount ?? p.followersCount,
                 }) : null);
                 if (typeof payload.isFollowing !== "undefined") {
                     setIsFollowing(Boolean(payload.isFollowing));
@@ -580,6 +579,7 @@ export default function ProfilePage() {
             }
         } catch (err) {
             console.error("Follow toggle error:", err);
+            // Revert optimistic update
             setIsFollowing(prevIsFollowing);
             setProfile((p) => p ? ({
                 ...p,
