@@ -231,7 +231,7 @@ const AccountInfo: React.FC<AccountInfoProps> = ({ closeModal }) => {
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                     <img
-                      src={profileData.profilePicture || (typedUser?.profilePicture ?? "") || "/default-avatar.png"}
+                      src={profileData.profilePicture || (typedUser?.profilePicture ?? "") || "/assets/images/default-avatar.svg"}
                       alt="Profile"
                       className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
                     />
