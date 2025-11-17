@@ -412,7 +412,7 @@ export async function getUserProfile(userId: string | number) {
     const res = await apiFetch(`/api/users/${userId}/profile`, {
       method: "GET",
       cache: "no-store",
-    });
+    }, userId);
     
     console.log("[api] getUserProfile: Response status:", res.status);
     

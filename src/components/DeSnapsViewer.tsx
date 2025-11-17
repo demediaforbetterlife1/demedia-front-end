@@ -20,6 +20,8 @@ import {
     ChevronLeft,
     ChevronRight
 } from "lucide-react";
+import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DeSnap {
     id: number;
@@ -50,6 +52,7 @@ const visibilityIcons = {
 };
 
 export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated }: DeSnapsViewerProps) {
+    const { user } = useAuth();
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(true);
     const [currentTime, setCurrentTime] = useState(0);
@@ -129,16 +132,12 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
         const updatedDeSnap = { ...deSnap, isLiked: newLiked, likes: newLikes };
         onDeSnapUpdated?.(updatedDeSnap);
         
-        // TODO: Send API request to like/unlike
+        // Send API request to like/unlike
         try {
-            await fetch(`/api/desnaps/${deSnap.id}/like`, {
+            await apiFetch(`/api/desnaps/${deSnap.id}/like`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                },
                 body: JSON.stringify({ liked: newLiked })
-            });
+            }, user?.id);
         } catch (error) {
             console.error('Error updating like:', error);
         }
@@ -152,16 +151,12 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
         const updatedDeSnap = { ...deSnap, isBookmarked: newBookmarked };
         onDeSnapUpdated?.(updatedDeSnap);
         
-        // TODO: Send API request to bookmark/unbookmark
+        // Send API request to bookmark/unbookmark
         try {
-            await fetch(`/api/desnaps/${deSnap.id}/bookmark`, {
+            await apiFetch(`/api/desnaps/${deSnap.id}/bookmark`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                },
                 body: JSON.stringify({ bookmarked: newBookmarked })
-            });
+            }, user?.id);
         } catch (error) {
             console.error('Error updating bookmark:', error);
         }
@@ -178,12 +173,9 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
         if (isLoadingComments) return;
         setIsLoadingComments(true);
         try {
-            const response = await fetch(`/api/desnaps/${deSnap.id}/comments`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json',
-                },
-            });
+            const response = await apiFetch(`/api/desnaps/${deSnap.id}/comments`, {
+                method: 'GET'
+            }, user?.id);
             if (response.ok) {
                 const data = await response.json();
                 setComments(Array.isArray(data) ? data : []);
@@ -202,14 +194,10 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
 
         setIsSubmittingComment(true);
         try {
-            const response = await fetch(`/api/desnaps/${deSnap.id}/comments`, {
+            const response = await apiFetch(`/api/desnaps/${deSnap.id}/comments`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({ content: newComment.trim() }),
-            });
+            }, user?.id);
 
             if (response.ok) {
                 const newCommentData = await response.json();

@@ -76,7 +76,7 @@ import {
     Badge,
     Crown as CrownIcon
 } from "lucide-react";
-import { getUserProfile, apiFetch, getAuthHeaders } from "../../../lib/api";
+import { getUserProfile, apiFetch, getAuthHeaders } from "../../../lib/api"; // Fixed duplicate import
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getEnhancedThemeClasses } from "@/utils/enhancedThemeUtils";
@@ -360,7 +360,9 @@ export default function ProfilePage() {
                 console.log('Profile data loaded:', data);
                 
                 // Fetch stories for this user
-                const storiesResponse = await apiFetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, { method: "GET" }, user?.id);
+                const storiesResponse = await apiFetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
+                    method: 'GET'
+                });
                 
                 let userStories = [];
                 if (storiesResponse.ok) {
@@ -370,7 +372,8 @@ export default function ProfilePage() {
                 // Fetch DeSnaps for this user
                 const deSnapsResponse = await apiFetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
                     method: 'GET',
-                }, user?.id);
+                    headers: getAuthHeaders(user?.id),
+                });
                 
                 let userDeSnaps = [];
                 if (deSnapsResponse.ok) {
@@ -460,7 +463,9 @@ export default function ProfilePage() {
         setIsRefreshing(true);
         try {
             // Refresh stories
-            const storiesResponse = await apiFetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, { method: "GET" }, user?.id);
+            const storiesResponse = await apiFetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
+                    method: 'GET'
+            });
             
             let userStories = [];
             if (storiesResponse.ok) {
@@ -468,7 +473,9 @@ export default function ProfilePage() {
             }
 
             // Refresh DeSnaps
-            const deSnapsResponse = await apiFetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, { method: "GET" }, user?.id);
+            const deSnapsResponse = await apiFetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
+                method: 'GET'
+            });
             
             let userDeSnaps = [];
             if (deSnapsResponse.ok) {
@@ -558,8 +565,42 @@ async function handleFollowToggle() {
             ...p,
             followersCount: prevFollowers,
         }) : null);
-    } finally {
-        setBusyFollow(false);
+
+        try {
+            const endpoint = prevIsFollowing
+                ? `/api/user/${profile.id}/unfollow`
+                : `/api/user/${profile.id}/follow`;
+
+            const res = await apiFetch(endpoint, { 
+                method: "POST",
+                body: JSON.stringify({
+                    followerId: user?.id
+                })
+            });
+            if (!res.ok) throw new Error("Follow request failed");
+
+            const payload = await res.json().catch(() => null);
+            if (payload) {
+                setProfile((p) => p ? ({
+                    ...p,
+                    followersCount:
+                        payload.followersCount ??
+                        p.followersCount,
+                }) : null);
+                if (typeof payload.isFollowing !== "undefined") {
+                    setIsFollowing(Boolean(payload.isFollowing));
+                }
+            }
+        } catch (err) {
+            console.error("Follow toggle error:", err);
+            setIsFollowing(prevIsFollowing);
+            setProfile((p) => p ? ({
+                ...p,
+                followersCount: prevFollowers,
+            }) : null);
+        } finally {
+            setBusyFollow(false);
+        }
     }
 }
 
@@ -570,7 +611,6 @@ async function handleFollowToggle() {
             // Create or find existing chat with this user
             const res = await apiFetch('/api/chat/create-or-find', {
                 method: 'POST',
-                
                 body: JSON.stringify({
                     participantId: profile.id
                 })
@@ -619,7 +659,7 @@ async function handleFollowToggle() {
             const response = await apiFetch(endpoint, {
                 method: 'POST',
                 body: formData,
-            }, user?.id);
+            });
             
             if (response.ok) {
                 const data = await response.json();
@@ -1809,7 +1849,8 @@ const UserPosts = ({
             // Pass user ID to apiFetch so it can be included in headers for like status checking
             const response = await apiFetch(`/api/posts/user/${userId}`, {
                 method: 'GET',
-            }, user?.id);
+                headers: getAuthHeaders(user?.id),
+            });
             
             if (!response.ok) {
                 throw new Error('Failed to fetch posts');
@@ -1865,8 +1906,7 @@ const UserPosts = ({
         try {
             const response = await apiFetch(`/api/posts/${postToDelete.id}`, {
                 method: 'DELETE',
-                
-            });
+            }, user?.id);
 
             if (response.ok) {
                 const result = await response.json();
@@ -2087,7 +2127,8 @@ const UserPosts = ({
                                     try {
                                         const response = await apiFetch(`/api/posts/${post.id}/like`, {
                                             method: 'POST',
-                                        }, user?.id);
+                                            headers: getAuthHeaders(user?.id),
+                                        });
                                         
                                         if (!response.ok) throw new Error('Like request failed');
                                         

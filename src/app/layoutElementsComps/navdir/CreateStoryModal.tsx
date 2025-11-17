@@ -294,7 +294,7 @@ export default function CreateStoryModal({ isOpen, onClose, onStoryCreated }: Cr
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className={`fixed inset-0 ${themeClasses.modalOverlay} flex items-start justify-center z-[9999] p-4 pt-20`}
+                className={`fixed inset-0 ${themeClasses.modalOverlay} flex items-start justify-center z-[99999] p-4 pt-20`}
                 onClick={onClose}
             >
                 <motion.div
