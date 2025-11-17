@@ -6,7 +6,6 @@ export async function GET(
 ) {
   let chatId: string = '';
   let authHeader: string | null = null;
-  let userId: string | null = null;
   
   try {
     const resolvedParams = await params;
@@ -21,7 +20,6 @@ export async function GET(
     }
     
     authHeader = `Bearer ${token}`;
-    userId = request.headers.get('user-id');
 
     console.log('Fetching chat details for chatId:', chatId);
 
@@ -32,7 +30,6 @@ export async function GET(
         method: 'GET',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId || '',
           'Content-Type': 'application/json',
         },
         // Add timeout to prevent hanging
@@ -62,8 +59,7 @@ export async function GET(
       message: errorMessage, 
       stack: errorStack, 
       chatId,
-      authHeader: !!authHeader,
-      userId 
+      authHeader: !!authHeader
     });
     return NextResponse.json({ 
       error: 'Internal server error',
@@ -78,7 +74,6 @@ export async function DELETE(
 ) {
   let chatId: string = '';
   let authHeader: string | null = null;
-  let userId: string | null = null;
   
   try {
     const resolvedParams = await params;
@@ -93,7 +88,6 @@ export async function DELETE(
     }
     
     authHeader = `Bearer ${token}`;
-    userId = request.headers.get('user-id');
 
     console.log('Deleting chat:', chatId);
 
@@ -103,7 +97,6 @@ export async function DELETE(
         method: 'DELETE',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId || '',
           'Content-Type': 'application/json',
         }
       });
@@ -132,8 +125,7 @@ export async function DELETE(
       message: errorMessage, 
       stack: errorStack, 
       chatId,
-      authHeader: !!authHeader,
-      userId 
+      authHeader: !!authHeader
     });
     return NextResponse.json({ 
       error: 'Internal server error',
