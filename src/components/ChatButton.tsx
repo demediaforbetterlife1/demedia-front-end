@@ -22,28 +22,21 @@ export default function ChatButton({ targetUserId, targetUserName, className = "
         setIsLoading(true);
         
         try {
-            // Check if chat already exists
-            const existingChatResponse = await apiFetch(`/api/chat/find/${targetUserId}`, {}, user?.id);
-            
-            if (existingChatResponse.ok) {
-                const existingChat = await existingChatResponse.json();
-                router.push(`/messeging/chat/${existingChat.id}`);
-                return;
-            }
-
-            // Create new chat
-            const response = await apiFetch('/api/chat', {
+            // Use the create-or-find endpoint which handles both cases
+            const response = await apiFetch('/api/chat/create-or-find', {
                 method: 'POST',
                 body: JSON.stringify({
-                    participants: [user.id, targetUserId],
-                    chatName: `Chat with ${targetUserName}`
+                    participantId: targetUserId
                 })
             }, user?.id);
 
             if (response.ok) {
-                const newChat = await response.json();
-                router.push(`/messeging/chat/${newChat.id}`);
+                const chatData = await response.json();
+                console.log('Chat created/found:', chatData);
+                router.push(`/messeging/chat/${chatData.id}`);
             } else {
+                const errorText = await response.text();
+                console.error('Failed to create/find chat:', response.status, errorText);
                 alert('Failed to start chat. Please try again.');
             }
         } catch (error) {
