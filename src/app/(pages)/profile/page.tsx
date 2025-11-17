@@ -546,9 +546,9 @@ async function handleFollowToggle() {
 
     try {
         if (prevIsFollowing) {
-            await unfollowUser(profile.id);
+            await unfollowUser(profile.id, user?.id);
         } else {
-            await followUser(profile.id);
+            await followUser(profile.id, user?.id);
         }
         
         // Refresh profile data to get accurate counts

@@ -471,10 +471,10 @@ export async function updateUserProfile(updates: Partial<User>) {
 /* ----------------------------- Follow endpoints ------------------------- */
 
 /** Follow a user */
-export async function followUser(targetUserId: string | number) {
+export async function followUser(targetUserId: string | number, currentUserId?: string | number) {
   const res = await apiFetch(`/api/user/${targetUserId}/follow`, {
     method: "POST",
-  });
+  }, currentUserId);
   
   if (!res.ok) {
     const errorText = await res.text();
@@ -486,10 +486,10 @@ export async function followUser(targetUserId: string | number) {
 }
 
 /** Unfollow a user */
-export async function unfollowUser(targetUserId: string | number) {
+export async function unfollowUser(targetUserId: string | number, currentUserId?: string | number) {
   const res = await apiFetch(`/api/user/${targetUserId}/unfollow`, {
     method: "POST",
-  });
+  }, currentUserId);
   
   if (!res.ok) {
     const errorText = await res.text();
