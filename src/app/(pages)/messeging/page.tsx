@@ -173,7 +173,7 @@ export default function MessagingPage() {
             
             try {
                 // First try the main conversations endpoint
-                response = await apiFetch('/api/conversations');
+                response = await apiFetch('/api/conversations', {}, user?.id);
                 console.log('Conversations API response:', response.status, response.ok);
                 
                 if (response.ok) {
@@ -188,7 +188,7 @@ export default function MessagingPage() {
             
             // Fallback: Try chat endpoint
             try {
-                response = await apiFetch('/api/chat');
+                response = await apiFetch('/api/chat', {}, user?.id);
                 if (response.ok) {
                     data = await response.json();
                     console.log('Chat data received:', data);

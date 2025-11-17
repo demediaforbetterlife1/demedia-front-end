@@ -187,14 +187,14 @@ export default function ChatPage() {
         setIsLoading(true);
         
         // Fetch chat details
-        const chatRes = await apiFetch(`/api/chat/${chatId}`);
+        const chatRes = await apiFetch(`/api/chat/${chatId}`, {}, user?.id);
         if (chatRes.ok) {
           const chatData = await chatRes.json();
           setChat(chatData);
         }
 
         // Fetch messages
-        const messagesRes = await apiFetch(`/api/messages/${chatId}`);
+        const messagesRes = await apiFetch(`/api/messages/${chatId}`, {}, user?.id);
         if (messagesRes.ok) {
           const messagesData = await messagesRes.json();
           setMessages(messagesData);
