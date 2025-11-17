@@ -137,7 +137,7 @@ export default function DeSnapsPage() {
             
             try {
                 // First try the main DeSnaps endpoint
-                response = await apiFetch(`/api/desnaps?filter=${filter}`);
+                response = await apiFetch(`/api/desnaps?filter=${filter}`, {}, user?.id);
                 console.log('DeSnaps API response:', response.status, response.ok);
                 
                 if (response.ok) {

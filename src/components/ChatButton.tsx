@@ -23,7 +23,7 @@ export default function ChatButton({ targetUserId, targetUserName, className = "
         
         try {
             // Check if chat already exists
-            const existingChatResponse = await apiFetch(`/api/chat/find/${targetUserId}`);
+            const existingChatResponse = await apiFetch(`/api/chat/find/${targetUserId}`, {}, user?.id);
             
             if (existingChatResponse.ok) {
                 const existingChat = await existingChatResponse.json();
@@ -38,7 +38,7 @@ export default function ChatButton({ targetUserId, targetUserName, className = "
                     participants: [user.id, targetUserId],
                     chatName: `Chat with ${targetUserName}`
                 })
-            });
+            }, user?.id);
 
             if (response.ok) {
                 const newChat = await response.json();

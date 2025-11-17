@@ -38,7 +38,6 @@ export default function DeSnapCreator({ isOpen, onClose, onDeSnapCreated }: DeSn
             // Use apiFetch which automatically handles token from cookies
             const response = await apiFetch('/api/desnaps', {
                 method: 'POST',
-                headers: getAuthHeaders(user?.id),
                 body: JSON.stringify({
                     content: content.trim(),
                     duration,

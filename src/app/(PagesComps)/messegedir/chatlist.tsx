@@ -27,7 +27,7 @@ export default function ChatsBox() {
         const fetchChats = async () => {
             try {
                 console.log("Fetching chats for user:", user?.id);
-                const res = await apiFetch("/api/chat");
+                const res = await apiFetch("/api/chat", {}, user?.id);
                 if (!mounted) return;
                 
                 if (res.ok) {
