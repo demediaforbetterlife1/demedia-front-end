@@ -6,7 +6,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { apiFetch, getAuthHeaders } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { MessageCircle } from "lucide-react";
+
 
 type AuthorType = {
   id: number;
@@ -177,34 +177,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   // 📄 صفحة البوست
   const goToPost = (id: number) => router.push(`/posts/${id}`);
 
-  // 💬 فتح محادثة مع المستخدم
-  const handleChat = async (e: React.MouseEvent, author?: AuthorType | null) => {
-    e.stopPropagation();
-    if (!author?.id || !user?.id) return;
-    
-    if (author.id === parseInt(user.id)) {
-      alert("You cannot chat with yourself!");
-      return;
-    }
 
-    try {
-      const response = await apiFetch("/api/chat/create-or-find", {
-        method: "POST",
-        headers: getAuthHeaders(user.id),
-        body: JSON.stringify({ participantId: author.id })
-      }, user.id);
-
-      if (!response.ok) {
-        throw new Error("Failed to create/find chat");
-      }
-
-      const chatData = await response.json();
-      router.push(`/messeging/chat/${chatData.id}`);
-    } catch (err) {
-      console.error("Chat error:", err);
-      alert("Failed to open chat. Please try again.");
-    }
-  };
 
   if (!isVisible) return null;
   if (loading)
@@ -336,7 +309,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       whileHover={{ scale: 1.15 }}
       onClick={(e) => {
         e.stopPropagation();
-        router.push(`/post/${post.id}#comments`);
+        router.push(`/posts/${post.id}#comments`);
       }}
       className={`flex items-center gap-2 text-sm font-semibold ${themeClasses.comment} transition-all duration-300`}
     >
@@ -384,18 +357,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       </svg>
     </motion.button>
 
-    {/* 💬 Chat */}
-    {author && author.id !== parseInt(user?.id || "0") && (
-      <motion.button
-        whileTap={{ scale: 0.85 }}
-        whileHover={{ scale: 1.15 }}
-        onClick={(e) => handleChat(e, author)}
-        className={`flex items-center gap-2 text-sm font-semibold ${themeClasses.textMuted} hover:text-green-500 transition-all duration-300`}
-        title="Send message"
-      >
-        <MessageCircle className="w-6 h-6" />
-      </motion.button>
-    )}
+
   </div>
 </div>
           </motion.div>

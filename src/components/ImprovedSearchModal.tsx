@@ -341,7 +341,7 @@ export default function ImprovedSearchModal({ isOpen, onClose }: ImprovedSearchM
                 window.location.href = `/profile?userId=${result.id}`;
                 break;
             case 'post':
-                window.location.href = `/post/${result.id}`;
+                window.location.href = `/posts/${result.id}`;
                 break;
             case 'story':
                 // Handle story navigation
