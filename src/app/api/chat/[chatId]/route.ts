@@ -11,12 +11,17 @@ export async function GET(
   try {
     const resolvedParams = await params;
     chatId = resolvedParams.chatId;
-    authHeader = request.headers.get('authorization');
-    userId = request.headers.get('user-id');
-
-    if (!authHeader || !userId) {
+    
+    // Get the auth token from cookies or Authorization header
+    const token = request.cookies.get('token')?.value || 
+                  request.headers.get('authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+    
+    authHeader = `Bearer ${token}`;
+    userId = request.headers.get('user-id');
 
     console.log('Fetching chat details for chatId:', chatId);
 
@@ -27,7 +32,7 @@ export async function GET(
         method: 'GET',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId,
+          'user-id': userId || '',
           'Content-Type': 'application/json',
         },
         // Add timeout to prevent hanging
@@ -78,12 +83,17 @@ export async function DELETE(
   try {
     const resolvedParams = await params;
     chatId = resolvedParams.chatId;
-    authHeader = request.headers.get('authorization');
-    userId = request.headers.get('user-id');
-
-    if (!authHeader || !userId) {
+    
+    // Get the auth token from cookies or Authorization header
+    const token = request.cookies.get('token')?.value || 
+                  request.headers.get('authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+    
+    authHeader = `Bearer ${token}`;
+    userId = request.headers.get('user-id');
 
     console.log('Deleting chat:', chatId);
 
@@ -93,7 +103,7 @@ export async function DELETE(
         method: 'DELETE',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId,
+          'user-id': userId || '',
           'Content-Type': 'application/json',
         }
       });

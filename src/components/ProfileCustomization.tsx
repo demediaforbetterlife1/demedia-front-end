@@ -183,7 +183,7 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
               <div className="flex flex-col items-center gap-3">
                 <div className="relative">
                   <img
-                    src={customization.image || "/default-avatar.png"}
+                    src={customization.image || "/assets/images/default-avatar.svg"}
                     alt="Profile Picture"
                     className="w-28 h-28 rounded-full object-cover border-2 border-blue-500 shadow-md"
                   />

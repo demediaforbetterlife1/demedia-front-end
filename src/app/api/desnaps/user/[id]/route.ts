@@ -86,7 +86,7 @@ export async function GET(
         isLiked: false,
         isBookmarked: false,
         author: {
-          id: parseInt(userId),
+          id: parseInt(userId || '0'),
           name: "Demo User",
           username: "demouser",
           profilePicture: null
@@ -106,7 +106,7 @@ export async function GET(
         isLiked: true,
         isBookmarked: false,
         author: {
-          id: parseInt(userId),
+          id: parseInt(userId || '0'),
           name: "Demo User",
           username: "demouser",
           profilePicture: null

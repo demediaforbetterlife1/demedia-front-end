@@ -101,6 +101,7 @@ import ProfileCustomization from "@/components/ProfileCustomization";
 import PremiumUserIndicator from "@/components/PremiumUserIndicator";
 import PhotoUploadModal from "@/components/PhotoUploadModal";
 import { getThemeClasses, getButtonClasses, getCardClasses } from "@/utils/themeUtils";
+import { followUser, unfollowUser } from '@/lib/api';
 
 interface Story {
     id: number;
@@ -190,7 +191,7 @@ export default function ProfilePage() {
         isOwnProfile,
         url: window.location.href,
         searchParams: Object.fromEntries(searchParams.entries())
-    });
+    }, user?.id);
     
     // Additional validation to prevent wrong profile loading
     if (userIdFromUrl && userIdFromUrl !== user?.id?.toString()) {
@@ -198,7 +199,7 @@ export default function ProfilePage() {
             requestedUserId: userIdFromUrl,
             currentUserId: user?.id,
             isDifferentUser: true
-        });
+        }, user?.id);
     }
     
     // Ensure userId is always valid (only after auth finished loading)
@@ -528,20 +529,41 @@ export default function ProfilePage() {
         return () => clearInterval(interval);
     }, [refreshProfile, isOwnProfile]);
 
-    async function handleFollowToggle() {
-        if (!profile || busyFollow) return;
-        setBusyFollow(true);
 
-        const prevIsFollowing = isFollowing;
-        const prevFollowers = profile.followersCount;
+async function handleFollowToggle() {
+    if (!profile || busyFollow) return;
+    setBusyFollow(true);
 
-        // Optimistic update
-        setIsFollowing(!prevIsFollowing);
+    const prevIsFollowing = isFollowing;
+    const prevFollowers = profile.followersCount;
+
+    // Optimistic update
+    setIsFollowing(!prevIsFollowing);
+    setProfile((p) => p ? ({
+        ...p,
+        followersCount: prevIsFollowing ? prevFollowers - 1 : prevFollowers + 1,
+    }) : null);
+
+    try {
+        if (prevIsFollowing) {
+            await unfollowUser(profile.id);
+        } else {
+            await followUser(profile.id);
+        }
+        
+        // Refresh profile data to get accurate counts
+        const updatedProfile = await getUserProfile(profile.id);
+        if (updatedProfile) {
+            setProfile(updatedProfile);
+            setIsFollowing(updatedProfile.isFollowing || false);
+        }
+    } catch (err) {
+        console.error("Follow toggle error:", err);
+        // Revert optimistic update
+        setIsFollowing(prevIsFollowing);
         setProfile((p) => p ? ({
             ...p,
-            followersCount: prevIsFollowing
-                ? prevFollowers - 1
-                : prevFollowers + 1,
+            followersCount: prevFollowers,
         }) : null);
 
         try {
@@ -580,6 +602,7 @@ export default function ProfilePage() {
             setBusyFollow(false);
         }
     }
+}
 
     async function handleStartChat() {
         if (!profile || !user?.id) return;

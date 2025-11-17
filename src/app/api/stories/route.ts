@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     const mockStory = {
       id: `story_${userId}_${Date.now()}`,
       content: body.content || 'New Story',
-      userId: parseInt(userId),
+      userId: parseInt(userId || '0'),
       visibility: body.visibility || 'public',
       durationHours: body.durationHours || 24,
       views: 0,

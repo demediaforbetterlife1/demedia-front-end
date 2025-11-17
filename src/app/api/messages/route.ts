@@ -3,12 +3,17 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const authHeader = request.headers.get('authorization');
-    const userId = request.headers.get('user-id');
-
-    if (!authHeader || !userId) {
+    
+    // Get the auth token from cookies or Authorization header
+    const token = request.cookies.get('token')?.value || 
+                  request.headers.get('authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+    
+    const authHeader = `Bearer ${token}`;
+    const userId = request.headers.get('user-id');
 
     const { chatId, content, type = 'text' } = body;
 
@@ -24,12 +29,12 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId,
+          'user-id': userId || '',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           chatId: parseInt(chatId),
-          senderId: parseInt(userId),
+          senderId: parseInt(userId || '0'),
           content,
           type
         })
@@ -52,7 +57,7 @@ export async function POST(request: NextRequest) {
     const mockMessage = {
       id: `msg_${Date.now()}`,
       chatId: parseInt(chatId),
-      senderId: parseInt(userId),
+      senderId: parseInt(userId || '0'),
       content,
       type,
       createdAt: new Date().toISOString(),

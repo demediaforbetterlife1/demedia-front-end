@@ -318,7 +318,7 @@ export default function PostDetailPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3 cursor-pointer" onClick={(e) => goToUser(e, currentPost.user?.id)}>
-              <img src={currentPost.user?.profilePicture || "/default-avatar.png"} alt="avatar" className="w-12 h-12 rounded-full object-cover border-2 border-gray-300" />
+              <img src={currentPost.user?.profilePicture || "/assets/images/default-avatar.svg"} alt="avatar" className="w-12 h-12 rounded-full object-cover border-2 border-gray-300" />
               <div>
                 <h3 className={`font-semibold ${themeClasses.text}`}>{currentPost.user?.name || "Unknown User"}</h3>
                 <p className={`text-sm ${themeClasses.textMuted}`}>@{currentPost.user?.username || "user"}</p>

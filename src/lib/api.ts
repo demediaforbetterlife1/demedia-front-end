@@ -3,7 +3,6 @@ export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 const API_BASE = ""; // same-origin; Next.js rewrites /api to backend in production
 const DIRECT_API_BASE = "https://demedia-backend.fly.dev"; // direct backend fallback
 
-
 /* --------------------------- Utility helpers ----------------------------- */
 
 /** Try connecting directly to the backend domain (fallback) */
@@ -47,52 +46,52 @@ export async function readJsonSafe<T = unknown>(res: Response): Promise<T | { er
     }
   }
 }
+
 /* -------------------------- Cookie Helper Functions ---------------------- */
-const setCookie = (name: string, value: string, days: number = 7) => {
-  if (typeof window === "undefined") return;
-  
-  const date = new Date();
-  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-  const expires = `expires=${date.toUTCString()}`;
-  document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Strict${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
-};
 
 const getCookie = (name: string): string | null => {
-  if (typeof window === "undefined") return null;
-  
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-};
+  if (typeof document === "undefined") return null;
 
-const deleteCookie = (name: string) => {
-  if (typeof window === "undefined") return;
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  const nameEQ = `${name}=`;
+  const cookies = document.cookie.split(";");
+
+  for (let cookie of cookies) {
+    cookie = cookie.trim();
+    if (cookie.startsWith(nameEQ)) {
+      return decodeURIComponent(cookie.substring(nameEQ.length));
+    }
+  }
+
+  return null;
 };
 
 /* ------------------------------------------------------------------------- */
 /* -------------------------- Auth helpers --------------------------------- */
 /* ------------------------------------------------------------------------- */
 
-/** Only token is stored in cookies — everything else pulled from backend */
+/** Get token from cookies first, then localStorage as fallback (matches AuthContext behavior) */
 export function getToken(): string | null {
-  return getCookie("token");
+  // First try cookies (primary storage)
+  const cookieToken = getCookie("token");
+  if (cookieToken) {
+    console.log('🔑 Token retrieved from cookies');
+    return cookieToken;
+  }
+  
+  // Fallback to localStorage (secondary storage)
+  if (typeof window !== "undefined") {
+    const localToken = localStorage.getItem("token");
+    if (localToken) {
+      console.log('🔑 Token retrieved from localStorage (fallback)');
+      return localToken;
+    }
+  }
+  
+  console.warn('⚠️ No token found in cookies or localStorage');
+  return null;
 }
 
-/** Validate token format */
-function isValidToken(token: string | null): boolean {
-  if (!token) return false;
-  // Basic JWT validation - check if it has 3 parts separated by dots
-  const parts = token.split('.');
-  return parts.length === 3 && token.length > 30;
-}
-
-/** Return headers including Authorization if token exists and is valid */
+/** Return headers including Authorization if token exists */
 export function getAuthHeaders(userId?: string | number): Record<string, string> {
   const token = getToken();
   const base: Record<string, string> = {
@@ -100,12 +99,16 @@ export function getAuthHeaders(userId?: string | number): Record<string, string>
     Accept: "application/json",
   };
   
-  // Only add Authorization if token exists and is valid
-  if (token && isValidToken(token)) {
+  // Always add Authorization if token exists
+  if (token) {
     base["Authorization"] = `Bearer ${token}`;
   }
   
-  if (userId) base["user-id"] = String(userId);
+  // Use consistent header name - make sure it matches what backend expects
+  if (userId) {
+    base["user-id"] = String(userId);
+  }
+  
   return base;
 }
 
@@ -114,27 +117,8 @@ export function getAuthHeaders(userId?: string | number): Record<string, string>
 /* ------------------------------------------------------------------------- */
 
 export async function apiFetch(path: string, options: RequestInit = {}, userId?: string | number): Promise<Response> {
-  // attach token from cookies (userId should be passed as parameter from AuthContext)
-  const token = getToken();
-
-  // copy/merge headers - prioritize Authorization from options.headers if provided
-  const providedHeaders = (options.headers as Record<string, string> | undefined) || {};
-  const headers: Record<string, string> = {
-    ...providedHeaders,
-  };
-
-  // Only add Authorization if token exists and is valid
-  // But don't overwrite if it's already in providedHeaders
-  if (token && isValidToken(token) && !headers["Authorization"]) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  
-  // If Authorization is in providedHeaders, use it (it might be more up-to-date)
-  if (providedHeaders["Authorization"]) {
-    headers["Authorization"] = providedHeaders["Authorization"];
-  }
-  
-  if (userId) headers["user-id"] = String(userId);
+  // Get token and build headers
+  const headers = getAuthHeaders(userId);
 
   // Only set Content-Type automatically if body is not FormData
   if (!headers["Content-Type"] && options.body && !(options.body instanceof FormData)) {
@@ -170,7 +154,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
           headers,
           cache: "no-cache",
           mode: "cors",
-          credentials: "include",
+          credentials: "include", // Always include cookies
         };
       } else {
         // use AbortController for non-auth/post endpoints
@@ -183,7 +167,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
           signal: controller.signal,
           cache: "no-cache",
           mode: "cors",
-          credentials: "include", // Always include credentials to send httpOnly cookies
+          credentials: "include", // Always include cookies
         };
 
         // Note: timer will be cleared implicitly when request finishes or caught below
@@ -202,20 +186,10 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
           ])
         : await fetch(url, fetchOptions);
 
-      // FIXED: Improved 401 handling - don't logout immediately
+      // Handle 401 - don't logout immediately
       if (res.status === 401) {
         console.warn("[api] 401 Unauthorized for:", path);
-        
-        // Only logout if this is NOT an auth endpoint and we have a valid token
-        const currentToken = getToken();
-        if (typeof window !== "undefined" && currentToken && isValidToken(currentToken) && !path.includes("/auth/")) {
-          console.warn("[api] Removing invalid token and logging out");
-          deleteCookie("token");
-          window.dispatchEvent(new CustomEvent("auth:logout"));
-        }
-        
-        // Return the response so the caller can handle 401 appropriately
-        return res;
+        return res; // Let caller handle 401
       }
 
       // if auth synthetic timeout (504), try direct backend
@@ -267,6 +241,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
 
   throw lastError;
 }
+
 /* ----------------------------- API wrappers ------------------------------ */
 
 export interface User {
@@ -298,6 +273,7 @@ export interface AuthResponse {
   message?: string;
   error?: string;
 }
+
 /* ----------------------------- Generic request -------------------------- */
 async function requestJson<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   const res = await apiFetch(path, opts);
@@ -311,6 +287,7 @@ async function requestJson<T = any>(path: string, opts: RequestInit = {}): Promi
   
   return parsed as T;
 }
+
 /*----------------------------- Auth endpoints --------------------------- */
 
 /** Sign up (register using phoneNumber) */
@@ -323,12 +300,7 @@ export async function signUp(payload: {
   const res = await requestJson<AuthResponse>("/api/auth/sign-up", {
     method: "POST",
     body: JSON.stringify(payload),
-    headers: { "Content-Type": "application/json" },
   });
-
-  if (res?.token && isValidToken(res.token)) {
-    setCookie("token", res.token, 7);
-  }
   return res;
 }
 
@@ -337,12 +309,7 @@ export async function signIn(payload: { phoneNumber: string; password: string })
   const res = await requestJson<AuthResponse>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify(payload),
-    headers: { "Content-Type": "application/json" },
   });
-
-  if (res?.token && isValidToken(res.token)) {
-    setCookie("token", res.token, 7);
-  }
   return res;
 }
 
@@ -350,23 +317,21 @@ export async function signIn(payload: { phoneNumber: string; password: string })
 export async function fetchCurrentUser(): Promise<User | null> {
   const token = getToken();
   
-  // Don't attempt to fetch user if no valid token
-  if (!token || !isValidToken(token)) {
-    console.warn("[api] fetchCurrentUser: No valid token");
+  // Don't attempt to fetch user if no token
+  if (!token) {
+    console.warn("[api] fetchCurrentUser: No token");
     return null;
   }
 
   try {
     const res = await apiFetch("/api/auth/me", {
       method: "GET",
-      headers: getAuthHeaders(),
       cache: "no-store",
     });
 
     // Handle 401 specifically for auth/me
     if (res.status === 401) {
       console.warn("[api] fetchCurrentUser: Token invalid or expired");
-      // Don't remove token here - let the apiFetch handle it
       return null;
     }
 
@@ -377,7 +342,6 @@ export async function fetchCurrentUser(): Promise<User | null> {
 
     const body = await readJsonSafe<{ user: User | null }>(res);
     
-    // FIXED: Type-safe property access
     if (body && 'user' in body && body.user) {
       return body.user;
     }
@@ -400,7 +364,6 @@ export async function verifyPhone(token: string): Promise<boolean> {
   const res = await requestJson<{ success: boolean; message?: string }>("/api/auth/verify-phone", {
     method: "POST",
     body: JSON.stringify({ token }),
-    headers: getAuthHeaders(),
   });
   return !!res.success;
 }
@@ -410,7 +373,6 @@ export async function resendPhoneVerification(phoneNumber: string): Promise<bool
   const res = await requestJson<{ success: boolean; message?: string }>("/api/auth/resend-verification", {
     method: "POST",
     body: JSON.stringify({ phoneNumber }),
-    headers: { "Content-Type": "application/json" },
   });
   return !!res.success;
 }
@@ -420,15 +382,16 @@ export async function sendVerificationCode(phoneNumber: string, method: "whatsap
   const res = await requestJson<{ success: boolean }>("/api/auth/send-verification", {
     method: "POST",
     body: JSON.stringify({ phoneNumber, method }),
-    headers: { "Content-Type": "application/json" },
   });
   return !!res.success;
 }
 
 /** Logout (clears token on client) */
 export function logoutClient(): void {
-  deleteCookie("token");
+  // Clear both cookie and localStorage
+  document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
   if (typeof window !== "undefined") {
+    localStorage.removeItem("token");
     window.dispatchEvent(new CustomEvent("auth:logout"));
   }
 }
@@ -460,7 +423,6 @@ export async function getUserProfile(userId: string | number) {
     }
     
     const profile = await res.json();
-    console.log("[api] getUserProfile: Response data:", profile);
     
     // Check if the response contains an error (even if status is 200)
     if (profile && profile.error && !profile.id) {
@@ -491,7 +453,6 @@ export async function getUserProfile(userId: string | number) {
 export async function updateUserProfile(updates: Partial<User>) {
   const res = await apiFetch("/api/user/update", {
     method: "PATCH",
-    headers: getAuthHeaders(),
     body: JSON.stringify(updates),
   });
   
@@ -507,6 +468,38 @@ export async function updateUserProfile(updates: Partial<User>) {
   return await res.json();
 }
 
+/* ----------------------------- Follow endpoints ------------------------- */
+
+/** Follow a user */
+export async function followUser(targetUserId: string | number) {
+  const res = await apiFetch(`/api/user/${targetUserId}/follow`, {
+    method: "POST",
+  });
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error(`Follow error ${res.status}:`, errorText);
+    throw new Error("Follow request failed");
+  }
+  
+  return await res.json();
+}
+
+/** Unfollow a user */
+export async function unfollowUser(targetUserId: string | number) {
+  const res = await apiFetch(`/api/user/${targetUserId}/unfollow`, {
+    method: "POST",
+  });
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error(`Unfollow error ${res.status}:`, errorText);
+    throw new Error("Unfollow request failed");
+  }
+  
+  return await res.json();
+}
+
 /* ----------------------------- Posts endpoints -------------------------- */
 
 export async function getPosts({ page = 1, limit = 20, q = "" }: { page?: number; limit?: number; q?: string } = {}) {
@@ -514,7 +507,6 @@ export async function getPosts({ page = 1, limit = 20, q = "" }: { page?: number
   if (q) params.set("q", q);
   const res = await apiFetch(`/api/posts?${params.toString()}`, {
     method: "GET",
-    headers: getAuthHeaders(),
     cache: "no-store",
   });
   
@@ -534,7 +526,6 @@ export async function getPosts({ page = 1, limit = 20, q = "" }: { page?: number
 export async function getPost(postId: string | number) {
   const res = await apiFetch(`/api/posts/${postId}`, {
     method: "GET",
-    headers: getAuthHeaders(),
     cache: "no-store",
   });
   
@@ -552,15 +543,11 @@ export async function getPost(postId: string | number) {
 
 export async function createPost(payload: any) {
   const isForm = payload instanceof FormData;
-  const token = getToken();
   
   const res = await apiFetch(`/api/posts`, {
     method: "POST",
-    body: isForm ? (payload as any) : JSON.stringify(payload),
-    headers: isForm ? { 
-      ...(token && isValidToken(token) ? { Authorization: `Bearer ${token}` } : {})
-    } : getAuthHeaders(),
-    credentials: "include",
+    body: isForm ? payload : JSON.stringify(payload),
+    headers: isForm ? {} : { "Content-Type": "application/json" },
   });
   
   // Handle 401 for post creation
@@ -580,7 +567,6 @@ export async function createPost(payload: any) {
 export async function postComment(postId: string | number, content: string) {
   const res = await apiFetch(`/api/comments`, {
     method: "POST",
-    headers: getAuthHeaders(),
     body: JSON.stringify({ postId, content }),
   });
   
@@ -602,7 +588,6 @@ export async function getNotifications({ page = 1, limit = 20 }: { page?: number
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   const res = await apiFetch(`/api/notifications?${params.toString()}`, {
     method: "GET",
-    headers: getAuthHeaders(),
     cache: "no-store",
   });
   // Handle 401 for notifications
@@ -621,7 +606,6 @@ export async function getNotifications({ page = 1, limit = 20 }: { page?: number
 export async function markNotificationRead(notificationId: string | number) {
   const res = await apiFetch(`/api/notifications/${notificationId}/read`, {
     method: "POST",
-    headers: getAuthHeaders(),
   });
   
   // Handle 401 for notification updates
@@ -643,7 +627,6 @@ export async function enhancedSearch(q: string, opts: { limit?: number; type?: s
   if (opts.type) params.set("type", opts.type);
   const res = await apiFetch(`/api/search?${params.toString()}`, {
     method: "GET",
-    headers: getAuthHeaders(),
     cache: "no-store",
   });
   
@@ -663,7 +646,7 @@ export async function enhancedSearch(q: string, opts: { limit?: number; type?: s
 
 export async function pingHealth() {
   try {
-    const res = await apiFetch("/api/health", { method: "GET", headers: getAuthHeaders() });
+    const res = await apiFetch("/api/health", { method: "GET" });
     return await readJsonSafe(res);
   } catch (err) {
     console.warn("[api] pingHealth failed:", err);
@@ -684,7 +667,6 @@ const api = {
   readJsonSafe,
   getToken,
   getAuthHeaders,
-  isValidToken,
   // auth
   signUp,
   signIn,
@@ -696,6 +678,9 @@ const api = {
   // user
   getUserProfile,
   updateUserProfile,
+  // follow
+  followUser,
+  unfollowUser,
   // posts/comments
   getPosts,
   getPost,
