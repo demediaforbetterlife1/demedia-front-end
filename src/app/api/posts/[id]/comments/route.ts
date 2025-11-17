@@ -65,13 +65,12 @@ export async function POST(
   try {
     const { id: postId } = await params;
     const authHeader = request.headers.get('authorization');
-    const userId = request.headers.get('user-id');
     const body = await request.json();
     
     console.log('Creating comment for post:', postId, 'content:', body.content);
 
-    if (!authHeader || !userId) {
-      return NextResponse.json({ error: 'No authorization header or user ID' }, { status: 401 });
+    if (!authHeader) {
+      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
     }
 
     if (!body.content || body.content.trim() === '') {
@@ -87,7 +86,6 @@ export async function POST(
         method: 'POST',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId || '',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
@@ -114,7 +112,6 @@ export async function POST(
         content: body.content,
         createdAt: new Date().toISOString(),
         user: {
-          id: parseInt(userId || '0'),
           name: 'User',
           username: 'user',
           profilePicture: null,

@@ -13,13 +13,12 @@ export async function POST(request: NextRequest) {
     }
     
     const authHeader = `Bearer ${token}`;
-    const userId = request.headers.get('user-id');
 
     if (!participantId) {
       return NextResponse.json({ error: 'Participant ID required' }, { status: 400 });
     }
 
-    console.log('Creating/finding chat between users:', userId, 'and', participantId);
+    console.log('Creating/finding chat with participant:', participantId);
 
     // Try to connect to the actual backend first
     try {
@@ -27,7 +26,6 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: {
           'Authorization': authHeader,
-          'user-id': userId || '',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ participantId: parseInt(participantId) })
@@ -47,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     // Fallback: Create a mock chat ID
     console.log('Using fallback chat creation');
-    const mockChatId = `chat_${userId}_${participantId}_${Date.now()}`;
+    const mockChatId = `chat_${participantId}_${Date.now()}`;
     
     return NextResponse.json({
       id: mockChatId,

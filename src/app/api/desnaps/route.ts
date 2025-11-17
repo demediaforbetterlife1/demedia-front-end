@@ -37,33 +37,9 @@ export async function POST(request: NextRequest) {
       }, { status: 401 });
     }
     
-    // Extract user ID from token if not provided in headers or body
-    let userId = request.headers.get('user-id');
     const body = await request.json();
-    
-    // Also check body for userId
-    if (!userId && body.userId) {
-      userId = body.userId.toString();
-    }
-    
-    if (!userId) {
-      try {
-        const part = token.split('.')[1];
-        const decoded = JSON.parse(Buffer.from(part, 'base64').toString('utf-8'));
-        userId = (decoded.sub || decoded.userId || decoded.id)?.toString?.() || null;
-      } catch (err) {
-        console.error('❌ Failed to decode token:', err);
-      }
-    }
 
-    if (!userId) {
-      console.error('❌ User ID not found in token or request');
-      return NextResponse.json({ 
-        error: 'User ID required. Unable to extract user ID from token.' 
-      }, { status: 401 });
-    }
-
-    console.log('Creating new DeSnap via backend:', { ...body, userId });
+    console.log('Creating new DeSnap via backend:', body);
 
     // Forward request to backend
     const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
@@ -76,7 +52,6 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'Cookie': `token=${token}`, // Forward cookie for backend auth
-          'user-id': userId || '',
         },
         body: JSON.stringify(body),
       });
@@ -122,17 +97,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No authorization token' }, { status: 401 });
     }
     
-    // Extract user ID from token if not provided in headers
-    let userId = request.headers.get('user-id');
-    if (!userId) {
-      try {
-        const part = token.split('.')[1];
-        const decoded = JSON.parse(Buffer.from(part, 'base64').toString('utf-8'));
-        userId = (decoded.sub || decoded.userId || decoded.id)?.toString?.() || null;
-      } catch (_) {}
-    }
-    
-    console.log('Fetching DeSnaps via backend, userId:', userId);
+    console.log('Fetching DeSnaps via backend');
 
     // Forward request to backend
     const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
@@ -144,7 +109,6 @@ export async function GET(request: NextRequest) {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Cookie': `token=${token}`, // Forward cookie for backend auth
-          'user-id': userId || '',
           'Content-Type': 'application/json',
         },
       });
