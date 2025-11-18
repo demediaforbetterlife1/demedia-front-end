@@ -7,6 +7,7 @@ import { apiFetch, getAuthHeaders } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import CommentModal from "@/components/CommentModal";
 
 
 type AuthorType = {
@@ -39,6 +40,8 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   const { user } = useAuth();
   const [posts, setPosts] = useState<PostType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<PostType | null>(null);
 
   // 🎨 الثيمات
   const allThemes = {
@@ -344,7 +347,8 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       whileHover={{ scale: 1.15 }}
       onClick={(e) => {
         e.stopPropagation();
-        router.push(`/post/${post.id}#comments`);
+        setSelectedPost(post);
+        setShowCommentModal(true);
       }}
       className={`flex items-center gap-2 text-sm font-semibold ${themeClasses.comment} transition-all duration-300`}
     >
@@ -398,6 +402,20 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           </motion.div>
         );
       })}
+      
+      {/* Comment Modal */}
+      {showCommentModal && selectedPost && (
+        <CommentModal
+          isOpen={showCommentModal}
+          onClose={() => {
+            setShowCommentModal(false);
+            setSelectedPost(null);
+          }}
+          postId={selectedPost.id}
+          postContent={selectedPost.content}
+          postAuthor={selectedPost.author?.name || 'Unknown'}
+        />
+      )}
     </div>
   );
 }

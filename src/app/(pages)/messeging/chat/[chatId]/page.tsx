@@ -191,6 +191,9 @@ export default function ChatPage() {
         if (chatRes.ok) {
           const chatData = await chatRes.json();
           setChat(chatData);
+        } else {
+          console.error('Failed to fetch chat:', chatRes.status);
+          setError('Chat not found');
         }
 
         // Fetch messages
