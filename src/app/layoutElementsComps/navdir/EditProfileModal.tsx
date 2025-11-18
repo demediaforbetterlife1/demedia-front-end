@@ -178,7 +178,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
             };
             // dateOfBirth is handled by /api/users/:id/profile as dob
             
-            const response = await apiFetch(`/api/user/${user?.id}`, {
+            const response = await apiFetch(`/api/users/${user?.id}/profile`, {
                 method: "PUT",
                 body: JSON.stringify({
                     ...payload
