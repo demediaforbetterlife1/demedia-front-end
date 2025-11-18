@@ -1753,35 +1753,23 @@ const UserDeSnaps = ({
 
                     {/* DeSnap Content */}
                     <div className="mb-4">
-                        {deSnap.content && (
-                            <p className="text-gray-300 text-base leading-relaxed mb-4">
-                                {deSnap.content}
-                            </p>
-                        )}
+                        {/* DeSnap video content - don't show raw URL as text */}
                         
-                        {/* DeSnap Video/Thumbnail */}
-                        {deSnap.thumbnail && (
-                            <div className="relative rounded-xl overflow-hidden">
-                                <img 
-                                    src={deSnap.thumbnail} 
-                                    alt="DeSnap thumbnail" 
+                        {/* DeSnap Video Player */}
+                        {deSnap.content && (
+                            <div className="relative rounded-xl overflow-hidden bg-black">
+                                <video 
+                                    src={deSnap.content.startsWith('http') ? deSnap.content : `https://demedia-backend.fly.dev${deSnap.content}`}
                                     className="w-full h-64 object-cover"
+                                    controls
+                                    preload="metadata"
+                                    poster={deSnap.thumbnail}
                                     onError={(e) => {
-                                        console.log('DeSnap thumbnail failed to load:', deSnap.thumbnail);
-                                        e.currentTarget.style.display = 'none';
+                                        console.log('DeSnap video failed to load:', deSnap.content);
                                     }}
                                 />
-                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                    <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
-                                        <Video className="w-8 h-8 text-white" />
-                                    </div>
-                                </div>
                             </div>
                         )}
-                    </div>
-
-                    {/* DeSnap Actions */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-700/50">
                         <div className="flex items-center space-x-6">
                             <button className="flex items-center space-x-2 text-gray-400 hover:text-red-400 transition-colors">
                                 <Heart size={20} />
