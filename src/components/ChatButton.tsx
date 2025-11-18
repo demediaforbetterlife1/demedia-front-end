@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FiMessageCircle } from "react-icons/fi";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch } from "@/lib/api";
+import { resolveChatId } from "@/utils/chatUtils";
 
 interface ChatButtonProps {
     targetUserId: string;
@@ -33,7 +34,14 @@ export default function ChatButton({ targetUserId, targetUserName, className = "
             if (response.ok) {
                 const chatData = await response.json();
                 console.log('Chat created/found:', chatData);
-                router.push(`/messeging/chat/${chatData.id}`);
+                const chatId = resolveChatId(chatData);
+                if (chatId) {
+                    router.push(`/messeging/chat/${chatId}`);
+                } else {
+                    console.error('Chat response missing id:', chatData);
+                    alert('Chat created but could not open the conversation. Please try again.');
+                    router.push('/messeging');
+                }
             } else {
                 const errorText = await response.text();
                 console.error('Failed to create/find chat:', response.status, errorText);

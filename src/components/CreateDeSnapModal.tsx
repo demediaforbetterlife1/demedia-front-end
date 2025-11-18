@@ -25,6 +25,7 @@ import AIFeatures from "./AIFeatures";
 import CollaborativeFeatures from "./CollaborativeFeatures";
 import GamificationSystem from "./GamificationSystem";
 import AdvancedVisibilityControls from "./AdvancedVisibilityControls";
+import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
 
 interface CreateDeSnapModalProps {
     isOpen: boolean;
@@ -247,16 +248,14 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 throw new Error('Invalid upload response from server. Please try again.');
             }
             
-            // Ensure video URL is properly formatted
-            let videoUrl = uploadData.videoUrl || uploadData.videoUrl;
-            if (videoUrl && !videoUrl.startsWith('http')) {
-                videoUrl = `https://demedia-backend.fly.dev${videoUrl}`;
+            let videoUrl = uploadData.videoUrl || uploadData.url || uploadData.fileUrl;
+            if (!videoUrl) {
+                throw new Error('Video upload succeeded but no URL was returned by the server.');
             }
+            videoUrl = ensureAbsoluteMediaUrl(videoUrl) || videoUrl;
             
-            let thumbnailUrl = uploadData.thumbnailUrl || uploadData.thumbnail;
-            if (thumbnailUrl && !thumbnailUrl.startsWith('http')) {
-                thumbnailUrl = `https://demedia-backend.fly.dev${thumbnailUrl}`;
-            }
+            let thumbnailUrl = uploadData.thumbnailUrl || uploadData.thumbnail || uploadData.previewUrl;
+            thumbnailUrl = ensureAbsoluteMediaUrl(thumbnailUrl) || thumbnailUrl || videoUrl;
             
             // Now create the DeSnap with the uploaded video URL
             const deSnapData = {

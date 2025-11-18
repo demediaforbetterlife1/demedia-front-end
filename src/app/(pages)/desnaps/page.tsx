@@ -23,6 +23,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import CreateDeSnapModal from '@/components/CreateDeSnapModal';
 import { apiFetch } from '@/lib/api';
+import { ensureAbsoluteMediaUrl } from '@/utils/mediaUtils';
 
 interface DeSnap {
     id: number;
@@ -44,6 +45,17 @@ interface DeSnap {
         profilePicture?: string;
     };
 }
+
+const normalizeDeSnap = (deSnap: any): DeSnap => ({
+    ...deSnap,
+    content: ensureAbsoluteMediaUrl(deSnap.content) || deSnap.content,
+    thumbnail: ensureAbsoluteMediaUrl(deSnap.thumbnail) || deSnap.thumbnail,
+    author: deSnap.author || deSnap.user || {
+        id: 0,
+        name: "Unknown",
+        username: "unknown"
+    }
+});
 
 export default function DeSnapsPage() {
     const { theme } = useTheme();
@@ -143,7 +155,8 @@ export default function DeSnapsPage() {
                 if (response.ok) {
                     data = await response.json();
                     console.log('DeSnaps data received:', data);
-                    setDeSnaps(Array.isArray(data) ? data : []);
+                    const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap);
+                    setDeSnaps(normalized);
                     return;
                 }
             } catch (apiError) {
@@ -157,7 +170,8 @@ export default function DeSnapsPage() {
                     if (response.ok) {
                         data = await response.json();
                         console.log('User DeSnaps data received:', data);
-                        setDeSnaps(Array.isArray(data) ? data : []);
+                        const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap);
+                        setDeSnaps(normalized);
                         return;
                     }
                 }
@@ -174,7 +188,8 @@ export default function DeSnapsPage() {
             if (directResponse.ok) {
                 data = await directResponse.json();
                 console.log('Direct DeSnaps data received:', data);
-                setDeSnaps(Array.isArray(data) ? data : []);
+                const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap);
+                setDeSnaps(normalized);
                 return;
             }
         } catch (directError) {
@@ -192,7 +207,8 @@ export default function DeSnapsPage() {
                 if (altResponse.ok) {
                     data = await altResponse.json();
                     console.log('Alternative DeSnaps data received:', data);
-                    setDeSnaps(Array.isArray(data) ? data : []);
+                    const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap);
+                    setDeSnaps(normalized);
                     return;
                 }
             } catch (altError) {
@@ -248,11 +264,21 @@ export default function DeSnapsPage() {
         }
     };
 
-    const filteredDeSnaps = deSnaps.filter(deSnap => 
-        searchQuery === '' || 
-        deSnap.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        deSnap.author.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const filteredDeSnaps = normalizedQuery
+        ? deSnaps.filter((deSnap) => {
+            const haystack = [
+                deSnap.author?.name,
+                deSnap.author?.username,
+                (deSnap as any).caption,
+                (deSnap as any).description,
+            ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+            return haystack.includes(normalizedQuery);
+        })
+        : deSnaps;
 
     if (loading) {
         return (
@@ -410,7 +436,7 @@ export default function DeSnapsPage() {
                                     </div>
 
                                     <p className={`text-sm ${themeClasses.text} mb-3 line-clamp-2`}>
-                                        {deSnap.content}
+                                        {(deSnap as any).caption || (deSnap as any).description || 'Shared a new DeSnap'}
                                     </p>
 
                                     {/* Stats */}

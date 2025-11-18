@@ -18,6 +18,7 @@ import { useI18n } from "@/contexts/I18nContext";
 import { useNotifications } from "@/components/NotificationProvider";
 import CommentModal from "@/components/CommentModal";
 import { apiFetch, getAuthHeaders } from "@/lib/api";
+import { resolveChatId } from "@/utils/chatUtils";
 
 type PostType = {
   id: number;
@@ -257,7 +258,12 @@ export default function PostDetailPage() {
       }
 
       const chatData = await response.json();
-      router.push(`/messeging/chat/${chatData.id}`);
+      const chatId = resolveChatId(chatData);
+      if (chatId) {
+        router.push(`/messeging/chat/${chatId}`);
+      } else {
+        throw new Error("Chat response did not include an ID");
+      }
     } catch (err) {
       console.error("Chat error:", err);
       alert("Failed to open chat. Please try again.");

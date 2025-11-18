@@ -102,6 +102,8 @@ import PremiumUserIndicator from "@/components/PremiumUserIndicator";
 import PhotoUploadModal from "@/components/PhotoUploadModal";
 import { getThemeClasses, getButtonClasses, getCardClasses } from "@/utils/themeUtils";
 import { followUser, unfollowUser } from '@/lib/api';
+import { ensureAbsoluteMediaUrl, appendCacheBuster } from "@/utils/mediaUtils";
+import { resolveChatId } from "@/utils/chatUtils";
 
 interface Story {
     id: number;
@@ -147,6 +149,48 @@ interface Profile {
     privacy?: 'public' | 'followers' | 'private';
     subscriptionTier?: 'monthly' | 'quarterly' | 'semiannual' | null;
 }
+
+const formatMediaUrl = (url?: string | null) => ensureAbsoluteMediaUrl(url) ?? null;
+
+const normalizePostFromApi = (post: any) => {
+    if (!post) return null;
+    const imagesArray = Array.isArray(post.images)
+        ? post.images
+        : Array.isArray(post.media)
+            ? post.media
+            : [];
+
+    const formattedImages = imagesArray
+        .map((img: any) => (typeof img === "string" ? img : img?.url))
+        .map(formatMediaUrl)
+        .filter(Boolean);
+
+    const primaryImage = formatMediaUrl(
+        post.imageUrl ||
+        formattedImages[0] ||
+        post.media?.[0]?.url
+    );
+
+    return {
+        ...post,
+        title: post.title ?? post.heading ?? "",
+        content: post.content ?? post.caption ?? post.body ?? "",
+        imageUrl: primaryImage,
+        images: formattedImages,
+        liked: Boolean(post.liked || post.isLiked),
+        createdAt: post.createdAt || post.created_at || new Date().toISOString(),
+        author: post.author || post.user || post.owner || null,
+    };
+};
+
+const normalizeDeSnap = (deSnap: any) => {
+    if (!deSnap) return null;
+    return {
+        ...deSnap,
+        content: formatMediaUrl(deSnap.content),
+        thumbnail: formatMediaUrl(deSnap.thumbnail),
+    };
+};
 
 export default function ProfilePage() {
     const { user, isLoading: authLoading, updateUser } = useAuth();
@@ -388,16 +432,8 @@ export default function ProfilePage() {
                 }
 
                 // Normalize data and format photo URLs
-                let profilePictureUrl = data.profilePicture ?? null;
-                let coverPhotoUrl = data.coverPhoto ?? null;
-                
-                // Ensure URLs are absolute if they're relative
-                if (profilePictureUrl && typeof profilePictureUrl === 'string' && !profilePictureUrl.startsWith('http')) {
-                    profilePictureUrl = `https://demedia-backend.fly.dev${profilePictureUrl}`;
-                }
-                if (coverPhotoUrl && typeof coverPhotoUrl === 'string' && !coverPhotoUrl.startsWith('http')) {
-                    coverPhotoUrl = `https://demedia-backend.fly.dev${coverPhotoUrl}`;
-                }
+                const profilePictureUrl = formatMediaUrl(data.profilePicture);
+                const coverPhotoUrl = formatMediaUrl(data.coverPhoto);
                 
                 const normalized: Profile = {
                     id: data.id,
@@ -419,19 +455,7 @@ export default function ProfilePage() {
                         type: story.type || 'text',
                         duration: story.duration || 24
                     })),
-                    deSnaps: userDeSnaps.map((deSnap: any) => ({
-                        id: deSnap.id,
-                        content: deSnap.content,
-                        thumbnail: deSnap.thumbnail,
-                        createdAt: deSnap.createdAt,
-                        likes: deSnap.likes || 0,
-                        comments: deSnap.comments || 0,
-                        views: deSnap.views || 0,
-                        duration: deSnap.duration || 0,
-                        visibility: deSnap.visibility || 'public',
-                        isLiked: deSnap.isLiked || false,
-                        isBookmarked: deSnap.isBookmarked || false
-                    })),
+                    deSnaps: userDeSnaps.map((deSnap: any) => normalizeDeSnap(deSnap)).filter(Boolean) as DeSnap[],
                     followersCount: data.followersCount ?? 0,
                     followingCount: data.followingCount ?? 0,
                     likesCount: data.likesCount ?? 0,
@@ -497,19 +521,7 @@ export default function ProfilePage() {
                     type: story.type || 'text',
                     duration: story.duration || 24
                 })),
-                deSnaps: userDeSnaps.map((deSnap: any) => ({
-                    id: deSnap.id,
-                    content: deSnap.content,
-                    thumbnail: deSnap.thumbnail,
-                    createdAt: deSnap.createdAt,
-                    likes: deSnap.likes || 0,
-                    comments: deSnap.comments || 0,
-                    views: deSnap.views || 0,
-                    duration: deSnap.duration || 0,
-                    visibility: deSnap.visibility || 'public',
-                    isLiked: deSnap.isLiked || false,
-                    isBookmarked: deSnap.isBookmarked || false
-                }))
+                deSnaps: userDeSnaps.map((deSnap: any) => normalizeDeSnap(deSnap)).filter(Boolean) as DeSnap[]
             } : null);
         } catch (err) {
             console.error('Error refreshing profile:', err);
@@ -618,8 +630,18 @@ async function handleFollowToggle() {
 
             if (res.ok) {
                 const chatData = await res.json();
-                // Navigate to the chat using router
-                router.push(`/messeging/chat/${chatData.id}`);
+                const chatId = resolveChatId(chatData);
+                if (chatId) {
+                    router.push(`/messeging/chat/${chatId}`);
+                } else {
+                    console.error('Chat created but no ID returned:', chatData);
+                    await notificationService.showNotification({
+                        title: 'Chat Error',
+                        body: 'Unable to open the chat room. Please try again.',
+                        tag: 'chat_error'
+                    });
+                    router.push('/messeging');
+                }
             } else {
                 console.error('Failed to create/find chat');
                 // Show error notification
@@ -659,22 +681,25 @@ async function handleFollowToggle() {
             const response = await apiFetch(endpoint, {
                 method: 'POST',
                 body: formData,
-            });
+            }, user?.id);
             
             if (response.ok) {
                 const data = await response.json();
                 console.log(`${type} photo uploaded:`, data);
                 console.log('Photo URL received:', data.url);
                 
-                // Ensure the URL is properly formatted
-                let photoUrl = data.url;
-                if (photoUrl && !photoUrl.startsWith('http')) {
-                    photoUrl = `https://demedia-backend.fly.dev${photoUrl}`;
+                const rawUrl = data.url || data.profilePicture || data.photoUrl || data.coverPhoto;
+                if (!rawUrl) {
+                    throw new Error('Upload succeeded but no URL was returned.');
                 }
-                console.log('Formatted photo URL:', photoUrl);
-                
-                // Add cache-busting query parameter to photo URL
-                const photoUrlWithCache = `${photoUrl}?t=${Date.now()}`;
+
+                const formattedUrl = formatMediaUrl(rawUrl);
+                if (!formattedUrl) {
+                    throw new Error('Could not format uploaded photo URL.');
+                }
+
+                const photoUrlWithCache = appendCacheBuster(formattedUrl);
+                console.log('Formatted photo URL:', photoUrlWithCache);
                 
                 // Update profile state with new photo URL (with cache busting)
                 setProfile(prev => prev ? {
@@ -714,9 +739,9 @@ async function handleFollowToggle() {
                             name: profileData.name,
                             username: profileData.username,
                             bio: profileData.bio ?? "",
-                            profilePicture: profileData.profilePicture ? `${profileData.profilePicture}?t=${Date.now()}` : null,
-                            coverPicture: profileData.coverPhoto ? `${profileData.coverPhoto}?t=${Date.now()}` : null,
-                            coverPhoto: profileData.coverPhoto ? `${profileData.coverPhoto}?t=${Date.now()}` : null,
+                            profilePicture: profileData.profilePicture ? appendCacheBuster(formatMediaUrl(profileData.profilePicture) || profileData.profilePicture) : prev?.profilePicture ?? null,
+                            coverPicture: profileData.coverPhoto ? appendCacheBuster(formatMediaUrl(profileData.coverPhoto) || profileData.coverPhoto) : prev?.coverPicture ?? null,
+                            coverPhoto: profileData.coverPhoto ? appendCacheBuster(formatMediaUrl(profileData.coverPhoto) || profileData.coverPhoto) : prev?.coverPhoto ?? null,
                             followersCount: profileData.followersCount ?? prev?.followersCount ?? 0,
                             followingCount: profileData.followingCount ?? prev?.followingCount ?? 0,
                             likesCount: profileData.likesCount ?? prev?.likesCount ?? 0,
@@ -1679,7 +1704,10 @@ const UserDeSnaps = ({
                 }
                 
                 const data = await response.json();
-                setDeSnaps(Array.isArray(data) ? data : []);
+                const normalized = (Array.isArray(data) ? data : [])
+                    .map((item: any) => normalizeDeSnap(item))
+                    .filter(Boolean);
+                setDeSnaps(normalized as any[]);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load DeSnaps');
             } finally {
@@ -1755,16 +1783,17 @@ const UserDeSnaps = ({
                     <div className="mb-4">
                         {deSnap.content && (
                             <div className="relative rounded-xl overflow-hidden mb-4">
-                                <video 
+                                <video
                                     controls
                                     preload="metadata"
                                     className="w-full h-64 object-cover"
-                                    poster={deSnap.thumbnail}
+                                    poster={deSnap.thumbnail || undefined}
+                                    src={deSnap.content}
+                                    onError={(event) => {
+                                        console.error('DeSnap video failed to load:', deSnap.content);
+                                        event.currentTarget.controls = false;
+                                    }}
                                 >
-                                    <source 
-                                        src={deSnap.content.startsWith("http") ? deSnap.content : `https://demedia-backend.fly.dev${deSnap.content}`} 
-                                        type="video/mp4" 
-                                    />
                                     Your browser does not support the video tag.
                                 </video>
                             </div>
@@ -1852,12 +1881,11 @@ const UserPosts = ({
 		router.push(`/profile?userId=${userId}`);
 	};
 
-    const fetchUserPosts = async () => {
+    const fetchUserPosts = useCallback(async () => {
         if (!userId) return;
         
         try {
             setLoading(true);
-            // Pass user ID to apiFetch so it can be included in headers for like status checking
             const response = await apiFetch(`/api/posts/user/${userId}`, {
                 method: 'GET',
                 headers: getAuthHeaders(user?.id),
@@ -1868,35 +1896,54 @@ const UserPosts = ({
             }
             
             const data = await response.json();
-            // Handle both direct array and wrapped response formats
             const postsData = Array.isArray(data) ? data : (data.posts || []);
+            const normalized = postsData
+                .map((post: any) => normalizePostFromApi(post))
+                .filter(Boolean) as any[];
             
-            // Ensure liked status is preserved
-            setPosts(postsData.map((post: any) => ({
-                ...post,
-                liked: Boolean(post.liked || post.isLiked),
-            })));
+            normalized.sort((a, b) => {
+                const timeA = new Date(a.createdAt || 0).getTime();
+                const timeB = new Date(b.createdAt || 0).getTime();
+                return timeB - timeA;
+            });
+            
+            setPosts(normalized);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load posts');
         } finally {
             setLoading(false);
         }
-    };
+    }, [userId, user?.id]);
 
     useEffect(() => {
         fetchUserPosts();
-    }, [userId])
+    }, [fetchUserPosts]);
 
     // Listen for post creation events to refresh user posts
     useEffect(() => {
-        const handlePostCreated = () => {
+        const handlePostCreated = (event: Event) => {
+            const customEvent = event as CustomEvent<{ post?: any }>;
+            const newPostRaw = customEvent.detail?.post;
+            if (newPostRaw) {
+                const normalized = normalizePostFromApi(newPostRaw);
+                const belongsToUser = userId
+                    ? String(newPostRaw.userId || newPostRaw.author?.id || newPostRaw.user?.id) === String(userId)
+                    : false;
+                
+                if (normalized && belongsToUser) {
+                    setPosts(prev => {
+                        const filtered = prev.filter(p => p.id !== normalized.id);
+                        return [normalized, ...filtered];
+                    });
+                }
+            }
             fetchUserPosts();
         };
 
-        window.addEventListener('post:created', handlePostCreated);
+        window.addEventListener('post:created', handlePostCreated as EventListener);
         
         return () => {
-            window.removeEventListener('post:created', handlePostCreated);
+            window.removeEventListener('post:created', handlePostCreated as EventListener);
         };
     }, [userId, fetchUserPosts]);
 
