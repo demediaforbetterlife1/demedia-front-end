@@ -214,11 +214,10 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
         let imageUrls: string[] = [];
         for (const image of images) {
             const formData = new FormData();
-            formData.append('file', image);
-            formData.append('type', 'image');
+            formData.append('image', image); // Backend expects 'image' field for post uploads
             formData.append('userId', String(userId));
 
-            const uploadResponse = await apiFetch(`/api/upload`, {
+            const uploadResponse = await apiFetch(`/api/upload/post`, {
                 method: 'POST',
                 body: formData,
             });

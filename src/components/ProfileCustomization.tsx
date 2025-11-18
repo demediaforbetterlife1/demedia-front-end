@@ -125,9 +125,9 @@ export default function ProfileCustomization({ user, onUpdate }: ProfileCustomiz
     formData.append("file", file);
 
     try {
-      // Use unified upload route and auth via apiFetch
+      // Use profile upload route for profile customization
       // Pass userId as third parameter to set user-id header
-      const res = await apiFetch(`/api/upload`, {
+      const res = await apiFetch(`/api/upload/profile`, {
         method: "POST",
         body: formData,
       }, user.id);
