@@ -38,20 +38,16 @@ export async function POST(request: NextRequest) {
       } else {
         const errorText = await backendResponse.text();
         console.log('Backend chat creation failed:', backendResponse.status, errorText);
+        return NextResponse.json({ 
+          error: `Backend chat creation failed: ${errorText}` 
+        }, { status: backendResponse.status });
       }
     } catch (backendError) {
       console.log('Backend chat connection error:', backendError);
+      return NextResponse.json({ 
+        error: 'Chat service is currently unavailable. Please try again later.' 
+      }, { status: 503 });
     }
-
-    // Fallback: Create a mock chat ID
-    console.log('Using fallback chat creation');
-    const mockChatId = `chat_${participantId}_${Date.now()}`;
-    
-    return NextResponse.json({
-      id: mockChatId,
-      participantId: parseInt(participantId),
-      message: 'Chat created (fallback mode)'
-    });
 
   } catch (error) {
     console.error('Error creating/finding chat:', error);

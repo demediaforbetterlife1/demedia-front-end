@@ -35,9 +35,14 @@ export default function ChatButton({ targetUserId, targetUserName, className = "
                 console.log('Chat created/found:', chatData);
                 router.push(`/messeging/chat/${chatData.id}`);
             } else {
-                const errorText = await response.text();
-                console.error('Failed to create/find chat:', response.status, errorText);
-                alert('Failed to start chat. Please try again.');
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                console.error('Failed to create/find chat:', response.status, errorData);
+                
+                if (response.status === 503) {
+                    alert('Chat service is currently unavailable. Please try again later.');
+                } else {
+                    alert(`Failed to start chat: ${errorData.error || 'Please try again.'}`);
+                }
             }
         } catch (error) {
             console.error('Error starting chat:', error);
