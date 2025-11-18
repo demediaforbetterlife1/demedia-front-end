@@ -62,7 +62,7 @@ export default function YouTubeStyleComments({
     const fetchComments = async () => {
         try {
             setIsLoading(true);
-            const response = await apiFetch(`/api/comments/${postId}`, {}, user?.id);
+            const response = await apiFetch(`/api/posts/${postId}/comments`, {}, user?.id);
 
             if (response.ok) {
                 const data = await response.json();

@@ -565,9 +565,9 @@ export async function createPost(payload: any) {
 /* --------------------------- Comments endpoints ------------------------- */
 
 export async function postComment(postId: string | number, content: string) {
-  const res = await apiFetch(`/api/comments`, {
+  const res = await apiFetch(`/api/posts/${postId}/comments`, {
     method: "POST",
-    body: JSON.stringify({ postId, content }),
+    body: JSON.stringify({ content }),
   });
   
   // Handle 401 for comment posts
