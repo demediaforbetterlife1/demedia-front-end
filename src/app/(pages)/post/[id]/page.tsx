@@ -18,6 +18,7 @@ import { useI18n } from "@/contexts/I18nContext";
 import { useNotifications } from "@/components/NotificationProvider";
 import CommentModal from "@/components/CommentModal";
 import { apiFetch, getAuthHeaders } from "@/lib/api";
+import { normalizePost } from "@/utils/postUtils";
 import { resolveChatId } from "@/utils/chatUtils";
 
 type PostType = {
@@ -153,7 +154,7 @@ export default function PostDetailPage() {
         const response = await apiFetch(`/api/posts/${params.id}`);
         if (response.ok) {
           const postData = await response.json();
-          setPost(postData);
+          setPost(normalizePost(postData));
         } else {
           setError("Post not found");
         }

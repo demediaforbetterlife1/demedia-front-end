@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
 import { apiFetch, getAuthHeaders } from "@/lib/api";
+import { normalizePost } from "@/utils/postUtils";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -96,7 +97,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     try {
       setLoading(true);
       const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
-      const res = await apiFetch(endpoint, { cache: "no-store" });
+      const res = await apiFetch(endpoint, { cache: "no-store" }, user?.id);
 
       if (!res.ok) throw new Error("Failed to fetch posts");
       const data = await res.json();
@@ -109,18 +110,9 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
       setPosts(
         fetched
-          .map((p: any) => ({
-            id: p.id,
-            content: p.content ?? "",
-            likes: p.likes ?? p._count?.likes ?? 0,
-            comments: p.comments ?? p._count?.comments ?? 0,
-            liked: Boolean(p.liked || p.isLiked),
-            imageUrl: p.imageUrl ?? null,
-            imageUrls: p.imageUrls ?? [],
-            createdAt: p.createdAt ?? p.created_at ?? null,
-            author: p.author ?? p.user ?? null,
-          }))
-          .reverse()
+          .map((p: any) => normalizePost(p))
+          .filter(Boolean)
+          .reverse() as PostType[]
       );
     } catch (err) {
       console.error("❌ Fetch posts error:", err);
@@ -132,7 +124,29 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
   useEffect(() => {
     if (isVisible) fetchPosts();
-  }, [isVisible, postId]);
+  }, [isVisible, postId, user?.id]);
+
+  useEffect(() => {
+    const handlePostCreated = (event: Event) => {
+      const customEvent = event as CustomEvent<{ post?: any }>;
+      const newPostRaw = customEvent.detail?.post;
+      if (!newPostRaw) return;
+      const normalized = normalizePost(newPostRaw);
+      if (!normalized) return;
+      setPosts((prev) => {
+        const filtered = prev.filter((p) => p.id !== normalized.id);
+        return [normalized as PostType, ...filtered];
+      });
+    };
+
+    window.addEventListener("post:created", handlePostCreated as EventListener);
+    return () => {
+      window.removeEventListener(
+        "post:created",
+        handlePostCreated as EventListener
+      );
+    };
+  }, []);
 
   // ❤️ اللايك
   const handleLike = async (e: React.MouseEvent, id: number) => {
@@ -150,7 +164,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       const res = await apiFetch(`/api/posts/${id}/like`, {
         method: "POST",
         cache: "no-store",
-      });
+      }, user?.id);
       if (!res.ok) throw new Error("Like request failed");
       const data = await res.json();
 
@@ -196,17 +210,15 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         const author = post.author;
         const profilePic = author?.profilePicture || "/assets/images/default-avatar.svg";
         const images =
-          post.imageUrls && post.imageUrls.length > 0
+          (Array.isArray((post as any).images) && (post as any).images.length > 0
+            ? (post as any).images
+            : post.imageUrls && post.imageUrls.length > 0
             ? post.imageUrls
             : post.imageUrl
             ? [post.imageUrl]
-            : [];
+            : []) as string[];
+        const videoUrl = (post as any).videoUrl || null;
         
-        // Debug: Log image URLs to see what we're getting
-        if (images.length > 0) {
-          console.log('Post images for post', post.id, ':', images);
-        }
-
         return (
           <motion.div
             key={post.id}
@@ -248,40 +260,44 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               {post.content}
             </p>
 
-            {/* 🖼️ Images */}
-            {images.length > 0 && (
-              <div className="mb-4 rounded-xl overflow-hidden">
-                {images.length === 1 ? (
-                  <img
-                    src={images[0]}
-                    alt="Post image"
-                    className="w-full h-auto object-cover max-h-96"
-                    onError={(e) => {
-                      console.error('Image failed to load:', images[0]);
-                      console.error('Error event:', e);
-                    }}
-                    onLoad={() => {
-                      console.log('Image loaded successfully:', images[0]);
-                    }}
+            {/* 🖼️ Media */}
+            {(videoUrl || images.length > 0) && (
+              <div className="mb-4 rounded-xl overflow-hidden space-y-4">
+                {videoUrl && (
+                  <video
+                    src={videoUrl}
+                    controls
+                    className="w-full rounded-xl max-h-96"
                   />
-                ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    {images.map((img, idx) => (
-                      <img
-                        key={idx}
-                        src={img}
-                        alt={`Post image ${idx + 1}`}
-                        className="w-full h-48 object-cover rounded-lg"
-                        onError={(e) => {
-                          console.error(`Image ${idx + 1} failed to load:`, img);
-                          console.error('Error event:', e);
-                        }}
-                        onLoad={() => {
-                          console.log(`Image ${idx + 1} loaded successfully:`, img);
-                        }}
-                      />
-                    ))}
-                  </div>
+                )}
+
+                {images.length > 0 && (
+                  images.length === 1 ? (
+                    <img
+                      src={images[0]}
+                      alt="Post image"
+                      className="w-full h-auto object-cover max-h-96"
+                      onError={(e) => {
+                        console.error('Image failed to load:', images[0]);
+                        console.error('Error event:', e);
+                      }}
+                    />
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      {images.map((img, idx) => (
+                        <img
+                          key={idx}
+                          src={img}
+                          alt={`Post image ${idx + 1}`}
+                          className="w-full h-48 object-cover rounded-lg"
+                          onError={(e) => {
+                            console.error(`Image ${idx + 1} failed to load:`, img);
+                            console.error('Error event:', e);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )
                 )}
               </div>
             )}

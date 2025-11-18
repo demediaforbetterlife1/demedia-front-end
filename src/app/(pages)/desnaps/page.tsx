@@ -23,6 +23,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import CreateDeSnapModal from '@/components/CreateDeSnapModal';
 import { apiFetch } from '@/lib/api';
+import { normalizeDeSnap } from '@/utils/desnapUtils';
 import { ensureAbsoluteMediaUrl } from '@/utils/mediaUtils';
 
 interface DeSnap {
@@ -45,17 +46,6 @@ interface DeSnap {
         profilePicture?: string;
     };
 }
-
-const normalizeDeSnap = (deSnap: any): DeSnap => ({
-    ...deSnap,
-    content: ensureAbsoluteMediaUrl(deSnap.content) || deSnap.content,
-    thumbnail: ensureAbsoluteMediaUrl(deSnap.thumbnail) || deSnap.thumbnail,
-    author: deSnap.author || deSnap.user || {
-        id: 0,
-        name: "Unknown",
-        username: "unknown"
-    }
-});
 
 export default function DeSnapsPage() {
     const { theme } = useTheme();
@@ -134,6 +124,37 @@ export default function DeSnapsPage() {
     useEffect(() => {
         fetchDeSnaps();
     }, [filter]);
+
+    useEffect(() => {
+        const handleCreated = (event: Event) => {
+            const customEvent = event as CustomEvent<{ deSnap?: any }>;
+            const raw = customEvent.detail?.deSnap;
+            if (!raw) return;
+            const normalized = normalizeDeSnap(raw);
+            if (!normalized) return;
+            setDeSnaps(prev => {
+                const filtered = prev.filter(ds => ds.id !== normalized.id);
+                return [normalized, ...filtered];
+            });
+        };
+
+        const handleUpdated = (event: Event) => {
+            const customEvent = event as CustomEvent<{ deSnap?: any }>;
+            const raw = customEvent.detail?.deSnap;
+            if (!raw) return;
+            const normalized = normalizeDeSnap(raw);
+            if (!normalized) return;
+            setDeSnaps(prev => prev.map(ds => ds.id === normalized.id ? normalized : ds));
+        };
+
+        window.addEventListener('desnap:created', handleCreated as EventListener);
+        window.addEventListener('desnap:updated', handleUpdated as EventListener);
+
+        return () => {
+            window.removeEventListener('desnap:created', handleCreated as EventListener);
+            window.removeEventListener('desnap:updated', handleUpdated as EventListener);
+        };
+    }, []);
 
 
     const fetchDeSnaps = async () => {

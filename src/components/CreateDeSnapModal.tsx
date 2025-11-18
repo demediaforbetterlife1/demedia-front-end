@@ -26,6 +26,7 @@ import CollaborativeFeatures from "./CollaborativeFeatures";
 import GamificationSystem from "./GamificationSystem";
 import AdvancedVisibilityControls from "./AdvancedVisibilityControls";
 import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
+import { normalizeDeSnap } from "@/utils/desnapUtils";
 
 interface CreateDeSnapModalProps {
     isOpen: boolean;
@@ -318,9 +319,22 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 throw new Error('Invalid response from server. Please try again.');
             }
             
+            const normalizedDeSnap = normalizeDeSnap({
+                ...newDeSnap,
+                content: videoUrl,
+                thumbnail: thumbnailUrl || videoUrl,
+            }) || {
+                ...newDeSnap,
+                content: videoUrl,
+                thumbnail: thumbnailUrl || videoUrl,
+            };
+
             if (onDeSnapCreated) {
-                onDeSnapCreated(newDeSnap);
+                onDeSnapCreated(normalizedDeSnap);
             }
+            window.dispatchEvent(new CustomEvent('desnap:created', {
+                detail: { deSnap: normalizedDeSnap }
+            }));
 
             onClose();
         } catch (err: unknown) {

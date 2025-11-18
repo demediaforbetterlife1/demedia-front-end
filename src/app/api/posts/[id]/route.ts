@@ -32,13 +32,29 @@ export async function GET(
       },
     });
 
+    const text = await res.text();
+
     if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Backend responded with ${res.status}: ${errText}`);
+      console.error('❌ Backend post fetch failed:', res.status, text);
+      let payload: any = text;
+      try {
+        payload = text ? JSON.parse(text) : { error: res.statusText };
+      } catch {
+        payload = { error: text || res.statusText || 'Failed to fetch post' };
+      }
+      return NextResponse.json(payload, { status: res.status });
     }
 
-    const data = await res.json();
-    return NextResponse.json(data, { status: 200 });
+    try {
+      const data = text ? JSON.parse(text) : null;
+      return NextResponse.json(data, { status: 200 });
+    } catch (parseError) {
+      console.error('❌ Failed to parse backend post response:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid response from backend', details: text },
+        { status: 502 }
+      );
+    }
   } catch (error: any) {
     console.error("Error fetching single post:", error?.message || error);
     return NextResponse.json(

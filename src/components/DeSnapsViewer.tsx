@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
     X, 
@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { normalizeDeSnap } from "@/utils/desnapUtils";
 
 interface DeSnap {
     id: number;
@@ -67,6 +68,15 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
     
     const videoRef = useRef<HTMLVideoElement>(null);
     const progressRef = useRef<HTMLDivElement>(null);
+
+    const mergeAndEmitUpdate = useCallback((partial: Partial<DeSnap>) => {
+        const merged = { ...deSnap, ...partial };
+        const normalized = normalizeDeSnap(merged) || merged;
+        onDeSnapUpdated?.(normalized as DeSnap);
+        window.dispatchEvent(new CustomEvent('desnap:updated', {
+            detail: { deSnap: normalized }
+        }));
+    }, [deSnap, onDeSnapUpdated]);
 
     useEffect(() => {
         if (videoRef.current) {
@@ -129,8 +139,7 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
         setLikes(newLikes);
         
         // Update the DeSnap
-        const updatedDeSnap = { ...deSnap, isLiked: newLiked, likes: newLikes };
-        onDeSnapUpdated?.(updatedDeSnap);
+        mergeAndEmitUpdate({ isLiked: newLiked, likes: newLikes });
         
         // Send API request to like/unlike
         try {
@@ -148,8 +157,7 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
         setIsBookmarked(newBookmarked);
         
         // Update the DeSnap
-        const updatedDeSnap = { ...deSnap, isBookmarked: newBookmarked };
-        onDeSnapUpdated?.(updatedDeSnap);
+        mergeAndEmitUpdate({ isBookmarked: newBookmarked });
         
         // Send API request to bookmark/unbookmark
         try {
@@ -204,8 +212,7 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                 setComments(prev => [newCommentData, ...prev]);
                 setNewComment("");
                 // Update comment count
-                const updatedDeSnap = { ...deSnap, comments: deSnap.comments + 1 };
-                onDeSnapUpdated?.(updatedDeSnap);
+                mergeAndEmitUpdate({ comments: deSnap.comments + 1 });
             }
         } catch (error) {
             console.error('Error submitting comment:', error);

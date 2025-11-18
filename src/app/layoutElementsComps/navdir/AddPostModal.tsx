@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getModalThemeClasses } from "@/utils/enhancedThemeUtils";
 import { contentModerationService } from "@/services/contentModeration";
 import { apiFetch } from "@/lib/api";
+import { normalizePost } from "@/utils/postUtils";
 import { 
     X, 
     Image as ImageIcon, 
@@ -311,11 +312,12 @@ export default function AddPostModal({ isOpen, onClose, authorId }: AddPostModal
 
         try {
             const newPost = JSON.parse(responseText);
+            const normalizedPost = normalizePost(newPost) || newPost;
             alert("✅ Post created successfully!");
             
             // Dispatch event to refresh posts list
             window.dispatchEvent(new CustomEvent('post:created', { 
-                detail: { post: newPost } 
+                detail: { post: normalizedPost } 
             }));
             
             onClose();

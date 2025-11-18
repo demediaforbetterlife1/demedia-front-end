@@ -103,7 +103,11 @@ import PhotoUploadModal from "@/components/PhotoUploadModal";
 import { getThemeClasses, getButtonClasses, getCardClasses } from "@/utils/themeUtils";
 import { followUser, unfollowUser } from '@/lib/api';
 import { ensureAbsoluteMediaUrl, appendCacheBuster } from "@/utils/mediaUtils";
+import { normalizePost } from "@/utils/postUtils";
+import { normalizeDeSnap } from "@/utils/desnapUtils";
 import { resolveChatId } from "@/utils/chatUtils";
+
+const formatMediaUrl = (url?: string | null) => ensureAbsoluteMediaUrl(url) ?? null;
 
 interface Story {
     id: number;
@@ -149,48 +153,6 @@ interface Profile {
     privacy?: 'public' | 'followers' | 'private';
     subscriptionTier?: 'monthly' | 'quarterly' | 'semiannual' | null;
 }
-
-const formatMediaUrl = (url?: string | null) => ensureAbsoluteMediaUrl(url) ?? null;
-
-const normalizePostFromApi = (post: any) => {
-    if (!post) return null;
-    const imagesArray = Array.isArray(post.images)
-        ? post.images
-        : Array.isArray(post.media)
-            ? post.media
-            : [];
-
-    const formattedImages = imagesArray
-        .map((img: any) => (typeof img === "string" ? img : img?.url))
-        .map(formatMediaUrl)
-        .filter(Boolean);
-
-    const primaryImage = formatMediaUrl(
-        post.imageUrl ||
-        formattedImages[0] ||
-        post.media?.[0]?.url
-    );
-
-    return {
-        ...post,
-        title: post.title ?? post.heading ?? "",
-        content: post.content ?? post.caption ?? post.body ?? "",
-        imageUrl: primaryImage,
-        images: formattedImages,
-        liked: Boolean(post.liked || post.isLiked),
-        createdAt: post.createdAt || post.created_at || new Date().toISOString(),
-        author: post.author || post.user || post.owner || null,
-    };
-};
-
-const normalizeDeSnap = (deSnap: any) => {
-    if (!deSnap) return null;
-    return {
-        ...deSnap,
-        content: formatMediaUrl(deSnap.content),
-        thumbnail: formatMediaUrl(deSnap.thumbnail),
-    };
-};
 
 export default function ProfilePage() {
     const { user, isLoading: authLoading, updateUser } = useAuth();
@@ -1690,6 +1652,7 @@ const UserDeSnaps = ({
     const [deSnaps, setDeSnaps] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { user } = useAuth();
 
     useEffect(() => {
         if (!userId) return;
@@ -1697,7 +1660,9 @@ const UserDeSnaps = ({
         const fetchUserDeSnaps = async () => {
             try {
                 setLoading(true);
-                const response = await apiFetch(`/api/desnaps/user/${userId}`);
+                const response = await apiFetch(`/api/desnaps/user/${userId}?viewerId=${user?.id ?? ''}`, {
+                    method: 'GET',
+                }, user?.id);
                 
                 if (!response.ok) {
                     throw new Error('Failed to fetch DeSnaps');
@@ -1716,6 +1681,38 @@ const UserDeSnaps = ({
         };
 
         fetchUserDeSnaps();
+    }, [userId, user?.id]);
+
+    useEffect(() => {
+        const handleCreated = (event: Event) => {
+            const customEvent = event as CustomEvent<{ deSnap?: any }>;
+            const raw = customEvent.detail?.deSnap;
+            if (!raw) return;
+            const normalized = normalizeDeSnap(raw);
+            if (!normalized) return;
+            if (userId && String(normalized.userId) !== String(userId)) return;
+            setDeSnaps(prev => {
+                const filtered = prev.filter(ds => ds.id !== normalized.id);
+                return [normalized, ...filtered];
+            });
+        };
+
+        const handleUpdated = (event: Event) => {
+            const customEvent = event as CustomEvent<{ deSnap?: any }>;
+            const raw = customEvent.detail?.deSnap;
+            if (!raw) return;
+            const normalized = normalizeDeSnap(raw);
+            if (!normalized) return;
+            setDeSnaps(prev => prev.map(ds => ds.id === normalized.id ? normalized : ds));
+        };
+
+        window.addEventListener('desnap:created', handleCreated as EventListener);
+        window.addEventListener('desnap:updated', handleUpdated as EventListener);
+
+        return () => {
+            window.removeEventListener('desnap:created', handleCreated as EventListener);
+            window.removeEventListener('desnap:updated', handleUpdated as EventListener);
+        };
     }, [userId]);
 
     if (loading) {
@@ -1898,7 +1895,7 @@ const UserPosts = ({
             const data = await response.json();
             const postsData = Array.isArray(data) ? data : (data.posts || []);
             const normalized = postsData
-                .map((post: any) => normalizePostFromApi(post))
+                .map((post: any) => normalizePost(post))
                 .filter(Boolean) as any[];
             
             normalized.sort((a, b) => {
@@ -1925,7 +1922,7 @@ const UserPosts = ({
             const customEvent = event as CustomEvent<{ post?: any }>;
             const newPostRaw = customEvent.detail?.post;
             if (newPostRaw) {
-                const normalized = normalizePostFromApi(newPostRaw);
+                const normalized = normalizePost(newPostRaw);
                 const belongsToUser = userId
                     ? String(newPostRaw.userId || newPostRaw.author?.id || newPostRaw.user?.id) === String(userId)
                     : false;
@@ -2047,7 +2044,15 @@ const UserPosts = ({
 
     return (
         <div className="space-y-6">
-            {posts.map((post) => (
+            {posts.map((post) => {
+                const galleryImages = Array.isArray(post.images) && post.images.length > 0
+                    ? post.images
+                    : post.imageUrl
+                    ? [post.imageUrl]
+                    : [];
+                const videoUrl = (post as any).videoUrl || null;
+
+                return (
                 <motion.div 
                     key={post.id} 
                     className={`rounded-2xl p-6 shadow-xl backdrop-blur-sm transition-all duration-300 ${
@@ -2131,35 +2136,35 @@ const UserPosts = ({
                     </div>
 
                     {/* Post Media */}
-                    {(post.imageUrl || post.images?.length || post.media?.length) && (
-                        <div className="mb-4">
-                            {post.imageUrl && (
-                                <img 
-                                    src={post.imageUrl} 
-                                    alt="Post content" 
-                                    className="w-full rounded-xl object-cover max-h-96 shadow-lg"
-                                    onError={(e) => {
-                                        console.log('Image failed to load:', post.imageUrl);
-                                        e.currentTarget.style.display = 'none';
-                                    }}
+                    {(videoUrl || galleryImages.length > 0) && (
+                        <div className="mb-4 space-y-4">
+                            {videoUrl && (
+                                <video
+                                    controls
+                                    className="w-full rounded-xl max-h-96"
+                                    src={videoUrl}
                                 />
                             )}
                             
-                            {post.images && post.images.length > 0 && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {post.images.map((imageUrl: string, index: number) => (
-                                        <img 
-                                            key={index}
-                                            src={imageUrl} 
-                                            alt={`Post content ${index + 1}`} 
-                                            className="w-full rounded-xl object-cover max-h-64 shadow-lg"
-                                            onError={(e) => {
-                                                console.log('Image failed to load:', imageUrl);
-                                                e.currentTarget.style.display = 'none';
-                                            }}
-                                        />
-                                    ))}
-                                </div>
+                            {galleryImages.length > 0 && (
+                                galleryImages.length === 1 ? (
+                                    <img 
+                                        src={galleryImages[0]} 
+                                        alt="Post content" 
+                                        className="w-full rounded-xl object-cover max-h-96 shadow-lg"
+                                    />
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {galleryImages.map((imageUrl: string, index: number) => (
+                                            <img 
+                                                key={index}
+                                                src={imageUrl} 
+                                                alt={`Post content ${index + 1}`} 
+                                                className="w-full rounded-xl object-cover max-h-64 shadow-lg"
+                                            />
+                                        ))}
+                                    </div>
+                                )
                             )}
                         </div>
                     )}
@@ -2247,7 +2252,7 @@ const UserPosts = ({
                         </div>
                     </div>
                 </motion.div>
-            ))}
+            )})}
             
             {/* Comment Modal */}
             {showCommentModal && selectedPost && (
