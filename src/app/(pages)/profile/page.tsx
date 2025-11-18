@@ -1652,6 +1652,8 @@ const UserDeSnaps = ({
     const [deSnaps, setDeSnaps] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showCommentModal, setShowCommentModal] = useState(false);
+    const [selectedDeSnap, setSelectedDeSnap] = useState<any>(null);
     const { user } = useAuth();
 
     useEffect(() => {
@@ -1747,101 +1749,193 @@ const UserDeSnaps = ({
         );
     }
 
+    const handleLike = async (deSnapId: number) => {
+        const deSnap = deSnaps.find(ds => ds.id === deSnapId);
+        if (!deSnap) return;
+        
+        const prevLiked = deSnap.isLiked || false;
+        const prevLikes = deSnap.likes || 0;
+        
+        // Optimistic update
+        setDeSnaps(prev => prev.map(ds => 
+            ds.id === deSnapId 
+                ? { ...ds, isLiked: !prevLiked, likes: prevLiked ? prevLikes - 1 : prevLikes + 1 }
+                : ds
+        ));
+        
+        try {
+            const response = await apiFetch(`/api/desnaps/${deSnapId}/like`, {
+                method: 'POST',
+            }, user?.id);
+            
+            if (!response.ok) throw new Error('Like request failed');
+            
+            const data = await response.json();
+            
+            // Update with server response
+            setDeSnaps(prev => prev.map(ds => 
+                ds.id === deSnapId 
+                    ? { ...ds, isLiked: data.isLiked ?? !prevLiked, likes: data.likes ?? (prevLiked ? prevLikes - 1 : prevLikes + 1) }
+                    : ds
+            ));
+        } catch (err) {
+            console.error('Like error:', err);
+            // Revert on error
+            setDeSnaps(prev => prev.map(ds => 
+                ds.id === deSnapId 
+                    ? { ...ds, isLiked: prevLiked, likes: prevLikes }
+                    : ds
+            ));
+        }
+    };
+
     return (
         <div className="space-y-6">
             {deSnaps.map((deSnap) => (
                 <motion.div 
                     key={deSnap.id} 
-                    className={`rounded-2xl p-6 shadow-xl backdrop-blur-sm transition-all duration-300 ${
+                    className={`group relative rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden ${
                         theme === 'gold' 
-                            ? 'bg-gradient-to-br from-gray-700/90 to-gray-800/90 border border-yellow-500/30 gold-glow gold-shimmer' 
-                            : 'bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-700/50'
+                            ? 'bg-gradient-to-br from-gray-800/95 via-gray-700/95 to-gray-800/95 border border-yellow-500/40 gold-glow gold-shimmer' 
+                            : 'bg-gradient-to-br from-gray-800/95 via-gray-900/95 to-gray-800/95 border border-gray-700/60'
                     }`}
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    transition={{ duration: 0.2 }}
+                    whileHover={{ scale: 1.01, y: -4 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                 >
+                    {/* Animated background gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-pink-500/5 to-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                    
                     {/* DeSnap Header */}
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-white font-bold">
-                                {deSnap.author?.name?.charAt(0) || 'U'}
-                            </div>
+                    <div className="relative flex items-center justify-between mb-5">
+                        <div className="flex items-center space-x-4">
+                            <motion.button
+                                whileHover={{ scale: 1.1, rotate: 5 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="relative w-14 h-14 bg-gradient-to-br from-purple-500 via-pink-600 to-yellow-500 rounded-2xl flex items-center justify-center text-white font-bold hover:shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 cursor-pointer ring-2 ring-purple-500/30 ring-offset-2 ring-offset-gray-900 overflow-hidden"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+                                <span className="relative z-10 text-lg">{deSnap.author?.name?.charAt(0) || 'U'}</span>
+                            </motion.button>
                             <div>
-                                <h3 className="font-bold text-white text-lg">{deSnap.author?.name || 'Unknown User'}</h3>
-                                <p className="text-sm text-gray-400">@{deSnap.author?.username || 'unknown'}</p>
+                                <h3 className="font-bold text-white text-lg md:text-xl bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                                    {deSnap.author?.name || 'Unknown User'}
+                                </h3>
+                                <p className="text-sm text-gray-400 font-medium">@{deSnap.author?.username || 'unknown'}</p>
                             </div>
                         </div>
-                        <div className="text-sm text-gray-500">
-                            {new Date(deSnap.createdAt).toLocaleDateString()}
+                        <div className="flex items-center space-x-2 text-sm text-gray-500 bg-gray-800/40 px-3 py-2 rounded-lg border border-gray-700/50">
+                            <Clock size={14} />
+                            <span>{new Date(deSnap.createdAt).toLocaleDateString()}</span>
                         </div>
                     </div>
 
                     {/* DeSnap Content */}
-                    <div className="mb-4">
+                    <div className="mb-5">
                         {deSnap.content && (
-                            <div className="relative rounded-xl overflow-hidden mb-4">
+                            <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
                                 <video
                                     controls
                                     preload="metadata"
-                                    className="w-full h-64 object-cover"
+                                    className="w-full h-80 md:h-96 object-cover"
                                     poster={deSnap.thumbnail || undefined}
                                     src={deSnap.content}
                                     onError={(event) => {
                                         console.error('DeSnap video failed to load:', deSnap.content);
-                                        event.currentTarget.controls = false;
+                                        event.currentTarget.style.display = 'none';
                                     }}
                                 >
                                     Your browser does not support the video tag.
                                 </video>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                             </div>
                         )}
                         
-                        {/* DeSnap Video/Thumbnail */}
-                        {deSnap.thumbnail && (
-                            <div className="relative rounded-xl overflow-hidden">
+                        {/* DeSnap Video/Thumbnail fallback */}
+                        {!deSnap.content && deSnap.thumbnail && (
+                            <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
                                 <img 
                                     src={deSnap.thumbnail} 
                                     alt="DeSnap thumbnail" 
-                                    className="w-full h-64 object-cover"
+                                    className="w-full h-80 md:h-96 object-cover transition-transform duration-500 group-hover/media:scale-105"
                                     onError={(e) => {
-                                        console.log('DeSnap thumbnail failed to load:', deSnap.thumbnail);
+                                        console.error('DeSnap thumbnail failed to load:', deSnap.thumbnail);
                                         e.currentTarget.style.display = 'none';
                                     }}
                                 />
-                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                    <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
-                                        <Video className="w-8 h-8 text-white" />
+                                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                    <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center ring-4 ring-white/10">
+                                        <Video className="w-10 h-10 text-white" />
                                     </div>
                                 </div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                             </div>
                         )}
                     </div>
 
                     {/* DeSnap Actions */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-700/50">
-                        <div className="flex items-center space-x-6">
-                            <button className="flex items-center space-x-2 text-gray-400 hover:text-red-400 transition-colors">
-                                <Heart size={20} />
-                                <span className="font-medium">{deSnap.likes || 0}</span>
-                            </button>
-                            <button className="flex items-center space-x-2 text-gray-400 hover:text-blue-400 transition-colors">
+                    <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between pt-5 border-t border-gray-700/60 gap-4">
+                        <div className="flex items-center space-x-2 sm:space-x-4">
+                            <motion.button 
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => handleLike(deSnap.id)}
+                                className={`relative flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-300 ${
+                                    deSnap.isLiked 
+                                        ? 'text-red-500 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40' 
+                                        : 'text-gray-400 bg-gray-700/30 hover:bg-gray-700/50 hover:text-red-400 border border-gray-600/30'
+                                }`}
+                            >
+                                <Heart size={20} fill={deSnap.isLiked ? 'currentColor' : 'none'} className={deSnap.isLiked ? 'animate-pulse' : ''} />
+                                <span className="font-semibold">{deSnap.likes || 0}</span>
+                            </motion.button>
+                            <motion.button 
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => {
+                                    setSelectedDeSnap(deSnap);
+                                    setShowCommentModal(true);
+                                }}
+                                className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-gray-400 bg-gray-700/30 hover:bg-blue-500/20 hover:text-blue-400 transition-all duration-300 border border-gray-600/30 hover:border-blue-500/40"
+                            >
                                 <MessageCircle size={20} />
-                                <span className="font-medium">{deSnap.comments || 0}</span>
-                            </button>
-                            <button className="flex items-center space-x-2 text-gray-400 hover:text-green-400 transition-colors">
+                                <span className="font-semibold">{deSnap.comments || 0}</span>
+                            </motion.button>
+                            <motion.button 
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-gray-400 bg-gray-700/30 hover:bg-green-500/20 hover:text-green-400 transition-all duration-300 border border-gray-600/30 hover:border-green-500/40"
+                            >
                                 <Share size={20} />
-                                <span className="font-medium">Share</span>
-                            </button>
+                                <span className="font-semibold hidden sm:inline">Share</span>
+                            </motion.button>
                         </div>
                         
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <span>{deSnap.views || 0} views</span>
-                            <span>•</span>
-                            <span>{deSnap.duration || 0}s</span>
+                        <div className="flex items-center space-x-3 text-sm text-gray-400 bg-gray-800/40 px-3 py-2 rounded-lg border border-gray-700/50">
+                            <span className="flex items-center space-x-1">
+                                <Eye size={14} />
+                                <span className="font-medium">{deSnap.views || 0}</span>
+                            </span>
+                            <span className="text-gray-600">•</span>
+                            <span className="font-medium">{deSnap.duration || 0}s</span>
                         </div>
                     </div>
                 </motion.div>
             ))}
+            
+            {/* Comment Modal for DeSnaps */}
+            {showCommentModal && selectedDeSnap && (
+                <CommentModal
+                    isOpen={showCommentModal}
+                    onClose={() => {
+                        setShowCommentModal(false);
+                        setSelectedDeSnap(null);
+                    }}
+                    postId={selectedDeSnap.id}
+                    postContent={selectedDeSnap.caption || selectedDeSnap.description || ''}
+                    postAuthor={selectedDeSnap.author?.name || 'Unknown'}
+                    isDeSnap={true}
+                />
+            )}
         </div>
     );
 };
@@ -2055,42 +2149,51 @@ const UserPosts = ({
                 return (
                 <motion.div 
                     key={post.id} 
-                    className={`rounded-2xl p-6 shadow-xl backdrop-blur-sm transition-all duration-300 ${
+                    className={`group relative rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden ${
                         theme === 'gold' 
-                            ? 'bg-gradient-to-br from-gray-700/90 to-gray-800/90 border border-yellow-500/30 gold-glow gold-shimmer' 
-                            : 'bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-700/50'
+                            ? 'bg-gradient-to-br from-gray-800/95 via-gray-700/95 to-gray-800/95 border border-yellow-500/40 gold-glow gold-shimmer' 
+                            : 'bg-gradient-to-br from-gray-800/95 via-gray-900/95 to-gray-800/95 border border-gray-700/60'
                     }`}
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    transition={{ duration: 0.2 }}
+                    whileHover={{ scale: 1.01, y: -4 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                 >
+                    {/* Animated background gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                    
                     {/* Post Header */}
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="relative flex items-start justify-between mb-5">
                         <div className="flex items-start space-x-4">
                             <motion.button
-                                whileHover={{ scale: 1.05 }}
+                                whileHover={{ scale: 1.1, rotate: 5 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => { const id = post.author?.id; if (id) router.push(`/profile?userId=${id}`); }}
-                                className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold hover:shadow-lg transition-all duration-300 cursor-pointer ring-2 ring-cyan-500/20"
+                                className="relative w-14 h-14 bg-gradient-to-br from-cyan-500 via-purple-600 to-pink-600 rounded-2xl flex items-center justify-center text-white font-bold hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 cursor-pointer ring-2 ring-cyan-500/30 ring-offset-2 ring-offset-gray-900 overflow-hidden"
                             >
-                                {post.author?.name?.charAt(0) || 'U'}
+                                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+                                <span className="relative z-10 text-lg">{post.author?.name?.charAt(0) || 'U'}</span>
                             </motion.button>
                             <div className="flex-1">
-                                <div className="flex items-center space-x-2 mb-1">
-                                    <h3 className="font-bold text-white text-lg">{post.author?.name || 'Unknown User'}</h3>
+                                <div className="flex items-center space-x-2 mb-1.5">
+                                    <h3 className="font-bold text-white text-lg md:text-xl bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                                        {post.author?.name || 'Unknown User'}
+                                    </h3>
                                     <PremiumUserIndicator 
                                         subscriptionTier={post.author?.subscriptionTier}
                                         size="sm"
                                     />
-                                    <div className="flex items-center space-x-1">
-                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                        <span className="text-xs text-green-400">Online</span>
+                                    <div className="flex items-center space-x-1.5 px-2 py-0.5 bg-green-500/20 rounded-full border border-green-500/30">
+                                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                                        <span className="text-xs text-green-400 font-medium">Online</span>
                                     </div>
                                 </div>
-                                <p className="text-sm text-gray-400 mb-1">@{post.author?.username || 'unknown'}</p>
-                                <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                <p className="text-sm text-gray-400 mb-2 font-medium">@{post.author?.username || 'unknown'}</p>
+                                <div className="flex items-center space-x-3 text-xs text-gray-500">
+                                    <span className="flex items-center space-x-1">
+                                        <Clock size={12} />
                                     <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                                    <span>•</span>
-                                    <span>{new Date(post.createdAt).toLocaleTimeString()}</span>
+                                    </span>
+                                    <span className="text-gray-600">•</span>
+                                    <span>{new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
                             </div>
                         </div>
@@ -2124,57 +2227,79 @@ const UserPosts = ({
                     </div>
 
                     {/* Post Content */}
-                    <div className="mb-4">
+                    <div className="relative mb-5">
                         {post.title && (
-                            <h2 className="text-xl font-bold text-white mb-3 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                            <h2 className="text-xl md:text-2xl font-bold text-white mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">
                                 {post.title}
                             </h2>
                         )}
-                        <p className="text-gray-300 text-base leading-relaxed whitespace-pre-wrap">
+                        {post.content && (
+                            <p className="text-gray-200 text-base md:text-lg leading-relaxed whitespace-pre-wrap relative z-10">
                             {post.content}
                         </p>
+                        )}
                     </div>
 
                     {/* Post Media */}
                     {(videoUrl || galleryImages.length > 0) && (
-                        <div className="mb-4 space-y-4">
+                        <div className="mb-5 space-y-4">
                             {videoUrl && (
-                                <video
-                                    controls
-                                    className="w-full rounded-xl max-h-96"
-                                    src={videoUrl}
+                                <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
+                                    <video
+                                        controls
+                                        className="w-full rounded-2xl max-h-[500px] object-cover"
+                                        src={videoUrl}
+                                    onError={(e) => {
+                                            console.error('Video failed to load:', videoUrl);
+                                        e.currentTarget.style.display = 'none';
+                                    }}
                                 />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                                </div>
                             )}
                             
                             {galleryImages.length > 0 && (
                                 galleryImages.length === 1 ? (
-                                    <img 
-                                        src={galleryImages[0]} 
-                                        alt="Post content" 
-                                        className="w-full rounded-xl object-cover max-h-96 shadow-lg"
-                                    />
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {galleryImages.map((imageUrl: string, index: number) => (
-                                            <img 
-                                                key={index}
-                                                src={imageUrl} 
-                                                alt={`Post content ${index + 1}`} 
-                                                className="w-full rounded-xl object-cover max-h-64 shadow-lg"
-                                            />
-                                        ))}
+                                    <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
+                                        <img 
+                                            src={galleryImages[0]} 
+                                            alt="Post content" 
+                                            className="w-full rounded-2xl object-cover max-h-[500px] transition-transform duration-500 group-hover/media:scale-105"
+                                            onError={(e) => {
+                                                console.error('Image failed to load:', galleryImages[0]);
+                                                e.currentTarget.style.display = 'none';
+                                            }}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                                     </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {galleryImages.map((imageUrl: string, index: number) => (
+                                            <div key={index} className="relative rounded-2xl overflow-hidden shadow-xl ring-2 ring-gray-700/50 group/media">
+                                                <img 
+                                            src={imageUrl} 
+                                            alt={`Post content ${index + 1}`} 
+                                                    className="w-full rounded-2xl object-cover max-h-72 transition-transform duration-500 group-hover/media:scale-105"
+                                            onError={(e) => {
+                                                        console.error('Image failed to load:', imageUrl);
+                                                e.currentTarget.style.display = 'none';
+                                            }}
+                                        />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                                            </div>
+                                    ))}
+                                </div>
                                 )
                             )}
                         </div>
                     )}
 
                     {/* Post Actions */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t border-gray-700/50 gap-4">
-                        <div className="flex items-center space-x-4 sm:space-x-6">
+                    <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between pt-5 border-t border-gray-700/60 gap-4">
+                        <div className="flex items-center space-x-2 sm:space-x-4">
                             <motion.button 
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
                                 onClick={async (e) => {
                                     e.stopPropagation();
                                     const prevLiked = post.liked;
@@ -2213,42 +2338,45 @@ const UserPosts = ({
                                         ));
                                     }
                                 }}
-                                className={`flex items-center space-x-2 transition-colors ${
+                                className={`relative flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-300 ${
                                     post.liked 
-                                        ? 'text-red-500 hover:text-red-600' 
-                                        : 'text-gray-400 hover:text-red-400'
+                                        ? 'text-red-500 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40' 
+                                        : 'text-gray-400 bg-gray-700/30 hover:bg-gray-700/50 hover:text-red-400 border border-gray-600/30'
                                 }`}
                             >
-                                <Heart size={20} fill={post.liked ? 'currentColor' : 'none'} />
-                                <span className="font-medium">{post.likes || 0}</span>
+                                <Heart size={20} fill={post.liked ? 'currentColor' : 'none'} className={post.liked ? 'animate-pulse' : ''} />
+                                <span className="font-semibold">{post.likes || 0}</span>
                             </motion.button>
                             <motion.button 
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
                                 onClick={() => {
                                     setSelectedPost(post);
                                     setShowCommentModal(true);
                                 }}
-                                className="flex items-center space-x-2 text-gray-400 hover:text-blue-400 transition-colors"
+                                className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-gray-400 bg-gray-700/30 hover:bg-blue-500/20 hover:text-blue-400 transition-all duration-300 border border-gray-600/30 hover:border-blue-500/40"
                             >
                                 <MessageCircle size={20} />
-                                <span className="font-medium">{post.comments || 0}</span>
+                                <span className="font-semibold">{post.comments || 0}</span>
                             </motion.button>
                             <motion.button 
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="flex items-center space-x-2 text-gray-400 hover:text-green-400 transition-colors"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-gray-400 bg-gray-700/30 hover:bg-green-500/20 hover:text-green-400 transition-all duration-300 border border-gray-600/30 hover:border-green-500/40"
                             >
                                 <Share size={20} />
-                                <span className="font-medium">Share</span>
+                                <span className="font-semibold hidden sm:inline">Share</span>
                             </motion.button>
                         </div>
                         
                         {/* Engagement Stats */}
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <span>{post.views || 0} views</span>
-                            <span>•</span>
-                            <span>{post.likes || 0} likes</span>
+                        <div className="flex items-center space-x-3 text-sm text-gray-400 bg-gray-800/40 px-3 py-2 rounded-lg border border-gray-700/50">
+                            <span className="flex items-center space-x-1">
+                                <Eye size={14} />
+                                <span className="font-medium">{post.views || 0}</span>
+                            </span>
+                            <span className="text-gray-600">•</span>
+                            <span className="font-medium">{post.likes || 0} likes</span>
                         </div>
                     </div>
                 </motion.div>

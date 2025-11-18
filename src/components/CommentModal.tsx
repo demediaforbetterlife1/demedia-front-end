@@ -31,9 +31,10 @@ interface CommentModalProps {
     postId: number;
     postContent: string;
     postAuthor: string;
+    isDeSnap?: boolean;
 }
 
-export default function CommentModal({ isOpen, onClose, postId, postContent, postAuthor }: CommentModalProps) {
+export default function CommentModal({ isOpen, onClose, postId, postContent, postAuthor, isDeSnap = false }: CommentModalProps) {
     const { user } = useAuth();
     const { theme } = useTheme();
     const [comments, setComments] = useState<Comment[]>([]);
@@ -121,12 +122,15 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
         if (isOpen) {
             fetchComments();
         }
-    }, [isOpen, postId]);
+    }, [isOpen, postId, isDeSnap]);
 
     const fetchComments = async () => {
         try {
             setLoading(true);
-            const response = await apiFetch(`/api/posts/${postId}/comments`, {}, user?.id);
+            const endpoint = isDeSnap 
+                ? `/api/desnaps/${postId}/comments`
+                : `/api/posts/${postId}/comments`;
+            const response = await apiFetch(endpoint, {}, user?.id);
 
             if (response.ok) {
                 const data = await response.json();
@@ -163,7 +167,10 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
             }
             
             console.log('CommentModal: Comment moderation passed');
-            const response = await apiFetch(`/api/posts/${postId}/comments`, {
+            const endpoint = isDeSnap 
+                ? `/api/desnaps/${postId}/comments`
+                : `/api/posts/${postId}/comments`;
+            const response = await apiFetch(endpoint, {
                 method: 'POST',
                 body: JSON.stringify({
                     content: newComment.trim()
