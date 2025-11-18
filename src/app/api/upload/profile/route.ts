@@ -38,7 +38,25 @@ export async function POST(request: NextRequest) {
       } else {
         const errorText = await backendResponse.text();
         console.error('❌ Backend upload failed:', backendResponse.status, errorText);
-        // Don't throw error, continue to fallback
+        
+        // Return specific error for authentication issues
+        if (backendResponse.status === 401) {
+          return NextResponse.json({ 
+            error: 'Authentication failed. Please log in again.',
+            details: 'Your session may have expired'
+          }, { status: 401 });
+        }
+        
+        // Return specific error for file size issues
+        if (backendResponse.status === 413) {
+          return NextResponse.json({ 
+            error: 'File too large. Please choose a smaller image.',
+            details: 'Maximum file size is 10MB'
+          }, { status: 413 });
+        }
+        
+        // For other backend errors, continue to fallback
+        console.log('🔄 Backend failed, continuing to fallback...');
       }
     } catch (backendError) {
       console.error('❌ Backend connection failed for upload (using fallback):', backendError);

@@ -96,8 +96,40 @@ export async function POST(request: NextRequest) {
     const text = await res.text();
     if (!res.ok) {
       console.error("❌ Backend returned error:", text);
+      
+      // Provide specific error messages based on status code
+      let errorMessage = "Failed to create post";
+      let details = text;
+      
+      switch (res.status) {
+        case 401:
+          errorMessage = "Authentication failed. Please log in again.";
+          details = "Your session may have expired";
+          break;
+        case 413:
+          errorMessage = "File too large. Please choose a smaller image.";
+          details = "Maximum file size is 10MB";
+          break;
+        case 400:
+          errorMessage = "Invalid post data. Please check your content.";
+          break;
+        case 429:
+          errorMessage = "Too many posts. Please wait before posting again.";
+          break;
+        case 500:
+          errorMessage = "Server error. Please try again later.";
+          break;
+        default:
+          errorMessage = `Post creation failed (${res.status})`;
+      }
+      
       return NextResponse.json(
-        { error: true, message: "Backend returned error", status: res.status },
+        { 
+          error: true, 
+          message: errorMessage,
+          details: details,
+          status: res.status 
+        },
         { status: res.status }
       );
     }
