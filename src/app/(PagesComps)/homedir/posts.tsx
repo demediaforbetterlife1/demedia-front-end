@@ -201,6 +201,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
             : post.imageUrl
             ? [post.imageUrl]
             : [];
+        
+        // Debug: Log image URLs to see what we're getting
+        if (images.length > 0) {
+          console.log('Post images for post', post.id, ':', images);
+        }
 
         return (
           <motion.div
@@ -251,6 +256,13 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                     src={images[0]}
                     alt="Post image"
                     className="w-full h-auto object-cover max-h-96"
+                    onError={(e) => {
+                      console.error('Image failed to load:', images[0]);
+                      console.error('Error event:', e);
+                    }}
+                    onLoad={() => {
+                      console.log('Image loaded successfully:', images[0]);
+                    }}
                   />
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
@@ -260,6 +272,13 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                         src={img}
                         alt={`Post image ${idx + 1}`}
                         className="w-full h-48 object-cover rounded-lg"
+                        onError={(e) => {
+                          console.error(`Image ${idx + 1} failed to load:`, img);
+                          console.error('Error event:', e);
+                        }}
+                        onLoad={() => {
+                          console.log(`Image ${idx + 1} loaded successfully:`, img);
+                        }}
                       />
                     ))}
                   </div>
