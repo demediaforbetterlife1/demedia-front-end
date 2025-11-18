@@ -12,11 +12,19 @@ export async function POST(request: NextRequest) {
                   request.headers.get('authorization')?.replace('Bearer ', '');
 
     if (!token) {
+      console.error('❌ Profile upload: No authentication token found');
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     authHeader = `Bearer ${token}`;
     userId = request.headers.get('user-id');
+    
+    console.log('📸 Profile upload request:', {
+      hasToken: !!token,
+      userId: userId,
+      fileCount: Array.from(formData.keys()).length,
+      formDataKeys: Array.from(formData.keys())
+    });
 
     // Try to connect to the actual backend first
     try {

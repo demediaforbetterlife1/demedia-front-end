@@ -118,9 +118,15 @@ export function getAuthHeaders(userId?: string | number): Record<string, string>
 
 export async function apiFetch(path: string, options: RequestInit = {}, userId?: string | number): Promise<Response> {
   // Get token and build headers
-  const headers = getAuthHeaders(userId);
+  const authHeaders = getAuthHeaders(userId);
+  
+  // Merge auth headers with any headers passed in options
+  const headers = {
+    ...authHeaders,
+    ...(options.headers as Record<string, string> || {})
+  };
 
-  // Only set Content-Type automatically if body is not FormData
+  // Only set Content-Type automatically if body is not FormData and not already set
   if (!headers["Content-Type"] && options.body && !(options.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }

@@ -9,11 +9,19 @@ export async function POST(request: NextRequest) {
                   request.headers.get('authorization')?.replace('Bearer ', '');
 
     if (!token) {
+      console.error('❌ Video upload: No authentication token found');
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const authHeader = `Bearer ${token}`;
     const userId = request.headers.get('user-id');
+    
+    console.log('🎥 Video upload request:', {
+      hasToken: !!token,
+      userId: userId,
+      fileCount: Array.from(formData.keys()).length,
+      formDataKeys: Array.from(formData.keys())
+    });
 
     // Try to connect to the actual backend first
     try {
