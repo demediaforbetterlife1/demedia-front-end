@@ -26,14 +26,35 @@ export async function POST(request: NextRequest) {
     // Try to connect to the actual backend first
     try {
       const backendFormData = new FormData();
-      backendFormData.append('file', file);
-      backendFormData.append('type', type);
       backendFormData.append('userId', userId || '');
+      
+      // Route to appropriate backend endpoint based on type
+      let backendEndpoint: string;
+      let fieldName: string;
+      
+      if (type === 'profile' || type === 'cover') {
+        backendEndpoint = 'https://demedia-backend.fly.dev/api/upload/profile';
+        fieldName = 'file';
+        backendFormData.append('type', type);
+      } else if (type === 'image' || type === 'post') {
+        backendEndpoint = 'https://demedia-backend.fly.dev/api/upload/post';
+        fieldName = 'image';
+      } else if (type === 'video') {
+        backendEndpoint = 'https://demedia-backend.fly.dev/api/upload/video';
+        fieldName = 'video';
+      } else {
+        // Default to post upload for unknown types
+        backendEndpoint = 'https://demedia-backend.fly.dev/api/upload/post';
+        fieldName = 'image';
+      }
+      
+      backendFormData.append(fieldName, file);
 
-      const backendResponse = await fetch('https://demedia-backend.fly.dev/api/upload', {
+      const backendResponse = await fetch(backendEndpoint, {
         method: 'POST',
         headers: {
           'Authorization': authHeader,
+          'user-id': userId || '',
         },
         body: backendFormData
       });

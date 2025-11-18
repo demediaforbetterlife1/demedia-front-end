@@ -120,8 +120,12 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
   // Get token and build headers
   const headers = getAuthHeaders(userId);
 
-  // Only set Content-Type automatically if body is not FormData
-  if (!headers["Content-Type"] && options.body && !(options.body instanceof FormData)) {
+  // For FormData, completely omit Content-Type to let browser set multipart boundary
+  // For other body types, set Content-Type to application/json
+  if (options.body && options.body instanceof FormData) {
+    // Remove Content-Type header for FormData - browser will set it automatically
+    delete headers["Content-Type"];
+  } else if (!headers["Content-Type"] && options.body) {
     headers["Content-Type"] = "application/json";
   }
 
