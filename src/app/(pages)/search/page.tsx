@@ -152,7 +152,7 @@ export default function SearchResultsPage() {
                 router.push(`/profile?userId=${result.id}`);
                 break;
             case 'post':
-                router.push(`/posts/${result.id}`);
+                router.push(`/post/${result.id}`);
                 break;
             case 'story':
                 if (result.author?.id) {

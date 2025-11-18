@@ -1754,9 +1754,20 @@ const UserDeSnaps = ({
                     {/* DeSnap Content */}
                     <div className="mb-4">
                         {deSnap.content && (
-                            <p className="text-gray-300 text-base leading-relaxed mb-4">
-                                {deSnap.content}
-                            </p>
+                            <div className="relative rounded-xl overflow-hidden mb-4">
+                                <video 
+                                    controls
+                                    preload="metadata"
+                                    className="w-full h-64 object-cover"
+                                    poster={deSnap.thumbnail}
+                                >
+                                    <source 
+                                        src={deSnap.content.startsWith("http") ? deSnap.content : `https://demedia-backend.fly.dev${deSnap.content}`} 
+                                        type="video/mp4" 
+                                    />
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
                         )}
                         
                         {/* DeSnap Video/Thumbnail */}
