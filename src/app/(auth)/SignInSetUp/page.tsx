@@ -137,7 +137,8 @@ function SpaceBackground() {
                 <Galaxy />
                 <ShootingStars count={7} />
                 <CameraController />
-                <OrbitControls enableZoom={false} />
+                {/* Disable OrbitControls to prevent interaction conflicts */}
+                <OrbitControls enableZoom={false} enabled={false} />
             </Canvas>
         </div>
     );
@@ -196,24 +197,19 @@ export default function SignInSetUp() {
     }
 
     // If auth finished loading and no user/token, redirect to sign-up
-    // But be very patient if token exists - user might still be loading after registration
     useEffect(() => {
-        // Don't do anything while auth is loading
         if (authLoading) {
             return;
         }
         
         const token = getCookie("token") || (typeof window !== 'undefined' ? localStorage.getItem("token") : null);
         
-        // If user is authenticated, we're good - don't redirect
         if (isAuthenticated && user) {
             return;
         }
         
-        // If no token at all, redirect to sign-up (but wait a bit to avoid race conditions)
         if (!token) {
             const timeout = setTimeout(() => {
-                // Double-check - if user became authenticated, don't redirect
                 if (isAuthenticated && user) {
                     return;
                 }
@@ -223,39 +219,32 @@ export default function SignInSetUp() {
                     console.log('SignInSetUp: No token found after delay, redirecting to sign-up');
                     router.replace('/sign-up');
                 }
-            }, 2000); // Wait 2 seconds before redirecting
+            }, 2000);
             
             return () => clearTimeout(timeout);
         }
         
-        // If token exists but user not loaded yet, wait longer for auth state to update
-        // This is common right after registration - be very patient
         if (!isAuthenticated && !user) {
             console.log('SignInSetUp: Token found but user not loaded, waiting for auth state...');
             
-            // Use a polling approach to check if user becomes authenticated
             let checkCount = 0;
-            const maxChecks = 10; // Check 10 times over 5 seconds
-            const checkInterval = 500; // Check every 500ms
+            const maxChecks = 10;
+            const checkInterval = 500;
             
             const interval = setInterval(() => {
                 checkCount++;
                 
-                // If user became authenticated, stop checking
                 if (isAuthenticated && user) {
                     console.log('SignInSetUp: User authenticated, stopping redirect check');
                     clearInterval(interval);
                     return;
                 }
                 
-                // If we've checked enough times and still no user, redirect
                 if (checkCount >= maxChecks) {
                     const tokenCheck = getCookie("token") || (typeof window !== 'undefined' ? localStorage.getItem("token") : null);
                     if (!user && !authLoading) {
                         if (tokenCheck) {
                             console.log('SignInSetUp: Token exists but user still not loaded after extended wait - this might be an auth issue');
-                            // Don't redirect if token exists - might be a temporary auth state issue
-                            // Let the user stay on the page
                         } else {
                             console.log('SignInSetUp: Token disappeared, redirecting to sign-up');
                             router.replace('/sign-up');
@@ -285,15 +274,12 @@ export default function SignInSetUp() {
         setError("");
     
         try {
-            // Call the complete-setup endpoint
-            // Cookies (httpOnly) are sent automatically via credentials: 'include'
-            // The Next.js API route will extract the token from cookies and forward it to the backend
             const res = await fetch("/api/auth/complete-setup", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                credentials: 'include', // This automatically sends httpOnly cookies
+                credentials: 'include',
                 body: JSON.stringify({ 
                     dob: dobIso 
                 }),
@@ -305,7 +291,6 @@ export default function SignInSetUp() {
                 throw new Error(data.error || "Failed to save profile information");
             }
     
-            // Update user context with the real data from backend
             if (data.user) {
                 updateUser(data.user);
             }
@@ -317,7 +302,6 @@ export default function SignInSetUp() {
             console.error("Setup error:", err);
             setError(err.message || "Error saving profile information");
             
-            // If it's an authentication error, suggest re-login
             if (err.message.includes("token") || err.message.includes("authentication")) {
                 setError(`${err.message} Please try signing in again.`);
             }
@@ -325,11 +309,27 @@ export default function SignInSetUp() {
             setIsLoading(false);
         }
     };
+
     return (
         <div className="relative min-h-screen w-screen overflow-hidden flex items-center justify-center">
             <SpaceBackground />
 
-            <motion.div ref={cardWrapRef} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative z-10 w-full max-w-xl px-6">
+            {/* Global styles for dropdown z-index */}
+            <style jsx global>{`
+                [data-radix-popper-content-wrapper] {
+                    z-index: 9999 !important;
+                }
+                [data-radix-select-content] {
+                    z-index: 9999 !important;
+                }
+            `}</style>
+
+            <motion.div 
+                ref={cardWrapRef} 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                className="relative z-10 w-full max-w-xl px-6"
+            >
                 <div className="relative rounded-3xl p-[3px] overflow-hidden">
                     <div className="absolute inset-0 rounded-3xl bg-[conic-gradient(at_top_left,_#ec4899,_#8b5cf6,_#06b6d4,_#3b82f6,_#ec4899)] animate-spin-slow blur-md opacity-80" />
 
@@ -338,44 +338,74 @@ export default function SignInSetUp() {
                             <CardTitle className="text-center text-4xl font-extrabold bg-gradient-to-r from-pink-300 via-purple-300 to-cyan-300 bg-clip-text text-transparent">
                                 {t('setup.completeProfile','Complete Your Profile')}
                             </CardTitle>
-                            <p className="text-center text-sm text-white/70 mt-2">Just two quick steps to personalize your experience 🚀</p>
+                            <p className="text-center text-sm text-white/70 mt-2">
+                                Just two quick steps to personalize your experience 🚀
+                            </p>
                         </CardHeader>
 
                         <CardContent className="pt-4">
                             <div className="grid grid-cols-1 gap-6">
-                                {/* DOB */}
+                                {/* DOB Section - Fixed with portal and proper z-index */}
                                 <div>
-                                    <label className="mb-2 block text-sm font-medium text-white/90">Date of Birth</label>
+                                    <label className="mb-2 block text-sm font-medium text-white/90">
+                                        Date of Birth
+                                    </label>
                                     <div className="grid grid-cols-3 gap-3">
+                                        {/* Day Select */}
                                         <Select onValueChange={setDay} value={day}>
-                                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                                            <SelectTrigger className="bg-white/10 border-white/20 text-white z-30 relative">
                                                 <SelectValue placeholder="Day" />
                                             </SelectTrigger>
-                                            <SelectContent className="bg-slate-900 text-white">
-                                                {days.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
+                                            <SelectContent 
+                                                position="popper"
+                                                className="bg-slate-900 text-white border border-white/20 z-50"
+                                                sideOffset={5}
+                                            >
+                                                {days.map((d) => (
+                                                    <SelectItem key={d} value={d} className="focus:bg-white/10">
+                                                        {d}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
 
+                                        {/* Month Select */}
                                         <Select onValueChange={setMonth} value={month}>
-                                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                                            <SelectTrigger className="bg-white/10 border-white/20 text-white z-30 relative">
                                                 <SelectValue placeholder="Month" />
                                             </SelectTrigger>
-                                            <SelectContent className="bg-slate-900 text-white">
-                                                {months.map((m) => (<SelectItem key={m.val} value={m.val}>{m.label}</SelectItem>))}
+                                            <SelectContent 
+                                                position="popper"
+                                                className="bg-slate-900 text-white border border-white/20 z-50"
+                                                sideOffset={5}
+                                            >
+                                                {months.map((m) => (
+                                                    <SelectItem key={m.val} value={m.val} className="focus:bg-white/10">
+                                                        {m.label}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
 
+                                        {/* Year Select */}
                                         <Select onValueChange={setYear} value={year}>
-                                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                                            <SelectTrigger className="bg-white/10 border-white/20 text-white z-30 relative">
                                                 <SelectValue placeholder="Year" />
                                             </SelectTrigger>
-                                            <SelectContent className="max-h-72 overflow-auto bg-slate-900 text-white">
-                                                {years.map((y) => (<SelectItem key={y} value={y}>{y}</SelectItem>))}
+                                            <SelectContent 
+                                                position="popper"
+                                                className="max-h-72 overflow-auto bg-slate-900 text-white border border-white/20 z-50"
+                                                sideOffset={5}
+                                            >
+                                                {years.map((y) => (
+                                                    <SelectItem key={y} value={y} className="focus:bg-white/10">
+                                                        {y}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </div>
                                 </div>
-
 
                                 {error && (
                                     <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
@@ -383,7 +413,7 @@ export default function SignInSetUp() {
                                     </div>
                                 )}
 
-                                {/* CTA */}
+                                {/* CTA Button */}
                                 <div>
                                     <Button 
                                         onClick={handleSave} 
@@ -400,14 +430,14 @@ export default function SignInSetUp() {
             </motion.div>
 
             <style jsx>{`
-        .animate-spin-slow {
-          animation: spin 10s linear infinite;
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+                .animate-spin-slow {
+                    animation: spin 10s linear infinite;
+                }
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+            `}</style>
         </div>
     );
 }
