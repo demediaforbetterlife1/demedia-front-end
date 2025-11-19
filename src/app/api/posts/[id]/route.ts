@@ -42,6 +42,20 @@ export async function GET(
       } catch {
         payload = { error: text || res.statusText || 'Failed to fetch post' };
       }
+      
+      // Provide more user-friendly error messages
+      if (res.status === 404) {
+        payload = { 
+          error: 'This post could not be found. It may have been deleted or is no longer available.',
+          code: 'POST_NOT_FOUND'
+        };
+      } else if (res.status >= 500) {
+        payload = { 
+          error: 'Unable to load post right now. Please try again in a moment.',
+          code: 'SERVER_ERROR'
+        };
+      }
+      
       return NextResponse.json(payload, { status: res.status });
     }
 
