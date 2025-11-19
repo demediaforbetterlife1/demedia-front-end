@@ -1,0 +1,8 @@
+<svg width="800" height="200" viewBox="0 0 800 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="800" height="200" fill="#E5E7EB"/>
+<rect x="300" y="60" width="200" height="80" rx="8" fill="#9CA3AF"/>
+<circle cx="330" cy="85" r="8" fill="#E5E7EB"/>
+<path d="M300 120L330 95L360 120L390 95L500 140H300V120Z" fill="#E5E7EB"/>
+<text x="400" y="170" text-anchor="middle" fill="#6B7280" font-family="Arial" font-size="16">Cover photo not available</text>
+</svg>
+

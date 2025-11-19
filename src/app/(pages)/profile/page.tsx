@@ -421,7 +421,7 @@ export default function ProfilePage() {
                     followersCount: data.followersCount ?? 0,
                     followingCount: data.followingCount ?? 0,
                     likesCount: data.likesCount ?? 0,
-                    isFollowing: false, // This will be determined by follow status
+                    isFollowing: Boolean(data.isFollowing), // Use actual follow status from API
                     privacy: (data.privacy as 'public' | 'followers' | 'private') || 'public'
                 };
 

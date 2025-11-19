@@ -43,10 +43,12 @@ export async function POST(request: NextRequest) {
       console.log('Backend chat connection error:', backendError);
     }
 
-    // No fallback - return error if backend fails
+    // Provide a more user-friendly response when backend is unavailable
     console.log('Chat creation failed - backend unavailable');
     return NextResponse.json({ 
-      error: 'Chat service is currently unavailable. Please try again later.' 
+      error: 'Unable to start chat right now. The messaging service may be temporarily unavailable. Please try again in a few moments.',
+      code: 'CHAT_SERVICE_UNAVAILABLE',
+      retryAfter: 30 // seconds
     }, { status: 503 });
 
   } catch (error) {
