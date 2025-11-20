@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
 import { apiFetch, getAuthHeaders } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
+import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import CommentModal from "@/components/CommentModal";
@@ -19,12 +20,15 @@ type AuthorType = {
 
 type PostType = {
   id: number;
+  title?: string | null;
   content: string;
   likes: number;
   comments: number;
   liked?: boolean;
   imageUrl?: string | null;
   imageUrls?: string[];
+  images?: string[];
+  videoUrl?: string | null;
   createdAt?: string;
   author?: AuthorType | null;
 };
@@ -211,16 +215,24 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     <div className="flex flex-col gap-6 p-4 md:p-6 max-w-3xl mx-auto">
       {posts.map((post) => {
         const author = post.author;
-        const profilePic = author?.profilePicture || "/assets/images/default-avatar.svg";
-        const images =
-          (Array.isArray((post as any).images) && (post as any).images.length > 0
-            ? (post as any).images
+        const profilePic = ensureAbsoluteMediaUrl(author?.profilePicture) || "/assets/images/default-avatar.svg";
+        
+        // Normalize and extract images
+        const rawImages = 
+          (Array.isArray(post.images) && post.images.length > 0
+            ? post.images
             : post.imageUrls && post.imageUrls.length > 0
             ? post.imageUrls
             : post.imageUrl
             ? [post.imageUrl]
             : []) as string[];
-        const videoUrl = (post as any).videoUrl || null;
+        
+        // Ensure all image URLs are absolute
+        const images = rawImages
+          .map(img => ensureAbsoluteMediaUrl(img))
+          .filter((img): img is string => !!img);
+        
+        const videoUrl = post.videoUrl ? ensureAbsoluteMediaUrl(post.videoUrl) : null;
         
         return (
           <motion.div
@@ -256,12 +268,21 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               </div>
             </div>
 
+            {/* 📝 Title */}
+            {post.title && (
+              <h2 className={`text-xl font-bold mb-3 ${themeClasses.text} leading-tight`}>
+                {post.title}
+              </h2>
+            )}
+
             {/* 📝 Content */}
-            <p
-              className={`text-base mb-4 leading-relaxed ${themeClasses.text} font-light select-text`}
-            >
-              {post.content}
-            </p>
+            {post.content && (
+              <p
+                className={`text-base mb-4 leading-relaxed ${themeClasses.text} font-light select-text`}
+              >
+                {post.content}
+              </p>
+            )}
 
             {/* 🖼️ Media */}
             {(videoUrl || images.length > 0) && (
@@ -278,11 +299,14 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   images.length === 1 ? (
                     <img
                       src={images[0]}
-                      alt="Post image"
-                      className="w-full h-auto object-cover max-h-96"
+                      alt={post.title || "Post image"}
+                      className="w-full h-auto object-cover rounded-xl max-h-96"
                       onError={(e) => {
                         console.error('Image failed to load:', images[0]);
-                        console.error('Error event:', e);
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                      onLoad={() => {
+                        console.log('Image loaded successfully:', images[0]);
                       }}
                     />
                   ) : (
@@ -295,7 +319,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                           className="w-full h-48 object-cover rounded-lg"
                           onError={(e) => {
                             console.error(`Image ${idx + 1} failed to load:`, img);
-                            console.error('Error event:', e);
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                          onLoad={() => {
+                            console.log(`Image ${idx + 1} loaded successfully:`, img);
                           }}
                         />
                       ))}
