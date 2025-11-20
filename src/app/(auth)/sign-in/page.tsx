@@ -44,14 +44,15 @@ function RotatingPlanet({
 }
 
 function ShootingStar() {
-    const meshRef = useRef<THREE.Mesh>(null!);
+    const meshRef = useRef<THREE.Mesh>(null);
 
     useEffect(() => {
         if (!meshRef.current) return;
 
         const loop = () => {
+            if (!meshRef.current) return;
             gsap.fromTo(
-                meshRef.current!.position,
+                meshRef.current.position,
                 { x: -12, y: 6, z: -10 },
                 {
                     x: 10,

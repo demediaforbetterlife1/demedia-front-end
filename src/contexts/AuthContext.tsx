@@ -327,13 +327,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         body: JSON.stringify({ phoneNumber, password }),
       });
 
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch (jsonError) {
+        // If response is not valid JSON, handle it
+        console.error("[Auth] Failed to parse response as JSON:", jsonError);
+        if (!res.ok) {
+          let msg = "Login failed. Please try again.";
+          if (res.status === 500) {
+            msg = "Server error occurred. Please try again later.";
+          } else if (res.status === 504) {
+            msg = "Backend service is temporarily unavailable. Please try again in a few minutes.";
+          } else if (res.status === 502) {
+            msg = "Unable to connect to backend service. Please check your internet connection and try again.";
+          } else if (res.status === 404) {
+            msg = "Login service is currently unavailable. Please contact support.";
+          }
+          return { success: false, message: msg };
+        }
+        return { success: false, message: "Login failed. Please try again." };
+      }
 
       if (!res.ok) {
-        let msg = data?.error || `Login failed (${res.status})`;
+        let msg = data?.error || data?.message || `Login failed (${res.status})`;
         
         // Provide better error messages for common backend issues
-        if (res.status === 504) {
+        if (res.status === 500) {
+          msg = data?.error || data?.message || "Server error occurred. Please try again later.";
+        } else if (res.status === 504) {
           msg = "Backend service is temporarily unavailable. Please try again in a few minutes.";
         } else if (res.status === 502) {
           msg = "Unable to connect to backend service. Please check your internet connection and try again.";
@@ -341,7 +363,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           msg = "Login service is currently unavailable. Please contact support.";
         }
         
-        console.error("[Auth] login failed:", msg);
+        console.error("[Auth] login failed:", msg, "Status:", res.status);
         return { success: false, message: msg };
       }
 
@@ -368,7 +390,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
     } catch (err: any) {
       console.error("[Auth] login error:", err);
-      return { success: false, message: err?.message || "Login failed" };
+      return { success: false, message: err?.message || "Login failed. Please try again." };
     } finally {
       setIsLoading(false);
     }
