@@ -99,15 +99,28 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   type ThemeKey = keyof typeof allThemes;
   const themeClasses = allThemes[(theme as ThemeKey) || "dark"];
 
+  const defaultPostImage = "/images/default-post.svg";
+  const defaultAvatar = "/images/default-avatar.svg";
+
+  // Helper to ensure we always have a valid image URL
+  const getImageSrc = (src?: string | null) => {
+    const normalized = ensureAbsoluteMediaUrl(src || undefined);
+    return normalized || defaultPostImage;
+  };
+
   // 🧩 جلب البوستات من الباك اند
   const fetchPosts = async () => {
     try {
       setLoading(true);
       const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
-      const res = await apiFetch(endpoint, { 
-        cache: "no-store",
-        next: { revalidate: 0 } // Always fetch fresh data
-      }, user?.id);
+      const res = await apiFetch(
+        endpoint,
+        {
+          cache: "no-store",
+          next: { revalidate: 0 },
+        },
+        user?.id
+      );
 
       if (!res.ok) throw new Error("Failed to fetch posts");
       const data = await res.json();
@@ -127,19 +140,20 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       
       // Preload images for better UX
       normalizedPosts.forEach((post) => {
-        const images = 
-          (Array.isArray(post.images) && post.images.length > 0 ? post.images :
-          post.imageUrls && post.imageUrls.length > 0 ? post.imageUrls :
-          post.imageUrl ? [post.imageUrl] : []) as string[];
-        
-        images.forEach((img) => {
-          if (img) {
-            const normalizedImg = ensureAbsoluteMediaUrl(img);
-            if (normalizedImg) {
-              const imageLoader = new Image();
-              imageLoader.src = normalizedImg;
-            }
-          }
+        const imgs =
+          (Array.isArray(post.images) && post.images.length > 0
+            ? post.images
+            : post.imageUrls && post.imageUrls.length > 0
+            ? post.imageUrls
+            : post.imageUrl
+            ? [post.imageUrl]
+            : []) as string[];
+
+        imgs.forEach((img) => {
+          if (typeof window === "undefined") return;
+          const src = getImageSrc(img);
+          const imageLoader = new Image();
+          imageLoader.src = src;
         });
       });
     } catch (err) {
@@ -236,7 +250,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     <div className="flex flex-col gap-6 p-4 md:p-6 max-w-3xl mx-auto w-full">
       {posts.map((post) => {
         const author = post.author;
-        const profilePic = ensureAbsoluteMediaUrl(author?.profilePicture) || "/assets/images/default-avatar.svg";
+        const profilePic = ensureAbsoluteMediaUrl(author?.profilePicture) || defaultAvatar;
         
         // Normalize and extract images
         const rawImages = 
@@ -250,7 +264,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         
         // Ensure all image URLs are absolute
         const images = rawImages
-          .map(img => ensureAbsoluteMediaUrl(img))
+          .map((img) => getImageSrc(img))
           .filter((img): img is string => !!img);
         
         const videoUrl = post.videoUrl ? ensureAbsoluteMediaUrl(post.videoUrl) : null;
@@ -320,16 +334,15 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   images.length === 1 ? (
                     <div className="relative w-full">
                       <img
-                        src={images[0]}
+                        src={images[0] || defaultPostImage}
                         alt={post.title || "Post image"}
                         className="w-full h-auto object-contain rounded-xl max-h-[600px] md:max-h-[700px] lg:max-h-[800px]"
                         loading="eager"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          console.error('Image failed to load:', images[0]);
-                          // Show placeholder instead of hiding
-                          target.src = '/assets/images/default-post.svg';
-                          target.onerror = null; // Prevent infinite loop
+                          console.error("Image failed to load:", images[0]);
+                          target.src = defaultPostImage;
+                          target.onerror = null;
                         }}
                         onLoad={() => {
                           console.log('Image loaded successfully:', images[0]);
@@ -341,16 +354,15 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                       {images.map((img, idx) => (
                         <div key={idx} className="relative w-full">
                           <img
-                            src={img}
+                            src={img || defaultPostImage}
                             alt={`Post image ${idx + 1}`}
                             className="w-full h-48 md:h-64 lg:h-80 object-cover rounded-lg"
                             loading={idx < 2 ? "eager" : "lazy"}
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               console.error(`Image ${idx + 1} failed to load:`, img);
-                              // Show placeholder instead of hiding
-                              target.src = '/assets/images/default-post.svg';
-                              target.onerror = null; // Prevent infinite loop
+                              target.src = defaultPostImage;
+                              target.onerror = null;
                             }}
                             onLoad={() => {
                               console.log(`Image ${idx + 1} loaded successfully:`, img);
