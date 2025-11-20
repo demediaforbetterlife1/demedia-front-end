@@ -1,5 +1,7 @@
 "use client";
 
+import { config } from "@/lib/config";
+
 type NotificationAction = { action: string; title: string; icon?: string };
 
 interface NotificationData {
@@ -213,7 +215,13 @@ class NotificationService {
     const hasPermission = await this.requestPermission();
     if (!hasPermission) return;
 
-    await this.registerServiceWorker();
+    const registration = await this.registerServiceWorker();
+    if (!registration) return;
+
+    if (!config.features.enablePushNotifications) {
+      console.info("Push notifications disabled: missing VAPID key");
+      return;
+    }
 
     const subscription = await this.subscribeToPush();
     if (subscription) {

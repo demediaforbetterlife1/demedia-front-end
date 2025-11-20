@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
-import { apiFetch, getAuthHeaders } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
 import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import CommentModal from "@/components/CommentModal";
-
 
 type AuthorType = {
   id: number;
@@ -38,6 +37,48 @@ interface PostsProps {
   postId?: number;
 }
 
+type ThemeClasses = {
+  bg: string;
+  text: string;
+  textMuted: string;
+  accent: string;
+  accentColor: string;
+  like: string;
+  comment: string;
+};
+
+const RELATIVE_DIVISIONS = [
+  { amount: 60, name: "seconds" },
+  { amount: 60, name: "minutes" },
+  { amount: 24, name: "hours" },
+  { amount: 7, name: "days" },
+  { amount: 4.34524, name: "weeks" },
+  { amount: 12, name: "months" },
+  { amount: Number.POSITIVE_INFINITY, name: "years" },
+] as const;
+
+function formatRelativeTime(dateString?: string) {
+  if (!dateString) return "";
+  const target = new Date(dateString);
+  if (Number.isNaN(target.getTime())) return "";
+
+  const diff = Date.now() - target.getTime();
+  let duration = diff / 1000;
+
+  for (const division of RELATIVE_DIVISIONS) {
+    if (Math.abs(duration) < division.amount) {
+      const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+      return formatter.format(
+        Math.round(duration * (diff > 0 ? -1 : 1)),
+        division.name as Intl.RelativeTimeFormatUnit
+      );
+    }
+    duration /= division.amount;
+  }
+
+  return "";
+}
+
 export default function Posts({ isVisible = true, postId }: PostsProps) {
   const { theme } = useTheme();
   const router = useRouter();
@@ -46,9 +87,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   const [loading, setLoading] = useState(true);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null);
+  const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<number>>(new Set());
+  const [expandedPosts, setExpandedPosts] = useState<Set<number>>(new Set());
+  const [shareStatus, setShareStatus] = useState<Record<number, string>>({});
 
-  // 🎨 الثيمات
-  const allThemes = {
+  const allThemes: Record<string, ThemeClasses> = {
     light: {
       bg: "bg-white/90 backdrop-blur-md border border-gray-200 shadow hover:shadow-lg transition-all duration-300",
       text: "text-gray-900",
@@ -94,7 +137,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       like: "text-red-500 hover:text-red-600",
       comment: "hover:text-green-500",
     },
-  } as const;
+  };
 
   type ThemeKey = keyof typeof allThemes;
   const themeClasses = allThemes[(theme as ThemeKey) || "dark"];
@@ -102,13 +145,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   const defaultPostImage = "/images/default-post.svg";
   const defaultAvatar = "/images/default-avatar.svg";
 
-  // Helper to ensure we always have a valid image URL
   const getImageSrc = (src?: string | null) => {
     const normalized = ensureAbsoluteMediaUrl(src || undefined);
     return normalized || defaultPostImage;
   };
 
-  // 🧩 جلب البوستات من الباك اند
   const fetchPosts = async () => {
     try {
       setLoading(true);
@@ -135,10 +176,9 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         .map((p: any) => normalizePost(p))
         .filter(Boolean)
         .reverse() as PostType[];
-      
+
       setPosts(normalizedPosts);
-      
-      // Preload images for better UX
+
       normalizedPosts.forEach((post) => {
         const imgs =
           (Array.isArray(post.images) && post.images.length > 0
@@ -190,7 +230,31 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     };
   }, []);
 
-  // ❤️ اللايك
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = window.localStorage.getItem("demedia:bookmarks");
+      if (stored) {
+        const parsed = JSON.parse(stored) as number[];
+        setBookmarkedPosts(new Set(parsed));
+      }
+    } catch (error) {
+      console.warn("Failed to load bookmarks", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        "demedia:bookmarks",
+        JSON.stringify(Array.from(bookmarkedPosts))
+      );
+    } catch (error) {
+      console.warn("Failed to persist bookmarks", error);
+    }
+  }, [bookmarkedPosts]);
+
   const handleLike = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
 
@@ -203,10 +267,14 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     );
 
     try {
-      const res = await apiFetch(`/api/posts/${id}/like`, {
-        method: "POST",
-        cache: "no-store",
-      }, user?.id);
+      const res = await apiFetch(
+        `/api/posts/${id}/like`,
+        {
+          method: "POST",
+          cache: "no-store",
+        },
+        user?.id
+      );
       if (!res.ok) throw new Error("Like request failed");
       const data = await res.json();
 
@@ -222,38 +290,105 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     }
   };
 
-  // 👤 الانتقال لصفحة المستخدم (باستخدام username)
   const goToUser = (e: React.MouseEvent, author?: AuthorType | null) => {
     e.stopPropagation();
     if (!author?.id) return;
-    // Always use userId-based navigation since profile page only handles userId query parameter
     router.push(`/profile?userId=${author.id}`);
   };
 
-  // 📄 صفحة البوست
   const goToPost = (id: number) => router.push(`/post/${id}`);
 
+  const toggleBookmark = useCallback((e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    setBookmarkedPosts((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
 
+  const toggleExpanded = useCallback((e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    setExpandedPosts((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const showShareToast = useCallback((postId: number, message: string) => {
+    setShareStatus((prev) => ({ ...prev, [postId]: message }));
+    if (typeof window === "undefined") return;
+    window.setTimeout(() => {
+      setShareStatus((prev) => {
+        const { [postId]: _ignored, ...rest } = prev;
+        return rest;
+      });
+    }, 2200);
+  }, []);
+
+  const handleShare = useCallback(
+    async (e: React.MouseEvent, post: PostType) => {
+      e.stopPropagation();
+      if (typeof window === "undefined") return;
+      const url = `${window.location.origin}/post/${post.id}`;
+      const title = post.title || "DeMedia Post";
+      const text = post.content?.slice(0, 160) ?? "Check this out on DeMedia!";
+
+      try {
+        if (navigator.share) {
+          await navigator.share({ title, text, url });
+          showShareToast(post.id, "Shared ✨");
+          return;
+        }
+
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(url);
+          showShareToast(post.id, "Link copied");
+          return;
+        }
+
+        console.info(url);
+        showShareToast(post.id, "Share manually");
+      } catch (error) {
+        console.error("Share failed:", error);
+        showShareToast(post.id, "Share cancelled");
+      }
+    },
+    [showShareToast]
+  );
 
   if (!isVisible) return null;
-  if (loading)
+
+  if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div
-          className="animate-spin h-12 w-12 rounded-full border-4 border-b-transparent"
-          style={{ borderColor: themeClasses.accentColor }}
-        ></div>
+      <div className="flex flex-col gap-4 p-4 md:p-6 max-w-3xl mx-auto w-full">
+        {Array.from({ length: 3 }).map((_, idx) => (
+          <PostSkeleton key={idx} themeClasses={themeClasses} />
+        ))}
       </div>
     );
+  }
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6 max-w-3xl mx-auto w-full">
+      {posts.length === 0 && (
+        <EmptyState themeClasses={themeClasses} fetchPosts={fetchPosts} />
+      )}
       {posts.map((post) => {
         const author = post.author;
-        const profilePic = ensureAbsoluteMediaUrl(author?.profilePicture) || defaultAvatar;
-        
-        // Normalize and extract images
-        const rawImages = 
+        const profilePic =
+          ensureAbsoluteMediaUrl(author?.profilePicture) || defaultAvatar;
+
+        const rawImages =
           (Array.isArray(post.images) && post.images.length > 0
             ? post.images
             : post.imageUrls && post.imageUrls.length > 0
@@ -261,220 +396,290 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
             : post.imageUrl
             ? [post.imageUrl]
             : []) as string[];
-        
-        // Ensure all image URLs are absolute
+
         const images = rawImages
           .map((img) => getImageSrc(img))
           .filter((img): img is string => !!img);
-        
-        const videoUrl = post.videoUrl ? ensureAbsoluteMediaUrl(post.videoUrl) : null;
-        
+
+        const videoUrl = post.videoUrl
+          ? ensureAbsoluteMediaUrl(post.videoUrl)
+          : null;
+        const isBookmarked = bookmarkedPosts.has(post.id);
+        const isExpanded = expandedPosts.has(post.id);
+        const shouldClamp = (post.content?.length || 0) > 320;
+        const relativeTime = formatRelativeTime(post.createdAt);
+
         return (
-          <motion.div
+          <motion.article
             key={post.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            whileHover={{ scale: 1.02 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            whileHover={{ scale: 1.01 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
             onClick={() => goToPost(post.id)}
-            className={`${themeClasses.bg} rounded-2xl p-4 md:p-6 lg:p-8 cursor-pointer overflow-hidden w-full`}
+            className={`relative ${themeClasses.bg} rounded-3xl p-5 md:p-8 cursor-pointer overflow-hidden w-full border border-white/5 shadow-[0_20px_80px_rgba(0,0,0,0.25)] transition-all duration-500 group`}
           >
-            {/* 🧑‍ Header */}
             <div
-              className="flex items-center gap-4 mb-4 cursor-pointer group"
-              onClick={(e) => goToUser(e, author)}
-            >
-              <img
-                src={profilePic}
-                alt="User avatar"
-                className="w-12 h-12 rounded-full object-cover ring-2 ring-transparent group-hover:ring-2 transition-all duration-300"
-                style={{ ["--tw-ring-color" as any]: themeClasses.accentColor }}
-              />
-              <div>
-                <h3 className={`font-bold text-lg ${themeClasses.text}`}>
-                  {author?.name || "Unknown User"}
-                </h3>
-                <p className={`text-sm ${themeClasses.textMuted}`}>
-                  @{author?.username ?? "user"} •{" "}
-                  {post.createdAt
-                    ? new Date(post.createdAt).toLocaleString()
-                    : ""}
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+              style={{
+                background: `radial-gradient(circle at 10% 20%, ${themeClasses.accentColor}1A, transparent 55%)`,
+              }}
+            />
+            <div className="relative z-10 flex flex-col gap-5">
+              <div
+                className="flex items-center gap-4 cursor-pointer group/header"
+                onClick={(e) => goToUser(e, author)}
+              >
+                <img
+                  src={profilePic}
+                  alt="User avatar"
+                  className="w-14 h-14 rounded-2xl object-cover ring-2 ring-transparent group-hover/header:ring-2 transition-all duration-300"
+                  style={{ ["--tw-ring-color" as any]: themeClasses.accentColor }}
+                />
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className={`font-semibold text-lg ${themeClasses.text}`}>
+                      {author?.name || "Community Member"}
+                    </h3>
+                    <span className="text-xs text-white/70 uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-white/10">
+                      {relativeTime || "Just now"}
+                    </span>
+                  </div>
+                  <p className={`text-sm ${themeClasses.textMuted}`}>
+                    @{author?.username ?? "user"} ·{" "}
+                    {post.createdAt
+                      ? new Date(post.createdAt).toLocaleString()
+                      : "Live"}
+                  </p>
+                </div>
+                <div className="ml-auto flex items-center gap-2 text-xs uppercase tracking-widest text-white/60">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Trend
+                </div>
+              </div>
+
+              {post.title && (
+                <h2 className={`text-2xl font-semibold ${themeClasses.text}`}>
+                  {post.title}
+                </h2>
+              )}
+
+              {post.content && (
+                <p
+                  className={`text-base leading-relaxed ${themeClasses.text} font-light select-text ${
+                    !isExpanded && shouldClamp ? "line-clamp-3" : ""
+                  }`}
+                >
+                  {post.content}
                 </p>
+              )}
+              {shouldClamp && (
+                <button
+                  className="self-start text-xs uppercase tracking-[0.3em] text-white/70 hover:text-white transition-colors"
+                  onClick={(e) => toggleExpanded(e, post.id)}
+                >
+                  {isExpanded ? "Show less" : "Show more"}
+                </button>
+              )}
+
+              {(videoUrl || images.length > 0) && (
+                <div className="rounded-2xl overflow-hidden space-y-4">
+                  {videoUrl && (
+                    <video
+                      src={videoUrl}
+                      controls
+                      className="w-full rounded-2xl max-h-[520px] bg-black/60"
+                    />
+                  )}
+
+                  {images.length > 0 &&
+                    (images.length === 1 ? (
+                      <div className="relative w-full overflow-hidden rounded-2xl">
+                        <img
+                          src={images[0] || defaultPostImage}
+                          alt={post.title || "Post image"}
+                          className="w-full h-full max-h-[600px] object-cover transition-transform duration-700 group-hover:scale-[1.01]"
+                          loading="eager"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = defaultPostImage;
+                            target.onerror = null;
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 auto-rows-[160px] md:auto-rows-[220px] gap-3">
+                        {images.slice(0, 4).map((img, idx) => {
+                          const isHero = idx === 0 && images.length > 1;
+                          const remaining = images.length - 4;
+                          return (
+                            <div
+                              key={`${img}-${idx}`}
+                              className={`relative overflow-hidden rounded-2xl ${
+                                isHero ? "col-span-2 row-span-2" : ""
+                              }`}
+                            >
+                              <img
+                                src={img || defaultPostImage}
+                                alt={`Post image ${idx + 1}`}
+                                className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                                loading={idx < 2 ? "eager" : "lazy"}
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = defaultPostImage;
+                                  target.onerror = null;
+                                }}
+                              />
+                              {remaining > 0 && idx === 3 && (
+                                <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white text-lg font-semibold">
+                                  +{remaining}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-3 text-xs uppercase tracking-[0.3em] text-white/70">
+                {post.comments > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-white/10">
+                    {post.comments} Comments
+                  </span>
+                )}
+                {post.likes > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-white/10">
+                    {post.likes} Likes
+                  </span>
+                )}
+                {videoUrl && (
+                  <span className="px-3 py-1 rounded-full bg-white/10">
+                    Video
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
+                <div className="flex flex-wrap items-center gap-4">
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    onClick={(e) => handleLike(e, post.id)}
+                    className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm transition-all duration-300 ${
+                      post.liked ? themeClasses.like : themeClasses.textMuted
+                    }`}
+                  >
+                    <motion.svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill={post.liked ? "currentColor" : "none"}
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      className="w-5 h-5"
+                      animate={{
+                        scale: post.liked ? [1, 1.4, 1] : 1,
+                        rotate: post.liked ? [0, -10, 10, 0] : 0,
+                      }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 21C12 21 4 13.667 4 8.667C4 5.4 6.4 3 9.667 3C11.389 3 13 4.067 13.833 5.533C14.667 4.067 16.278 3 18 3C21.267 3 23.667 5.4 23.667 8.667C23.667 13.667 16 21 16 21H12Z"
+                      />
+                    </motion.svg>
+                    <span>{post.likes}</span>
+                  </motion.button>
+
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPost(post);
+                      setShowCommentModal(true);
+                    }}
+                    className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm ${themeClasses.comment} transition-all duration-300`}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      className="w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M7 8h10M7 12h6m5 8a9 9 0 10-9-9c0 1.52.38 2.96 1.05 4.23L7 20l4.77-2.05A9.01 9.01 0 0018 20z"
+                      />
+                    </svg>
+                    <span>{post.comments}</span>
+                  </motion.button>
+
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    onClick={(e) => toggleBookmark(e, post.id)}
+                    className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm transition-all duration-300 ${
+                      isBookmarked ? themeClasses.accent : themeClasses.textMuted
+                    }`}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill={isBookmarked ? "currentColor" : "none"}
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      className="w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v18l-7-4-7 4V5z"
+                      />
+                    </svg>
+                    <span>{isBookmarked ? "Saved" : "Save"}</span>
+                  </motion.button>
+
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    onClick={(e) => handleShare(e, post)}
+                    className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm text-white/80 hover:text-white transition-all duration-300"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      className="w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M7 9l5-5m0 0l5 5m-5-5v12"
+                      />
+                    </svg>
+                    <span>Share</span>
+                  </motion.button>
+                </div>
+                {shareStatus[post.id] && (
+                  <span className="text-xs text-white/70">
+                    {shareStatus[post.id]}
+                  </span>
+                )}
               </div>
             </div>
-
-            {/* 📝 Title */}
-            {post.title && (
-              <h2 className={`text-xl font-bold mb-3 ${themeClasses.text} leading-tight`}>
-                {post.title}
-              </h2>
-            )}
-
-            {/* 📝 Content */}
-            {post.content && (
-              <p
-                className={`text-base mb-4 leading-relaxed ${themeClasses.text} font-light select-text`}
-              >
-                {post.content}
-              </p>
-            )}
-
-            {/* 🖼️ Media */}
-            {(videoUrl || images.length > 0) && (
-              <div className="mb-4 rounded-xl overflow-hidden space-y-4">
-                {videoUrl && (
-                  <video
-                    src={videoUrl}
-                    controls
-                    className="w-full rounded-xl max-h-96"
-                  />
-                )}
-
-                {images.length > 0 && (
-                  images.length === 1 ? (
-                    <div className="relative w-full">
-                      <img
-                        src={images[0] || defaultPostImage}
-                        alt={post.title || "Post image"}
-                        className="w-full h-auto object-contain rounded-xl max-h-[600px] md:max-h-[700px] lg:max-h-[800px]"
-                        loading="eager"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          console.error("Image failed to load:", images[0]);
-                          target.src = defaultPostImage;
-                          target.onerror = null;
-                        }}
-                        onLoad={() => {
-                          console.log('Image loaded successfully:', images[0]);
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
-                      {images.map((img, idx) => (
-                        <div key={idx} className="relative w-full">
-                          <img
-                            src={img || defaultPostImage}
-                            alt={`Post image ${idx + 1}`}
-                            className="w-full h-48 md:h-64 lg:h-80 object-cover rounded-lg"
-                            loading={idx < 2 ? "eager" : "lazy"}
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              console.error(`Image ${idx + 1} failed to load:`, img);
-                              target.src = defaultPostImage;
-                              target.onerror = null;
-                            }}
-                            onLoad={() => {
-                              console.log(`Image ${idx + 1} loaded successfully:`, img);
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )
-                )}
-              </div>
-            )}
-           {/* ❤️💬🔖 Actions */}
-<div
-  className="flex items-center justify-between pt-3 border-t mt-3"
-  style={{ borderColor: themeClasses.accentColor + "40" }}
->
-  <div className="flex items-center gap-6">
-    {/* ❤️ Like */}
-    <motion.button
-      whileTap={{ scale: 0.85 }}
-      whileHover={{ scale: 1.15 }}
-      onClick={(e) => handleLike(e, post.id)}
-      className={`flex items-center gap-2 text-sm font-semibold transition-all duration-300 ${
-        post.liked ? themeClasses.like : themeClasses.textMuted
-      }`}
-    >
-      <motion.svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill={post.liked ? "currentColor" : "none"}
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-        className="w-6 h-6"
-        animate={{
-          scale: post.liked ? [1, 1.4, 1] : 1,
-          rotate: post.liked ? [0, -10, 10, 0] : 0,
-        }}
-        transition={{ duration: 0.4 }}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M12 21C12 21 4 13.667 4 8.667C4 5.4 6.4 3 9.667 3C11.389 3 13 4.067 13.833 5.533C14.667 4.067 16.278 3 18 3C21.267 3 23.667 5.4 23.667 8.667C23.667 13.667 16 21 16 21H12Z"
-        />
-      </motion.svg>
-      <span>{post.likes}</span>
-    </motion.button>
-
-    {/* 💬 Comment */}
-    <motion.button
-      whileTap={{ scale: 0.85 }}
-      whileHover={{ scale: 1.15 }}
-      onClick={(e) => {
-        e.stopPropagation();
-        setSelectedPost(post);
-        setShowCommentModal(true);
-      }}
-      className={`flex items-center gap-2 text-sm font-semibold ${themeClasses.comment} transition-all duration-300`}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-        className="w-6 h-6"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M7 8h10M7 12h6m5 8a9 9 0 10-9-9c0 1.52.38 2.96 1.05 4.23L7 20l4.77-2.05A9.01 9.01 0 0018 20z"
-        />
-      </svg>
-      <span>{post.comments}</span>
-    </motion.button>
-
-    {/* 🔖 Bookmark */}
-    <motion.button
-      whileTap={{ scale: 0.85 }}
-      whileHover={{ scale: 1.15 }}
-      onClick={(e) => {
-        e.stopPropagation();
-        // ممكن تضيف هنا دالة save لاحقًا
-        alert("Bookmark feature coming soon!");
-      }}
-      className={`flex items-center gap-2 text-sm font-semibold ${themeClasses.textMuted} hover:${themeClasses.accent} transition-all duration-300`}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-        className="w-6 h-6"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v18l-7-4-7 4V5z"
-        />
-      </svg>
-    </motion.button>
-
-
-  </div>
-</div>
-          </motion.div>
+          </motion.article>
         );
       })}
-      
-      {/* Comment Modal */}
+
       {showCommentModal && selectedPost && (
         <CommentModal
           isOpen={showCommentModal}
@@ -484,9 +689,59 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           }}
           postId={selectedPost.id}
           postContent={selectedPost.content}
-          postAuthor={selectedPost.author?.name || 'Unknown'}
+          postAuthor={selectedPost.author?.name || "Unknown"}
         />
       )}
+    </div>
+  );
+}
+
+function PostSkeleton({ themeClasses }: { themeClasses: ThemeClasses }) {
+  return (
+    <div
+      className={`rounded-3xl p-5 md:p-8 border border-white/5 shadow-inner ${themeClasses.bg}`}
+    >
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-14 h-14 rounded-2xl bg-white/20 animate-pulse" />
+        <div className="flex-1 space-y-2">
+          <div className="w-1/3 h-4 bg-white/20 rounded animate-pulse" />
+          <div className="w-1/4 h-3 bg-white/10 rounded animate-pulse" />
+        </div>
+      </div>
+      <div className="space-y-3">
+        <div className="w-3/4 h-4 bg-white/15 rounded animate-pulse" />
+        <div className="w-full h-4 bg-white/10 rounded animate-pulse" />
+        <div className="w-2/3 h-4 bg-white/10 rounded animate-pulse" />
+      </div>
+      <div className="mt-6 h-52 bg-white/10 rounded-2xl animate-pulse" />
+    </div>
+  );
+}
+
+function EmptyState({
+  themeClasses,
+  fetchPosts,
+}: {
+  themeClasses: ThemeClasses;
+  fetchPosts: () => Promise<void>;
+}) {
+  return (
+    <div
+      className={`rounded-3xl p-10 text-center border border-dashed border-white/10 ${themeClasses.bg}`}
+    >
+      <div className="text-3xl mb-4">🚀</div>
+      <p className={`text-lg ${themeClasses.text} mb-2`}>
+        Everything is ready for the next big story.
+      </p>
+      <p className={`${themeClasses.textMuted} mb-6`}>
+        Be the first to share something with the community.
+      </p>
+      <button
+        className="px-6 py-3 rounded-full bg-white/10 text-white/90 hover:bg-white/20 transition-colors text-sm tracking-[0.3em]"
+        onClick={fetchPosts}
+      >
+        Refresh Feed
+      </button>
     </div>
   );
 }
