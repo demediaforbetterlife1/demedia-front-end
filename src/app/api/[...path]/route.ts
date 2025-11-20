@@ -65,6 +65,16 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]): Promise<R
 
     console.log(`✅ ${req.method} → ${res.status} (${targetUrl})`);
 
+    // Log error response body for debugging
+    if (!res.ok) {
+      try {
+        const errorBody = await res.clone().text();
+        console.error(`❌ Backend error response (${res.status}):`, errorBody);
+      } catch (e) {
+        console.error(`❌ Failed to read error response body:`, e);
+      }
+    }
+
     const resHeaders = new Headers(res.headers);
     resHeaders.delete("transfer-encoding");
     resHeaders.delete("connection");
