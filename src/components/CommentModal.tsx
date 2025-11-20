@@ -155,18 +155,26 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
         setError("");
 
         try {
-            // Content moderation check
-            console.log('CommentModal: Checking comment moderation...');
-            const moderationResult = await contentModerationService.moderateText(newComment.trim());
-            
-            if (!moderationResult.isApproved) {
-                console.log('CommentModal: Comment moderation failed:', moderationResult.reason);
-                setError(`Comment not approved: ${moderationResult.reason}. ${moderationResult.suggestions?.join('. ')}`);
-                setIsSubmitting(false);
-                return;
+            // Content moderation check (with error handling)
+            let moderationPassed = true;
+            try {
+                console.log('CommentModal: Checking comment moderation...');
+                const moderationResult = await contentModerationService.moderateText(newComment.trim());
+                
+                if (!moderationResult.isApproved) {
+                    console.log('CommentModal: Comment moderation failed:', moderationResult.reason);
+                    setError(`Comment not approved: ${moderationResult.reason}. ${moderationResult.suggestions?.join('. ')}`);
+                    setIsSubmitting(false);
+                    return;
+                }
+                
+                console.log('CommentModal: Comment moderation passed');
+            } catch (moderationError) {
+                // If moderation service fails, log but continue (don't block comments)
+                console.warn('CommentModal: Moderation service error, allowing comment:', moderationError);
+                moderationPassed = true;
             }
             
-            console.log('CommentModal: Comment moderation passed');
             const endpoint = isDeSnap 
                 ? `/api/desnaps/${postId}/comments`
                 : `/api/posts/${postId}/comments`;
@@ -181,19 +189,28 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
                 const newCommentData = await response.json();
                 setComments(prev => [newCommentData, ...prev]);
                 setNewComment("");
+                setError(""); // Clear any previous errors
             } else {
                 let errorMessage = 'Failed to add comment';
                 try {
                     const errorData = await response.json();
                     errorMessage = errorData.error || errorData.message || errorMessage;
                 } catch (e) {
-                    errorMessage = `Server error: ${response.status}`;
+                    // If response is not JSON, try to get text
+                    try {
+                        const errorText = await response.text();
+                        errorMessage = errorText || `Server error: ${response.status}`;
+                    } catch (textError) {
+                        errorMessage = `Server error: ${response.status}`;
+                    }
                 }
                 setError(errorMessage);
+                console.error('Comment submission failed:', response.status, errorMessage);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error adding comment:', err);
-            setError('Failed to add comment');
+            const errorMessage = err?.message || 'Failed to add comment. Please try again.';
+            setError(errorMessage);
         } finally {
             setIsSubmitting(false);
         }

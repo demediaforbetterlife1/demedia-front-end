@@ -104,7 +104,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     try {
       setLoading(true);
       const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
-      const res = await apiFetch(endpoint, { cache: "no-store" }, user?.id);
+      const res = await apiFetch(endpoint, { 
+        cache: "no-store",
+        next: { revalidate: 0 } // Always fetch fresh data
+      }, user?.id);
 
       if (!res.ok) throw new Error("Failed to fetch posts");
       const data = await res.json();
@@ -115,12 +118,30 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         ? data.data
         : [data];
 
-      setPosts(
-        fetched
-          .map((p: any) => normalizePost(p))
-          .filter(Boolean)
-          .reverse() as PostType[]
-      );
+      const normalizedPosts = fetched
+        .map((p: any) => normalizePost(p))
+        .filter(Boolean)
+        .reverse() as PostType[];
+      
+      setPosts(normalizedPosts);
+      
+      // Preload images for better UX
+      normalizedPosts.forEach((post) => {
+        const images = 
+          (Array.isArray(post.images) && post.images.length > 0 ? post.images :
+          post.imageUrls && post.imageUrls.length > 0 ? post.imageUrls :
+          post.imageUrl ? [post.imageUrl] : []) as string[];
+        
+        images.forEach((img) => {
+          if (img) {
+            const normalizedImg = ensureAbsoluteMediaUrl(img);
+            if (normalizedImg) {
+              const imageLoader = new Image();
+              imageLoader.src = normalizedImg;
+            }
+          }
+        });
+      });
     } catch (err) {
       console.error("❌ Fetch posts error:", err);
       setPosts([]);
@@ -212,7 +233,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     );
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6 max-w-3xl mx-auto">
+    <div className="flex flex-col gap-6 p-4 md:p-6 max-w-3xl mx-auto w-full">
       {posts.map((post) => {
         const author = post.author;
         const profilePic = ensureAbsoluteMediaUrl(author?.profilePicture) || "/assets/images/default-avatar.svg";
@@ -242,7 +263,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
             whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
             onClick={() => goToPost(post.id)}
-            className={`${themeClasses.bg} rounded-2xl p-6 cursor-pointer overflow-hidden`}
+            className={`${themeClasses.bg} rounded-2xl p-4 md:p-6 lg:p-8 cursor-pointer overflow-hidden w-full`}
           >
             {/* 🧑‍ Header */}
             <div
@@ -297,34 +318,45 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
                 {images.length > 0 && (
                   images.length === 1 ? (
-                    <img
-                      src={images[0]}
-                      alt={post.title || "Post image"}
-                      className="w-full h-auto object-cover rounded-xl max-h-96"
-                      onError={(e) => {
-                        console.error('Image failed to load:', images[0]);
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                      onLoad={() => {
-                        console.log('Image loaded successfully:', images[0]);
-                      }}
-                    />
+                    <div className="relative w-full">
+                      <img
+                        src={images[0]}
+                        alt={post.title || "Post image"}
+                        className="w-full h-auto object-contain rounded-xl max-h-[600px] md:max-h-[700px] lg:max-h-[800px]"
+                        loading="eager"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          console.error('Image failed to load:', images[0]);
+                          // Show placeholder instead of hiding
+                          target.src = '/assets/images/default-post.svg';
+                          target.onerror = null; // Prevent infinite loop
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully:', images[0]);
+                        }}
+                      />
+                    </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
                       {images.map((img, idx) => (
-                        <img
-                          key={idx}
-                          src={img}
-                          alt={`Post image ${idx + 1}`}
-                          className="w-full h-48 object-cover rounded-lg"
-                          onError={(e) => {
-                            console.error(`Image ${idx + 1} failed to load:`, img);
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                          onLoad={() => {
-                            console.log(`Image ${idx + 1} loaded successfully:`, img);
-                          }}
-                        />
+                        <div key={idx} className="relative w-full">
+                          <img
+                            src={img}
+                            alt={`Post image ${idx + 1}`}
+                            className="w-full h-48 md:h-64 lg:h-80 object-cover rounded-lg"
+                            loading={idx < 2 ? "eager" : "lazy"}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              console.error(`Image ${idx + 1} failed to load:`, img);
+                              // Show placeholder instead of hiding
+                              target.src = '/assets/images/default-post.svg';
+                              target.onerror = null; // Prevent infinite loop
+                            }}
+                            onLoad={() => {
+                              console.log(`Image ${idx + 1} loaded successfully:`, img);
+                            }}
+                          />
+                        </div>
                       ))}
                     </div>
                   )

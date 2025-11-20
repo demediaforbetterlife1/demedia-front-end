@@ -22,13 +22,16 @@ export async function POST(request: NextRequest) {
 
     // Try to connect to the actual backend first
     try {
-      const backendResponse = await fetch('https://demedia-backend.fly.dev/api/chat/create-or-find', {
+      const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
+      const backendResponse = await fetch(`${backendUrl}/api/chat/create-or-find`, {
         method: 'POST',
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json',
+          'user-id': request.headers.get('user-id') || '',
         },
-        body: JSON.stringify({ participantId: parseInt(participantId) })
+        body: JSON.stringify({ participantId: parseInt(participantId) }),
+        signal: AbortSignal.timeout(10000), // 10 second timeout
       });
 
       if (backendResponse.ok) {
@@ -36,11 +39,29 @@ export async function POST(request: NextRequest) {
         console.log('Backend chat data received:', data);
         return NextResponse.json(data);
       } else {
-        const errorText = await backendResponse.text();
-        console.log('Backend chat creation failed:', backendResponse.status, errorText);
+        const errorText = await backendResponse.text().catch(() => 'Unknown error');
+        console.error('Backend chat creation failed:', backendResponse.status, errorText);
+        
+        // Return the backend error if it's a client error (4xx)
+        if (backendResponse.status >= 400 && backendResponse.status < 500) {
+          try {
+            const errorData = JSON.parse(errorText);
+            return NextResponse.json(errorData, { status: backendResponse.status });
+          } catch {
+            return NextResponse.json({ error: errorText }, { status: backendResponse.status });
+          }
+        }
       }
-    } catch (backendError) {
-      console.log('Backend chat connection error:', backendError);
+    } catch (backendError: any) {
+      console.error('Backend chat connection error:', backendError);
+      
+      // If it's a timeout, provide specific message
+      if (backendError.name === 'AbortError' || backendError.name === 'TimeoutError') {
+        return NextResponse.json({ 
+          error: 'Chat service is taking too long to respond. Please try again.',
+          code: 'TIMEOUT'
+        }, { status: 504 });
+      }
     }
 
     // Provide a more user-friendly response when backend is unavailable
