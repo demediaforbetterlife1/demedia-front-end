@@ -9,6 +9,7 @@ import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import CommentModal from "@/components/CommentModal";
+import MediaImage from "@/components/MediaImage";
 
 type AuthorType = {
   id: number;
@@ -430,12 +431,16 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                 className="flex items-center gap-4 cursor-pointer group/header"
                 onClick={(e) => goToUser(e, author)}
               >
-                <img
-                  src={profilePic}
-                  alt="User avatar"
-                  className="w-14 h-14 rounded-2xl object-cover ring-2 ring-transparent group-hover/header:ring-2 transition-all duration-300"
-                  style={{ ["--tw-ring-color" as any]: themeClasses.accentColor }}
-                />
+                <div className="relative w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-transparent group-hover/header:ring-2 transition-all duration-300" style={{ ["--tw-ring-color" as any]: themeClasses.accentColor }}>
+                  <MediaImage
+                    src={profilePic}
+                    alt="User avatar"
+                    className="object-cover"
+                    fill
+                    fallbackSrc={defaultAvatar}
+                    priority
+                  />
+                </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className={`font-semibold text-lg ${themeClasses.text}`}>
@@ -451,10 +456,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                       ? new Date(post.createdAt).toLocaleString()
                       : "Live"}
                   </p>
-                </div>
-                <div className="ml-auto flex items-center gap-2 text-xs uppercase tracking-widest text-white/60">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Trend
                 </div>
               </div>
 
@@ -494,17 +495,14 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
                   {images.length > 0 &&
                     (images.length === 1 ? (
-                      <div className="relative w-full overflow-hidden rounded-2xl">
-                        <img
+                      <div className="relative w-full overflow-hidden rounded-2xl h-full min-h-[320px]">
+                        <MediaImage
                           src={images[0] || defaultPostImage}
                           alt={post.title || "Post image"}
-                          className="w-full h-full max-h-[600px] object-cover transition-transform duration-700 group-hover:scale-[1.01]"
-                          loading="eager"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = defaultPostImage;
-                            target.onerror = null;
-                          }}
+                          className="object-cover transition-transform duration-700 group-hover:scale-[1.01]"
+                          fill
+                          fallbackSrc={defaultPostImage}
+                          priority
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
                       </div>
@@ -520,16 +518,13 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                                 isHero ? "col-span-2 row-span-2" : ""
                               }`}
                             >
-                              <img
+                              <MediaImage
                                 src={img || defaultPostImage}
                                 alt={`Post image ${idx + 1}`}
-                                className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                                loading={idx < 2 ? "eager" : "lazy"}
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.src = defaultPostImage;
-                                  target.onerror = null;
-                                }}
+                                className="object-cover transition-transform duration-700 hover:scale-105"
+                                fill
+                                fallbackSrc={defaultPostImage}
+                                priority={idx === 0}
                               />
                               {remaining > 0 && idx === 3 && (
                                 <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white text-lg font-semibold">
