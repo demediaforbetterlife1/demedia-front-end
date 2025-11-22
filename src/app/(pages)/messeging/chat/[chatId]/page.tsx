@@ -344,7 +344,7 @@ export default function ChatPage() {
   const handleBlockUser = async () => {
     if (!chat?.participants) return;
     
-    const otherParticipant = chat.participants.find(p => p.id !== user?.id);
+    const otherParticipant = (chat?.participants ?? []).find(p => p.id !== user?.id);
     if (!otherParticipant) return;
 
     if (confirm(`Are you sure you want to block ${otherParticipant.name}?`)) {
@@ -432,7 +432,7 @@ export default function ChatPage() {
     );
   }
 
-  const otherParticipant = chat.participants.find(p => p.id !== user?.id);
+  const otherParticipant = (chat?.participants ?? []).find(p => p.id !== user?.id);
 
   return (
     <div className={`min-h-screen flex flex-col ${themeClasses.bg}`}>
