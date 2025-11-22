@@ -325,7 +325,14 @@ export default function PostDetailPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3 cursor-pointer" onClick={(e) => goToUser(e, currentPost.user?.id)}>
-              <img src={currentPost.user?.profilePicture || "/assets/images/default-avatar.svg"} alt="avatar" className="w-12 h-12 rounded-full object-cover border-2 border-gray-300" />
+              {/* Use resilient MediaImage with fallback to avoid broken avatars */}
+              <MediaImage
+                src={currentPost.user?.profilePicture || "/assets/images/default-avatar.svg"}
+                alt="profile avatar"
+                className="w-12 h-12 rounded-full object-cover border-2 border-gray-300"
+                width={48}
+                height={48}
+              />
               <div>
                 <h3 className={`font-semibold ${themeClasses.text}`}>{currentPost.user?.name || "Unknown User"}</h3>
                 <p className={`text-sm ${themeClasses.textMuted}`}>@{currentPost.user?.username || "user"}</p>
@@ -351,7 +358,15 @@ export default function PostDetailPage() {
           <p className={`${themeClasses.textSecondary} text-lg mb-4`}>{currentPost.content}</p>
 
           {/* Media */}
-          {currentPost.imageUrl && <img src={currentPost.imageUrl} className="w-full rounded-xl max-h-96 object-cover mb-4" alt="post media" />}
+          {currentPost.imageUrl && (
+            <MediaImage
+              src={currentPost.imageUrl}
+              alt="post media"
+              className="w-full rounded-xl max-h-96 object-cover mb-4"
+              width={800}
+              height={600}
+            />
+          )}
           {currentPost.videoUrl && <video src={currentPost.videoUrl} controls className="w-full rounded-xl max-h-96 mb-4" />}
 
           {/* Actions */}
