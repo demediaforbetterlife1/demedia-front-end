@@ -35,12 +35,17 @@ export const normalizePost = (post: any) => {
     );
   };
 
+  // Gather possible image fields coming from different backend shapes
   const imgs = extractUrls(post.images);
   const mediaImgs = extractUrls(post.media);
   const imageUrls = extractUrls(post.imageUrls);
+  const photos = extractUrls(post.photos);
+  const attachments = extractUrls(post.attachments);
+  const mediaUrls = extractUrls(post.mediaUrls);
 
-  // Choose first non-empty source array
-  const imagesFromPost = [imgs, mediaImgs, imageUrls].find(arr => Array.isArray(arr) && arr.length > 0) || [];
+  // Choose first non-empty source array (ordered by most explicit/common first)
+  const imagesFromPost = [imageUrls, photos, imgs, mediaUrls, mediaImgs, attachments]
+    .find(arr => Array.isArray(arr) && arr.length > 0) || [];
 
   // Normalize and drop placeholders
   const formattedImages = imagesFromPost
@@ -48,7 +53,8 @@ export const normalizePost = (post: any) => {
     .filter((u) => !!u && !isPlaceholder(u)) as string[];
 
   // Compute primary image preferring explicit fields, but skip placeholders
-  const explicitCandidates = [post.imageUrl, post.coverImage, post.thumbnail].filter((u) => !!u && !isPlaceholder(u));
+  const explicitCandidates = [post.imageUrl, post.coverImage, post.thumbnail, post.primaryImage]
+    .filter((u) => !!u && !isPlaceholder(u));
   const primaryCandidate = explicitCandidates[0] || formattedImages[0] || post.media?.[0]?.url || null;
   const primaryImage = ensureAbsoluteMediaUrl(primaryCandidate) || null;
 

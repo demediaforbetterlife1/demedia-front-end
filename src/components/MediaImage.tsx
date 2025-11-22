@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import Image from 'next/image';
+import { ensureAbsoluteMediaUrl } from '@/utils/mediaUtils';
 
 interface MediaImageProps {
   src: string | null | undefined;
@@ -44,29 +45,15 @@ export default function MediaImage({
     return DEFAULT_POST_IMAGE;
   }, [fallbackSrc, alt]);
 
-  // Validate and clean the image URL
+  // Validate and clean the image URL using shared media util
   const getValidImageUrl = useCallback((url: string | null | undefined): string => {
     if (!url || url === 'null' || url === 'undefined') {
       return getFallbackImage();
     }
 
-    // If it's already a full URL, return as is
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-
-    // If it starts with /uploads, prepend the backend URL
-    if (url.startsWith('/uploads')) {
-      return `https://demedia-backend.fly.dev${url}`;
-    }
-
-    // If it's a relative path, treat it as a local asset
-    if (url.startsWith('/')) {
-      return url;
-    }
-
-    // Default fallback
-    return getFallbackImage();
+    // Use shared helper that handles relative paths (with/without leading slash)
+    const normalized = ensureAbsoluteMediaUrl(url);
+    return normalized || getFallbackImage();
   }, [getFallbackImage]);
 
   const handleImageError = useCallback(() => {
