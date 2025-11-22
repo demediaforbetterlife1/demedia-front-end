@@ -17,6 +17,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { useNotifications } from "@/components/NotificationProvider";
 import CommentModal from "@/components/CommentModal";
+import MediaImage from "@/components/MediaImage";
 import { apiFetch, getAuthHeaders } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
 import { resolveChatId } from "@/utils/chatUtils";
