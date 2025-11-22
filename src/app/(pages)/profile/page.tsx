@@ -862,7 +862,7 @@ async function handleFollowToggle() {
     };
 
     return (
-        <div key={userId}>
+        <div key={userId} className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black/95 text-white">
             <style jsx>{`
                 @keyframes spin-slow {
                     from { transform: rotate(0deg); }
