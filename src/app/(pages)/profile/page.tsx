@@ -873,11 +873,11 @@ async function handleFollowToggle() {
                 }
             `}</style>
             <div className={`min-h-screen theme-bg-primary pb-20 md:pb-0 gold-theme`}>
-                <div className="max-w-6xl mx-auto p-4">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Enhanced Cover Section */}
                     <div className="relative mb-8">
                         {coverPicture ? (
-                            <div className="relative h-64 sm:h-80 md:h-96 lg:h-[28rem] overflow-hidden rounded-3xl shadow-2xl group">
+                            <div className="relative h-56 xs:h-64 sm:h-80 md:h-96 lg:h-[28rem] overflow-hidden rounded-3xl shadow-2xl group">
                                 <MediaImage
                                   src={coverPicture}
                                   alt="Cover"
@@ -904,7 +904,7 @@ async function handleFollowToggle() {
                                 )}
                             </div>
                         ) : (
-                            <div className={`h-64 sm:h-80 md:h-96 lg:h-[28rem] bg-gradient-to-br ${themeClasses.coverGradient} rounded-3xl flex items-center justify-center relative overflow-hidden shadow-2xl group`}>
+                            <div className={`h-56 xs:h-64 sm:h-80 md:h-96 lg:h-[28rem] bg-gradient-to-br ${themeClasses.coverGradient} rounded-3xl flex items-center justify-center relative overflow-hidden shadow-2xl group`}>
                                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10"></div>
                                 <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-black/10"></div>
                                 <div className="text-center relative z-10">
@@ -931,15 +931,15 @@ async function handleFollowToggle() {
                         )}
 
                     {/* Modern Profile Section */}
-                    <div className="relative px-6 pb-6">
+                    <div className="relative px-4 sm:px-6 pb-6">
                         {/* Enhanced Profile Picture Section */}
-                        <div className="absolute -top-20 sm:-top-24 md:-top-28 left-6 sm:left-8">
+                        <div className="absolute -top-16 xs:-top-20 sm:-top-24 md:-top-28 left-4 sm:left-8">
                             <div className="relative group">
                                 {/* Animated Ring */}
                                 <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 opacity-75 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
                                 
                                 {/* Main Profile Circle */}
-                                <div className={`relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl ring-4 ring-white/20 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300`}>
+                                <div className={`relative w-24 h-24 xs:w-28 xs:h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl ring-4 ring-white/20 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300`}>
                                   <motion.div
                                     key={profilePicture || 'default-avatar'}
                                     initial={{ scale: 0.8, opacity: 0 }}
@@ -958,42 +958,42 @@ async function handleFollowToggle() {
                                   </motion.div>
                     
                                     {/* Online Status */}
-                                    <div className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
+                                    <div className="absolute bottom-2 right-2 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
                     </div>
                             </div>
                 </div>
 
                         {/* Profile Info Section */}
-                        <div className="pt-20 sm:pt-24 px-4 sm:px-6">
+                        <div className="pt-20 sm:pt-24 px-2 sm:px-6">
                             {/* Name and Username */}
                             <div className="mb-6">
                                 <div className="flex items-center gap-3 mb-2">
-                                    <h1 className={`text-3xl sm:text-4xl font-bold ${themeClasses.text}`}>{name}</h1>
+                                    <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${themeClasses.text}`}>{name}</h1>
                                     <PremiumUserIndicator 
                                         subscriptionTier={profile?.subscriptionTier}
                                         size="md"
                                     />
                                 </div>
-                                <p className={`text-lg sm:text-xl ${themeClasses.textSecondary}`}>@{username}</p>
+                                <p className={`text-base sm:text-lg md:text-xl ${themeClasses.textSecondary}`}>@{username}</p>
                             </div>
 
                             {/* Bio */}
                         {bio && (
                                 <div className="mb-6">
-                                    <p className={`text-sm leading-relaxed ${themeClasses.textSecondary} max-w-2xl`}>{bio}</p>
+                                    <p className={`text-sm md:text-base leading-relaxed ${themeClasses.textSecondary} max-w-2xl`}>{bio}</p>
                                 </div>
                             )}
 
                             {/* Modern Stats Section - Horizontal Layout */}
-                            <div className="grid grid-cols-3 gap-4 mb-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
                                 <motion.div 
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={handleFollowersClick}
                                     className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300 backdrop-blur-sm`}
                                 >
-                                    <div className={`text-2xl font-bold ${themeClasses.text} mb-1`}>{followersCount}</div>
-                                    <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>Followers</div>
+                                    <div className={`text-xl sm:text-2xl font-bold ${themeClasses.text} mb-1`}>{followersCount}</div>
+                                    <div className={`text-xs sm:text-sm font-medium ${themeClasses.textSecondary}`}>Followers</div>
                                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
                                         <div className="bg-gradient-to-r from-cyan-500 to-purple-600 h-1.5 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (followersCount / 1000) * 100)}%`}}></div>
                                     </div>
@@ -1005,8 +1005,8 @@ async function handleFollowToggle() {
                                     onClick={handleFollowingClick}
                                     className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300 backdrop-blur-sm`}
                                 >
-                                    <div className={`text-2xl font-bold ${themeClasses.text} mb-1`}>{followingCount}</div>
-                                    <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>Following</div>
+                                    <div className={`text-xl sm:text-2xl font-bold ${themeClasses.text} mb-1`}>{followingCount}</div>
+                                    <div className={`text-xs sm:text-sm font-medium ${themeClasses.textSecondary}`}>Following</div>
                                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
                                         <div className="bg-gradient-to-r from-pink-500 to-rose-600 h-1.5 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (followingCount / 500) * 100)}%`}}></div>
                                     </div>
@@ -1016,8 +1016,8 @@ async function handleFollowToggle() {
                                     whileHover={{ scale: 1.05 }}
                                     className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300 backdrop-blur-sm`}
                                 >
-                                    <div className={`text-2xl font-bold ${themeClasses.text} mb-1`}>{likesCount}</div>
-                                    <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>Likes</div>
+                                    <div className={`text-xl sm:text-2xl font-bold ${themeClasses.text} mb-1`}>{likesCount}</div>
+                                    <div className={`text-xs sm:text-sm font-medium ${themeClasses.textSecondary}`}>Likes</div>
                                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
                                         <div className="bg-gradient-to-r from-yellow-500 to-orange-600 h-1.5 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (likesCount / 10000) * 100)}%`}}></div>
                                     </div>
@@ -1025,7 +1025,7 @@ async function handleFollowToggle() {
                             </div>
 
                             {/* Enhanced Action Buttons */}
-                            <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 mb-8">
+                            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
                     {isOwnProfile ? (
                                     <>
                         <motion.button
@@ -1033,7 +1033,7 @@ async function handleFollowToggle() {
                             onClick={() => setShowEditModal(true)}
                             whileTap={{ scale: 0.95 }}
                             whileHover={{ scale: 1.02 }}
-                            className={`flex-1 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${themeClasses.button} text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
+                            className={`w-full sm:flex-1 px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${themeClasses.button} text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
                         >
                             <Edit size={18} />
                             <span>Edit Profile</span>
@@ -1048,7 +1048,7 @@ async function handleFollowToggle() {
                             }}
                             whileTap={{ scale: 0.95 }}
                             whileHover={{ scale: 1.02 }}
-                            className={`px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${themeClasses.buttonSecondary} flex items-center space-x-2 text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
+                            className={`w-full sm:w-auto px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl font-semibold transition-all duration-300 ${themeClasses.buttonSecondary} flex items-center justify-center space-x-2 text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
                         >
                             <Camera size={18} />
                             <span>Change Photo</span>
@@ -1108,7 +1108,7 @@ async function handleFollowToggle() {
                 </div>
 
                             {/* Modern Navigation Tabs */}
-                            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-8 overflow-x-auto">
+                            <div className="-mx-4 px-4 flex border-b border-gray-200 dark:border-gray-700 mb-6 sm:mb-8 overflow-x-auto snap-x snap-mandatory no-scrollbar">
                                 {[
                                     { id: "posts", label: "Posts", icon: Grid3X3, color: "from-blue-500 to-cyan-600" },
                                     { id: "desnaps", label: "DeSnaps", icon: Video, color: "from-purple-500 to-pink-600" },
@@ -1124,7 +1124,7 @@ async function handleFollowToggle() {
                                         onClick={() => setActiveTab(tab.id)}
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
-                                        className={`flex-1 py-4 px-6 text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 relative rounded-t-xl ${
+                                        className={`flex-none sm:flex-1 py-3.5 sm:py-4 px-4 sm:px-6 text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 relative rounded-t-xl whitespace-nowrap snap-start ${
                                             activeTab === tab.id
                                                 ? `text-white bg-gradient-to-r ${tab.color} shadow-lg`
                                                 : `${themeClasses.textSecondary} hover:${themeClasses.text} hover:bg-gray-100/10`
@@ -1145,7 +1145,7 @@ async function handleFollowToggle() {
             </div>
 
                             {/* Modern Content Sections */}
-                            <div className="p-8">
+                            <div className="p-4 sm:p-8">
                 <AnimatePresence mode="wait">
                     {activeTab === "posts" && (
                         <motion.div
