@@ -16,8 +16,9 @@ interface MediaImageProps {
   onLoad?: () => void;
 }
 
-const DEFAULT_AVATAR = '/images/default-avatar.svg';
-const DEFAULT_POST_IMAGE = '/images/default-post.svg';
+// Use assets paths that exist in this project under public/assets/images
+const DEFAULT_AVATAR = '/assets/images/default-avatar.svg';
+const DEFAULT_POST_IMAGE = '/assets/images/default-post.svg';
 
 export default function MediaImage({
   src,

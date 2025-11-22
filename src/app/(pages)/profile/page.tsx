@@ -77,6 +77,7 @@ import {
     Crown as CrownIcon
 } from "lucide-react";
 import { getUserProfile, apiFetch, getAuthHeaders } from "../../../lib/api"; // Fixed duplicate import
+import MediaImage from "@/components/MediaImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getEnhancedThemeClasses } from "@/utils/enhancedThemeUtils";
@@ -877,12 +878,12 @@ async function handleFollowToggle() {
                     <div className="relative mb-8">
                         {coverPicture ? (
                             <div className="relative h-64 sm:h-80 md:h-96 lg:h-[28rem] overflow-hidden rounded-3xl shadow-2xl group">
-                                <img
-                                    src={coverPicture}
-                                    alt="Cover"
-                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                    loading="lazy"
-                                    onError={(e) => (e.currentTarget.style.display = "none")}
+                                <MediaImage
+                                  src={coverPicture}
+                                  alt="Cover"
+                                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                  fill
+                                  fallbackSrc="/assets/images/default-post.svg"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                                 <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20" />
@@ -939,34 +940,23 @@ async function handleFollowToggle() {
                                 
                                 {/* Main Profile Circle */}
                                 <div className={`relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl ring-4 ring-white/20 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300`}>
-                    {profilePicture ? (
-                        <motion.img
-                                            key={profilePicture}
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ type: "spring", stiffness: 120 }}
-                            src={profilePicture}
-                            alt={name}
-                                className="w-full h-full object-cover"
-                            loading="lazy"
-                            onError={(e) => {
-                                    console.log("Profile picture failed to load:", profilePicture);
-                                    console.log("Error details:", e);
-                                e.currentTarget.src = "/assets/images/default-avatar.svg";
-                                }}
-                                onLoad={() => {
-                                    console.log("Profile picture loaded successfully:", profilePicture);
-                            }}
-                        />
-                    ) : (
-                        <img
-                            src="/assets/images/default-avatar.svg"
-                            alt={name}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                        />
-                    )}
-                                    
+                                  <motion.div
+                                    key={profilePicture || 'default-avatar'}
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ type: "spring", stiffness: 120 }}
+                                    className="w-full h-full"
+                                  >
+                                    <MediaImage
+                                      src={profilePicture || undefined}
+                                      alt={name}
+                                      className="w-full h-full object-cover"
+                                      width={144}
+                                      height={144}
+                                      fallbackSrc="/assets/images/default-avatar.svg"
+                                    />
+                                  </motion.div>
+                    
                                     {/* Online Status */}
                                     <div className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
                     </div>

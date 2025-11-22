@@ -20,7 +20,17 @@ export async function GET(
     }
 
     const authHeader = `Bearer ${token}`;
-    const userId = request.headers.get('user-id');
+    // Try to get userId from header; if missing, decode from JWT
+    let userId = request.headers.get('user-id') || '';
+    if (!userId) {
+      try {
+        const [, payload] = token.split('.') as [string, string, string];
+        const json = JSON.parse(Buffer.from(payload, 'base64').toString('utf8')) as any;
+        userId = String(json.sub || json.userId || json.id || '');
+      } catch {
+        // ignore decode errors
+      }
+    }
 
     const backendUrl = "https://demedia-backend.fly.dev";
     const res = await fetch(`${backendUrl}/api/posts/${id}`, {
@@ -108,7 +118,17 @@ export async function PUT(
     }
 
     const authHeader = `Bearer ${token}`;
-    const userId = request.headers.get('user-id');
+    // Ensure user-id header is forwarded; if missing, try to decode from JWT
+    let userId = request.headers.get('user-id') || '';
+    if (!userId) {
+      try {
+        const [, payload] = token.split('.') as [string, string, string];
+        const json = JSON.parse(Buffer.from(payload, 'base64').toString('utf8')) as any;
+        userId = String(json.sub || json.userId || json.id || '');
+      } catch {
+        // ignore decode errors
+      }
+    }
 
     console.log('Post update request:', { postId, body, userId });
 
@@ -168,13 +188,22 @@ export async function DELETE(
     }
 
     const authHeader = `Bearer ${token}`;
-    const userId = request.headers.get('user-id');
+    // Ensure user-id header is forwarded; if missing, try to decode from JWT
+    let userId = request.headers.get('user-id') || '';
+    if (!userId) {
+      try {
+        const [, payload] = token.split('.') as [string, string, string];
+        const json = JSON.parse(Buffer.from(payload, 'base64').toString('utf8')) as any;
+        userId = String(json.sub || json.userId || json.id || '');
+      } catch {
+        // ignore decode errors
+      }
+    }
 
     console.log('Post delete request:', { postId, userId });
 
     // Try to connect to the actual backend first
     try {
-
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/posts/${postId}`, {
         method: 'DELETE',
         headers: {
@@ -182,14 +211,31 @@ export async function DELETE(
           'user-id': userId || '',
           'Content-Type': 'application/json',
         },
+        // prevent hanging requests
+        // @ts-ignore - AbortSignal.timeout available in Node 18+
+        signal: (AbortSignal as any).timeout ? (AbortSignal as any).timeout(10000) : undefined,
       });
 
       if (backendResponse.ok) {
-        const data = await backendResponse.json();
-        return NextResponse.json(data);
+        // Attempt to return backend JSON; if empty body, return success true
+        const text = await backendResponse.text();
+        let payload: any = undefined;
+        try {
+          payload = text ? JSON.parse(text) : { success: true };
+        } catch {
+          payload = text ? { message: text } : { success: true };
+        }
+        return NextResponse.json(payload);
       }
       const errorText = await backendResponse.text();
-      return NextResponse.json({ error: errorText || 'Failed to delete post' }, { status: backendResponse.status });
+      // Try to parse backend error JSON to avoid double-encoding
+      let errorPayload: any = { error: 'Failed to delete post' };
+      try {
+        errorPayload = errorText ? JSON.parse(errorText) : { error: backendResponse.statusText || 'Failed to delete post' };
+      } catch {
+        errorPayload = { error: errorText || backendResponse.statusText || 'Failed to delete post' };
+      }
+      return NextResponse.json(errorPayload, { status: backendResponse.status });
     } catch (backendError) {
       console.log('Backend not available for delete');
       return NextResponse.json({ error: 'Backend unavailable' }, { status: 503 });
