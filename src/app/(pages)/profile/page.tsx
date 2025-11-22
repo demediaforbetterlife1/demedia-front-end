@@ -936,7 +936,7 @@ async function handleFollowToggle() {
                         <div className="absolute -top-16 xs:-top-20 sm:-top-24 md:-top-28 left-4 sm:left-8">
                             <div className="relative group">
                                 {/* Animated Ring */}
-                                <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 opacity-75 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+                                <div className="absolute -inset-1 sm:-inset-2 rounded-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 opacity-75 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
                                 
                                 {/* Main Profile Circle */}
                                 <div className={`relative w-24 h-24 xs:w-28 xs:h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl ring-4 ring-white/20 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300`}>
@@ -968,7 +968,7 @@ async function handleFollowToggle() {
                             {/* Name and Username */}
                             <div className="mb-6">
                                 <div className="flex items-center gap-3 mb-2">
-                                    <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${themeClasses.text}`}>{name}</h1>
+                                    <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold break-words ${themeClasses.text}`}>{name}</h1>
                                     <PremiumUserIndicator 
                                         subscriptionTier={profile?.subscriptionTier}
                                         size="md"
@@ -1108,7 +1108,7 @@ async function handleFollowToggle() {
                 </div>
 
                             {/* Modern Navigation Tabs */}
-                            <div className="-mx-4 px-4 flex border-b border-gray-200 dark:border-gray-700 mb-6 sm:mb-8 overflow-x-auto snap-x snap-mandatory no-scrollbar">
+                            <div className="-mx-4 px-4 flex gap-2 sm:gap-0 border-b border-gray-200 dark:border-gray-700 mb-6 sm:mb-8 overflow-x-auto snap-x snap-mandatory no-scrollbar">
                                 {[
                                     { id: "posts", label: "Posts", icon: Grid3X3, color: "from-blue-500 to-cyan-600" },
                                     { id: "desnaps", label: "DeSnaps", icon: Video, color: "from-purple-500 to-pink-600" },
@@ -1124,7 +1124,7 @@ async function handleFollowToggle() {
                                         onClick={() => setActiveTab(tab.id)}
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
-                                        className={`flex-none sm:flex-1 py-3.5 sm:py-4 px-4 sm:px-6 text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 relative rounded-t-xl whitespace-nowrap snap-start ${
+                                        className={`flex-none sm:flex-1 py-3.5 sm:py-4 px-3 sm:px-6 text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 relative rounded-t-xl whitespace-nowrap snap-start ${
                                             activeTab === tab.id
                                                 ? `text-white bg-gradient-to-r ${tab.color} shadow-lg`
                                                 : `${themeClasses.textSecondary} hover:${themeClasses.text} hover:bg-gray-100/10`

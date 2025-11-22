@@ -251,7 +251,7 @@ export default function ChatPage() {
           content: messageContent,
           type: 'text'
         })
-      });
+      }, user?.id);
 
       if (response.ok) {
         const newMsg = await response.json();
@@ -310,7 +310,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           content: editContent.trim()
         })
-      });
+      }, user?.id);
 
       if (response.ok) {
         const updatedMessage = await response.json();
@@ -331,7 +331,7 @@ export default function ChatPage() {
     try {
       const response = await apiFetch(`/api/messages/${messageId}`, {
         method: 'DELETE',
-      });
+      }, user?.id);
 
       if (response.ok) {
         setMessages(prev => prev.filter(msg => msg.id !== messageId));
@@ -351,7 +351,7 @@ export default function ChatPage() {
       try {
         const response = await apiFetch(`/api/user/${otherParticipant.id}/block`, {
           method: 'POST',
-        });
+        }, user?.id);
 
         if (response.ok) {
           router.push('/messeging');
@@ -367,7 +367,7 @@ export default function ChatPage() {
       try {
         const response = await apiFetch(`/api/chat/${chatId}`, {
           method: 'DELETE',
-        });
+        }, user?.id);
 
         if (response.ok) {
           router.push('/messeging');
