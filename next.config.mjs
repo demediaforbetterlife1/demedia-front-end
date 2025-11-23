@@ -1,5 +1,3 @@
-// next.config.mjs
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -23,15 +21,18 @@ const nextConfig = {
   },
 
   async rewrites() {
-    const target = "https://demedia-backend.fly.dev";
+    const target = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
     return [
       {
         source: "/socket.io/:path*",
         destination: `${target}/socket.io/:path*`,
       },
+      {
+        source: "/uploads/:path*",
+        destination: `${target}/uploads/:path*`,
+      },
     ];
   },
 };
-  
-  export default nextConfig;
-  
+
+export default nextConfig;

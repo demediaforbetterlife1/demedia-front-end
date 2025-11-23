@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const BACKEND_BASE = "https://demedia-backend.fly.dev";
+const BACKEND_BASE = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
 
 // ✅ حل شامل: دعم كل حالات params (Promise أو object أو undefined)
 async function resolveParams(context: any): Promise<string[]> {

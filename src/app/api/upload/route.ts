@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     // Extract token from cookies or Authorization header
-    const token = request.cookies.get('token')?.value || 
-                  request.headers.get('authorization')?.replace('Bearer ', '');
+    const token = request.cookies.get('token')?.value ||
+      request.headers.get('authorization')?.replace('Bearer ', '');
 
     if (!token) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const type = formData.get('type') as string || 'image';
-    
+
     console.log('Upload request:', { type, fileName: file?.name, fileSize: file?.size });
 
     if (!file) {
@@ -27,27 +27,27 @@ export async function POST(request: NextRequest) {
     try {
       const backendFormData = new FormData();
       backendFormData.append('userId', userId || '');
-      
+
       // Route to appropriate backend endpoint based on type
       let backendEndpoint: string;
       let fieldName: string;
-      
+
       if (type === 'profile' || type === 'cover') {
-        backendEndpoint = 'https://demedia-backend.fly.dev/api/upload/profile';
+        backendEndpoint = (process.env.BACKEND_URL || 'https://demedia-backend.fly.dev') + '/api/upload/profile';
         fieldName = 'file';
         backendFormData.append('type', type);
       } else if (type === 'image' || type === 'post') {
-        backendEndpoint = 'https://demedia-backend.fly.dev/api/upload/post';
+        backendEndpoint = (process.env.BACKEND_URL || 'https://demedia-backend.fly.dev') + '/api/upload/post';
         fieldName = 'image';
       } else if (type === 'video') {
-        backendEndpoint = 'https://demedia-backend.fly.dev/api/upload/video';
+        backendEndpoint = (process.env.BACKEND_URL || 'https://demedia-backend.fly.dev') + '/api/upload/video';
         fieldName = 'video';
       } else {
         // Default to post upload for unknown types
-        backendEndpoint = 'https://demedia-backend.fly.dev/api/upload/post';
+        backendEndpoint = (process.env.BACKEND_URL || 'https://demedia-backend.fly.dev') + '/api/upload/post';
         fieldName = 'image';
       }
-      
+
       backendFormData.append(fieldName, file);
 
       const backendResponse = await fetch(backendEndpoint, {
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString('base64');
     const dataUrl = `data:${file.type};base64,${base64}`;
-    
+
     const mockUpload = {
       success: true,
       url: dataUrl,

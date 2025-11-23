@@ -11,12 +11,12 @@ export const config = {
 // ✅ جلب كل البوستات
 export async function GET(request: NextRequest) {
   try {
-    const backendUrl = "https://demedia-backend.fly.dev/api/posts";
+    const backendUrl = (process.env.BACKEND_URL || "https://demedia-backend.fly.dev") + "/api/posts";
     const userId = request.headers.get("user-id");
-    
+
     // Try to get token from cookie first, then fall back to Authorization header
     let token = request.cookies.get('token')?.value;
-    
+
     if (!token) {
       const authHeader = request.headers.get("authorization");
       if (authHeader?.startsWith('Bearer ')) {
@@ -59,13 +59,13 @@ export async function GET(request: NextRequest) {
 // ✅ إنشاء بوست جديد
 export async function POST(request: NextRequest) {
   try {
-    const backendUrl = "https://demedia-backend.fly.dev/api/posts";
+    const backendUrl = (process.env.BACKEND_URL || "https://demedia-backend.fly.dev") + "/api/posts";
     const body = await request.json();
     const userId = request.headers.get("user-id");
-    
+
     // Try to get token from cookie first, then fall back to Authorization header
     let token = request.cookies.get('token')?.value;
-    
+
     if (!token) {
       const authHeader = request.headers.get("authorization");
       if (authHeader?.startsWith('Bearer ')) {
@@ -96,11 +96,11 @@ export async function POST(request: NextRequest) {
     const text = await res.text();
     if (!res.ok) {
       console.error("❌ Backend returned error:", text);
-      
+
       // Provide specific error messages based on status code
       let errorMessage = "Failed to create post";
       let details = text;
-      
+
       switch (res.status) {
         case 401:
           errorMessage = "Authentication failed. Please log in again.";
@@ -122,13 +122,13 @@ export async function POST(request: NextRequest) {
         default:
           errorMessage = `Post creation failed (${res.status})`;
       }
-      
+
       return NextResponse.json(
-        { 
-          error: true, 
+        {
+          error: true,
           message: errorMessage,
           details: details,
-          status: res.status 
+          status: res.status
         },
         { status: res.status }
       );

@@ -248,6 +248,7 @@ export default function ChatPage() {
         },
         body: JSON.stringify({
           chatId,
+          senderId: user?.id,
           content: messageContent,
           type: 'text'
         })
@@ -262,7 +263,8 @@ export default function ChatPage() {
           playMessageSound();
         }
       } else {
-        console.error('Failed to send message');
+        const errTxt = await response.text().catch(() => '');
+        console.error('Failed to send message', response.status, errTxt);
         setError('Failed to send message');
       }
     } catch (err) {
@@ -273,7 +275,7 @@ export default function ChatPage() {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -623,12 +625,12 @@ export default function ChatPage() {
       </AnimatePresence>
 
       {/* Message Input */}
-      <div className={`p-4 border-t ${themeClasses.border} ${themeClasses.card}`}>
-        <div className="flex items-center space-x-2">
+      <div className={`p-3 sm:p-4 border-t ${themeClasses.border} ${themeClasses.card} sticky bottom-0 z-40`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setShowStickers(!showStickers)}
             className={`p-2 rounded-lg ${themeClasses.hover} transition-colors`}
-          >
+            >
             <FiSmile size={20} />
           </button>
           
@@ -637,8 +639,9 @@ export default function ChatPage() {
               type="text"
               value={newMessage}
               onChange={handleTyping}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               placeholder="Type a message..."
+              aria-label="Message input"
               className={`w-full px-4 py-3 rounded-full ${themeClasses.input} focus:outline-none focus:ring-2 focus:ring-cyan-500`}
               disabled={isSending}
             />
@@ -656,7 +659,8 @@ export default function ChatPage() {
           <button
             onClick={handleSendMessage}
             disabled={!newMessage.trim() || isSending}
-            className={`p-3 rounded-full ${themeClasses.button} disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
+            aria-label="Send message"
+            className={`p-3 sm:p-3.5 rounded-full ${themeClasses.button} disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
           >
             <FiSend size={20} />
           </button>
