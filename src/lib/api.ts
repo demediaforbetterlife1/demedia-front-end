@@ -1,7 +1,7 @@
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 const API_BASE = ""; // same-origin; Next.js rewrites /api to backend in production
-const DIRECT_API_BASE = "https://demedia-backend.fly.dev"; // direct backend fallback
+const DIRECT_API_BASE = process.env.BACKEND_URL || "https://demedia-backend.fly.dev"; // direct backend fallback
 
 /* --------------------------- Utility helpers ----------------------------- */
 
@@ -77,7 +77,7 @@ export function getToken(): string | null {
     console.log('🔑 Token retrieved from cookies');
     return cookieToken;
   }
-  
+
   // Fallback to localStorage (secondary storage)
   if (typeof window !== "undefined") {
     const localToken = localStorage.getItem("token");
@@ -86,7 +86,7 @@ export function getToken(): string | null {
       return localToken;
     }
   }
-  
+
   console.warn('⚠️ No token found in cookies or localStorage');
   return null;
 }
@@ -98,17 +98,17 @@ export function getAuthHeaders(userId?: string | number): Record<string, string>
     "Content-Type": "application/json",
     Accept: "application/json",
   };
-  
+
   // Always add Authorization if token exists
   if (token) {
     base["Authorization"] = `Bearer ${token}`;
   }
-  
+
   // Use consistent header name - make sure it matches what backend expects
   if (userId) {
     base["user-id"] = String(userId);
   }
-  
+
   return base;
 }
 
@@ -180,14 +180,14 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
       // For auth endpoints: soft timeout using Promise.race to return 504 synthetic response
       const res: Response = isAuthEndpoint
         ? await Promise.race<Promise<Response>>([
-            fetch(url, fetchOptions),
-            new Promise<Response>((resolve) =>
-              setTimeout(() => {
-                const body = JSON.stringify({ error: "Auth request timed out" });
-                resolve(new Response(body, { status: 504, headers: { "Content-Type": "application/json" } }));
-              }, timeout || 20000)
-            ),
-          ])
+          fetch(url, fetchOptions),
+          new Promise<Response>((resolve) =>
+            setTimeout(() => {
+              const body = JSON.stringify({ error: "Auth request timed out" });
+              resolve(new Response(body, { status: 504, headers: { "Content-Type": "application/json" } }));
+            }, timeout || 20000)
+          ),
+        ])
         : await fetch(url, fetchOptions);
 
       // Handle 401 - don't logout immediately
@@ -221,7 +221,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
         } else if (isAuthEndpoint) {
           try {
             return await tryDirectConnection(path, options);
-          } catch {}
+          } catch { }
         }
       }
 
@@ -282,13 +282,13 @@ export interface AuthResponse {
 async function requestJson<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   const res = await apiFetch(path, opts);
   const parsed = await readJsonSafe<T | { error?: string }>(res);
-  
+
   // Don't throw for 401 - let the caller handle it
   if (!res.ok && res.status !== 401) {
     const errMsg = (parsed as any)?.error || (parsed as any)?.message || res.statusText;
     throw new Error(`Request failed ${res.status} - ${errMsg}`);
   }
-  
+
   return parsed as T;
 }
 
@@ -320,7 +320,7 @@ export async function signIn(payload: { phoneNumber: string; password: string })
 /** Fetch current authenticated user from backend only */
 export async function fetchCurrentUser(): Promise<User | null> {
   const token = getToken();
-  
+
   // Don't attempt to fetch user if no token
   if (!token) {
     console.warn("[api] fetchCurrentUser: No token");
@@ -345,16 +345,16 @@ export async function fetchCurrentUser(): Promise<User | null> {
     }
 
     const body = await readJsonSafe<{ user: User | null }>(res);
-    
+
     if (body && 'user' in body && body.user) {
       return body.user;
     }
-    
+
     // Check if it's an error response
     if (body && 'error' in body) {
       console.warn("[api] fetchCurrentUser: Error in response:", body.error);
     }
-    
+
     console.warn("[api] fetchCurrentUser: Invalid response body", body);
     return null;
   } catch (err) {
@@ -412,40 +412,40 @@ export async function getUserProfile(userId: string | number) {
     }
 
     console.log("[api] getUserProfile: Fetching profile for userId:", userId, "type:", typeof userId);
-    
+
     const res = await apiFetch(`/api/users/${userId}/profile`, {
       method: "GET",
       cache: "no-store",
     }, userId);
-    
+
     console.log("[api] getUserProfile: Response status:", res.status);
-    
+
     // Handle 401 for profile requests
     if (res.status === 401) {
       console.warn("[api] getUserProfile: Unauthorized (401)");
       return null;
     }
-    
+
     const profile = await res.json();
-    
+
     // Check if the response contains an error (even if status is 200)
     if (profile && profile.error && !profile.id) {
       console.error("[api] getUserProfile error:", profile.error);
       return null;
     }
-    
+
     if (!res.ok) {
       const errorMsg = profile?.error || `Failed to get profile: ${res.status}`;
       console.error("[api] getUserProfile: Request failed:", errorMsg);
       throw new Error(errorMsg);
     }
-    
+
     // Ensure profile has required fields
     if (!profile || !profile.id) {
       console.error("[api] getUserProfile: Invalid profile data returned");
       return null;
     }
-    
+
     return profile;
   } catch (err) {
     console.error("[api] getUserProfile error:", err);
@@ -459,12 +459,12 @@ export async function updateUserProfile(updates: Partial<User>) {
     method: "PATCH",
     body: JSON.stringify(updates),
   });
-  
+
   // Handle 401 for update requests
   if (res.status === 401) {
     throw new Error("Authentication required");
   }
-  
+
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Update failed: ${res.status} ${txt}`);
@@ -479,13 +479,13 @@ export async function followUser(targetUserId: string | number, currentUserId?: 
   const res = await apiFetch(`/api/user/${targetUserId}/follow`, {
     method: "POST",
   }, currentUserId);
-  
+
   if (!res.ok) {
     const errorText = await res.text();
     console.error(`Follow error ${res.status}:`, errorText);
     throw new Error("Follow request failed");
   }
-  
+
   return await res.json();
 }
 
@@ -494,13 +494,13 @@ export async function unfollowUser(targetUserId: string | number, currentUserId?
   const res = await apiFetch(`/api/user/${targetUserId}/unfollow`, {
     method: "POST",
   }, currentUserId);
-  
+
   if (!res.ok) {
     const errorText = await res.text();
     console.error(`Unfollow error ${res.status}:`, errorText);
     throw new Error("Unfollow request failed");
   }
-  
+
   return await res.json();
 }
 
@@ -513,12 +513,12 @@ export async function getPosts({ page = 1, limit = 20, q = "" }: { page?: number
     method: "GET",
     cache: "no-store",
   });
-  
+
   // Handle 401 for posts requests
   if (res.status === 401) {
     return [];
   }
-  
+
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Failed to fetch posts: ${res.status} ${txt}`);
@@ -532,12 +532,12 @@ export async function getPost(postId: string | number) {
     method: "GET",
     cache: "no-store",
   });
-  
+
   // Handle 401 for single post requests
   if (res.status === 401) {
     throw new Error("Authentication required");
   }
-  
+
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Failed to fetch post: ${res.status} ${txt}`);
@@ -547,18 +547,18 @@ export async function getPost(postId: string | number) {
 
 export async function createPost(payload: any) {
   const isForm = payload instanceof FormData;
-  
+
   const res = await apiFetch(`/api/posts`, {
     method: "POST",
     body: isForm ? payload : JSON.stringify(payload),
     headers: isForm ? {} : { "Content-Type": "application/json" },
   });
-  
+
   // Handle 401 for post creation
   if (res.status === 401) {
     throw new Error("Authentication required");
   }
-  
+
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
     throw new Error(errText || `Failed to create post (${res.status})`);
@@ -573,12 +573,12 @@ export async function postComment(postId: string | number, content: string) {
     method: "POST",
     body: JSON.stringify({ content }),
   });
-  
+
   // Handle 401 for comment posts
   if (res.status === 401) {
     throw new Error("Authentication required");
   }
-  
+
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Failed to post comment: ${res.status} ${txt}`);
@@ -598,7 +598,7 @@ export async function getNotifications({ page = 1, limit = 20 }: { page?: number
   if (res.status === 401) {
     return [];
   }
-  
+
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Failed to fetch notifications: ${res.status} ${txt}`);
@@ -611,12 +611,12 @@ export async function markNotificationRead(notificationId: string | number) {
   const res = await apiFetch(`/api/notifications/${notificationId}/read`, {
     method: "POST",
   });
-  
+
   // Handle 401 for notification updates
   if (res.status === 401) {
     throw new Error("Authentication required");
   }
-  
+
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Failed to mark read: ${res.status} ${txt}`);
@@ -633,12 +633,12 @@ export async function enhancedSearch(q: string, opts: { limit?: number; type?: s
     method: "GET",
     cache: "no-store",
   });
-  
+
   // Handle 401 for search
   if (res.status === 401) {
     return { users: [], posts: [] };
   }
-  
+
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Search failed: ${res.status} ${txt}`);

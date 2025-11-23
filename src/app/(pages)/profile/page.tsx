@@ -77,7 +77,6 @@ import {
     Crown as CrownIcon
 } from "lucide-react";
 import { getUserProfile, apiFetch, getAuthHeaders } from "../../../lib/api"; // Fixed duplicate import
-import MediaImage from "@/components/MediaImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getEnhancedThemeClasses } from "@/utils/enhancedThemeUtils";
@@ -164,7 +163,7 @@ export default function ProfilePage() {
     // Fix: Only use current user's ID if no userIdFromUrl is provided
     const userId = userIdFromUrl ? userIdFromUrl : user?.id?.toString();
     const isOwnProfile = !userIdFromUrl || userIdFromUrl === user?.id?.toString();
-
+    
     // State variables - moved before early returns
     const [activeTab, setActiveTab] = useState<string>("posts");
     const [isFollowing, setIsFollowing] = useState<boolean>(false);
@@ -179,17 +178,17 @@ export default function ProfilePage() {
     const [selectedDeSnap, setSelectedDeSnap] = useState<DeSnap | null>(null);
     const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
-
+    
     // Followers/Following state
     const [showFollowersList, setShowFollowersList] = useState(false);
     const [showFollowingList, setShowFollowingList] = useState(false);
     const [listType, setListType] = useState<'followers' | 'following'>('followers');
-
+    
     // Additional validation
     if (userIdFromUrl && userIdFromUrl !== user?.id?.toString()) {
         console.log('Loading different user profile:', userIdFromUrl, 'vs current user:', user?.id);
     }
-
+    
     // Debug logging
     console.log('Profile Page Debug:', {
         userIdFromUrl,
@@ -199,7 +198,7 @@ export default function ProfilePage() {
         url: window.location.href,
         searchParams: Object.fromEntries(searchParams.entries())
     }, user?.id);
-
+    
     // Additional validation to prevent wrong profile loading
     if (userIdFromUrl && userIdFromUrl !== user?.id?.toString()) {
         console.log('🔍 Loading different user profile:', {
@@ -208,7 +207,7 @@ export default function ProfilePage() {
             isDifferentUser: true
         }, user?.id);
     }
-
+    
     // Ensure userId is always valid (only after auth finished loading)
     if (!userId || userId === 'undefined' || userId === 'null') {
         console.error('❌ Invalid userId detected:', userId);
@@ -235,17 +234,17 @@ export default function ProfilePage() {
     }
 
     const themeClasses = getEnhancedThemeClasses(theme);
-
+    
     const handleFollowersClick = () => {
         setListType('followers');
         setShowFollowersList(true);
     };
-
+    
     const handleFollowingClick = () => {
         setListType('following');
         setShowFollowingList(true);
     };
-
+    
     // State for modals and features
     const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
     const [showQuickActions, setShowQuickActions] = useState(false);
@@ -253,7 +252,7 @@ export default function ProfilePage() {
     const [selectedPost, setSelectedPost] = useState<any>(null);
     const [showFollowersModal, setShowFollowersModal] = useState(false);
     const [followersModalType, setFollowersModalType] = useState<'followers' | 'following'>('followers');
-
+    
     // Unique Features State
     const [showAchievements, setShowAchievements] = useState(false);
     const [showAnalytics, setShowAnalytics] = useState(false);
@@ -270,13 +269,13 @@ export default function ProfilePage() {
     const [showMemoryLane, setShowMemoryLane] = useState(false);
     const [showCollaborationHub, setShowCollaborationHub] = useState(false);
     const [showInnovationLab, setShowInnovationLab] = useState(false);
-
+    
     // Advanced UI State
     const [activeView, setActiveView] = useState('overview');
     const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
     const [isProfileOptimized, setIsProfileOptimized] = useState(false);
     const [showPerformanceMetrics, setShowPerformanceMetrics] = useState(false);
-
+    
     // Photo Upload State
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
     const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false);
@@ -314,7 +313,7 @@ export default function ProfilePage() {
                 console.log('About to call getUserProfile with:', userId);
                 console.log('Current user from auth:', user);
                 console.log('Is own profile:', isOwnProfile);
-
+                
                 // Ensure userId is valid before making the request
                 if (!userId || userId === 'undefined' || userId === 'null') {
                     console.error('❌ Invalid userId before API call:', userId);
@@ -322,16 +321,16 @@ export default function ProfilePage() {
                     setLoading(false);
                     return;
                 }
-
+                
                 const data = await getUserProfile(userId);
                 console.log('getUserProfile returned:', data);
-
+                
                 if (!data || !data.id) {
                     console.error('getUserProfile returned null or invalid data');
                     console.log('Profile fetch failed for userId:', userId);
                     console.log('Is own profile:', isOwnProfile);
                     console.log('Current user ID:', user?.id);
-
+                    
                     // If it's the user's own profile and they're authenticated, try to use their auth data
                     if (isOwnProfile && user && user.id) {
                         console.log('🔄 Using auth user data as fallback for own profile');
@@ -355,22 +354,22 @@ export default function ProfilePage() {
                         setLoading(false);
                         return;
                     }
-
+                    
                     setError("Profile not found - User may not exist or has been deleted");
                     setLoading(false);
-
+                    
                     // Don't redirect - just show the error message
                     console.log('❌ User profile not found for userId:', userId);
                     return;
                 }
-
+                
                 console.log('Profile data loaded:', data);
-
+                
                 // Fetch stories for this user
                 const storiesResponse = await apiFetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
                     method: 'GET'
                 });
-
+                
                 let userStories = [];
                 if (storiesResponse.ok) {
                     userStories = await storiesResponse.json();
@@ -381,7 +380,7 @@ export default function ProfilePage() {
                     method: 'GET',
                     headers: getAuthHeaders(user?.id),
                 });
-
+                
                 let userDeSnaps = [];
                 if (deSnapsResponse.ok) {
                     userDeSnaps = await deSnapsResponse.json();
@@ -397,7 +396,7 @@ export default function ProfilePage() {
                 // Normalize data and format photo URLs
                 const profilePictureUrl = formatMediaUrl(data.profilePicture);
                 const coverPhotoUrl = formatMediaUrl(data.coverPhoto);
-
+                
                 const normalized: Profile = {
                     id: data.id,
                     name: data.name,
@@ -446,14 +445,14 @@ export default function ProfilePage() {
     // Real-time refresh function
     const refreshProfile = useCallback(async () => {
         if (!userId) return;
-
+        
         setIsRefreshing(true);
         try {
             // Refresh stories
             const storiesResponse = await apiFetch(`/api/stories/user/${userId}?viewerId=${user?.id}`, {
-                method: 'GET'
+                    method: 'GET'
             });
-
+            
             let userStories = [];
             if (storiesResponse.ok) {
                 userStories = await storiesResponse.json();
@@ -463,7 +462,7 @@ export default function ProfilePage() {
             const deSnapsResponse = await apiFetch(`/api/desnaps/user/${userId}?viewerId=${user?.id}`, {
                 method: 'GET'
             });
-
+            
             let userDeSnaps = [];
             if (deSnapsResponse.ok) {
                 userDeSnaps = await deSnapsResponse.json();
@@ -496,7 +495,7 @@ export default function ProfilePage() {
     // Auto-refresh every 30 seconds for stories
     useEffect(() => {
         if (!isOwnProfile) return;
-
+        
         const interval = setInterval(() => {
             refreshProfile();
         }, 30000);
@@ -505,83 +504,83 @@ export default function ProfilePage() {
     }, [refreshProfile, isOwnProfile]);
 
 
-    async function handleFollowToggle() {
-        if (!profile || busyFollow) return;
-        setBusyFollow(true);
+async function handleFollowToggle() {
+    if (!profile || busyFollow) return;
+    setBusyFollow(true);
 
-        const prevIsFollowing = isFollowing;
-        const prevFollowers = profile.followersCount;
+    const prevIsFollowing = isFollowing;
+    const prevFollowers = profile.followersCount;
 
-        // Optimistic update
-        setIsFollowing(!prevIsFollowing);
+    // Optimistic update
+    setIsFollowing(!prevIsFollowing);
+    setProfile((p) => p ? ({
+        ...p,
+        followersCount: prevIsFollowing ? prevFollowers - 1 : prevFollowers + 1,
+    }) : null);
+
+    try {
+        if (prevIsFollowing) {
+            await unfollowUser(profile.id, user?.id);
+        } else {
+            await followUser(profile.id, user?.id);
+        }
+        
+        // Refresh profile data to get accurate counts
+        const updatedProfile = await getUserProfile(profile.id);
+        if (updatedProfile) {
+            setProfile(updatedProfile);
+            setIsFollowing(updatedProfile.isFollowing || false);
+        }
+    } catch (err) {
+        console.error("Follow toggle error:", err);
+        // Revert optimistic update
+        setIsFollowing(prevIsFollowing);
         setProfile((p) => p ? ({
             ...p,
-            followersCount: prevIsFollowing ? prevFollowers - 1 : prevFollowers + 1,
+            followersCount: prevFollowers,
         }) : null);
 
         try {
-            if (prevIsFollowing) {
-                await unfollowUser(profile.id, user?.id);
-            } else {
-                await followUser(profile.id, user?.id);
-            }
+            const endpoint = prevIsFollowing
+                ? `/api/user/${profile.id}/unfollow`
+                : `/api/user/${profile.id}/follow`;
 
-            // Refresh profile data to get accurate counts
-            const updatedProfile = await getUserProfile(profile.id);
-            if (updatedProfile) {
-                setProfile(updatedProfile);
-                setIsFollowing(updatedProfile.isFollowing || false);
+            const res = await apiFetch(endpoint, { 
+                method: "POST",
+                body: JSON.stringify({
+                    followerId: user?.id
+                })
+            });
+            if (!res.ok) throw new Error("Follow request failed");
+
+            const payload = await res.json().catch(() => null);
+            if (payload) {
+                setProfile((p) => p ? ({
+                    ...p,
+                    followersCount:
+                        payload.followersCount ??
+                        p.followersCount,
+                }) : null);
+                if (typeof payload.isFollowing !== "undefined") {
+                    setIsFollowing(Boolean(payload.isFollowing));
+                }
             }
         } catch (err) {
             console.error("Follow toggle error:", err);
-            // Revert optimistic update
             setIsFollowing(prevIsFollowing);
             setProfile((p) => p ? ({
                 ...p,
                 followersCount: prevFollowers,
             }) : null);
-
-            try {
-                const endpoint = prevIsFollowing
-                    ? `/api/user/${profile.id}/unfollow`
-                    : `/api/user/${profile.id}/follow`;
-
-                const res = await apiFetch(endpoint, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        followerId: user?.id
-                    })
-                });
-                if (!res.ok) throw new Error("Follow request failed");
-
-                const payload = await res.json().catch(() => null);
-                if (payload) {
-                    setProfile((p) => p ? ({
-                        ...p,
-                        followersCount:
-                            payload.followersCount ??
-                            p.followersCount,
-                    }) : null);
-                    if (typeof payload.isFollowing !== "undefined") {
-                        setIsFollowing(Boolean(payload.isFollowing));
-                    }
-                }
-            } catch (err) {
-                console.error("Follow toggle error:", err);
-                setIsFollowing(prevIsFollowing);
-                setProfile((p) => p ? ({
-                    ...p,
-                    followersCount: prevFollowers,
-                }) : null);
-            } finally {
-                setBusyFollow(false);
-            }
+        } finally {
+            setBusyFollow(false);
         }
     }
+}
 
     async function handleStartChat() {
         if (!profile || !user?.id) return;
-
+        
         try {
             // Create or find existing chat with this user
             const res = await apiFetch('/api/chat/create-or-find', {
@@ -632,25 +631,25 @@ export default function ProfilePage() {
     // Photo Upload Functions
     const handlePhotoUpload = async (file: File, type: 'profile' | 'cover') => {
         if (!file) return;
-
+        
         setIsUploadingPhoto(true);
         try {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('type', type);
             formData.append('userId', user?.id?.toString() || '');
-
+            
             const endpoint = type === 'profile' ? '/api/upload/profile' : '/api/upload/cover';
             const response = await apiFetch(endpoint, {
                 method: 'POST',
                 body: formData,
             }, user?.id);
-
+            
             if (response.ok) {
                 const data = await response.json();
                 console.log(`${type} photo uploaded:`, data);
                 console.log('Photo URL received:', data.url);
-
+                
                 const rawUrl = data.url || data.profilePicture || data.photoUrl || data.coverPhoto;
                 if (!rawUrl) {
                     throw new Error('Upload succeeded but no URL was returned.');
@@ -663,14 +662,14 @@ export default function ProfilePage() {
 
                 const photoUrlWithCache = appendCacheBuster(formattedUrl);
                 console.log('Formatted photo URL:', photoUrlWithCache);
-
+                
                 // Update profile state with new photo URL (with cache busting)
                 setProfile(prev => prev ? {
                     ...prev,
                     [type === 'profile' ? 'profilePicture' : 'coverPicture']: photoUrlWithCache,
                     [type === 'profile' ? 'profilePicture' : 'coverPhoto']: photoUrlWithCache
                 } : null);
-
+                
                 // Also update the user context if it's the current user's profile
                 if (isOwnProfile && user && updateUser) {
                     // Update user context with new photo URL
@@ -678,7 +677,7 @@ export default function ProfilePage() {
                         [type === 'profile' ? 'profilePicture' : 'coverPhoto']: photoUrlWithCache
                     });
                 }
-
+                
                 // Show success notification
                 try {
                     const { notificationService } = await import('@/services/notificationService');
@@ -690,7 +689,7 @@ export default function ProfilePage() {
                 } catch (error) {
                     console.log('Notification service not available');
                 }
-
+                
                 // Reload the profile data to ensure everything is in sync
                 try {
                     const profileData = await getUserProfile(userId);
@@ -717,7 +716,7 @@ export default function ProfilePage() {
                 console.error(`Failed to upload ${type} photo`);
                 const errorText = await response.text();
                 console.error('Upload error details:', errorText);
-
+                
                 try {
                     const { notificationService } = await import('@/services/notificationService');
                     notificationService.showNotification({
@@ -731,7 +730,7 @@ export default function ProfilePage() {
             }
         } catch (error) {
             console.error(`Error uploading ${type} photo:`, error);
-
+            
             try {
                 const { notificationService } = await import('@/services/notificationService');
                 notificationService.showNotification({
@@ -756,13 +755,13 @@ export default function ProfilePage() {
                 alert('Please select an image file.');
                 return;
             }
-
+            
             // Validate file size (5MB limit)
             if (file.size > 5 * 1024 * 1024) {
                 alert('File size must be less than 5MB.');
                 return;
             }
-
+            
             handlePhotoUpload(file, photoUploadType);
         }
     };
@@ -784,7 +783,7 @@ export default function ProfilePage() {
             </div>
         );
     }
-
+    
     if (error)
         return (
             <div className={`min-h-screen ${themeClasses.bg} pb-20 md:pb-0 flex items-center justify-center`}>
@@ -794,8 +793,8 @@ export default function ProfilePage() {
                     </div>
                     <h2 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>Profile Not Found</h2>
                     <p className={`${themeClasses.textSecondary} mb-6`}>
-                        {error.includes("User may not exist")
-                            ? "This user profile doesn't exist or has been deleted."
+                        {error.includes("User may not exist") 
+                            ? "This user profile doesn't exist or has been deleted." 
                             : error}
                     </p>
                     <div className="space-y-3">
@@ -817,7 +816,7 @@ export default function ProfilePage() {
                 </div>
             </div>
         );
-
+    
     if (!profile)
         return (
             <div className={`min-h-screen ${themeClasses.bg} pb-20 md:pb-0 flex items-center justify-center`}>
@@ -851,572 +850,801 @@ export default function ProfilePage() {
 
     const { coverPicture, profilePicture, name, username, bio, followersCount, followingCount, likesCount, stories } =
         profile;
-
+    
     // Debug logging for profile picture
     console.log('Profile picture value:', profilePicture);
     console.log('Cover picture value:', coverPicture);
 
-    onClick = {() => setShowEditModal(true)
-}
-whileTap = {{ scale: 0.95 }}
-whileHover = {{ scale: 1.02 }}
-className = {`w-full sm:flex-1 px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${themeClasses.button} text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
+    const handleGoToAuthorProfile = (userId?: number | string) => {
+      if (!userId) return;
+      router.push(`/profile?userId=${userId}`);
+    };
+
+    return (
+        <div key={userId}>
+            <style jsx>{`
+                @keyframes spin-slow {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+                .animate-spin-slow {
+                    animation: spin-slow 3s linear infinite;
+                }
+            `}</style>
+            <div className={`min-h-screen theme-bg-primary pb-20 md:pb-0 gold-theme`}>
+                <div className="max-w-6xl mx-auto p-4">
+                    {/* Enhanced Cover Section */}
+                    <div className="relative mb-8">
+                        {coverPicture ? (
+                            <div className="relative h-64 sm:h-80 md:h-96 lg:h-[28rem] overflow-hidden rounded-3xl shadow-2xl group">
+                                <img
+                                    src={coverPicture}
+                                    alt="Cover"
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                    loading="lazy"
+                                    onError={(e) => (e.currentTarget.style.display = "none")}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20" />
+                                {isOwnProfile && (
+                                    <motion.button
+                                        type="button"
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => {
+                                            setPhotoUploadType('cover');
+                                            setShowPhotoUploadModal(true);
+                                        }}
+                                        disabled={isUploadingPhoto}
+                                        className="absolute bottom-4 right-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
+                                    >
+                                        <Camera size={16} />
+                                    </motion.button>
+                                )}
+                            </div>
+                        ) : (
+                            <div className={`h-64 sm:h-80 md:h-96 lg:h-[28rem] bg-gradient-to-br ${themeClasses.coverGradient} rounded-3xl flex items-center justify-center relative overflow-hidden shadow-2xl group`}>
+                                <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10"></div>
+                                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-black/10"></div>
+                                <div className="text-center relative z-10">
+                                    <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                                        <UserIcon className="w-10 h-10 text-white" />
+                                    </div>
+                                    <p className={`text-lg font-medium text-white/90 mb-4`}>No cover photo</p>
+                                    {isOwnProfile && (
+                                        <motion.button 
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => {
+                                                setPhotoUploadType('cover');
+                                                setShowPhotoUploadModal(true);
+                                            }}
+                                            disabled={isUploadingPhoto}
+                                            className="px-4 py-2 bg-white/20 backdrop-blur-md text-white rounded-lg hover:bg-white/30 transition-all duration-300 disabled:opacity-50 shadow-lg text-sm font-medium"
+                                        >
+                                            {isUploadingPhoto ? 'Uploading...' : 'Add Cover Photo'}
+                                        </motion.button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                    {/* Modern Profile Section */}
+                    <div className="relative px-6 pb-6">
+                        {/* Enhanced Profile Picture Section */}
+                        <div className="absolute -top-20 sm:-top-24 md:-top-28 left-6 sm:left-8">
+                            <div className="relative group">
+                                {/* Animated Ring */}
+                                <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 opacity-75 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+                                
+                                {/* Main Profile Circle */}
+                                <div className={`relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl ring-4 ring-white/20 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300`}>
+                    {profilePicture ? (
+                        <motion.img
+                                            key={profilePicture}
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 120 }}
+                            src={profilePicture}
+                            alt={name}
+                                className="w-full h-full object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                                    console.log("Profile picture failed to load:", profilePicture);
+                                    console.log("Error details:", e);
+                                e.currentTarget.src = "/assets/images/default-avatar.svg";
+                                }}
+                                onLoad={() => {
+                                    console.log("Profile picture loaded successfully:", profilePicture);
+                            }}
+                        />
+                    ) : (
+                        <img
+                            src="/assets/images/default-avatar.svg"
+                            alt={name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                        />
+                    )}
+                                    
+                                    {/* Online Status */}
+                                    <div className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
+                    </div>
+                            </div>
+                </div>
+
+                        {/* Profile Info Section */}
+                        <div className="pt-20 sm:pt-24 px-4 sm:px-6">
+                            {/* Name and Username */}
+                            <div className="mb-6">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <h1 className={`text-3xl sm:text-4xl font-bold ${themeClasses.text}`}>{name}</h1>
+                                    <PremiumUserIndicator 
+                                        subscriptionTier={profile?.subscriptionTier}
+                                        size="md"
+                                    />
+                                </div>
+                                <p className={`text-lg sm:text-xl ${themeClasses.textSecondary}`}>@{username}</p>
+                            </div>
+
+                            {/* Bio */}
+                        {bio && (
+                                <div className="mb-6">
+                                    <p className={`text-sm leading-relaxed ${themeClasses.textSecondary} max-w-2xl`}>{bio}</p>
+                                </div>
+                            )}
+
+                            {/* Modern Stats Section - Horizontal Layout */}
+                            <div className="grid grid-cols-3 gap-4 mb-8">
+                                <motion.div 
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={handleFollowersClick}
+                                    className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300 backdrop-blur-sm`}
+                                >
+                                    <div className={`text-2xl font-bold ${themeClasses.text} mb-1`}>{followersCount}</div>
+                                    <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>Followers</div>
+                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
+                                        <div className="bg-gradient-to-r from-cyan-500 to-purple-600 h-1.5 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (followersCount / 1000) * 100)}%`}}></div>
+                                    </div>
+                                </motion.div>
+                                
+                                <motion.div 
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={handleFollowingClick}
+                                    className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300 backdrop-blur-sm`}
+                                >
+                                    <div className={`text-2xl font-bold ${themeClasses.text} mb-1`}>{followingCount}</div>
+                                    <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>Following</div>
+                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
+                                        <div className="bg-gradient-to-r from-pink-500 to-rose-600 h-1.5 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (followingCount / 500) * 100)}%`}}></div>
+                                    </div>
+                                </motion.div>
+                                
+                                <motion.div 
+                                    whileHover={{ scale: 1.05 }}
+                                    className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300 backdrop-blur-sm`}
+                                >
+                                    <div className={`text-2xl font-bold ${themeClasses.text} mb-1`}>{likesCount}</div>
+                                    <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>Likes</div>
+                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
+                                        <div className="bg-gradient-to-r from-yellow-500 to-orange-600 h-1.5 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (likesCount / 10000) * 100)}%`}}></div>
+                                    </div>
+                                </motion.div>
+                            </div>
+
+                            {/* Enhanced Action Buttons */}
+                            <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 mb-8">
+                    {isOwnProfile ? (
+                                    <>
+                        <motion.button
+                            type="button"
+                            onClick={() => setShowEditModal(true)}
+                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.02 }}
+                            className={`flex-1 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${themeClasses.button} text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
                         >
                             <Edit size={18} />
                             <span>Edit Profile</span>
-                        </motion.button >
-
-    {/* Profile Photo Upload Button */ }
-    < motion.button
-type = "button"
-onClick = {() => {
-    setPhotoUploadType('profile');
-    setShowPhotoUploadModal(true);
-}}
-whileTap = {{ scale: 0.95 }}
-whileHover = {{ scale: 1.02 }}
-className = {`w-full sm:w-auto px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl font-semibold transition-all duration-300 ${themeClasses.buttonSecondary} flex items-center justify-center space-x-2 text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
+                        </motion.button>
+                        
+                        {/* Profile Photo Upload Button */}
+                        <motion.button
+                            type="button"
+                            onClick={() => {
+                                setPhotoUploadType('profile');
+                                setShowPhotoUploadModal(true);
+                            }}
+                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.02 }}
+                            className={`px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${themeClasses.buttonSecondary} flex items-center space-x-2 text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
                         >
                             <Camera size={18} />
                             <span>Change Photo</span>
-                        </motion.button >
-
-    {/* Profile Customization Button */ }
-{
-    user && (
-        <ProfileCustomization
-            user={{ id: String(user.id) }}
-            onUpdate={(updates) => {
-                console.log('Profile customization updated:', updates);
-                // Here you can implement the actual update logic
-            }}
-        />
-    )
-}
+                        </motion.button>
+                        
+                        {/* Profile Customization Button */}
+                        {user && (
+                        <ProfileCustomization 
+                                user={{ id: String(user.id) }} 
+                            onUpdate={(updates) => {
+                                console.log('Profile customization updated:', updates);
+                                // Here you can implement the actual update logic
+                            }} 
+                        />
+                        )}
                                     </>
                                 ) : (
-    <>
-        <motion.button
-            type="button"
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.02 }}
-            onClick={handleFollowToggle}
-            disabled={busyFollow}
-            className={`flex-1 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${isFollowing
-                ? `${themeClasses.buttonSecondary}`
-                : `${themeClasses.button}`
-                } ${busyFollow ? "opacity-70 cursor-wait" : ""} text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
-        >
-            {busyFollow ? "..." : isFollowing ? "Following" : "Follow"}
-        </motion.button>
+                                    <>
+                            <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: 1.02 }}
+                                onClick={handleFollowToggle}
+                                disabled={busyFollow}
+                                className={`flex-1 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${
+                                    isFollowing
+                                        ? `${themeClasses.buttonSecondary}`
+                                        : `${themeClasses.button}`
+                                } ${busyFollow ? "opacity-70 cursor-wait" : ""} text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
+                            >
+                                {busyFollow ? "..." : isFollowing ? "Following" : "Follow"}
+                            </motion.button>
+                            
+                            {/* Chat Button */}
+                            <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: 1.02 }}
+                                onClick={() => handleStartChat()}
+                                className={`px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${themeClasses.button} flex items-center space-x-2 text-sm sm:text-base shadow-lg hover:shadow-xl`}
+                            >
+                                <MessageCircle size={18} />
+                                <span>Chat</span>
+                            </motion.button>
+                                        
+                                        <motion.button
+                                            type="button"
+                                            whileTap={{ scale: 0.95 }}
+                                            whileHover={{ scale: 1.02 }}
+                                            className={`p-3 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-lg hover:shadow-xl transition-all duration-300`}
+                                            title="More"
+                                        >
+                                            <MoreVertical size={18} />
+                                        </motion.button>
+                                    </>
+                    )}
+                </div>
 
-        {/* Chat Button */}
-        <motion.button
-            type="button"
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.02 }}
-            onClick={() => handleStartChat()}
-            className={`px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${themeClasses.button} flex items-center space-x-2 text-sm sm:text-base shadow-lg hover:shadow-xl`}
-        >
-            <MessageCircle size={18} />
-            <span>Chat</span>
-        </motion.button>
+                            {/* Modern Navigation Tabs */}
+                            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-8 overflow-x-auto">
+                                {[
+                                    { id: "posts", label: "Posts", icon: Grid3X3, color: "from-blue-500 to-cyan-600" },
+                                    { id: "desnaps", label: "DeSnaps", icon: Video, color: "from-purple-500 to-pink-600" },
+                                    { id: "stories", label: "Stories", icon: Sparkles, color: "from-yellow-500 to-orange-600" },
+                                    { id: "achievements", label: "Achievements", icon: Trophy, color: "from-yellow-500 to-amber-600" },
+                                    { id: "analytics", label: "Analytics", icon: BarChart3, color: "from-green-500 to-emerald-600" },
+                                    { id: "wellness", label: "Wellness", icon: Heart, color: "from-red-500 to-rose-600" },
+                                    { id: "goals", label: "Goals", icon: Target, color: "from-indigo-500 to-purple-600" },
+                                    { id: "memories", label: "Memories", icon: Clock, color: "from-pink-500 to-rose-600" },
+                                ].map((tab) => (
+                                    <motion.button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className={`flex-1 py-4 px-6 text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 relative rounded-t-xl ${
+                                            activeTab === tab.id
+                                                ? `text-white bg-gradient-to-r ${tab.color} shadow-lg`
+                                                : `${themeClasses.textSecondary} hover:${themeClasses.text} hover:bg-gray-100/10`
+                                        }`}
+                                    >
+                                        <tab.icon size={18} />
+                                        <span>{tab.label}</span>
+                                        {activeTab === tab.id && (
+                                            <motion.div
+                                                layoutId="activeTab"
+                                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full"
+                                                initial={false}
+                                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                            />
+                                        )}
+                                    </motion.button>
+                ))}
+            </div>
 
-        <motion.button
-            type="button"
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.02 }}
-            className={`p-3 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-lg hover:shadow-xl transition-all duration-300`}
-            title="More"
-        >
-            <MoreVertical size={18} />
-            <motion.div
-                key="posts"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-            >
-                <UserPosts
-                    userId={userId}
-                    showCommentModal={showCommentModal}
-                    setShowCommentModal={setShowCommentModal}
-                    selectedPost={selectedPost}
-                    setSelectedPost={setSelectedPost}
-                    themeClasses={themeClasses}
-                />
-            </motion.div>
-            )}
+                            {/* Modern Content Sections */}
+                            <div className="p-8">
+                <AnimatePresence mode="wait">
+                    {activeTab === "posts" && (
+                        <motion.div
+                            key="posts"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <UserPosts 
+                                userId={userId} 
+                                showCommentModal={showCommentModal}
+                                setShowCommentModal={setShowCommentModal}
+                                selectedPost={selectedPost}
+                                setSelectedPost={setSelectedPost}
+                                themeClasses={themeClasses}
+                            />
+                        </motion.div>
+                    )}
 
-            {activeTab === "desnaps" && (
-                <motion.div
-                    key="desnaps"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                >
-                    <UserDeSnaps
-                        userId={userId}
-                        themeClasses={themeClasses}
-                        theme={theme}
-                    />
-                </motion.div>
-            )}
+                                    {activeTab === "desnaps" && (
+                        <motion.div
+                                            key="desnaps"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <UserDeSnaps 
+                                userId={userId} 
+                                themeClasses={themeClasses}
+                                theme={theme}
+                            />
+                        </motion.div>
+                    )}
 
-            {activeTab === "stories" && (
-                <motion.div
-                    key="stories"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                >
-                    <div className="text-center py-8">
-                        <div className="w-20 h-20 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                            <Sparkles className="w-10 h-10 text-white" />
-                        </div>
-                        <h3 className={`text-xl font-bold ${themeClasses.text} mb-2`}>Stories</h3>
-                        <p className={`${themeClasses.textSecondary} mb-4`}>Temporary content that disappears after 24 hours</p>
-                        <div className="text-center">
-                            <p className={`${themeClasses.textSecondary} mb-4`}>No stories yet</p>
-                            {isOwnProfile && (
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => setShowCreateStoryModal(true)}
-                                    className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl font-semibold hover:from-yellow-600 hover:to-orange-700 transition-all duration-300 shadow-lg"
-                                >
-                                    Create Your First Story
-                                </motion.button>
-                            )}
+                                    {activeTab === "stories" && (
+                                        <motion.div
+                                            key="stories"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <div className="text-center py-8">
+                                                <div className="w-20 h-20 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                                                    <Sparkles className="w-10 h-10 text-white" />
+                                                </div>
+                                                <h3 className={`text-xl font-bold ${themeClasses.text} mb-2`}>Stories</h3>
+                                                <p className={`${themeClasses.textSecondary} mb-4`}>Temporary content that disappears after 24 hours</p>
+                                                <div className="text-center">
+                                                    <p className={`${themeClasses.textSecondary} mb-4`}>No stories yet</p>
+                                                    {isOwnProfile && (
+                                                        <motion.button
+                                                            whileHover={{ scale: 1.05 }}
+                                                            whileTap={{ scale: 0.95 }}
+                                                            onClick={() => setShowCreateStoryModal(true)}
+                                                            className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl font-semibold hover:from-yellow-600 hover:to-orange-700 transition-all duration-300 shadow-lg"
+                                                        >
+                                                            Create Your First Story
+                                                        </motion.button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    {activeTab === "achievements" && (
+                                        <motion.div
+                                            key="achievements"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <div className="py-8">
+                                                <div className="text-center mb-8">
+                                                    <div className="w-20 h-20 bg-gradient-to-r from-yellow-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                                                        <Trophy className="w-10 h-10 text-white" />
+                                                    </div>
+                                                    <h3 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>Achievements</h3>
+                                                    <p className={`${themeClasses.textSecondary} mb-6`}>Your journey of accomplishments and milestones</p>
+                                                </div>
+
+                                                {/* Achievement Categories */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                                                    {/* Social Achievements */}
+                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
+                                                        <div className="flex items-center mb-4">
+                                                            <Users className="w-8 h-8 text-blue-500 mr-3" />
+                                                            <h4 className={`text-lg font-semibold ${themeClasses.text}`}>Social</h4>
+                                                        </div>
+                                                        <div className="space-y-3">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className={`text-sm ${themeClasses.textSecondary}`}>First Post</span>
+                                                                <Star className="w-5 h-5 text-yellow-500" />
+                                                            </div>
+                                                            <div className="flex items-center justify-between">
+                                                                <span className={`text-sm ${themeClasses.textSecondary}`}>100 Followers</span>
+                                                                <Star className="w-5 h-5 text-yellow-500" />
+                                                            </div>
+                                                            <div className="flex items-center justify-between">
+                                                                <span className={`text-sm ${themeClasses.textSecondary}`}>Viral Content</span>
+                                                                <Star className="w-5 h-5 text-yellow-500" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Creative Achievements */}
+                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
+                                                        <div className="flex items-center mb-4">
+                                                            <Sparkles className="w-8 h-8 text-purple-500 mr-3" />
+                                                            <h4 className={`text-lg font-semibold ${themeClasses.text}`}>Creative</h4>
+                                                        </div>
+                                                        <div className="space-y-3">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className={`text-sm ${themeClasses.textSecondary}`}>First DeSnap</span>
+                                                                <Star className="w-5 h-5 text-yellow-500" />
+                                                            </div>
+                                                            <div className="flex items-center justify-between">
+                                                                <span className={`text-sm ${themeClasses.textSecondary}`}>Story Master</span>
+                                                                <Star className="w-5 h-5 text-yellow-500" />
+                                                            </div>
+                                                            <div className="flex items-center justify-between">
+                                                                <span className={`text-sm ${themeClasses.textSecondary}`}>Content Creator</span>
+                                                                <Star className="w-5 h-5 text-yellow-500" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Wellness Achievements */}
+                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
+                                                        <div className="flex items-center mb-4">
+                                                            <Heart className="w-8 h-8 text-red-500 mr-3" />
+                                                            <h4 className={`text-lg font-semibold ${themeClasses.text}`}>Wellness</h4>
+                                                        </div>
+                                                        <div className="space-y-3">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className={`text-sm ${themeClasses.textSecondary}`}>Mood Tracker</span>
+                                                                <Star className="w-5 h-5 text-yellow-500" />
+                                                            </div>
+                                                            <div className="flex items-center justify-between">
+                                                                <span className={`text-sm ${themeClasses.textSecondary}`}>Wellness Week</span>
+                                                                <Star className="w-5 h-5 text-yellow-500" />
+                                                            </div>
+                                                            <div className="flex items-center justify-between">
+                                                                <span className={`text-sm ${themeClasses.textSecondary}`}>Mindful User</span>
+                                                                <Star className="w-5 h-5 text-yellow-500" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Achievement Progress */}
+                                                <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border}`}>
+                                                    <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Achievement Progress</h4>
+                                                    <div className="text-center py-8">
+                                                        <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                                        <p className={`text-lg ${themeClasses.textSecondary}`}>No achievements yet</p>
+                                                        <p className={`text-sm ${themeClasses.textSecondary}`}>Start engaging to unlock achievements</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    {activeTab === "analytics" && (
+                                        <motion.div
+                                            key="analytics"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <ProfileAnalytics userId={user?.id?.toString() || ''} posts={[]} />
+                                        </motion.div>
+                                    )}
+
+                                    {activeTab === "wellness" && (
+                                        <motion.div
+                                            key="wellness"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <div className="py-8">
+                                                <div className="text-center mb-8">
+                                                    <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                                                        <Heart className="w-10 h-10 text-white" />
+                                                    </div>
+                                                    <h3 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>Wellness Dashboard</h3>
+                                                    <p className={`${themeClasses.textSecondary} mb-6`}>Track your mental health and social media wellness</p>
+                                                </div>
+
+                                                {/* Wellness Metrics */}
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <Heart className="w-8 h-8 text-red-500" />
+                                                            <div className="text-2xl font-bold text-gray-400">--</div>
+                                                        </div>
+                                                        <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>Mental Health</div>
+                                                        <div className={`text-sm ${themeClasses.textSecondary}`}>Track your mood and wellness</div>
+                                                        <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
+                                                            <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{width: '0%'}}></div>
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mt-2">Start tracking to see data</div>
+                                                    </div>
+
+                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <Activity className="w-8 h-8 text-green-500" />
+                                                            <div className="text-2xl font-bold text-gray-400">--</div>
+                                                        </div>
+                                                        <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>Social Balance</div>
+                                                        <div className={`text-sm ${themeClasses.textSecondary}`}>Healthy social media usage</div>
+                                                        <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
+                                                            <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{width: '0%'}}></div>
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mt-2">Start tracking to see data</div>
+                                                    </div>
+
+                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <Sun className="w-8 h-8 text-yellow-500" />
+                                                            <div className="text-2xl font-bold text-gray-400">--</div>
+                                                        </div>
+                                                        <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>Energy Level</div>
+                                                        <div className={`text-sm ${themeClasses.textSecondary}`}>Daily energy and motivation</div>
+                                                        <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
+                                                            <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{width: '0%'}}></div>
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mt-2">Start tracking to see data</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Mood Tracker */}
+                                                <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} mb-8`}>
+                                                    <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Mood Tracker</h4>
+                                                    <div className="grid grid-cols-7 gap-2 mb-4">
+                                                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
+                                                            <div key={day} className="text-center">
+                                                                <div className="text-xs text-gray-400 mb-2">{day}</div>
+                                                                <div className="w-8 h-8 rounded-full mx-auto bg-gray-300"></div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className={`${themeClasses.textSecondary}`}>Start tracking your mood</span>
+                                                        <span className={`${themeClasses.textSecondary}`}>0-day streak</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Wellness Tips */}
+                                                <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border}`}>
+                                                    <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Wellness Tips</h4>
+                                                    <div className="space-y-4">
+                                                        <div className="flex items-start space-x-3 p-4 rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
+                                                            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                                                <Sun className="w-4 h-4 text-white" />
+                                                            </div>
+                                                            <div>
+                                                                <div className={`font-medium ${themeClasses.text} mb-1`}>Take Regular Breaks</div>
+                                                                <div className={`text-sm ${themeClasses.textSecondary}`}>Step away from social media every 2 hours for better mental health</div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-start space-x-3 p-4 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
+                                                            <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                                                <Heart className="w-4 h-4 text-white" />
+                                                            </div>
+                                                            <div>
+                                                                <div className={`font-medium ${themeClasses.text} mb-1`}>Practice Mindfulness</div>
+                                                                <div className={`text-sm ${themeClasses.textSecondary}`}>Take 5 minutes daily to reflect on your social media usage</div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-start space-x-3 p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+                                                            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                                                <Sparkles className="w-4 h-4 text-white" />
+                                                            </div>
+                                                            <div>
+                                                                <div className={`font-medium ${themeClasses.text} mb-1`}>Positive Content</div>
+                                                                <div className={`text-sm ${themeClasses.textSecondary}`}>Focus on creating and consuming uplifting content</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    {activeTab === "goals" && (
+                                        <motion.div
+                                            key="goals"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <div className="py-8">
+                                                <div className="text-center mb-8">
+                                                    <div className="w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                                                        <Target className="w-10 h-10 text-white" />
+                                                    </div>
+                                                    <h3 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>Goal Tracker</h3>
+                                                    <p className={`${themeClasses.textSecondary} mb-6`}>Set and track your personal and social media goals</p>
+                                                </div>
+
+                                                {/* Active Goals */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <Users className="w-8 h-8 text-blue-500" />
+                                                            <div className="text-2xl font-bold text-gray-400">--</div>
+                                                        </div>
+                                                        <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>No Goals Set</div>
+                                                        <div className={`text-sm ${themeClasses.textSecondary} mb-3`}>Create your first goal to get started</div>
+                                                        <div className="w-full bg-gray-200 rounded-full h-2">
+                                                            <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{width: '0%'}}></div>
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mt-2">Set a goal to track progress</div>
+                                                    </div>
+
+                                                    <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <Heart className="w-8 h-8 text-red-500" />
+                                                            <div className="text-2xl font-bold text-gray-400">--</div>
+                                                        </div>
+                                                        <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>No Goals Set</div>
+                                                        <div className={`text-sm ${themeClasses.textSecondary} mb-3`}>Create your first goal to get started</div>
+                                                        <div className="w-full bg-gray-200 rounded-full h-2">
+                                                            <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{width: '0%'}}></div>
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mt-2">Set a goal to track progress</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Goal Categories */}
+                                                <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} mb-8`}>
+                                                    <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Goal Categories</h4>
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                        <div className="text-center p-4 rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
+                                                            <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                                                            <div className={`text-sm font-medium ${themeClasses.text}`}>Social</div>
+                                                            <div className={`text-xs ${themeClasses.textSecondary}`}>0 goals</div>
+                                                        </div>
+                                                        <div className="text-center p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+                                                            <Sparkles className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                                                            <div className={`text-sm font-medium ${themeClasses.text}`}>Creative</div>
+                                                            <div className={`text-xs ${themeClasses.textSecondary}`}>0 goals</div>
+                                                        </div>
+                                                        <div className="text-center p-4 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
+                                                            <Heart className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                                                            <div className={`text-sm font-medium ${themeClasses.text}`}>Wellness</div>
+                                                            <div className={`text-xs ${themeClasses.textSecondary}`}>0 goals</div>
+                                                        </div>
+                                                        <div className="text-center p-4 rounded-lg bg-gradient-to-r from-yellow-500/10 to-orange-500/10">
+                                                            <Trophy className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+                                                            <div className={`text-sm font-medium ${themeClasses.text}`}>Achievement</div>
+                                                            <div className={`text-xs ${themeClasses.textSecondary}`}>0 goals</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Goal Progress Chart */}
+                                                <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border}`}>
+                                                    <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Monthly Progress</h4>
+                                                    <div className="h-32 flex items-center justify-center">
+                                                        <div className="text-center">
+                                                            <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                                            <p className={`text-lg ${themeClasses.textSecondary}`}>No goals set yet</p>
+                                                            <p className={`text-sm ${themeClasses.textSecondary}`}>Create goals to see your progress here</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex justify-between mt-4">
+                                                        <span className={`text-sm ${themeClasses.textSecondary}`}>Goal completion rate</span>
+                                                        <span className={`text-sm font-medium ${themeClasses.text}`}>0% this month</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    {activeTab === "memories" && (
+                                        <motion.div
+                                            key="memories"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <div className="py-8">
+                                                <div className="text-center mb-8">
+                                                    <div className="w-20 h-20 bg-gradient-to-r from-pink-500 to-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                                                        <Clock className="w-10 h-10 text-white" />
+                                                    </div>
+                                                    <h3 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>Memory Lane</h3>
+                                                    <p className={`${themeClasses.textSecondary} mb-6`}>Relive your favorite moments and milestones</p>
+                                                </div>
+
+                                                {/* Memory Timeline */}
+                                                <div className="space-y-6">
+                                                    <div className="text-center py-8">
+                                                        <Clock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                                        <p className={`text-lg ${themeClasses.textSecondary}`}>No memories yet</p>
+                                                        <p className={`text-sm ${themeClasses.textSecondary}`}>Your milestones and memories will appear here</p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Memory Stats */}
+                                                <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} mt-8`}>
+                                                    <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Memory Statistics</h4>
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                        <div className="text-center">
+                                                            <div className={`text-2xl font-bold ${themeClasses.text}`}>0</div>
+                                                            <div className={`text-sm ${themeClasses.textSecondary}`}>Memories</div>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <div className={`text-2xl font-bold ${themeClasses.text}`}>0</div>
+                                                            <div className={`text-sm ${themeClasses.textSecondary}`}>Days Active</div>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <div className={`text-2xl font-bold ${themeClasses.text}`}>0</div>
+                                                            <div className={`text-sm ${themeClasses.textSecondary}`}>Milestones</div>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <div className={`text-2xl font-bold ${themeClasses.text}`}>0</div>
+                                                            <div className={`text-sm ${themeClasses.textSecondary}`}>Viral Posts</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                </AnimatePresence>
+                            </div>
                         </div>
                     </div>
-                </motion.div>
-            )}
+                </div>
+                </div>
+            </div>
 
-            {activeTab === "achievements" && (
-                <motion.div
-                    key="achievements"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                >
-                    <div className="py-8">
-                        <div className="text-center mb-8">
-                            <div className="w-20 h-20 bg-gradient-to-r from-yellow-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                                <Trophy className="w-10 h-10 text-white" />
-                            </div>
-                            <h3 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>Achievements</h3>
-                            <p className={`${themeClasses.textSecondary} mb-6`}>Your journey of accomplishments and milestones</p>
-                        </div>
-
-                        {/* Achievement Categories */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                            {/* Social Achievements */}
-                            <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                <div className="flex items-center mb-4">
-                                    <Users className="w-8 h-8 text-blue-500 mr-3" />
-                                    <h4 className={`text-lg font-semibold ${themeClasses.text}`}>Social</h4>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <span className={`text-sm ${themeClasses.textSecondary}`}>First Post</span>
-                                        <Star className="w-5 h-5 text-yellow-500" />
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className={`text-sm ${themeClasses.textSecondary}`}>100 Followers</span>
-                                        <Star className="w-5 h-5 text-yellow-500" />
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className={`text-sm ${themeClasses.textSecondary}`}>Viral Content</span>
-                                        <Star className="w-5 h-5 text-yellow-500" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Creative Achievements */}
-                            <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                <div className="flex items-center mb-4">
-                                    <Sparkles className="w-8 h-8 text-purple-500 mr-3" />
-                                    <h4 className={`text-lg font-semibold ${themeClasses.text}`}>Creative</h4>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <span className={`text-sm ${themeClasses.textSecondary}`}>First DeSnap</span>
-                                        <Star className="w-5 h-5 text-yellow-500" />
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className={`text-sm ${themeClasses.textSecondary}`}>Story Master</span>
-                                        <Star className="w-5 h-5 text-yellow-500" />
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className={`text-sm ${themeClasses.textSecondary}`}>Content Creator</span>
-                                        <Star className="w-5 h-5 text-yellow-500" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Wellness Achievements */}
-                            <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                <div className="flex items-center mb-4">
-                                    <Heart className="w-8 h-8 text-red-500 mr-3" />
-                                    <h4 className={`text-lg font-semibold ${themeClasses.text}`}>Wellness</h4>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <span className={`text-sm ${themeClasses.textSecondary}`}>Mood Tracker</span>
-                                        <Star className="w-5 h-5 text-yellow-500" />
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className={`text-sm ${themeClasses.textSecondary}`}>Wellness Week</span>
-                                        <Star className="w-5 h-5 text-yellow-500" />
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className={`text-sm ${themeClasses.textSecondary}`}>Mindful User</span>
-                                        <Star className="w-5 h-5 text-yellow-500" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Achievement Progress */}
-                        <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border}`}>
-                            <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Achievement Progress</h4>
-                            <div className="text-center py-8">
-                                <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                                <p className={`text-lg ${themeClasses.textSecondary}`}>No achievements yet</p>
-                                <p className={`text-sm ${themeClasses.textSecondary}`}>Start engaging to unlock achievements</p>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
-            )}
-
-            {activeTab === "analytics" && (
-                <motion.div
-                    key="analytics"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                >
-                    <ProfileAnalytics userId={user?.id?.toString() || ''} posts={[]} />
-                </motion.div>
-            )}
-
-            {activeTab === "wellness" && (
-                <motion.div
-                    key="wellness"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                >
-                    <div className="py-8">
-                        <div className="text-center mb-8">
-                            <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                                <Heart className="w-10 h-10 text-white" />
-                            </div>
-                            <h3 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>Wellness Dashboard</h3>
-                            <p className={`${themeClasses.textSecondary} mb-6`}>Track your mental health and social media wellness</p>
-                        </div>
-
-                        {/* Wellness Metrics */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                <div className="flex items-center justify-between mb-4">
-                                    <Heart className="w-8 h-8 text-red-500" />
-                                    <div className="text-2xl font-bold text-gray-400">--</div>
-                                </div>
-                                <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>Mental Health</div>
-                                <div className={`text-sm ${themeClasses.textSecondary}`}>Track your mood and wellness</div>
-                                <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                                    <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{ width: '0%' }}></div>
-                                </div>
-                                <div className="text-xs text-gray-500 mt-2">Start tracking to see data</div>
-                            </div>
-
-                            <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                <div className="flex items-center justify-between mb-4">
-                                    <Activity className="w-8 h-8 text-green-500" />
-                                    <div className="text-2xl font-bold text-gray-400">--</div>
-                                </div>
-                                <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>Social Balance</div>
-                                <div className={`text-sm ${themeClasses.textSecondary}`}>Healthy social media usage</div>
-                                <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                                    <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{ width: '0%' }}></div>
-                                </div>
-                                <div className="text-xs text-gray-500 mt-2">Start tracking to see data</div>
-                            </div>
-
-                            <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                <div className="flex items-center justify-between mb-4">
-                                    <Sun className="w-8 h-8 text-yellow-500" />
-                                    <div className="text-2xl font-bold text-gray-400">--</div>
-                                </div>
-                                <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>Energy Level</div>
-                                <div className={`text-sm ${themeClasses.textSecondary}`}>Daily energy and motivation</div>
-                                <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                                    <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{ width: '0%' }}></div>
-                                </div>
-                                <div className="text-xs text-gray-500 mt-2">Start tracking to see data</div>
-                            </div>
-                        </div>
-
-                        {/* Mood Tracker */}
-                        <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} mb-8`}>
-                            <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Mood Tracker</h4>
-                            <div className="grid grid-cols-7 gap-2 mb-4">
-                                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
-                                    <div key={day} className="text-center">
-                                        <div className="text-xs text-gray-400 mb-2">{day}</div>
-                                        <div className="w-8 h-8 rounded-full mx-auto bg-gray-300"></div>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="flex justify-between text-sm">
-                                <span className={`${themeClasses.textSecondary}`}>Start tracking your mood</span>
-                                <span className={`${themeClasses.textSecondary}`}>0-day streak</span>
-                            </div>
-                        </div>
-
-                        {/* Wellness Tips */}
-                        <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border}`}>
-                            <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Wellness Tips</h4>
-                            <div className="space-y-4">
-                                <div className="flex items-start space-x-3 p-4 rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
-                                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <Sun className="w-4 h-4 text-white" />
-                                    </div>
-                                    <div>
-                                        <div className={`font-medium ${themeClasses.text} mb-1`}>Take Regular Breaks</div>
-                                        <div className={`text-sm ${themeClasses.textSecondary}`}>Step away from social media every 2 hours for better mental health</div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-start space-x-3 p-4 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
-                                    <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <Heart className="w-4 h-4 text-white" />
-                                    </div>
-                                    <div>
-                                        <div className={`font-medium ${themeClasses.text} mb-1`}>Practice Mindfulness</div>
-                                        <div className={`text-sm ${themeClasses.textSecondary}`}>Take 5 minutes daily to reflect on your social media usage</div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-start space-x-3 p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10">
-                                    <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <Sparkles className="w-4 h-4 text-white" />
-                                    </div>
-                                    <div>
-                                        <div className={`font-medium ${themeClasses.text} mb-1`}>Positive Content</div>
-                                        <div className={`text-sm ${themeClasses.textSecondary}`}>Focus on creating and consuming uplifting content</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
-            )}
-
-            {activeTab === "goals" && (
-                <motion.div
-                    key="goals"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                >
-                    <div className="py-8">
-                        <div className="text-center mb-8">
-                            <div className="w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                                <Target className="w-10 h-10 text-white" />
-                            </div>
-                            <h3 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>Goal Tracker</h3>
-                            <p className={`${themeClasses.textSecondary} mb-6`}>Set and track your personal and social media goals</p>
-                        </div>
-
-                        {/* Active Goals */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                <div className="flex items-center justify-between mb-4">
-                                    <Users className="w-8 h-8 text-blue-500" />
-                                    <div className="text-2xl font-bold text-gray-400">--</div>
-                                </div>
-                                <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>No Goals Set</div>
-                                <div className={`text-sm ${themeClasses.textSecondary} mb-3`}>Create your first goal to get started</div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{ width: '0%' }}></div>
-                                </div>
-                                <div className="text-xs text-gray-500 mt-2">Set a goal to track progress</div>
-                            </div>
-
-                            <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} hover:shadow-lg transition-all duration-300`}>
-                                <div className="flex items-center justify-between mb-4">
-                                    <Heart className="w-8 h-8 text-red-500" />
-                                    <div className="text-2xl font-bold text-gray-400">--</div>
-                                </div>
-                                <div className={`text-lg font-semibold ${themeClasses.text} mb-2`}>No Goals Set</div>
-                                <div className={`text-sm ${themeClasses.textSecondary} mb-3`}>Create your first goal to get started</div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-2 rounded-full" style={{ width: '0%' }}></div>
-                                </div>
-                                <div className="text-xs text-gray-500 mt-2">Set a goal to track progress</div>
-                            </div>
-                        </div>
-
-                        {/* Goal Categories */}
-                        <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} mb-8`}>
-                            <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Goal Categories</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="text-center p-4 rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
-                                    <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                                    <div className={`text-sm font-medium ${themeClasses.text}`}>Social</div>
-                                    <div className={`text-xs ${themeClasses.textSecondary}`}>0 goals</div>
-                                </div>
-                                <div className="text-center p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10">
-                                    <Sparkles className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                                    <div className={`text-sm font-medium ${themeClasses.text}`}>Creative</div>
-                                    <div className={`text-xs ${themeClasses.textSecondary}`}>0 goals</div>
-                                </div>
-                                <div className="text-center p-4 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
-                                    <Heart className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                                    <div className={`text-sm font-medium ${themeClasses.text}`}>Wellness</div>
-                                    <div className={`text-xs ${themeClasses.textSecondary}`}>0 goals</div>
-                                </div>
-                                <div className="text-center p-4 rounded-lg bg-gradient-to-r from-yellow-500/10 to-orange-500/10">
-                                    <Trophy className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-                                    <div className={`text-sm font-medium ${themeClasses.text}`}>Achievement</div>
-                                    <div className={`text-xs ${themeClasses.textSecondary}`}>0 goals</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Goal Progress Chart */}
-                        <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border}`}>
-                            <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Monthly Progress</h4>
-                            <div className="h-32 flex items-center justify-center">
-                                <div className="text-center">
-                                    <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                                    <p className={`text-lg ${themeClasses.textSecondary}`}>No goals set yet</p>
-                                    <p className={`text-sm ${themeClasses.textSecondary}`}>Create goals to see your progress here</p>
-                                </div>
-                            </div>
-                            <div className="flex justify-between mt-4">
-                                <span className={`text-sm ${themeClasses.textSecondary}`}>Goal completion rate</span>
-                                <span className={`text-sm font-medium ${themeClasses.text}`}>0% this month</span>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
-            )}
-
-            {activeTab === "memories" && (
-                <motion.div
-                    key="memories"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                >
-                    <div className="py-8">
-                        <div className="text-center mb-8">
-                            <div className="w-20 h-20 bg-gradient-to-r from-pink-500 to-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                                <Clock className="w-10 h-10 text-white" />
-                            </div>
-                            <h3 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>Memory Lane</h3>
-                            <p className={`${themeClasses.textSecondary} mb-6`}>Relive your favorite moments and milestones</p>
-                        </div>
-
-                        {/* Memory Timeline */}
-                        <div className="space-y-6">
-                            <div className="text-center py-8">
-                                <Clock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                                <p className={`text-lg ${themeClasses.textSecondary}`}>No memories yet</p>
-                                <p className={`text-sm ${themeClasses.textSecondary}`}>Your milestones and memories will appear here</p>
-                            </div>
-                        </div>
-
-                        {/* Memory Stats */}
-                        <div className={`p-6 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} mt-8`}>
-                            <h4 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>Memory Statistics</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="text-center">
-                                    <div className={`text-2xl font-bold ${themeClasses.text}`}>0</div>
-                                    <div className={`text-sm ${themeClasses.textSecondary}`}>Memories</div>
-                                </div>
-                                <div className="text-center">
-                                    <div className={`text-2xl font-bold ${themeClasses.text}`}>0</div>
-                                    <div className={`text-sm ${themeClasses.textSecondary}`}>Days Active</div>
-                                </div>
-                                <div className="text-center">
-                                    <div className={`text-2xl font-bold ${themeClasses.text}`}>0</div>
-                                    <div className={`text-sm ${themeClasses.textSecondary}`}>Milestones</div>
-                                </div>
-                                <div className="text-center">
-                                    <div className={`text-2xl font-bold ${themeClasses.text}`}>0</div>
-                                    <div className={`text-sm ${themeClasses.textSecondary}`}>Viral Posts</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
-            )}
-
-        </AnimatePresence>
-    </div >
-                        </div >
-                    </div >
-                </div >
-                </div >
-            </div >
-
-    {/* Edit Profile Modal */ }
-    < EditProfileModal
-isOpen = { showEditModal }
-onClose = {() => setShowEditModal(false)}
-onProfileUpdated = {(updatedProfile) => {
-    setProfile(updatedProfile);
-    setShowEditModal(false);
-}}
+            {/* Edit Profile Modal */}
+            <EditProfileModal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                onProfileUpdated={(updatedProfile) => {
+                    setProfile(updatedProfile);
+                    setShowEditModal(false);
+                }}
             />
 
-{/* Followers List Modal */ }
-<FollowersList
-    isOpen={showFollowersList}
-    onClose={() => setShowFollowersList(false)}
-    userId={parseInt(userId)}
-    type={listType}
-/>
+            {/* Followers List Modal */}
+            <FollowersList
+                isOpen={showFollowersList}
+                onClose={() => setShowFollowersList(false)}
+                userId={parseInt(userId)}
+                type={listType}
+            />
 
-{/* Following List Modal */ }
-<FollowersList
-    isOpen={showFollowingList}
-    onClose={() => setShowFollowingList(false)}
-    userId={parseInt(userId)}
-    type="following"
-/>
+            {/* Following List Modal */}
+            <FollowersList
+                isOpen={showFollowingList}
+                onClose={() => setShowFollowingList(false)}
+                userId={parseInt(userId)}
+                type="following"
+            />
 
-{/* Photo Upload Modal */ }
-<PhotoUploadModal
-    isOpen={showPhotoUploadModal}
-    onClose={() => setShowPhotoUploadModal(false)}
-    onUpload={handlePhotoUpload}
-    type={photoUploadType}
-    isUploading={isUploadingPhoto}
-/>
-        </div >
+            {/* Photo Upload Modal */}
+            <PhotoUploadModal
+                isOpen={showPhotoUploadModal}
+                onClose={() => setShowPhotoUploadModal(false)}
+                onUpload={handlePhotoUpload}
+                type={photoUploadType}
+                isUploading={isUploadingPhoto}
+            />
+        </div>
     );
 }
 
 // UserDeSnaps component to display user's DeSnaps
-const UserDeSnaps = ({
-    userId,
+const UserDeSnaps = ({ 
+    userId, 
     themeClasses,
     theme
-}: {
+}: { 
     userId?: string;
     themeClasses: any;
     theme: string;
@@ -1430,18 +1658,18 @@ const UserDeSnaps = ({
 
     useEffect(() => {
         if (!userId) return;
-
+        
         const fetchUserDeSnaps = async () => {
             try {
                 setLoading(true);
                 const response = await apiFetch(`/api/desnaps/user/${userId}?viewerId=${user?.id ?? ''}`, {
                     method: 'GET',
                 }, user?.id);
-
+                
                 if (!response.ok) {
                     throw new Error('Failed to fetch DeSnaps');
                 }
-
+                
                 const data = await response.json();
                 const normalized = (Array.isArray(data) ? data : [])
                     .map((item: any) => normalizeDeSnap(item))
@@ -1524,37 +1752,37 @@ const UserDeSnaps = ({
     const handleLike = async (deSnapId: number) => {
         const deSnap = deSnaps.find(ds => ds.id === deSnapId);
         if (!deSnap) return;
-
+        
         const prevLiked = deSnap.isLiked || false;
         const prevLikes = deSnap.likes || 0;
-
+        
         // Optimistic update
-        setDeSnaps(prev => prev.map(ds =>
-            ds.id === deSnapId
+        setDeSnaps(prev => prev.map(ds => 
+            ds.id === deSnapId 
                 ? { ...ds, isLiked: !prevLiked, likes: prevLiked ? prevLikes - 1 : prevLikes + 1 }
                 : ds
         ));
-
+        
         try {
             const response = await apiFetch(`/api/desnaps/${deSnapId}/like`, {
                 method: 'POST',
             }, user?.id);
-
+            
             if (!response.ok) throw new Error('Like request failed');
-
+            
             const data = await response.json();
-
+            
             // Update with server response
-            setDeSnaps(prev => prev.map(ds =>
-                ds.id === deSnapId
+            setDeSnaps(prev => prev.map(ds => 
+                ds.id === deSnapId 
                     ? { ...ds, isLiked: data.isLiked ?? !prevLiked, likes: data.likes ?? (prevLiked ? prevLikes - 1 : prevLikes + 1) }
                     : ds
             ));
         } catch (err) {
             console.error('Like error:', err);
             // Revert on error
-            setDeSnaps(prev => prev.map(ds =>
-                ds.id === deSnapId
+            setDeSnaps(prev => prev.map(ds => 
+                ds.id === deSnapId 
                     ? { ...ds, isLiked: prevLiked, likes: prevLikes }
                     : ds
             ));
@@ -1564,18 +1792,19 @@ const UserDeSnaps = ({
     return (
         <div className="space-y-6">
             {deSnaps.map((deSnap) => (
-                <motion.div
-                    key={deSnap.id}
-                    className={`group relative rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden ${theme === 'gold'
-                        ? 'bg-gradient-to-br from-gray-800/95 via-gray-700/95 to-gray-800/95 border border-yellow-500/40 gold-glow gold-shimmer'
-                        : 'bg-gradient-to-br from-gray-800/95 via-gray-900/95 to-gray-800/95 border border-gray-700/60'
-                        }`}
+                <motion.div 
+                    key={deSnap.id} 
+                    className={`group relative rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden ${
+                        theme === 'gold' 
+                            ? 'bg-gradient-to-br from-gray-800/95 via-gray-700/95 to-gray-800/95 border border-yellow-500/40 gold-glow gold-shimmer' 
+                            : 'bg-gradient-to-br from-gray-800/95 via-gray-900/95 to-gray-800/95 border border-gray-700/60'
+                    }`}
                     whileHover={{ scale: 1.01, y: -4 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                 >
                     {/* Animated background gradient overlay */}
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-pink-500/5 to-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
+                    
                     {/* DeSnap Header */}
                     <div className="relative flex items-center justify-between mb-5">
                         <div className="flex items-center space-x-4">
@@ -1620,13 +1849,13 @@ const UserDeSnaps = ({
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                             </div>
                         )}
-
+                        
                         {/* DeSnap Video/Thumbnail fallback */}
                         {!deSnap.content && deSnap.thumbnail && (
                             <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
-                                <img
-                                    src={deSnap.thumbnail}
-                                    alt="DeSnap thumbnail"
+                                <img 
+                                    src={deSnap.thumbnail} 
+                                    alt="DeSnap thumbnail" 
                                     className="w-full h-80 md:h-96 object-cover transition-transform duration-500 group-hover/media:scale-105"
                                     onError={(e) => {
                                         console.error('DeSnap thumbnail failed to load:', deSnap.thumbnail);
@@ -1646,19 +1875,20 @@ const UserDeSnaps = ({
                     {/* DeSnap Actions */}
                     <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between pt-5 border-t border-gray-700/60 gap-4">
                         <div className="flex items-center space-x-2 sm:space-x-4">
-                            <motion.button
+                            <motion.button 
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => handleLike(deSnap.id)}
-                                className={`relative flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-300 ${deSnap.isLiked
-                                    ? 'text-red-500 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40'
-                                    : 'text-gray-400 bg-gray-700/30 hover:bg-gray-700/50 hover:text-red-400 border border-gray-600/30'
-                                    }`}
+                                className={`relative flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-300 ${
+                                    deSnap.isLiked 
+                                        ? 'text-red-500 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40' 
+                                        : 'text-gray-400 bg-gray-700/30 hover:bg-gray-700/50 hover:text-red-400 border border-gray-600/30'
+                                }`}
                             >
                                 <Heart size={20} fill={deSnap.isLiked ? 'currentColor' : 'none'} className={deSnap.isLiked ? 'animate-pulse' : ''} />
                                 <span className="font-semibold">{deSnap.likes || 0}</span>
                             </motion.button>
-                            <motion.button
+                            <motion.button 
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => {
@@ -1670,7 +1900,7 @@ const UserDeSnaps = ({
                                 <MessageCircle size={20} />
                                 <span className="font-semibold">{deSnap.comments || 0}</span>
                             </motion.button>
-                            <motion.button
+                            <motion.button 
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                                 className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-gray-400 bg-gray-700/30 hover:bg-green-500/20 hover:text-green-400 transition-all duration-300 border border-gray-600/30 hover:border-green-500/40"
@@ -1679,7 +1909,7 @@ const UserDeSnaps = ({
                                 <span className="font-semibold hidden sm:inline">Share</span>
                             </motion.button>
                         </div>
-
+                        
                         <div className="flex items-center space-x-3 text-sm text-gray-400 bg-gray-800/40 px-3 py-2 rounded-lg border border-gray-700/50">
                             <span className="flex items-center space-x-1">
                                 <Eye size={14} />
@@ -1691,7 +1921,7 @@ const UserDeSnaps = ({
                     </div>
                 </motion.div>
             ))}
-
+            
             {/* Comment Modal for DeSnaps */}
             {showCommentModal && selectedDeSnap && (
                 <CommentModal
@@ -1711,14 +1941,14 @@ const UserDeSnaps = ({
 };
 
 // UserPosts component to display user's posts
-const UserPosts = ({
-    userId,
-    showCommentModal,
-    setShowCommentModal,
-    selectedPost,
+const UserPosts = ({ 
+    userId, 
+    showCommentModal, 
+    setShowCommentModal, 
+    selectedPost, 
     setSelectedPost,
     themeClasses
-}: {
+}: { 
     userId?: string;
     showCommentModal: boolean;
     setShowCommentModal: (show: boolean) => void;
@@ -1735,39 +1965,39 @@ const UserPosts = ({
     const [postToDelete, setPostToDelete] = useState<any>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const { user } = useAuth();
-    const router = useRouter();
+	const router = useRouter();
 
-    const handleGoToAuthorProfile = (userId?: number | string) => {
-        if (!userId) return;
-        router.push(`/profile?userId=${userId}`);
-    };
+	const handleGoToAuthorProfile = (userId?: number | string) => {
+		if (!userId) return;
+		router.push(`/profile?userId=${userId}`);
+	};
 
     const fetchUserPosts = useCallback(async () => {
         if (!userId) return;
-
+        
         try {
             setLoading(true);
             const response = await apiFetch(`/api/posts/user/${userId}`, {
                 method: 'GET',
                 headers: getAuthHeaders(user?.id),
             });
-
+            
             if (!response.ok) {
                 throw new Error('Failed to fetch posts');
             }
-
+            
             const data = await response.json();
             const postsData = Array.isArray(data) ? data : (data.posts || []);
             const normalized = postsData
                 .map((post: any) => normalizePost(post))
                 .filter(Boolean) as any[];
-
+            
             normalized.sort((a, b) => {
                 const timeA = new Date(a.createdAt || 0).getTime();
                 const timeB = new Date(b.createdAt || 0).getTime();
                 return timeB - timeA;
             });
-
+            
             setPosts(normalized);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load posts');
@@ -1790,7 +2020,7 @@ const UserPosts = ({
                 const belongsToUser = userId
                     ? String(newPostRaw.userId || newPostRaw.author?.id || newPostRaw.user?.id) === String(userId)
                     : false;
-
+                
                 if (normalized && belongsToUser) {
                     setPosts(prev => {
                         const filtered = prev.filter(p => p.id !== normalized.id);
@@ -1802,7 +2032,7 @@ const UserPosts = ({
         };
 
         window.addEventListener('post:created', handlePostCreated as EventListener);
-
+        
         return () => {
             window.removeEventListener('post:created', handlePostCreated as EventListener);
         };
@@ -1830,12 +2060,12 @@ const UserPosts = ({
             if (response.ok) {
                 const result = await response.json();
                 console.log('Delete response:', result);
-
+                
                 // Remove from local state immediately
                 setPosts(prev => prev.filter(p => p.id !== postToDelete.id));
                 setShowDeleteConfirm(false);
                 setPostToDelete(null);
-
+                
                 // Show success message
                 console.log('Post deleted successfully');
                 notificationService.showNotification({
@@ -1846,7 +2076,7 @@ const UserPosts = ({
             } else {
                 const errorText = await response.text();
                 console.error('Delete failed:', response.status, errorText);
-
+                
                 // Try to parse error message
                 let errorMessage = `Failed to delete post (${response.status})`;
                 try {
@@ -1855,7 +2085,7 @@ const UserPosts = ({
                 } catch (e) {
                     errorMessage = errorText || errorMessage;
                 }
-
+                
                 notificationService.showNotification({
                     title: 'Delete Failed',
                     body: errorMessage,
@@ -1875,7 +2105,7 @@ const UserPosts = ({
     };
 
     const handlePostUpdated = (updatedPost: any) => {
-        setPosts(prev => prev.map(p =>
+        setPosts(prev => prev.map(p => 
             p.id === updatedPost.id ? updatedPost : p
         ));
         setShowEditModal(false);
@@ -1912,245 +2142,246 @@ const UserPosts = ({
                 const galleryImages = Array.isArray(post.images) && post.images.length > 0
                     ? post.images
                     : post.imageUrl
-                        ? [post.imageUrl]
-                        : [];
+                    ? [post.imageUrl]
+                    : [];
                 const videoUrl = (post as any).videoUrl || null;
 
                 return (
-                    <motion.div
-                        key={post.id}
-                        className={`group relative rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden ${theme === 'gold'
-                            ? 'bg-gradient-to-br from-gray-800/95 via-gray-700/95 to-gray-800/95 border border-yellow-500/40 gold-glow gold-shimmer'
+                <motion.div 
+                    key={post.id} 
+                    className={`group relative rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden ${
+                        theme === 'gold' 
+                            ? 'bg-gradient-to-br from-gray-800/95 via-gray-700/95 to-gray-800/95 border border-yellow-500/40 gold-glow gold-shimmer' 
                             : 'bg-gradient-to-br from-gray-800/95 via-gray-900/95 to-gray-800/95 border border-gray-700/60'
-                            }`}
-                        whileHover={{ scale: 1.01, y: -4 }}
-                        transition={{ duration: 0.3, ease: "easeOut" }}
-                    >
-                        {/* Animated background gradient overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
-                        {/* Post Header */}
-                        <div className="relative flex items-start justify-between mb-5">
-                            <div className="flex items-start space-x-4">
-                                <motion.button
-                                    whileHover={{ scale: 1.1, rotate: 5 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => { const id = post.author?.id; if (id) router.push(`/profile?userId=${id}`); }}
-                                    className="relative w-14 h-14 bg-gradient-to-br from-cyan-500 via-purple-600 to-pink-600 rounded-2xl flex items-center justify-center text-white font-bold hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 cursor-pointer ring-2 ring-cyan-500/30 ring-offset-2 ring-offset-gray-900 overflow-hidden"
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
-                                    <span className="relative z-10 text-lg">{post.author?.name?.charAt(0) || 'U'}</span>
-                                </motion.button>
-                                <div className="flex-1">
-                                    <div className="flex items-center space-x-2 mb-1.5">
-                                        <h3 className="font-bold text-white text-lg md:text-xl bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                                            {post.author?.name || 'Unknown User'}
-                                        </h3>
-                                        <PremiumUserIndicator
-                                            subscriptionTier={post.author?.subscriptionTier}
-                                            size="sm"
-                                        />
-                                        <div className="flex items-center space-x-1.5 px-2 py-0.5 bg-green-500/20 rounded-full border border-green-500/30">
-                                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                                            <span className="text-xs text-green-400 font-medium">Online</span>
-                                        </div>
+                    }`}
+                    whileHover={{ scale: 1.01, y: -4 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                >
+                    {/* Animated background gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                    
+                    {/* Post Header */}
+                    <div className="relative flex items-start justify-between mb-5">
+                        <div className="flex items-start space-x-4">
+                            <motion.button
+                                whileHover={{ scale: 1.1, rotate: 5 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => { const id = post.author?.id; if (id) router.push(`/profile?userId=${id}`); }}
+                                className="relative w-14 h-14 bg-gradient-to-br from-cyan-500 via-purple-600 to-pink-600 rounded-2xl flex items-center justify-center text-white font-bold hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 cursor-pointer ring-2 ring-cyan-500/30 ring-offset-2 ring-offset-gray-900 overflow-hidden"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+                                <span className="relative z-10 text-lg">{post.author?.name?.charAt(0) || 'U'}</span>
+                            </motion.button>
+                            <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-1.5">
+                                    <h3 className="font-bold text-white text-lg md:text-xl bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                                        {post.author?.name || 'Unknown User'}
+                                    </h3>
+                                    <PremiumUserIndicator 
+                                        subscriptionTier={post.author?.subscriptionTier}
+                                        size="sm"
+                                    />
+                                    <div className="flex items-center space-x-1.5 px-2 py-0.5 bg-green-500/20 rounded-full border border-green-500/30">
+                                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                                        <span className="text-xs text-green-400 font-medium">Online</span>
                                     </div>
-                                    <p className="text-sm text-gray-400 mb-2 font-medium">@{post.author?.username || 'unknown'}</p>
-                                    <div className="flex items-center space-x-3 text-xs text-gray-500">
-                                        <span className="flex items-center space-x-1">
-                                            <Clock size={12} />
-                                            <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                                        </span>
-                                        <span className="text-gray-600">•</span>
-                                        <span>{new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                    </div>
+                                </div>
+                                <p className="text-sm text-gray-400 mb-2 font-medium">@{post.author?.username || 'unknown'}</p>
+                                <div className="flex items-center space-x-3 text-xs text-gray-500">
+                                    <span className="flex items-center space-x-1">
+                                        <Clock size={12} />
+                                    <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                                    </span>
+                                    <span className="text-gray-600">•</span>
+                                    <span>{new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
                             </div>
+                        </div>
+                        
+                        {/* Edit/Delete buttons - only show for current user's posts */}
+                        {user?.id && (Number(user.id) === Number(userId) || (post.user?.id || post.author?.id) === Number(user?.id)) && (
+                            <div className="flex items-center space-x-2">
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => handleEdit(post)}
+                                    className="p-3 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-all duration-300 border border-blue-500/30"
+                                    title="Edit Post"
+                                >
+                                    <Edit size={18} />
+                                </motion.button>
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => {
+                                        setPostToDelete(post);
+                                        setShowDeleteConfirm(true);
+                                    }}
+                                    className="p-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-all duration-300 border border-red-500/30"
+                                    title="Delete Post"
+                                >
+                                    <Trash2 size={18} />
+                                </motion.button>
+                            </div>
+                        )}
+                    </div>
 
-                            {/* Edit/Delete buttons - only show for current user's posts */}
-                            {user?.id && (Number(user.id) === Number(userId) || (post.user?.id || post.author?.id) === Number(user?.id)) && (
-                                <div className="flex items-center space-x-2">
-                                    <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => handleEdit(post)}
-                                        className="p-3 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-all duration-300 border border-blue-500/30"
-                                        title="Edit Post"
-                                    >
-                                        <Edit size={18} />
-                                    </motion.button>
-                                    <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => {
-                                            setPostToDelete(post);
-                                            setShowDeleteConfirm(true);
-                                        }}
-                                        className="p-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-all duration-300 border border-red-500/30"
-                                        title="Delete Post"
-                                    >
-                                        <Trash2 size={18} />
-                                    </motion.button>
+                    {/* Post Content */}
+                    <div className="relative mb-5">
+                        {post.title && (
+                            <h2 className="text-xl md:text-2xl font-bold text-white mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">
+                                {post.title}
+                            </h2>
+                        )}
+                        {post.content && (
+                            <p className="text-gray-200 text-base md:text-lg leading-relaxed whitespace-pre-wrap relative z-10">
+                            {post.content}
+                        </p>
+                        )}
+                    </div>
+
+                    {/* Post Media */}
+                    {(videoUrl || galleryImages.length > 0) && (
+                        <div className="mb-5 space-y-4">
+                            {videoUrl && (
+                                <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
+                                    <video
+                                        controls
+                                        className="w-full rounded-2xl max-h-[500px] object-cover"
+                                        src={videoUrl}
+                                    onError={(e) => {
+                                            console.error('Video failed to load:', videoUrl);
+                                        e.currentTarget.style.display = 'none';
+                                    }}
+                                />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                                 </div>
                             )}
-                        </div>
-
-                        {/* Post Content */}
-                        <div className="relative mb-5">
-                            {post.title && (
-                                <h2 className="text-xl md:text-2xl font-bold text-white mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">
-                                    {post.title}
-                                </h2>
-                            )}
-                            {post.content && (
-                                <p className="text-gray-200 text-base md:text-lg leading-relaxed whitespace-pre-wrap relative z-10">
-                                    {post.content}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Post Media */}
-                        {(videoUrl || galleryImages.length > 0) && (
-                            <div className="mb-5 space-y-4">
-                                {videoUrl && (
+                            
+                            {galleryImages.length > 0 && (
+                                galleryImages.length === 1 ? (
                                     <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
-                                        <video
-                                            controls
-                                            className="w-full rounded-2xl max-h-[500px] object-cover"
-                                            src={videoUrl}
+                                        <img 
+                                            src={galleryImages[0]} 
+                                            alt="Post content" 
+                                            className="w-full rounded-2xl object-cover max-h-[500px] transition-transform duration-500 group-hover/media:scale-105"
                                             onError={(e) => {
-                                                console.error('Video failed to load:', videoUrl);
+                                                console.error('Image failed to load:', galleryImages[0]);
                                                 e.currentTarget.style.display = 'none';
                                             }}
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                                     </div>
-                                )}
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {galleryImages.map((imageUrl: string, index: number) => (
+                                            <div key={index} className="relative rounded-2xl overflow-hidden shadow-xl ring-2 ring-gray-700/50 group/media">
+                                                <img 
+                                            src={imageUrl} 
+                                            alt={`Post content ${index + 1}`} 
+                                                    className="w-full rounded-2xl object-cover max-h-72 transition-transform duration-500 group-hover/media:scale-105"
+                                            onError={(e) => {
+                                                        console.error('Image failed to load:', imageUrl);
+                                                e.currentTarget.style.display = 'none';
+                                            }}
+                                        />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                                            </div>
+                                    ))}
+                                </div>
+                                )
+                            )}
+                        </div>
+                    )}
 
-                                {galleryImages.length > 0 && (
-                                    galleryImages.length === 1 ? (
-                                        <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
-                                            <img
-                                                src={galleryImages[0]}
-                                                alt="Post content"
-                                                className="w-full rounded-2xl object-cover max-h-[500px] transition-transform duration-500 group-hover/media:scale-105"
-                                                onError={(e) => {
-                                                    console.error('Image failed to load:', galleryImages[0]);
-                                                    e.currentTarget.style.display = 'none';
-                                                }}
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-                                        </div>
-                                    ) : (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {galleryImages.map((imageUrl: string, index: number) => (
-                                                <div key={index} className="relative rounded-2xl overflow-hidden shadow-xl ring-2 ring-gray-700/50 group/media">
-                                                    <img
-                                                        src={imageUrl}
-                                                        alt={`Post content ${index + 1}`}
-                                                        className="w-full rounded-2xl object-cover max-h-72 transition-transform duration-500 group-hover/media:scale-105"
-                                                        onError={(e) => {
-                                                            console.error('Image failed to load:', imageUrl);
-                                                            e.currentTarget.style.display = 'none';
-                                                        }}
-                                                    />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )
-                                )}
-                            </div>
-                        )}
-
-                        {/* Post Actions */}
-                        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between pt-5 border-t border-gray-700/60 gap-4">
-                            <div className="flex items-center space-x-2 sm:space-x-4">
-                                <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    onClick={async (e) => {
-                                        e.stopPropagation();
-                                        const prevLiked = post.liked;
-                                        const prevLikes = post.likes || 0;
-
-                                        // Optimistic update
-                                        setPosts(prev => prev.map(p =>
-                                            p.id === post.id
-                                                ? { ...p, liked: !prevLiked, likes: prevLiked ? prevLikes - 1 : prevLikes + 1 }
+                    {/* Post Actions */}
+                    <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between pt-5 border-t border-gray-700/60 gap-4">
+                        <div className="flex items-center space-x-2 sm:space-x-4">
+                            <motion.button 
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const prevLiked = post.liked;
+                                    const prevLikes = post.likes || 0;
+                                    
+                                    // Optimistic update
+                                    setPosts(prev => prev.map(p => 
+                                        p.id === post.id 
+                                            ? { ...p, liked: !prevLiked, likes: prevLiked ? prevLikes - 1 : prevLikes + 1 }
+                                            : p
+                                    ));
+                                    
+                                    try {
+                                        const response = await apiFetch(`/api/posts/${post.id}/like`, {
+                                            method: 'POST',
+                                            headers: getAuthHeaders(user?.id),
+                                        });
+                                        
+                                        if (!response.ok) throw new Error('Like request failed');
+                                        
+                                        const data = await response.json();
+                                        
+                                        // Update with server response
+                                        setPosts(prev => prev.map(p => 
+                                            p.id === post.id 
+                                                ? { ...p, liked: data.liked ?? !prevLiked, likes: data.likes ?? (prevLiked ? prevLikes - 1 : prevLikes + 1) }
                                                 : p
                                         ));
-
-                                        try {
-                                            const response = await apiFetch(`/api/posts/${post.id}/like`, {
-                                                method: 'POST',
-                                                headers: getAuthHeaders(user?.id),
-                                            });
-
-                                            if (!response.ok) throw new Error('Like request failed');
-
-                                            const data = await response.json();
-
-                                            // Update with server response
-                                            setPosts(prev => prev.map(p =>
-                                                p.id === post.id
-                                                    ? { ...p, liked: data.liked ?? !prevLiked, likes: data.likes ?? (prevLiked ? prevLikes - 1 : prevLikes + 1) }
-                                                    : p
-                                            ));
-                                        } catch (err) {
-                                            console.error('Like error:', err);
-                                            // Revert on error
-                                            setPosts(prev => prev.map(p =>
-                                                p.id === post.id
-                                                    ? { ...p, liked: prevLiked, likes: prevLikes }
-                                                    : p
-                                            ));
-                                        }
-                                    }}
-                                    className={`relative flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-300 ${post.liked
-                                        ? 'text-red-500 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40'
+                                    } catch (err) {
+                                        console.error('Like error:', err);
+                                        // Revert on error
+                                        setPosts(prev => prev.map(p => 
+                                            p.id === post.id 
+                                                ? { ...p, liked: prevLiked, likes: prevLikes }
+                                                : p
+                                        ));
+                                    }
+                                }}
+                                className={`relative flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-300 ${
+                                    post.liked 
+                                        ? 'text-red-500 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40' 
                                         : 'text-gray-400 bg-gray-700/30 hover:bg-gray-700/50 hover:text-red-400 border border-gray-600/30'
-                                        }`}
-                                >
-                                    <Heart size={20} fill={post.liked ? 'currentColor' : 'none'} className={post.liked ? 'animate-pulse' : ''} />
-                                    <span className="font-semibold">{post.likes || 0}</span>
-                                </motion.button>
-                                <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    onClick={() => {
-                                        setSelectedPost(post);
-                                        setShowCommentModal(true);
-                                    }}
-                                    className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-gray-400 bg-gray-700/30 hover:bg-blue-500/20 hover:text-blue-400 transition-all duration-300 border border-gray-600/30 hover:border-blue-500/40"
-                                >
-                                    <MessageCircle size={20} />
-                                    <span className="font-semibold">{post.comments || 0}</span>
-                                </motion.button>
-                                <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-gray-400 bg-gray-700/30 hover:bg-green-500/20 hover:text-green-400 transition-all duration-300 border border-gray-600/30 hover:border-green-500/40"
-                                >
-                                    <Share size={20} />
-                                    <span className="font-semibold hidden sm:inline">Share</span>
-                                </motion.button>
-                            </div>
-
-                            {/* Engagement Stats */}
-                            <div className="flex items-center space-x-3 text-sm text-gray-400 bg-gray-800/40 px-3 py-2 rounded-lg border border-gray-700/50">
-                                <span className="flex items-center space-x-1">
-                                    <Eye size={14} />
-                                    <span className="font-medium">{post.views || 0}</span>
-                                </span>
-                                <span className="text-gray-600">•</span>
-                                <span className="font-medium">{post.likes || 0} likes</span>
-                            </div>
+                                }`}
+                            >
+                                <Heart size={20} fill={post.liked ? 'currentColor' : 'none'} className={post.liked ? 'animate-pulse' : ''} />
+                                <span className="font-semibold">{post.likes || 0}</span>
+                            </motion.button>
+                            <motion.button 
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => {
+                                    setSelectedPost(post);
+                                    setShowCommentModal(true);
+                                }}
+                                className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-gray-400 bg-gray-700/30 hover:bg-blue-500/20 hover:text-blue-400 transition-all duration-300 border border-gray-600/30 hover:border-blue-500/40"
+                            >
+                                <MessageCircle size={20} />
+                                <span className="font-semibold">{post.comments || 0}</span>
+                            </motion.button>
+                            <motion.button 
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-gray-400 bg-gray-700/30 hover:bg-green-500/20 hover:text-green-400 transition-all duration-300 border border-gray-600/30 hover:border-green-500/40"
+                            >
+                                <Share size={20} />
+                                <span className="font-semibold hidden sm:inline">Share</span>
+                            </motion.button>
                         </div>
-                    </motion.div>
-                )
-            })}
-
+                        
+                        {/* Engagement Stats */}
+                        <div className="flex items-center space-x-3 text-sm text-gray-400 bg-gray-800/40 px-3 py-2 rounded-lg border border-gray-700/50">
+                            <span className="flex items-center space-x-1">
+                                <Eye size={14} />
+                                <span className="font-medium">{post.views || 0}</span>
+                            </span>
+                            <span className="text-gray-600">•</span>
+                            <span className="font-medium">{post.likes || 0} likes</span>
+                        </div>
+                    </div>
+                </motion.div>
+            )})}
+            
             {/* Comment Modal */}
             {showCommentModal && selectedPost && (
                 <CommentModal
