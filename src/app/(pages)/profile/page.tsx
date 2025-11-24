@@ -2046,71 +2046,69 @@ const UserPosts = ({
                         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
                         {/* Post Header */}
-                        < div className="relative flex items-start justify-between mb-5" >
+                        <div className="relative flex flex-col sm:flex-row sm:items-start justify-between mb-5 gap-4">
                             <div className="flex items-start space-x-4">
                                 <motion.button
                                     whileHover={{ scale: 1.1, rotate: 5 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => { const id = post.author?.id; if (id) router.push(`/profile?userId=${id}`); }}
-                                    className="relative w-14 h-14 bg-gradient-to-br from-cyan-500 via-purple-600 to-pink-600 rounded-2xl flex items-center justify-center text-white font-bold hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 cursor-pointer ring-2 ring-cyan-500/30 ring-offset-2 ring-offset-gray-900 overflow-hidden"
+                                    className="relative w-14 h-14 bg-gradient-to-br from-cyan-500 via-purple-600 to-pink-600 rounded-2xl flex items-center justify-center text-white font-bold hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 cursor-pointer ring-2 ring-cyan-500/30 ring-offset-2 ring-offset-gray-900 overflow-hidden shrink-0"
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
                                     <span className="relative z-10 text-lg">{post.author?.name?.charAt(0) || 'U'}</span>
                                 </motion.button>
-                                <div className="flex-1">
-                                    <div className="flex items-center space-x-2 mb-1.5">
-                                        <h3 className="font-bold text-white text-lg md:text-xl bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                                        <h3 className="font-bold text-white text-lg md:text-xl bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent truncate">
                                             {post.author?.name || 'Unknown User'}
                                         </h3>
                                         <PremiumUserIndicator
                                             subscriptionTier={post.author?.subscriptionTier}
                                             size="sm"
                                         />
-                                        <div className="flex items-center space-x-1.5 px-2 py-0.5 bg-green-500/20 rounded-full border border-green-500/30">
+                                        <div className="flex items-center space-x-1.5 px-2 py-0.5 bg-green-500/20 rounded-full border border-green-500/30 shrink-0">
                                             <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
                                             <span className="text-xs text-green-400 font-medium">Online</span>
                                         </div>
                                     </div>
-                                    <p className="text-sm text-gray-400 mb-2 font-medium">@{post.author?.username || 'unknown'}</p>
+                                    <p className="text-sm text-gray-400 mb-2 font-medium truncate">@{post.author?.username || 'unknown'}</p>
                                     <div className="flex items-center space-x-3 text-xs text-gray-500">
                                         <span className="flex items-center space-x-1">
                                             <Clock size={12} />
                                             <span>{new Date(post.createdAt).toLocaleDateString()}</span>
                                         </span>
-                                        <span className="text-gray-600">�</span>
+                                        <span className="text-gray-600"></span>
                                         <span>{new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Edit/Delete buttons - only show for current user's posts */}
-                            {
-                                user?.id && (Number(user.id) === Number(userId) || (post.user?.id || post.author?.id) === Number(user?.id)) && (
-                                    <div className="flex items-center space-x-2">
-                                        <motion.button
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 0.95 }}
-                                            onClick={() => handleEdit(post)}
-                                            className="p-3 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-all duration-300 border border-blue-500/30"
-                                            title="Edit Post"
-                                        >
-                                            <Edit size={18} />
-                                        </motion.button>
-                                        <motion.button
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 0.95 }}
-                                            onClick={() => {
-                                                setPostToDelete(post);
-                                                setShowDeleteConfirm(true);
-                                            }}
-                                            className="p-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-all duration-300 border border-red-500/30"
-                                            title="Delete Post"
-                                        >
-                                            <Trash2 size={18} />
-                                        </motion.button>
-                                    </div>
-                                )
-                            }
+                            {user?.id && (Number(user.id) === Number(userId) || (post.user?.id || post.author?.id) === Number(user?.id)) && (
+                                <div className="flex items-center space-x-2 self-end sm:self-start">
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => handleEdit(post)}
+                                        className="p-3 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-all duration-300 border border-blue-500/30"
+                                        title="Edit Post"
+                                    >
+                                        <Edit size={18} />
+                                    </motion.button>
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => {
+                                            setPostToDelete(post);
+                                            setShowDeleteConfirm(true);
+                                        }}
+                                        className="p-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-all duration-300 border border-red-500/30"
+                                        title="Delete Post"
+                                    >
+                                        <Trash2 size={18} />
+                                    </motion.button>
+                                </div>
+                            )}
                         </div>
                         {/* Post Content */}
                         <div className="relative mb-5">

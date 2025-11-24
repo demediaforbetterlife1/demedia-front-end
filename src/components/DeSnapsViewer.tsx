@@ -294,6 +294,9 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                                 console.error('Video load error:', e);
                                 // Try fallback URL only if it's not already a full URL or local path
                                 const video = e.currentTarget;
+                                // Don't fallback if it's a local upload
+                                if (deSnap.content.includes('local-uploads')) return;
+
                                 if (!deSnap.content.startsWith('http') && !deSnap.content.startsWith('/')) {
                                     video.src = `https://demedia-backend.fly.dev${deSnap.content}`;
                                 }

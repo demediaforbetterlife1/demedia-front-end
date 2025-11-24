@@ -51,6 +51,11 @@ export default function MediaImage({
       return getFallbackImage();
     }
 
+    // Explicitly handle local uploads
+    if (url.startsWith('/local-uploads') || url.includes('local-uploads')) {
+      return url.startsWith('/') ? url : `/${url}`;
+    }
+
     // Use shared helper that handles relative paths (with/without leading slash)
     const normalized = ensureAbsoluteMediaUrl(url);
     return normalized || getFallbackImage();
