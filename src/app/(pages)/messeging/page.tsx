@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    MessageCircle, 
-    Send, 
-    Search, 
+import {
+    MessageCircle,
+    Send,
+    Search,
     MoreVertical,
     Phone,
     Video,
@@ -164,18 +164,18 @@ export default function MessagingPage() {
         try {
             setLoading(true);
             setError(null);
-            
+
             console.log('Fetching conversations...');
-            
+
             // Try multiple endpoints with fallback
             let response;
             let data;
-            
+
             try {
                 // First try the main conversations endpoint
                 response = await apiFetch('/api/conversations', {}, user?.id);
                 console.log('Conversations API response:', response.status, response.ok);
-                
+
                 if (response.ok) {
                     data = await response.json();
                     console.log('Conversations data received:', data);
@@ -185,7 +185,7 @@ export default function MessagingPage() {
             } catch (apiError) {
                 console.warn('Main API failed, trying fallback:', apiError);
             }
-            
+
             // Fallback: Try chat endpoint
             try {
                 response = await apiFetch('/api/chat', {}, user?.id);
@@ -198,50 +198,50 @@ export default function MessagingPage() {
             } catch (chatError) {
                 console.warn('Chat API failed, trying direct fetch:', chatError);
             }
-            
-        // Final fallback: Direct fetch to backend with multiple endpoints
-        try {
-            const directResponse = await fetch('https://demedia-backend.fly.dev/api/conversations', {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include', // Automatically sends httpOnly cookies
-            });
 
-            if (directResponse.ok) {
-                data = await directResponse.json();
-                console.log('Direct conversations data received:', data);
-                setConversations(Array.isArray(data) ? data : []);
-                return;
-            }
-        } catch (directError) {
-            console.warn('Direct fetch failed, trying alternative endpoints:', directError);
-            
-            // Try alternative endpoints
+            // Final fallback: Direct fetch to backend with multiple endpoints
             try {
-                const altResponse = await fetch('https://demedia-backend.fly.dev/api/chat', {
+                const directResponse = await fetch('https://demedia-backend.fly.dev/api/conversations', {
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     credentials: 'include', // Automatically sends httpOnly cookies
                 });
 
-                if (altResponse.ok) {
-                    data = await altResponse.json();
-                    console.log('Alternative conversations data received:', data);
+                if (directResponse.ok) {
+                    data = await directResponse.json();
+                    console.log('Direct conversations data received:', data);
                     setConversations(Array.isArray(data) ? data : []);
                     return;
                 }
-            } catch (altError) {
-                console.warn('Alternative endpoint failed:', altError);
+            } catch (directError) {
+                console.warn('Direct fetch failed, trying alternative endpoints:', directError);
+
+                // Try alternative endpoints
+                try {
+                    const altResponse = await fetch('https://demedia-backend.fly.dev/api/chat', {
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'include', // Automatically sends httpOnly cookies
+                    });
+
+                    if (altResponse.ok) {
+                        data = await altResponse.json();
+                        console.log('Alternative conversations data received:', data);
+                        setConversations(Array.isArray(data) ? data : []);
+                        return;
+                    }
+                } catch (altError) {
+                    console.warn('Alternative endpoint failed:', altError);
+                }
             }
-        }
-            
+
             // If all methods fail, show error
             console.error('All conversation endpoints failed');
             setError(`Unable to fetch conversations. Please check your connection and try again.`);
             setConversations([]);
-            
+
         } catch (err) {
             console.error('Error fetching conversations:', err);
             setError(`Network error: ${err instanceof Error ? err.message : 'Unable to fetch conversations'}`);
@@ -254,16 +254,16 @@ export default function MessagingPage() {
     const fetchMessages = async (conversationId: number) => {
         try {
             console.log('Fetching messages for conversation:', conversationId);
-            
+
             // Try multiple endpoints with fallback
             let response;
             let data;
-            
+
             try {
                 // First try the main messages endpoint
                 response = await apiFetch(`/api/conversations/${conversationId}/messages`);
                 console.log('Messages API response:', response.status, response.ok);
-                
+
                 if (response.ok) {
                     data = await response.json();
                     console.log('Messages data received:', data);
@@ -273,7 +273,7 @@ export default function MessagingPage() {
             } catch (apiError) {
                 console.warn('Main API failed, trying fallback:', apiError);
             }
-            
+
             // Fallback: Try direct fetch to backend
             try {
                 const directResponse = await fetch(`https://demedia-backend.fly.dev/api/conversations/${conversationId}/messages`, {
@@ -282,7 +282,7 @@ export default function MessagingPage() {
                     },
                     credentials: 'include', // Automatically sends httpOnly cookies
                 });
-                
+
                 if (directResponse.ok) {
                     data = await directResponse.json();
                     console.log('Direct messages data received:', data);
@@ -292,12 +292,12 @@ export default function MessagingPage() {
             } catch (directError) {
                 console.warn('Direct fetch failed:', directError);
             }
-            
+
             // If all methods fail, show error but don't crash
             const errorText = response ? await response.text() : 'All fetch methods failed';
             console.error('All message fetch methods failed:', errorText);
             setMessages([]);
-            
+
         } catch (err) {
             console.error('Failed to fetch messages:', err);
             setMessages([]);
@@ -308,6 +308,9 @@ export default function MessagingPage() {
         if (!newMessage.trim() || !selectedConversation) return;
 
         try {
+            console.log('Sending message to conversation:', selectedConversation.id);
+
+            // Try main API with authentication
             const response = await apiFetch(`/api/conversations/${selectedConversation.id}/messages`, {
                 method: 'POST',
                 headers: {
@@ -317,15 +320,46 @@ export default function MessagingPage() {
                     content: newMessage.trim(),
                     type: 'text'
                 })
-            });
+            }, user?.id);
 
             if (response.ok) {
                 const newMsg = await response.json();
+                console.log('Message sent successfully:', newMsg);
                 setMessages(prev => [...prev, newMsg]);
                 setNewMessage('');
+                return;
             }
+
+            // Fallback: Try direct fetch to backend
+            console.warn('Main API failed, trying direct fetch');
+            const directResponse = await fetch(`https://demedia-backend.fly.dev/api/conversations/${selectedConversation.id}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    content: newMessage.trim(),
+                    type: 'text'
+                })
+            });
+
+            if (directResponse.ok) {
+                const newMsg = await directResponse.json();
+                console.log('Message sent via direct fetch:', newMsg);
+                setMessages(prev => [...prev, newMsg]);
+                setNewMessage('');
+                return;
+            }
+
+            // If both fail, log error
+            const errorText = await directResponse.text();
+            console.error('Failed to send message:', errorText);
+            alert('Failed to send message. Please try again.');
+
         } catch (err) {
             console.error('Failed to send message:', err);
+            alert('Network error. Please check your connection and try again.');
         }
     };
 
@@ -361,16 +395,16 @@ export default function MessagingPage() {
                             <p className={`text-sm ${themeClasses.textSecondary}`}>Chat with friends</p>
                         </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
-                        <button 
+                        <button
                             onClick={() => setShowSettings(true)}
                             className={`p-2 rounded-lg ${themeClasses.hover} transition-colors`}
                             title="Settings"
                         >
                             <Settings className="w-5 h-5" />
                         </button>
-                        <button 
+                        <button
                             onClick={() => setShowArchive(true)}
                             className={`p-2 rounded-lg ${themeClasses.hover} transition-colors`}
                             title="Archived Chats"
@@ -424,9 +458,8 @@ export default function MessagingPage() {
                                     key={conversation.id}
                                     whileHover={{ backgroundColor: 'rgba(0,0,0,0.05)' }}
                                     onClick={() => setSelectedConversation(conversation)}
-                                    className={`p-4 border-b ${themeClasses.border} cursor-pointer ${
-                                        selectedConversation?.id === conversation.id ? 'bg-purple-50 dark:bg-purple-900/20' : ''
-                                    }`}
+                                    className={`p-4 border-b ${themeClasses.border} cursor-pointer ${selectedConversation?.id === conversation.id ? 'bg-purple-50 dark:bg-purple-900/20' : ''
+                                        }`}
                                 >
                                     <div className="flex items-center space-x-3">
                                         <div className="relative">
@@ -439,20 +472,20 @@ export default function MessagingPage() {
                                                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
                                             )}
                                         </div>
-                                        
+
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between">
                                                 <h3 className={`font-semibold ${themeClasses.text} truncate`}>
                                                     {conversation.participant.name}
                                                 </h3>
                                                 <span className={`text-xs ${themeClasses.textSecondary}`}>
-                                                    {new Date(conversation.lastMessage.createdAt).toLocaleTimeString([], { 
-                                                        hour: '2-digit', 
-                                                        minute: '2-digit' 
+                                                    {new Date(conversation.lastMessage.createdAt).toLocaleTimeString([], {
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
                                                     })}
                                                 </span>
                                             </div>
-                                            
+
                                             <div className="flex items-center justify-between">
                                                 <p className={`text-sm ${themeClasses.textSecondary} truncate`}>
                                                     {conversation.lastMessage.content}
@@ -492,7 +525,7 @@ export default function MessagingPage() {
                                         </p>
                                     </div>
                                 </div>
-                                
+
                                 <div className="flex items-center space-x-2">
                                     <button
                                         onClick={() => setShowCallModal(true)}
@@ -519,17 +552,16 @@ export default function MessagingPage() {
                                     animate={{ opacity: 1, y: 0 }}
                                     className={`flex ${message.senderId === Number(user?.id) ? 'justify-end' : 'justify-start'}`}
                                 >
-                                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                                        message.senderId === Number(user?.id)
+                                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.senderId === Number(user?.id)
                                             ? 'bg-purple-500 text-white'
                                             : `${themeClasses.card} ${themeClasses.text}`
-                                    }`}>
+                                        }`}>
                                         <p className="text-sm">{message.content}</p>
                                         <div className="flex items-center justify-end mt-1 space-x-1">
                                             <span className="text-xs opacity-70">
-                                                {new Date(message.createdAt).toLocaleTimeString([], { 
-                                                    hour: '2-digit', 
-                                                    minute: '2-digit' 
+                                                {new Date(message.createdAt).toLocaleTimeString([], {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
                                                 })}
                                             </span>
                                             {message.senderId === Number(user?.id) && (
@@ -547,7 +579,7 @@ export default function MessagingPage() {
                                 <button className={`p-2 rounded-lg ${themeClasses.hover} transition-colors`}>
                                     <Paperclip className="w-5 h-5" />
                                 </button>
-                                
+
                                 <div className="flex-1 relative">
                                     <input
                                         type="text"
@@ -557,15 +589,15 @@ export default function MessagingPage() {
                                         onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                                         className={`w-full px-4 py-2 ${themeClasses.input} border rounded-lg ${themeClasses.text} placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500`}
                                     />
-        </div>
-                                
+                                </div>
+
                                 <button
                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                                     className={`p-2 rounded-lg ${themeClasses.hover} transition-colors`}
                                 >
                                     <Smile className="w-5 h-5" />
                                 </button>
-                                
+
                                 <button
                                     onClick={sendMessage}
                                     disabled={!newMessage.trim()}
@@ -618,5 +650,5 @@ export default function MessagingPage() {
                 </div>
             )}
         </div>
-      );
+    );
 }
