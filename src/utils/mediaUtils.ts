@@ -4,18 +4,45 @@
 
 export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://demedia-backend.fly.dev';
 
+/**
+ * Validates that a URL string is actually usable
+ */
+export function isValidUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  if (typeof url !== 'string') return false;
+  if (url === 'null' || url === 'undefined') return false;
+  if (url.trim() === '') return false;
+
+  // Check for obviously broken URLs
+  const lower = url.toLowerCase();
+  if (lower === 'n/a' || lower === 'none' || lower === 'unknown') return false;
+
+  return true;
+}
+
 const needsPrefix = (url: string) => {
   return url && !url.startsWith("http") && !url.startsWith("data:");
 };
 
 export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
-  if (!url) return null;
-  if (!needsPrefix(url)) return url;
-  // If it's a local upload, return as is (just ensure it starts with /)
-  if (url.startsWith('/local-uploads') || url.startsWith('local-uploads')) {
-    return url.startsWith('/') ? url : `/${url}`;
+  // Early validation
+  if (!isValidUrl(url)) {
+    return null;
   }
-  const normalized = url.startsWith("/") ? url : `/${url}`;
+
+  const cleanUrl = url!.trim();
+
+  // Already absolute
+  if (!needsPrefix(cleanUrl)) {
+    return cleanUrl;
+  }
+
+  // If it's a local upload, return as is (just ensure it starts with /)
+  if (cleanUrl.startsWith('/local-uploads') || cleanUrl.startsWith('local-uploads')) {
+    return cleanUrl.startsWith('/') ? cleanUrl : `/${cleanUrl}`;
+  }
+
+  const normalized = cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
   return `${BACKEND_URL}${normalized}`;
 }
 

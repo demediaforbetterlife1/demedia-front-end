@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import Image from 'next/image';
 import { ensureAbsoluteMediaUrl } from '@/utils/mediaUtils';
 
 interface MediaImageProps {
@@ -21,6 +20,34 @@ interface MediaImageProps {
 const DEFAULT_AVATAR = '/images/default-avatar.svg';
 const DEFAULT_POST_IMAGE = '/images/default-post.svg';
 
+// Validate that a URL is actually loadable
+const isValidImageUrl = (url: string | null | undefined): boolean => {
+  if (!url) return false;
+  if (url === 'null' || url === 'undefined') return false;
+  if (url.trim() === '') return false;
+
+  // Check if it's a valid URL format
+  try {
+    // Absolute URLs
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      new URL(url);
+      return true;
+    }
+    // Relative URLs (local paths)
+    if (url.startsWith('/')) {
+      return true;
+    }
+    // Data URLs
+    if (url.startsWith('data:')) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+};
+
 export default function MediaImage({
   src,
   alt,
@@ -35,12 +62,16 @@ export default function MediaImage({
 }: MediaImageProps) {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [attemptedSrc, setAttemptedSrc] = useState<string | null>(null);
 
   // Reset state when src changes
   React.useEffect(() => {
-    setImageError(false);
-    setIsLoading(true);
-  }, [src]);
+    if (src !== attemptedSrc) {
+      setImageError(false);
+      setIsLoading(true);
+      setAttemptedSrc(src || null);
+    }
+  }, [src, attemptedSrc]);
 
   // Determine the appropriate fallback image
   const getFallbackImage = useCallback(() => {
@@ -51,24 +82,31 @@ export default function MediaImage({
     return DEFAULT_POST_IMAGE;
   }, [fallbackSrc, alt]);
 
-  // Validate and clean the image URL using shared media util
+  // Validate and clean the image URL
   const getValidImageUrl = useCallback((url: string | null | undefined): string => {
-    if (!url || url === 'null' || url === 'undefined') {
+    // If URL is invalid, return fallback immediately
+    if (!isValidImageUrl(url)) {
+      console.warn(`Invalid image URL: ${url}, using fallback`);
       return getFallbackImage();
     }
 
     // Explicitly handle local uploads
-    if (url.startsWith('/local-uploads') || url.includes('local-uploads')) {
-      return url.startsWith('/') ? url : `/${url}`;
+    if (url!.startsWith('/local-uploads') || url!.includes('local-uploads')) {
+      return url!.startsWith('/') ? url! : `/${url}`;
     }
 
     // Use shared helper that handles relative paths (with/without leading slash)
     const normalized = ensureAbsoluteMediaUrl(url);
-    return normalized || getFallbackImage();
+    if (!normalized) {
+      console.warn(`Failed to normalize URL: ${url}, using fallback`);
+      return getFallbackImage();
+    }
+
+    return normalized;
   }, [getFallbackImage]);
 
   const handleImageError = useCallback(() => {
-    console.log(`Image failed to load: ${src}`);
+    console.warn(`Image failed to load: ${src}, switching to fallback`);
     setImageError(true);
     setIsLoading(false);
     onError?.();
@@ -79,24 +117,31 @@ export default function MediaImage({
     onLoad?.();
   }, [onLoad]);
 
+  // Determine the final image URL to use
   const imageUrl = imageError ? getFallbackImage() : getValidImageUrl(src);
 
-  const imageProps = {
-    src: imageUrl,
-    alt,
-    className: `${className} ${isLoading ? 'opacity-50' : 'opacity-100'} transition-opacity duration-200`,
-    onError: handleImageError,
-    onLoad: handleImageLoad,
-    priority,
-    ...(fill ? { fill: true } : { width: width || 400, height: height || 400 })
-  };
+  // Build style object for img tag
+  const imgStyle: React.CSSProperties = fill
+    ? { width: '100%', height: '100%', objectFit: 'cover' as const }
+    : { width: width || 'auto', height: height || 'auto' };
 
   return (
     <div className={`relative ${fill ? 'w-full h-full' : ''}`}>
-      {isLoading && (
-        <div className={`absolute inset-0 bg-gray-200 animate-pulse rounded ${fill ? '' : 'w-full h-full'}`} />
+      {isLoading && !imageError && (
+        <div
+          className={`absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse rounded ${fill ? '' : 'w-full h-full'}`}
+          style={imgStyle}
+        />
       )}
-      <Image {...imageProps} />
+      <img
+        src={imageUrl}
+        alt={alt}
+        className={`${className} ${isLoading && !imageError ? 'opacity-0' : 'opacity-100'} transition-opacity duration-200`}
+        style={imgStyle}
+        onError={handleImageError}
+        onLoad={handleImageLoad}
+        loading={priority ? 'eager' : 'lazy'}
+      />
     </div>
   );
 }
