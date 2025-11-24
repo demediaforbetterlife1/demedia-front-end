@@ -1,15 +1,15 @@
 "use client";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-    X, 
-    Play, 
-    Pause, 
-    Volume2, 
-    VolumeX, 
-    Heart, 
-    MessageCircle, 
-    Share, 
+import {
+    X,
+    Play,
+    Pause,
+    Volume2,
+    VolumeX,
+    Heart,
+    MessageCircle,
+    Share,
     Bookmark,
     Eye,
     Clock,
@@ -65,7 +65,7 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
     const [newComment, setNewComment] = useState("");
     const [isSubmittingComment, setIsSubmittingComment] = useState(false);
     const [isLoadingComments, setIsLoadingComments] = useState(false);
-    
+
     const videoRef = useRef<HTMLVideoElement>(null);
     const progressRef = useRef<HTMLDivElement>(null);
 
@@ -81,19 +81,19 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
     useEffect(() => {
         if (videoRef.current) {
             const video = videoRef.current;
-            
+
             const handleTimeUpdate = () => {
                 setCurrentTime(video.currentTime);
             };
-            
+
             const handleEnded = () => {
                 setIsPlaying(false);
                 setCurrentTime(0);
             };
-            
+
             video.addEventListener('timeupdate', handleTimeUpdate);
             video.addEventListener('ended', handleEnded);
-            
+
             return () => {
                 video.removeEventListener('timeupdate', handleTimeUpdate);
                 video.removeEventListener('ended', handleEnded);
@@ -125,7 +125,7 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
             const clickX = e.clientX - rect.left;
             const percentage = clickX / rect.width;
             const newTime = percentage * deSnap.duration;
-            
+
             videoRef.current.currentTime = newTime;
             setCurrentTime(newTime);
         }
@@ -134,13 +134,13 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
     const handleLike = async () => {
         const newLiked = !isLiked;
         const newLikes = newLiked ? likes + 1 : likes - 1;
-        
+
         setIsLiked(newLiked);
         setLikes(newLikes);
-        
+
         // Update the DeSnap
         mergeAndEmitUpdate({ isLiked: newLiked, likes: newLikes });
-        
+
         // Send API request to like/unlike
         try {
             await apiFetch(`/api/desnaps/${deSnap.id}/like`, {
@@ -155,10 +155,10 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
     const handleBookmark = async () => {
         const newBookmarked = !isBookmarked;
         setIsBookmarked(newBookmarked);
-        
+
         // Update the DeSnap
         mergeAndEmitUpdate({ isBookmarked: newBookmarked });
-        
+
         // Send API request to bookmark/unbookmark
         try {
             await apiFetch(`/api/desnaps/${deSnap.id}/bookmark`, {
@@ -225,7 +225,7 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
     const handleShare = async () => {
         try {
             const shareUrl = `${window.location.origin}/desnaps/${deSnap.id}`;
-            
+
             if (navigator.share) {
                 await navigator.share({
                     title: 'Check out this DeSnap!',
@@ -265,7 +265,7 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                 className="fixed inset-0 bg-black z-50 flex items-center justify-center"
             >
                 {/* Background overlay */}
-                <div 
+                <div
                     className="absolute inset-0 bg-black/90"
                     onClick={onClose}
                 />
@@ -284,23 +284,23 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                     <div className="flex-1 flex items-center justify-center relative">
                         <video
                             ref={videoRef}
-                            src={deSnap.content.startsWith('http') ? deSnap.content : `https://demedia-backend.fly.dev${deSnap.content}`}
+                            src={deSnap.content.startsWith('http') || deSnap.content.startsWith('/') ? deSnap.content : `https://demedia-backend.fly.dev${deSnap.content}`}
                             className="w-full h-full object-cover"
                             muted={isMuted}
                             loop
                             onClick={togglePlayPause}
                             onError={(e) => {
                                 console.error('Video load error:', e);
-                                // Try fallback URL
+                                // Try fallback URL only if it's not already a full URL or local path
                                 const video = e.currentTarget;
-                                if (!deSnap.content.startsWith('http')) {
+                                if (!deSnap.content.startsWith('http') && !deSnap.content.startsWith('/')) {
                                     video.src = `https://demedia-backend.fly.dev${deSnap.content}`;
                                 }
                             }}
                         />
-                        
+
                         {/* Play/Pause overlay */}
-                        <div 
+                        <div
                             className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
                             onClick={togglePlayPause}
                         >
@@ -314,12 +314,12 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                         {/* Video controls */}
                         <div className="absolute bottom-4 left-4 right-4 z-10">
                             {/* Progress bar */}
-                            <div 
+                            <div
                                 ref={progressRef}
                                 className="w-full h-1 bg-white/30 rounded-full cursor-pointer mb-2"
                                 onClick={handleProgressClick}
                             >
-                                <div 
+                                <div
                                     className="h-full bg-white rounded-full transition-all"
                                     style={{ width: `${progress}%` }}
                                 />
@@ -332,7 +332,7 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                                     <span>/</span>
                                     <span>{formatTime(deSnap.duration)}</span>
                                 </div>
-                                
+
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={toggleMute}
@@ -354,7 +354,7 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                                     <VisibilityIcon size={16} className={visibilityColor} />
                                     <span className="text-white text-sm">{visibilityLabel}</span>
                                 </div>
-                                
+
                                 <div className="flex items-center gap-4 text-white text-sm">
                                     <span className="flex items-center gap-1">
                                         <Eye size={14} />
@@ -371,13 +371,12 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                             <div className="flex flex-col gap-4">
                                 <button
                                     onClick={handleLike}
-                                    className={`flex flex-col items-center gap-1 p-2 rounded-full transition-colors ${
-                                        isLiked ? 'bg-red-500/20' : 'bg-white/10 hover:bg-white/20'
-                                    }`}
+                                    className={`flex flex-col items-center gap-1 p-2 rounded-full transition-colors ${isLiked ? 'bg-red-500/20' : 'bg-white/10 hover:bg-white/20'
+                                        }`}
                                 >
-                                    <Heart 
-                                        size={24} 
-                                        className={isLiked ? "text-red-400 fill-current" : "text-white"} 
+                                    <Heart
+                                        size={24}
+                                        className={isLiked ? "text-red-400 fill-current" : "text-white"}
                                     />
                                     <span className="text-white text-xs">{likes}</span>
                                 </button>
@@ -392,17 +391,16 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
 
                                 <button
                                     onClick={handleBookmark}
-                                    className={`flex flex-col items-center gap-1 p-2 rounded-full transition-colors ${
-                                        isBookmarked ? 'bg-yellow-500/20' : 'bg-white/10 hover:bg-white/20'
-                                    }`}
+                                    className={`flex flex-col items-center gap-1 p-2 rounded-full transition-colors ${isBookmarked ? 'bg-yellow-500/20' : 'bg-white/10 hover:bg-white/20'
+                                        }`}
                                 >
-                                    <Bookmark 
-                                        size={24} 
-                                        className={isBookmarked ? "text-yellow-400 fill-current" : "text-white"} 
+                                    <Bookmark
+                                        size={24}
+                                        className={isBookmarked ? "text-yellow-400 fill-current" : "text-white"}
                                     />
                                 </button>
 
-                                <button 
+                                <button
                                     onClick={handleShare}
                                     className="flex flex-col items-center gap-1 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
                                 >
@@ -422,7 +420,7 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                                 className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-md p-4 max-h-64 flex flex-col"
                             >
                                 <h4 className="font-semibold mb-2 text-white text-sm">Comments ({comments.length})</h4>
-                                
+
                                 {/* Comments list */}
                                 <div className="flex-1 overflow-y-auto space-y-2 mb-3">
                                     {isLoadingComments ? (
@@ -434,8 +432,8 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                                             <div key={comment.id} className="text-white text-sm">
                                                 <div className="flex items-start gap-2">
                                                     {comment.user?.profilePicture ? (
-                                                        <img 
-                                                            src={comment.user.profilePicture} 
+                                                        <img
+                                                            src={comment.user.profilePicture}
                                                             alt={comment.user.name}
                                                             className="w-6 h-6 rounded-full"
                                                         />
@@ -453,7 +451,7 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                                         ))
                                     )}
                                 </div>
-                                
+
                                 {/* Comment input */}
                                 <form onSubmit={handleSubmitComment} className="flex gap-2">
                                     <input
