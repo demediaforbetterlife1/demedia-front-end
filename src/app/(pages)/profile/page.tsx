@@ -2035,7 +2035,7 @@ const UserPosts = ({
                 return (
                     <motion.div
                         key={post.id}
-                        className={`group relative rounded-3xl p-4 md:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden ${theme === 'gold'
+                        className={`group relative rounded-3xl p-5 sm:p-6 md:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden ${theme === 'gold'
                             ? 'bg-gradient-to-br from-gray-800/95 via-gray-700/95 to-gray-800/95 border border-yellow-500/40 gold-glow gold-shimmer'
                             : 'bg-gradient-to-br from-gray-800/95 via-gray-900/95 to-gray-800/95 border border-gray-700/60'
                             }`}
@@ -2155,7 +2155,7 @@ const UserPosts = ({
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
                                                 {galleryImages.map((imageUrl: string, index: number) => (
                                                     <div key={index} className="relative rounded-2xl overflow-hidden shadow-xl ring-2 ring-gray-700/50 group/media">
                                                         <div className="relative w-full h-72">
