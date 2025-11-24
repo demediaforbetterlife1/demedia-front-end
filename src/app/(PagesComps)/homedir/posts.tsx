@@ -170,8 +170,8 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       const fetched = Array.isArray(data)
         ? data
         : Array.isArray(data.data)
-        ? data.data
-        : [data];
+          ? data.data
+          : [data];
 
       const normalizedPosts = fetched
         .map((p: any) => normalizePost(p))
@@ -185,10 +185,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           (Array.isArray(post.images) && post.images.length > 0
             ? post.images
             : post.imageUrls && post.imageUrls.length > 0
-            ? post.imageUrls
-            : post.imageUrl
-            ? [post.imageUrl]
-            : []) as string[];
+              ? post.imageUrls
+              : post.imageUrl
+                ? [post.imageUrl]
+                : []) as string[];
 
         imgs.forEach((img) => {
           if (typeof window === "undefined") return;
@@ -393,10 +393,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           (Array.isArray(post.images) && post.images.length > 0
             ? post.images
             : post.imageUrls && post.imageUrls.length > 0
-            ? post.imageUrls
-            : post.imageUrl
-            ? [post.imageUrl]
-            : []) as string[];
+              ? post.imageUrls
+              : post.imageUrl
+                ? [post.imageUrl]
+                : []) as string[];
 
         const images = rawImages
           .map((img) => getImageSrc(img))
@@ -418,7 +418,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
             whileHover={{ scale: 1.01 }}
             transition={{ duration: 0.35, ease: "easeOut" }}
             onClick={() => goToPost(post.id)}
-            className={`relative ${themeClasses.bg} rounded-3xl p-5 md:p-8 cursor-pointer overflow-hidden w-full border border-white/5 shadow-[0_20px_80px_rgba(0,0,0,0.25)] transition-all duration-500 group`}
+            className={`relative ${theme === 'super-dark' ? 'bg-[#151b23]/80 border-white/10' :
+                theme === 'super-light' ? 'bg-[#f5f2ed]/90 border-gray-300/40' :
+                  theme === 'gold' ? 'bg-gray-900/90 border-2 border-yellow-500/30 shadow-[0_0_30px_rgba(255,215,0,0.15)]' :
+                    themeClasses.bg
+              } backdrop-blur-xl rounded-3xl p-5 md:p-8 cursor-pointer overflow-hidden w-full shadow-[0_20px_80px_rgba(0,0,0,0.25)] transition-all duration-500 group`}
           >
             <div
               className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
@@ -467,9 +471,8 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
               {post.content && (
                 <p
-                  className={`text-base leading-relaxed ${themeClasses.text} font-light select-text ${
-                    !isExpanded && shouldClamp ? "line-clamp-3" : ""
-                  }`}
+                  className={`text-base leading-relaxed ${themeClasses.text} font-light select-text ${!isExpanded && shouldClamp ? "line-clamp-3" : ""
+                    }`}
                 >
                   {post.content}
                 </p>
@@ -514,9 +517,8 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                           return (
                             <div
                               key={`${img}-${idx}`}
-                              className={`relative overflow-hidden rounded-2xl ${
-                                isHero ? "col-span-2 row-span-2" : ""
-                              }`}
+                              className={`relative overflow-hidden rounded-2xl ${isHero ? "col-span-2 row-span-2" : ""
+                                }`}
                             >
                               <MediaImage
                                 src={img || defaultPostImage}
@@ -563,9 +565,8 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                     whileTap={{ scale: 0.9 }}
                     whileHover={{ scale: 1.05 }}
                     onClick={(e) => handleLike(e, post.id)}
-                    className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm transition-all duration-300 ${
-                      post.liked ? themeClasses.like : themeClasses.textMuted
-                    }`}
+                    className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm transition-all duration-300 ${post.liked ? themeClasses.like : themeClasses.textMuted
+                      }`}
                   >
                     <motion.svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -620,9 +621,8 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                     whileTap={{ scale: 0.9 }}
                     whileHover={{ scale: 1.05 }}
                     onClick={(e) => toggleBookmark(e, post.id)}
-                    className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm transition-all duration-300 ${
-                      isBookmarked ? themeClasses.accent : themeClasses.textMuted
-                    }`}
+                    className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm transition-all duration-300 ${isBookmarked ? themeClasses.accent : themeClasses.textMuted
+                      }`}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
