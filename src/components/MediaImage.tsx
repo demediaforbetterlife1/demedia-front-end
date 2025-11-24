@@ -36,6 +36,12 @@ export default function MediaImage({
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Reset state when src changes
+  React.useEffect(() => {
+    setImageError(false);
+    setIsLoading(true);
+  }, [src]);
+
   // Determine the appropriate fallback image
   const getFallbackImage = useCallback(() => {
     if (fallbackSrc) return fallbackSrc;

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { User } from 'lucide-react';
+import { ensureAbsoluteMediaUrl } from '@/utils/mediaUtils';
 
 interface AvatarProps {
     src?: string | null;
@@ -56,7 +57,8 @@ export default function Avatar({
     const iconSize = iconSizes[size];
 
     // Determine if we should show the image
-    const shouldShowImage = src && !imageError;
+    const normalizedSrc = ensureAbsoluteMediaUrl(src);
+    const shouldShowImage = normalizedSrc && !imageError;
 
     // Generate a consistent color based on name
     const getColorFromName = (name?: string): string => {
@@ -97,7 +99,7 @@ export default function Avatar({
                         </div>
                     )}
                     <img
-                        src={src}
+                        src={normalizedSrc || ''}
                         alt={alt}
                         className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'
                             }`}

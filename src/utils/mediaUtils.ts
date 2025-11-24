@@ -2,7 +2,7 @@
  * Utility functions for handling media URLs and validation
  */
 
-export const BACKEND_URL = 'https://demedia-backend.fly.dev';
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://demedia-backend.fly.dev';
 
 const needsPrefix = (url: string) => {
   return url && !url.startsWith("http") && !url.startsWith("data:");
