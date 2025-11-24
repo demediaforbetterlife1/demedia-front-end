@@ -288,6 +288,7 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                             className="w-full h-full object-cover"
                             muted={isMuted}
                             loop
+                            playsInline
                             onClick={togglePlayPause}
                             onError={(e) => {
                                 console.error('Video load error:', e);

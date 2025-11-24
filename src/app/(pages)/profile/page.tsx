@@ -1037,8 +1037,8 @@ export default function ProfilePage() {
                                                 onClick={handleFollowToggle}
                                                 disabled={busyFollow}
                                                 className={`flex-1 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${isFollowing
-                                                        ? `${themeClasses.buttonSecondary}`
-                                                        : `${themeClasses.button}`
+                                                    ? `${themeClasses.buttonSecondary}`
+                                                    : `${themeClasses.button}`
                                                     } ${busyFollow ? "opacity-70 cursor-wait" : ""} text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
                                             >
                                                 {busyFollow ? "..." : isFollowing ? "Following" : "Follow"}
@@ -1086,8 +1086,8 @@ export default function ProfilePage() {
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                             className={`flex-1 py-4 px-6 text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 relative rounded-t-xl ${activeTab === tab.id
-                                                    ? `text-white bg-gradient-to-r ${tab.color} shadow-lg`
-                                                    : `${themeClasses.textSecondary} hover:${themeClasses.text} hover:bg-gray-100/10`
+                                                ? `text-white bg-gradient-to-r ${tab.color} shadow-lg`
+                                                : `${themeClasses.textSecondary} hover:${themeClasses.text} hover:bg-gray-100/10`
                                                 }`}
                                         >
                                             <tab.icon size={18} />
@@ -1703,8 +1703,8 @@ const UserDeSnaps = ({
                 <motion.div
                     key={deSnap.id}
                     className={`group relative rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden ${theme === 'gold'
-                            ? 'bg-gradient-to-br from-gray-800/95 via-gray-700/95 to-gray-800/95 border border-yellow-500/40 gold-glow gold-shimmer'
-                            : 'bg-gradient-to-br from-gray-800/95 via-gray-900/95 to-gray-800/95 border border-gray-700/60'
+                        ? 'bg-gradient-to-br from-gray-800/95 via-gray-700/95 to-gray-800/95 border border-yellow-500/40 gold-glow gold-shimmer'
+                        : 'bg-gradient-to-br from-gray-800/95 via-gray-900/95 to-gray-800/95 border border-gray-700/60'
                         }`}
                     whileHover={{ scale: 1.01, y: -4 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
@@ -1784,8 +1784,8 @@ const UserDeSnaps = ({
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => handleLike(deSnap.id)}
                                 className={`relative flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-300 ${deSnap.isLiked
-                                        ? 'text-red-500 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40'
-                                        : 'text-gray-400 bg-gray-700/30 hover:bg-gray-700/50 hover:text-red-400 border border-gray-600/30'
+                                    ? 'text-red-500 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40'
+                                    : 'text-gray-400 bg-gray-700/30 hover:bg-gray-700/50 hover:text-red-400 border border-gray-600/30'
                                     }`}
                             >
                                 <Heart size={20} fill={deSnap.isLiked ? 'currentColor' : 'none'} className={deSnap.isLiked ? 'animate-pulse' : ''} />
@@ -2036,8 +2036,8 @@ const UserPosts = ({
                     <motion.div
                         key={post.id}
                         className={`group relative rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden ${theme === 'gold'
-                                ? 'bg-gradient-to-br from-gray-800/95 via-gray-700/95 to-gray-800/95 border border-yellow-500/40 gold-glow gold-shimmer'
-                                : 'bg-gradient-to-br from-gray-800/95 via-gray-900/95 to-gray-800/95 border border-gray-700/60'
+                            ? 'bg-gradient-to-br from-gray-800/95 via-gray-700/95 to-gray-800/95 border border-yellow-500/40 gold-glow gold-shimmer'
+                            : 'bg-gradient-to-br from-gray-800/95 via-gray-900/95 to-gray-800/95 border border-gray-700/60'
                             }`}
                         whileHover={{ scale: 1.01, y: -4 }}
                         transition={{ duration: 0.3, ease: "easeOut" }}
@@ -2130,6 +2130,7 @@ const UserPosts = ({
                                     <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
                                         <video
                                             controls
+                                            playsInline
                                             className="w-full rounded-2xl max-h-[500px] object-cover"
                                             src={videoUrl}
                                         />
@@ -2140,7 +2141,7 @@ const UserPosts = ({
                                 {galleryImages.length > 0 && (
                                     galleryImages.length === 1 ? (
                                         <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
-                                            <div className="relative w-full h-[500px]">
+                                            <div className="relative w-full h-64 sm:h-96 md:h-[500px]">
                                                 <MediaImage
                                                     src={galleryImages[0]}
                                                     alt="Post content"
@@ -2218,8 +2219,8 @@ const UserPosts = ({
                                         }
                                     }}
                                     className={`relative flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-300 ${post.liked
-                                            ? 'text-red-500 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40'
-                                            : 'text-gray-400 bg-gray-700/30 hover:bg-gray-700/50 hover:text-red-400 border border-gray-600/30'
+                                        ? 'text-red-500 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40'
+                                        : 'text-gray-400 bg-gray-700/30 hover:bg-gray-700/50 hover:text-red-400 border border-gray-600/30'
                                         }`}
                                 >
                                     <Heart size={20} fill={post.liked ? 'currentColor' : 'none'} className={post.liked ? 'animate-pulse' : ''} />
