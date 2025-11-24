@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'videos');
+    const uploadsDir = path.join(process.cwd(), 'public', 'local-uploads', 'videos');
     try {
       await mkdir(uploadsDir, { recursive: true });
     } catch (err) {
@@ -63,9 +63,8 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
     await writeFile(filepath, buffer);
 
-    // Return the absolute local URL to prevent ensureAbsoluteMediaUrl from prepending backend URL
-    const origin = request.nextUrl.origin;
-    const videoUrl = `${origin}/uploads/videos/${filename}`;
+    // Return the local URL (no need for absolute URL now that mediaUtils handles it)
+    const videoUrl = `/local-uploads/videos/${filename}`;
 
     // For thumbnail, we'll just use a default for now since we can't easily generate one server-side without ffmpeg
     // The frontend generates a thumbnail for preview anyway

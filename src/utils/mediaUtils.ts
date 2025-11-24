@@ -5,20 +5,24 @@
 export const BACKEND_URL = 'https://demedia-backend.fly.dev';
 
 const needsPrefix = (url: string) => {
-    return url && !url.startsWith("http") && !url.startsWith("data:");
+  return url && !url.startsWith("http") && !url.startsWith("data:");
 };
 
 export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
-    if (!url) return null;
-    if (!needsPrefix(url)) return url;
-    const normalized = url.startsWith("/") ? url : `/${url}`;
-    return `${BACKEND_URL}${normalized}`;
+  if (!url) return null;
+  if (!needsPrefix(url)) return url;
+  // If it's a local upload, return as is (just ensure it starts with /)
+  if (url.startsWith('/local-uploads') || url.startsWith('local-uploads')) {
+    return url.startsWith('/') ? url : `/${url}`;
+  }
+  const normalized = url.startsWith("/") ? url : `/${url}`;
+  return `${BACKEND_URL}${normalized}`;
 }
 
 export function appendCacheBuster(url: string): string {
-    if (!url) return url;
-    const separator = url.includes("?") ? "&" : "?";
-    return `${url}${separator}t=${Date.now()}`;
+  if (!url) return url;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}t=${Date.now()}`;
 }
 
 /**
@@ -34,6 +38,11 @@ export function normalizeMediaUrl(url: string | null | undefined): string | null
   // If it's already a full URL, return as is
   if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
     return cleanUrl;
+  }
+
+  // If it's a local upload, return as is
+  if (cleanUrl.startsWith('/local-uploads') || cleanUrl.startsWith('local-uploads')) {
+    return cleanUrl.startsWith('/') ? cleanUrl : `/${cleanUrl}`;
   }
 
   // If it starts with /uploads, prepend the backend URL
@@ -90,7 +99,7 @@ export function getFallbackImage(context: 'profile' | 'post' | 'cover' | 'defaul
  * Creates a media URL with error handling
  */
 export function createMediaUrl(
-  url: string | null | undefined, 
+  url: string | null | undefined,
   fallbackContext: 'profile' | 'post' | 'cover' | 'default' = 'default'
 ): string {
   const normalizedUrl = normalizeMediaUrl(url);

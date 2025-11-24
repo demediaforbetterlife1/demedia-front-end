@@ -2035,7 +2035,7 @@ const UserPosts = ({
                 return (
                     <motion.div
                         key={post.id}
-                        className={`group relative rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden ${theme === 'gold'
+                        className={`group relative rounded-3xl p-4 md:p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden ${theme === 'gold'
                             ? 'bg-gradient-to-br from-gray-800/95 via-gray-700/95 to-gray-800/95 border border-yellow-500/40 gold-glow gold-shimmer'
                             : 'bg-gradient-to-br from-gray-800/95 via-gray-900/95 to-gray-800/95 border border-gray-700/60'
                             }`}
@@ -2046,7 +2046,7 @@ const UserPosts = ({
                         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
                         {/* Post Header */}
-                        <div className="relative flex items-start justify-between mb-5">
+                        < div className="relative flex items-start justify-between mb-5" >
                             <div className="flex items-start space-x-4">
                                 <motion.button
                                     whileHover={{ scale: 1.1, rotate: 5 }}
@@ -2084,31 +2084,33 @@ const UserPosts = ({
                             </div>
 
                             {/* Edit/Delete buttons - only show for current user's posts */}
-                            {user?.id && (Number(user.id) === Number(userId) || (post.user?.id || post.author?.id) === Number(user?.id)) && (
-                                <div className="flex items-center space-x-2">
-                                    <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => handleEdit(post)}
-                                        className="p-3 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-all duration-300 border border-blue-500/30"
-                                        title="Edit Post"
-                                    >
-                                        <Edit size={18} />
-                                    </motion.button>
-                                    <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => {
-                                            setPostToDelete(post);
-                                            setShowDeleteConfirm(true);
-                                        }}
-                                        className="p-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-all duration-300 border border-red-500/30"
-                                        title="Delete Post"
-                                    >
-                                        <Trash2 size={18} />
-                                    </motion.button>
-                                </div>
-                            )}
+                            {
+                                user?.id && (Number(user.id) === Number(userId) || (post.user?.id || post.author?.id) === Number(user?.id)) && (
+                                    <div className="flex items-center space-x-2">
+                                        <motion.button
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => handleEdit(post)}
+                                            className="p-3 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-all duration-300 border border-blue-500/30"
+                                            title="Edit Post"
+                                        >
+                                            <Edit size={18} />
+                                        </motion.button>
+                                        <motion.button
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => {
+                                                setPostToDelete(post);
+                                                setShowDeleteConfirm(true);
+                                            }}
+                                            className="p-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-all duration-300 border border-red-500/30"
+                                            title="Delete Post"
+                                        >
+                                            <Trash2 size={18} />
+                                        </motion.button>
+                                    </div>
+                                )
+                            }
                         </div>
                         {/* Post Content */}
                         <div className="relative mb-5">
@@ -2124,56 +2126,58 @@ const UserPosts = ({
                             )}
                         </div>
                         {/* Post Media */}
-                        {(videoUrl || galleryImages.length > 0) && (
-                            <div className="mb-5 space-y-4">
-                                {videoUrl && (
-                                    <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
-                                        <video
-                                            controls
-                                            playsInline
-                                            className="w-full rounded-2xl max-h-[500px] object-cover"
-                                            src={videoUrl}
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-                                    </div>
-                                )}
-
-                                {galleryImages.length > 0 && (
-                                    galleryImages.length === 1 ? (
+                        {
+                            (videoUrl || galleryImages.length > 0) && (
+                                <div className="mb-5 space-y-4">
+                                    {videoUrl && (
                                         <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
-                                            <div className="relative w-full h-64 sm:h-96 md:h-[500px]">
-                                                <MediaImage
-                                                    src={galleryImages[0]}
-                                                    alt="Post content"
-                                                    className="object-cover"
-                                                    fallbackSrc="/assets/images/default-post.svg"
-                                                    fill
-                                                    priority
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-                                            </div>
+                                            <video
+                                                controls
+                                                playsInline
+                                                className="w-full rounded-2xl max-h-[500px] object-cover"
+                                                src={videoUrl}
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                                         </div>
-                                    ) : (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                                            {galleryImages.map((imageUrl: string, index: number) => (
-                                                <div key={index} className="relative rounded-2xl overflow-hidden shadow-xl ring-2 ring-gray-700/50 group/media">
-                                                    <div className="relative w-full h-72">
-                                                        <MediaImage
-                                                            src={imageUrl}
-                                                            alt={`Post content ${index + 1}`}
-                                                            className="object-cover transition-transform duration-500 group-hover/media:scale-105"
-                                                            fallbackSrc="/assets/images/default-post.svg"
-                                                            fill
-                                                        />
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-                                                    </div>
+                                    )}
+
+                                    {galleryImages.length > 0 && (
+                                        galleryImages.length === 1 ? (
+                                            <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
+                                                <div className="relative w-full h-64 sm:h-96 md:h-[500px]">
+                                                    <MediaImage
+                                                        src={galleryImages[0]}
+                                                        alt="Post content"
+                                                        className="object-cover"
+                                                        fallbackSrc="/assets/images/default-post.svg"
+                                                        fill
+                                                        priority
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )
-                                )}
-                            </div>
-                        )}
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                                                {galleryImages.map((imageUrl: string, index: number) => (
+                                                    <div key={index} className="relative rounded-2xl overflow-hidden shadow-xl ring-2 ring-gray-700/50 group/media">
+                                                        <div className="relative w-full h-72">
+                                                            <MediaImage
+                                                                src={imageUrl}
+                                                                alt={`Post content ${index + 1}`}
+                                                                className="object-cover transition-transform duration-500 group-hover/media:scale-105"
+                                                                fallbackSrc="/assets/images/default-post.svg"
+                                                                fill
+                                                            />
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+                            )
+                        }
                         {/* Post Actions */}
                         <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between pt-5 border-t border-gray-700/60 gap-4">
                             <div className="flex items-center space-x-2 sm:space-x-4">
@@ -2258,87 +2262,93 @@ const UserPosts = ({
                                 <span className="font-medium">{post.likes || 0} likes</span>
                             </div>
                         </div>
-                    </motion.div>
+                    </motion.div >
                 )
             })}
 
             {/* Comment Modal */}
-            {showCommentModal && selectedPost && (
-                <CommentModal
-                    isOpen={showCommentModal}
-                    onClose={() => {
-                        setShowCommentModal(false);
-                        setSelectedPost(null);
-                    }}
-                    postId={selectedPost.id}
-                    postContent={selectedPost.content}
-                    postAuthor={selectedPost.author?.name || 'Unknown'}
-                />
-            )}
+            {
+                showCommentModal && selectedPost && (
+                    <CommentModal
+                        isOpen={showCommentModal}
+                        onClose={() => {
+                            setShowCommentModal(false);
+                            setSelectedPost(null);
+                        }}
+                        postId={selectedPost.id}
+                        postContent={selectedPost.content}
+                        postAuthor={selectedPost.author?.name || 'Unknown'}
+                    />
+                )
+            }
             {/* Edit Post Modal */}
-            {selectedPost && (
-                <EditPostModal
-                    isOpen={showEditModal}
-                    onClose={() => {
-                        setShowEditModal(false);
-                        setSelectedPost(null);
-                    }}
-                    post={selectedPost}
-                    onPostUpdated={handlePostUpdated}
-                />
-            )}
+            {
+                selectedPost && (
+                    <EditPostModal
+                        isOpen={showEditModal}
+                        onClose={() => {
+                            setShowEditModal(false);
+                            setSelectedPost(null);
+                        }}
+                        post={selectedPost}
+                        onPostUpdated={handlePostUpdated}
+                    />
+                )
+            }
             {/* Delete Confirmation Modal */}
-            {showDeleteConfirm && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <motion.div
-                        className="bg-gray-800 rounded-2xl w-full max-w-md shadow-2xl border border-gray-700"
-                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                        animate={{ scale: 1, opacity: 1, y: 0 }}
-                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                        transition={{ duration: 0.2 }}
-                    >
-                        <div className="p-6">
-                            <div className="flex items-center space-x-3 mb-4">
-                                <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
-                                    <Trash2 className="w-5 h-5 text-red-400" />
+            {
+                showDeleteConfirm && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <motion.div
+                            className="bg-gray-800 rounded-2xl w-full max-w-md shadow-2xl border border-gray-700"
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <div className="p-6">
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
+                                        <Trash2 className="w-5 h-5 text-red-400" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-white">Delete Post</h2>
+                                        <p className="text-sm text-gray-400">This action cannot be undone</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">Delete Post</h2>
-                                    <p className="text-sm text-gray-400">This action cannot be undone</p>
+                                <p className="text-gray-300 mb-6">
+                                    Are you sure you want to delete this post? This action cannot be undone.
+                                </p>
+                                <div className="flex items-center justify-end space-x-3">
+                                    <button
+                                        onClick={() => {
+                                            setShowDeleteConfirm(false);
+                                            setPostToDelete(null);
+                                        }}
+                                        className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmDelete}
+                                        disabled={isDeleting}
+                                        className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+                                    >
+                                        {isDeleting ? (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                Deleting...
+                                            </>
+                                        ) : (
+                                            'Delete Post'
+                                        )}
+                                    </button>
                                 </div>
                             </div>
-                            <p className="text-gray-300 mb-6">
-                                Are you sure you want to delete this post? This action cannot be undone.
-                            </p>
-                            <div className="flex items-center justify-end space-x-3">
-                                <button
-                                    onClick={() => {
-                                        setShowDeleteConfirm(false);
-                                        setPostToDelete(null);
-                                    }}
-                                    className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmDelete}
-                                    disabled={isDeleting}
-                                    className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
-                                >
-                                    {isDeleting ? (
-                                        <>
-                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                            Deleting...
-                                        </>
-                                    ) : (
-                                        'Delete Post'
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
-            )}
-        </div>
+                        </motion.div>
+                    </div>
+                )
+            }
+        </div >
     );
 }
