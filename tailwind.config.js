@@ -8,13 +8,27 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'super-dark': '#030409',
-        'panel-dark': '#0b0f14',
-        'super-light': '#f8fafc',
+        // Eye-comfortable dark mode - warm slate with reduced blue light
+        'super-dark': '#0a0e13',
+        'panel-dark': '#151b23',
+        'dark-accent': '#1e2730',
+
+        // Eye-comfortable light mode - cream/warm tones
+        'super-light': '#faf8f5',
+        'panel-light': '#f5f2ed',
+        'light-accent': '#ebe7df',
+
+        // Premium gold theme
         'gold': '#ffd700',
         'gold-glow': 'rgba(255,215,0,0.12)',
         'gold-dark': '#b8860b',
         'gold-light': '#ffed4e',
+        'gold-shimmer': 'rgba(255,237,78,0.15)',
+
+        // Accent colors for better contrast
+        'accent-blue': '#60a5fa',
+        'accent-purple': '#a78bfa',
+        'accent-cyan': '#22d3ee',
       },
       animation: {
         'shimmer': 'shimmer 1.8s infinite',
