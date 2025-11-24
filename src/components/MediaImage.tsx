@@ -17,9 +17,9 @@ interface MediaImageProps {
   onLoad?: () => void;
 }
 
-// Use assets paths that exist in this project under public/assets/images
-const DEFAULT_AVATAR = '/assets/images/default-avatar.svg';
-const DEFAULT_POST_IMAGE = '/assets/images/default-post.svg';
+// Use assets paths that exist in this project under public/images
+const DEFAULT_AVATAR = '/images/default-avatar.svg';
+const DEFAULT_POST_IMAGE = '/images/default-post.svg';
 
 export default function MediaImage({
   src,
@@ -97,11 +97,6 @@ export default function MediaImage({
         <div className={`absolute inset-0 bg-gray-200 animate-pulse rounded ${fill ? '' : 'w-full h-full'}`} />
       )}
       <Image {...imageProps} />
-      {imageError && (
-        <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded opacity-75">
-          Failed to load
-        </div>
-      )}
     </div>
   );
 }
