@@ -10,10 +10,21 @@ export const normalizeDeSnap = (deSnap: any): DeSnap | null => {
     username: "unknown",
   };
 
+  const processedContent = ensureAbsoluteMediaUrl(deSnap.content) || deSnap.content || "";
+  const processedThumbnail = ensureAbsoluteMediaUrl(deSnap.thumbnail) || deSnap.thumbnail || null;
+
+  console.log('🔄 normalizeDeSnap:', {
+    rawContent: deSnap.content,
+    processedContent,
+    rawThumbnail: deSnap.thumbnail,
+    processedThumbnail,
+    author: author.name
+  });
+
   return {
     ...deSnap,
-    content: ensureAbsoluteMediaUrl(deSnap.content) || deSnap.content || "",
-    thumbnail: ensureAbsoluteMediaUrl(deSnap.thumbnail) || deSnap.thumbnail || null,
+    content: processedContent,
+    thumbnail: processedThumbnail,
     author,
     userId: deSnap.userId || author.id || 0,
     likes: deSnap.likes ?? deSnap._count?.likes ?? 0,

@@ -70,6 +70,12 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
         if (videoRef.current) {
             const video = videoRef.current;
 
+            // Enhanced logging for debugging
+            console.log('🎬 DeSnapsViewer - Video element initialized');
+            console.log('📹 Raw content URL:', deSnap.content);
+            console.log('🔗 Processed video src:', video.src);
+            console.log('✅ Video element ready state:', video.readyState);
+
             const handleTimeUpdate = () => {
                 setCurrentTime(video.currentTime);
             };
@@ -79,15 +85,33 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                 setCurrentTime(0);
             };
 
+            const handleLoadedData = () => {
+                console.log('✅ Video loaded successfully:', video.src);
+                console.log('⏱️ Video duration:', video.duration);
+            };
+
+            const handleError = (e: Event) => {
+                console.error('❌ Video loading error:', {
+                    src: video.src,
+                    error: video.error,
+                    networkState: video.networkState,
+                    readyState: video.readyState
+                });
+            };
+
             video.addEventListener('timeupdate', handleTimeUpdate);
             video.addEventListener('ended', handleEnded);
+            video.addEventListener('loadeddata', handleLoadedData);
+            video.addEventListener('error', handleError);
 
             // Auto-play when viewer opens
             if (isOpen) {
+                console.log('▶️ Attempting autoplay...');
                 video.play().then(() => {
+                    console.log('✅ Autoplay successful');
                     setIsPlaying(true);
                 }).catch(err => {
-                    console.log('Autoplay prevented:', err);
+                    console.log('⚠️ Autoplay prevented:', err);
                     setIsPlaying(false);
                 });
             }
@@ -95,9 +119,11 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
             return () => {
                 video.removeEventListener('timeupdate', handleTimeUpdate);
                 video.removeEventListener('ended', handleEnded);
+                video.removeEventListener('loadeddata', handleLoadedData);
+                video.removeEventListener('error', handleError);
             };
         }
-    }, [isOpen]);
+    }, [isOpen, deSnap.content]);
 
     const togglePlayPause = () => {
         if (videoRef.current) {
@@ -282,16 +308,24 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                     <div className="flex-1 flex items-center justify-center relative bg-black">
                         <video
                             ref={videoRef}
-                            src={ensureAbsoluteMediaUrl(deSnap.content) || deSnap.content}
+                            src={deSnap.content}
                             className="w-full h-full object-contain max-h-[80vh]"
                             muted={isMuted}
                             loop
                             playsInline
                             onClick={togglePlayPause}
                             onError={(e) => {
+                                console.error('❌ Video element error event fired');
                                 console.error('Video load error for:', deSnap.content);
                                 const video = e.currentTarget;
                                 console.log('Attempted URL:', video.src);
+                                console.log('Video error details:', {
+                                    error: video.error,
+                                    code: video.error?.code,
+                                    message: video.error?.message,
+                                    networkState: video.networkState,
+                                    readyState: video.readyState
+                                });
                             }}
                         />
 
