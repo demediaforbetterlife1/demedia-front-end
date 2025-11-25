@@ -23,6 +23,7 @@ import {
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { normalizeDeSnap } from "@/utils/desnapUtils";
+import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
 
 interface DeSnap {
     id: number;
@@ -94,12 +95,22 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
             video.addEventListener('timeupdate', handleTimeUpdate);
             video.addEventListener('ended', handleEnded);
 
+            // Auto-play when viewer opens
+            if (isOpen) {
+                video.play().then(() => {
+                    setIsPlaying(true);
+                }).catch(err => {
+                    console.log('Autoplay prevented:', err);
+                    setIsPlaying(false);
+                });
+            }
+
             return () => {
                 video.removeEventListener('timeupdate', handleTimeUpdate);
                 video.removeEventListener('ended', handleEnded);
             };
         }
-    }, []);
+    }, [isOpen]);
 
     const togglePlayPause = () => {
         if (videoRef.current) {
@@ -271,7 +282,7 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                 />
 
                 {/* DeSnap content */}
-                <div className="relative w-full h-full max-w-md mx-auto flex flex-col">
+                <div className="relative w-full h-full max-w-2xl mx-auto flex flex-col">
                     {/* Close button */}
                     <button
                         onClick={onClose}
@@ -281,25 +292,19 @@ export default function DeSnapsViewer({ isOpen, onClose, deSnap, onDeSnapUpdated
                     </button>
 
                     {/* Video container */}
-                    <div className="flex-1 flex items-center justify-center relative">
+                    <div className="flex-1 flex items-center justify-center relative bg-black">
                         <video
                             ref={videoRef}
-                            src={deSnap.content.startsWith('http') || deSnap.content.startsWith('/') ? deSnap.content : `https://demedia-backend.fly.dev${deSnap.content}`}
-                            className="w-full h-full object-cover"
+                            src={ensureAbsoluteMediaUrl(deSnap.content) || deSnap.content}
+                            className="w-full h-full object-contain max-h-[80vh]"
                             muted={isMuted}
                             loop
                             playsInline
                             onClick={togglePlayPause}
                             onError={(e) => {
-                                console.error('Video load error:', e);
-                                // Try fallback URL only if it's not already a full URL or local path
+                                console.error('Video load error for:', deSnap.content);
                                 const video = e.currentTarget;
-                                // Don't fallback if it's a local upload
-                                if (deSnap.content.includes('local-uploads')) return;
-
-                                if (!deSnap.content.startsWith('http') && !deSnap.content.startsWith('/')) {
-                                    video.src = `https://demedia-backend.fly.dev${deSnap.content}`;
-                                }
+                                console.log('Attempted URL:', video.src);
                             }}
                         />
 
