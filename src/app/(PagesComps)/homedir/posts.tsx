@@ -121,7 +121,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       comment: "hover:text-yellow-300",
     },
     "super-dark": {
-      bg: "bg-black/90 backdrop-blur-xl border border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.15)] hover:shadow-[0_0_50px_rgba(168,85,247,0.3)] hover:border-purple-400/50 transition-all duration-500 overflow-hidden",
+      bg: "bg-gradient-to-br from-gray-950/95 via-black/95 to-purple-950/90 backdrop-blur-2xl border border-purple-500/40 shadow-[0_8px_32px_rgba(168,85,247,0.12),0_0_0_1px_rgba(168,85,247,0.08)] hover:shadow-[0_16px_48px_rgba(168,85,247,0.25),0_0_64px_rgba(236,72,153,0.15)] hover:border-purple-400/60 transition-all duration-700 overflow-hidden relative",
       text: "text-white",
       textMuted: "text-gray-400",
       accent: "text-purple-400",
@@ -416,12 +416,33 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className={`group rounded-3xl p-5 md:p-8 cursor-pointer relative ${themeClasses.bg}`}
+            className={`group rounded-3xl p-5 md:p-8 cursor-pointer relative ${themeClasses.bg} ${theme === 'super-dark'
+              ? 'ring-1 ring-purple-500/20 hover:ring-purple-400/40 before:absolute before:inset-0 before:rounded-3xl before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-700 before:bg-gradient-to-br before:from-purple-500/5 before:via-transparent before:to-pink-500/5 before:pointer-events-none'
+              : ''
+              }`}
             onClick={() => goToPost(post.id)}
           >
-            {/* Shimmer overlay for super-dark theme */}
+            {/* Enhanced shimmer and glow effects for super-dark theme */}
             {theme === 'super-dark' && (
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-500/0 via-purple-500/5 to-pink-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+              <>
+                {/* Animated border glow */}
+                <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20 blur-xl animate-pulse" />
+                </div>
+                {/* Shimmer overlay */}
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-500/0 via-purple-400/10 to-pink-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                {/* Subtle grid pattern */}
+                <div
+                  className="absolute inset-0 rounded-3xl opacity-[0.02] pointer-events-none"
+                  style={{
+                    backgroundImage: `
+                      linear-gradient(rgba(168, 85, 247, 0.1) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(168, 85, 247, 0.1) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '32px 32px'
+                  }}
+                />
+              </>
             )}
             <div className="flex items-start gap-4 mb-6 group/header" onClick={(e) => goToUser(e, author)}>
               <div className="relative w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-transparent group-hover/header:ring-2 transition-all duration-300" style={{ ["--tw-ring-color" as any]: themeClasses.accentColor }}>
@@ -557,8 +578,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   whileTap={{ scale: 0.9 }}
                   whileHover={{ scale: 1.05 }}
                   onClick={(e) => handleLike(e, post.id)}
-                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm transition-all duration-300 ${post.liked ? themeClasses.like : themeClasses.textMuted
-                    }`}
+                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${theme === 'super-dark'
+                    ? `bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]`
+                    : 'bg-white/5 backdrop-blur-sm'
+                    } transition-all duration-300 ${post.liked ? themeClasses.like : themeClasses.textMuted}`}
                 >
                   <motion.svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -590,7 +613,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                     setSelectedPost(post);
                     setShowCommentModal(true);
                   }}
-                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm ${themeClasses.comment} transition-all duration-300`}
+                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${theme === 'super-dark'
+                    ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]'
+                    : 'bg-white/5 backdrop-blur-sm'
+                    } ${themeClasses.comment} transition-all duration-300`}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -613,8 +639,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   whileTap={{ scale: 0.9 }}
                   whileHover={{ scale: 1.05 }}
                   onClick={(e) => toggleBookmark(e, post.id)}
-                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm transition-all duration-300 ${isBookmarked ? themeClasses.accent : themeClasses.textMuted
-                    }`}
+                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${theme === 'super-dark'
+                      ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]'
+                      : 'bg-white/5 backdrop-blur-sm'
+                    } transition-all duration-300 ${isBookmarked ? themeClasses.accent : themeClasses.textMuted}`}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -637,7 +665,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   whileTap={{ scale: 0.9 }}
                   whileHover={{ scale: 1.05 }}
                   onClick={(e) => handleShare(e, post)}
-                  className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm text-white/80 hover:text-white transition-all duration-300"
+                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${
+                    theme === 'super-dark' 
+                      ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]' 
+                      : 'bg-white/5 backdrop-blur-sm'
+                  } text-white/80 hover:text-white transition-all duration-300`}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
