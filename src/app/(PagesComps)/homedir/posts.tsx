@@ -121,7 +121,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       comment: "hover:text-yellow-300",
     },
     "super-dark": {
-      bg: "bg-gradient-to-br from-gray-950/95 via-black/95 to-purple-950/90 backdrop-blur-2xl border border-purple-500/40 shadow-[0_8px_32px_rgba(168,85,247,0.12),0_0_0_1px_rgba(168,85,247,0.08)] hover:shadow-[0_16px_48px_rgba(168,85,247,0.25),0_0_64px_rgba(236,72,153,0.15)] hover:border-purple-400/60 transition-all duration-700 overflow-hidden relative",
+      bg: "bg-gradient-to-br from-gray-950/80 via-black/75 to-purple-950/70 backdrop-blur-2xl border border-purple-500/40 shadow-[0_8px_32px_rgba(168,85,247,0.12),0_0_0_1px_rgba(168,85,247,0.08)] hover:shadow-[0_16px_48px_rgba(168,85,247,0.25),0_0_64px_rgba(236,72,153,0.15)] hover:border-purple-400/60 transition-all duration-700 overflow-hidden relative",
       text: "text-white",
       textMuted: "text-gray-400",
       accent: "text-purple-400",
@@ -640,8 +640,8 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   whileHover={{ scale: 1.05 }}
                   onClick={(e) => toggleBookmark(e, post.id)}
                   className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${theme === 'super-dark'
-                      ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]'
-                      : 'bg-white/5 backdrop-blur-sm'
+                    ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]'
+                    : 'bg-white/5 backdrop-blur-sm'
                     } transition-all duration-300 ${isBookmarked ? themeClasses.accent : themeClasses.textMuted}`}
                 >
                   <svg
@@ -665,11 +665,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   whileTap={{ scale: 0.9 }}
                   whileHover={{ scale: 1.05 }}
                   onClick={(e) => handleShare(e, post)}
-                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${
-                    theme === 'super-dark' 
-                      ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]' 
+                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${theme === 'super-dark'
+                      ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]'
                       : 'bg-white/5 backdrop-blur-sm'
-                  } text-white/80 hover:text-white transition-all duration-300`}
+                    } text-white/80 hover:text-white transition-all duration-300`}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
