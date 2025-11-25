@@ -413,270 +413,268 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         return (
           <motion.article
             key={post.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className={`group rounded-3xl p-5 md:p-8 cursor-pointer ${themeClasses.bg}`}
+            onClick={() => goToPost(post.id)}
           >
-            <div className="relative w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-transparent group-hover/header:ring-2 transition-all duration-300" style={{ ["--tw-ring-color" as any]: themeClasses.accentColor }}>
-              <MediaImage
-                src={profilePic}
-                alt="User avatar"
-                className="object-cover"
-                fill
-                fallbackSrc={defaultAvatar}
-                priority
-              />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className={`font-semibold text-lg ${themeClasses.text}`}>
-                  {author?.name || "Community Member"}
-                </h3>
-                <span className="text-xs text-white/70 uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-white/10">
-                  {relativeTime || "Just now"}
-                </span>
-              </div>
-              <p className={`text-sm ${themeClasses.textMuted}`}>
-                @{author?.username ?? "user"} ·{" "}
-                {post.createdAt
-                  ? new Date(post.createdAt).toLocaleString()
-                  : "Live"}
-              </p>
-            </div>
-          </div>
-
-              {
-          post.title && (
-            <h2 className={`text-2xl font-semibold ${themeClasses.text}`}>
-              {post.title}
-            </h2>
-          )
-        }
-
-        {
-          post.content && (
-            <p
-              className={`text-base leading-relaxed ${themeClasses.text} font-light select-text ${!isExpanded && shouldClamp ? "line-clamp-3" : ""
-                }`}
-            >
-              {post.content}
-            </p>
-          )
-        }
-        {
-          shouldClamp && (
-            <button
-              className="self-start text-xs uppercase tracking-[0.3em] text-white/70 hover:text-white transition-colors"
-              onClick={(e) => toggleExpanded(e, post.id)}
-            >
-              {isExpanded ? "Show less" : "Show more"}
-            </button>
-          )
-        }
-
-        {
-          (videoUrl || images.length > 0) && (
-            <div className="rounded-2xl overflow-hidden space-y-4">
-              {videoUrl && (
-                <video
-                  src={videoUrl}
-                  controls
-                  className="w-full rounded-2xl max-h-[520px] bg-black/60"
+            <div className="flex items-start gap-4 mb-6 group/header" onClick={(e) => goToUser(e, author)}>
+              <div className="relative w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-transparent group-hover/header:ring-2 transition-all duration-300" style={{ ["--tw-ring-color" as any]: themeClasses.accentColor }}>
+                <MediaImage
+                  src={profilePic}
+                  alt="User avatar"
+                  className="object-cover"
+                  fill
+                  fallbackSrc={defaultAvatar}
+                  priority
                 />
-              )}
-
-              {images.length > 0 &&
-                (images.length === 1 ? (
-                  <div className="relative w-full overflow-hidden rounded-2xl h-full min-h-[320px]">
-                    <MediaImage
-                      src={images[0] || defaultPostImage}
-                      alt={post.title || "Post image"}
-                      className="object-cover transition-transform duration-700 group-hover:scale-[1.01]"
-                      fill
-                      fallbackSrc={defaultPostImage}
-                      priority
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 auto-rows-[160px] md:auto-rows-[220px] gap-3">
-                    {images.slice(0, 4).map((img, idx) => {
-                      const isHero = idx === 0 && images.length > 1;
-                      const remaining = images.length - 4;
-                      return (
-                        <div
-                          key={`${img}-${idx}`}
-                          className={`relative overflow-hidden rounded-2xl ${isHero ? "col-span-2 row-span-2" : ""
-                            }`}
-                        >
-                          <MediaImage
-                            src={img || defaultPostImage}
-                            alt={`Post image ${idx + 1}`}
-                            className="object-cover transition-transform duration-700 hover:scale-105"
-                            fill
-                            fallbackSrc={defaultPostImage}
-                            priority={idx === 0}
-                          />
-                          {remaining > 0 && idx === 3 && (
-                            <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white text-lg font-semibold">
-                              +{remaining}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-            </div>
-          )
-        }
-
-              <div className="flex flex-wrap gap-3 text-xs uppercase tracking-[0.3em] text-white/70">
-                {post.comments > 0 && (
-                  <span className="px-3 py-1 rounded-full bg-white/10">
-                    {post.comments} Comments
-                  </span>
-                )}
-                {post.likes > 0 && (
-                  <span className="px-3 py-1 rounded-full bg-white/10">
-                    {post.likes} Likes
-                  </span>
-                )}
-                {videoUrl && (
-                  <span className="px-3 py-1 rounded-full bg-white/10">
-                    Video
-                  </span>
-                )}
               </div>
-
-              <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
-                <div className="flex flex-wrap items-center gap-4">
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    whileHover={{ scale: 1.05 }}
-                    onClick={(e) => handleLike(e, post.id)}
-                    className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm transition-all duration-300 ${post.liked ? themeClasses.like : themeClasses.textMuted
-                      }`}
-                  >
-                    <motion.svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill={post.liked ? "currentColor" : "none"}
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      className="w-5 h-5"
-                      animate={{
-                        scale: post.liked ? [1, 1.4, 1] : 1,
-                        rotate: post.liked ? [0, -10, 10, 0] : 0,
-                      }}
-                      transition={{ duration: 0.4 }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 21C12 21 4 13.667 4 8.667C4 5.4 6.4 3 9.667 3C11.389 3 13 4.067 13.833 5.533C14.667 4.067 16.278 3 18 3C21.267 3 23.667 5.4 23.667 8.667C23.667 13.667 16 21 16 21H12Z"
-                      />
-                    </motion.svg>
-                    <span>{post.likes}</span>
-                  </motion.button>
-
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    whileHover={{ scale: 1.05 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPost(post);
-                      setShowCommentModal(true);
-                    }}
-                    className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm ${themeClasses.comment} transition-all duration-300`}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      className="w-5 h-5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M7 8h10M7 12h6m5 8a9 9 0 10-9-9c0 1.52.38 2.96 1.05 4.23L7 20l4.77-2.05A9.01 9.01 0 0018 20z"
-                      />
-                    </svg>
-                    <span>{post.comments}</span>
-                  </motion.button>
-
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    whileHover={{ scale: 1.05 }}
-                    onClick={(e) => toggleBookmark(e, post.id)}
-                    className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm transition-all duration-300 ${isBookmarked ? themeClasses.accent : themeClasses.textMuted
-                      }`}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill={isBookmarked ? "currentColor" : "none"}
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      className="w-5 h-5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v18l-7-4-7 4V5z"
-                      />
-                    </svg>
-                    <span>{isBookmarked ? "Saved" : "Save"}</span>
-                  </motion.button>
-
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    whileHover={{ scale: 1.05 }}
-                    onClick={(e) => handleShare(e, post)}
-                    className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm text-white/80 hover:text-white transition-all duration-300"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      className="w-5 h-5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M7 9l5-5m0 0l5 5m-5-5v12"
-                      />
-                    </svg>
-                    <span>Share</span>
-                  </motion.button>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className={`font-semibold text-lg ${themeClasses.text}`}>
+                    {author?.name || "Community Member"}
+                  </h3>
+                  <span className="text-xs text-white/70 uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-white/10">
+                    {relativeTime || "Just now"}
+                  </span>
                 </div>
-                {shareStatus[post.id] && (
-                  <span className="text-xs text-white/70">
-                    {shareStatus[post.id]}
-                  </span>
-                )}
+                <p className={`text-sm ${themeClasses.textMuted}`}>
+                  @{author?.username ?? "user"} ·{" "}
+                  {post.createdAt
+                    ? new Date(post.createdAt).toLocaleString()
+                    : "Live"}
+                </p>
               </div>
             </div>
-          </motion.article >
-        );
-})}
 
-{
-  showCommentModal && selectedPost && (
-    <CommentModal
-      isOpen={showCommentModal}
-      onClose={() => {
-        setShowCommentModal(false);
-        setSelectedPost(null);
-      }}
-      postId={selectedPost.id}
-      postContent={selectedPost.content}
-      postAuthor={selectedPost.author?.name || "Unknown"}
-    />
-  )
-}
-    </div >
+            {post.title && (
+              <h2 className={`text-2xl font-semibold ${themeClasses.text} mb-4`}>
+                {post.title}
+              </h2>
+            )}
+
+            <div className="flex flex-col gap-3 mb-6">
+              {post.content && (
+                <p
+                  className={`text-base leading-relaxed ${themeClasses.text} font-light select-text ${!isExpanded && shouldClamp ? "line-clamp-3" : ""
+                    }`}
+                >
+                  {post.content}
+                </p>
+              )}
+              {shouldClamp && (
+                <button
+                  className="self-start text-xs uppercase tracking-[0.3em] text-white/70 hover:text-white transition-colors"
+                  onClick={(e) => toggleExpanded(e, post.id)}
+                >
+                  {isExpanded ? "Show less" : "Show more"}
+                </button>
+              )}
+            </div>
+
+            {(videoUrl || images.length > 0) && (
+              <div className="rounded-2xl overflow-hidden space-y-4 mb-6">
+                {videoUrl && (
+                  <video
+                    src={videoUrl}
+                    controls
+                    playsInline
+                    className="w-full rounded-2xl max-h-[520px] bg-black/60"
+                  />
+                )}
+
+                {images.length > 0 &&
+                  (images.length === 1 ? (
+                    <div className="relative w-full overflow-hidden rounded-2xl h-full min-h-[320px]">
+                      <MediaImage
+                        src={images[0] || defaultPostImage}
+                        alt={post.title || "Post image"}
+                        className="object-cover transition-transform duration-700 group-hover:scale-[1.01]"
+                        fill
+                        fallbackSrc={defaultPostImage}
+                        priority
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 auto-rows-[160px] md:auto-rows-[220px] gap-3">
+                      {images.slice(0, 4).map((img, idx) => {
+                        const isHero = idx === 0 && images.length > 1;
+                        const remaining = images.length - 4;
+                        return (
+                          <div
+                            key={`${img}-${idx}`}
+                            className={`relative overflow-hidden rounded-2xl ${isHero ? "col-span-2 row-span-2" : ""
+                              }`}
+                          >
+                            <MediaImage
+                              src={img || defaultPostImage}
+                              alt={`Post image ${idx + 1}`}
+                              className="object-cover transition-transform duration-700 hover:scale-105"
+                              fill
+                              fallbackSrc={defaultPostImage}
+                              priority={idx === 0}
+                            />
+                            {remaining > 0 && idx === 3 && (
+                              <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white text-lg font-semibold">
+                                +{remaining}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-3 text-xs uppercase tracking-[0.3em] text-white/70 mb-6">
+              {post.comments > 0 && (
+                <span className="px-3 py-1 rounded-full bg-white/10">
+                  {post.comments} Comments
+                </span>
+              )}
+              {post.likes > 0 && (
+                <span className="px-3 py-1 rounded-full bg-white/10">
+                  {post.likes} Likes
+                </span>
+              )}
+              {videoUrl && (
+                <span className="px-3 py-1 rounded-full bg-white/10">
+                  Video
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
+              <div className="flex flex-wrap items-center gap-4">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                  onClick={(e) => handleLike(e, post.id)}
+                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm transition-all duration-300 ${post.liked ? themeClasses.like : themeClasses.textMuted
+                    }`}
+                >
+                  <motion.svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill={post.liked ? "currentColor" : "none"}
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    className="w-5 h-5"
+                    animate={{
+                      scale: post.liked ? [1, 1.4, 1] : 1,
+                      rotate: post.liked ? [0, -10, 10, 0] : 0,
+                    }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 21C12 21 4 13.667 4 8.667C4 5.4 6.4 3 9.667 3C11.389 3 13 4.067 13.833 5.533C14.667 4.067 16.278 3 18 3C21.267 3 23.667 5.4 23.667 8.667C23.667 13.667 16 21 16 21H12Z"
+                    />
+                  </motion.svg>
+                  <span>{post.likes}</span>
+                </motion.button>
+
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPost(post);
+                    setShowCommentModal(true);
+                  }}
+                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm ${themeClasses.comment} transition-all duration-300`}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M7 8h10M7 12h6m5 8a9 9 0 10-9-9c0 1.52.38 2.96 1.05 4.23L7 20l4.77-2.05A9.01 9.01 0 0018 20z"
+                    />
+                  </svg>
+                  <span>{post.comments}</span>
+                </motion.button>
+
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                  onClick={(e) => toggleBookmark(e, post.id)}
+                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm transition-all duration-300 ${isBookmarked ? themeClasses.accent : themeClasses.textMuted
+                    }`}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill={isBookmarked ? "currentColor" : "none"}
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v18l-7-4-7 4V5z"
+                    />
+                  </svg>
+                  <span>{isBookmarked ? "Saved" : "Save"}</span>
+                </motion.button>
+
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                  onClick={(e) => handleShare(e, post)}
+                  className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm text-white/80 hover:text-white transition-all duration-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M7 9l5-5m0 0l5 5m-5-5v12"
+                    />
+                  </svg>
+                  <span>Share</span>
+                </motion.button>
+              </div>
+              {shareStatus[post.id] && (
+                <span className="text-xs text-white/70">
+                  {shareStatus[post.id]}
+                </span>
+              )}
+            </div>
+          </motion.article>
+        );
+      })}
+
+      {showCommentModal && selectedPost && (
+        <CommentModal
+          isOpen={showCommentModal}
+          onClose={() => {
+            setShowCommentModal(false);
+            setSelectedPost(null);
+          }}
+          postId={selectedPost.id}
+          postContent={selectedPost.content}
+          postAuthor={selectedPost.author?.name || "Unknown"}
+        />
+      )}
+    </div>
   );
 }
 
