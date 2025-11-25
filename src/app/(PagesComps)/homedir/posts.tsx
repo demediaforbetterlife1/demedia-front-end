@@ -413,133 +413,120 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         return (
           <motion.article
             key={post.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ scale: 1.01 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
-            onClick={() => goToPost(post.id)}
-            className={`relative ${theme === 'super-dark' ? 'bg-[#151b23]/80 border-white/10' :
-                theme === 'super-light' ? 'bg-[#f5f2ed]/90 border-gray-300/40' :
-                  theme === 'gold' ? 'bg-gray-900/90 border-2 border-yellow-500/30 shadow-[0_0_30px_rgba(255,215,0,0.15)]' :
-                    themeClasses.bg
-              } backdrop-blur-xl rounded-3xl p-5 md:p-8 cursor-pointer overflow-hidden w-full shadow-[0_20px_80px_rgba(0,0,0,0.25)] transition-all duration-500 group`}
           >
-            <div
-              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
-              style={{
-                background: `radial-gradient(circle at 10% 20%, ${themeClasses.accentColor}1A, transparent 55%)`,
-              }}
-            />
-            <div className="relative z-10 flex flex-col gap-5">
-              <div
-                className="flex items-center gap-4 cursor-pointer group/header"
-                onClick={(e) => goToUser(e, author)}
-              >
-                <div className="relative w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-transparent group-hover/header:ring-2 transition-all duration-300" style={{ ["--tw-ring-color" as any]: themeClasses.accentColor }}>
-                  <MediaImage
-                    src={profilePic}
-                    alt="User avatar"
-                    className="object-cover"
-                    fill
-                    fallbackSrc={defaultAvatar}
-                    priority
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className={`font-semibold text-lg ${themeClasses.text}`}>
-                      {author?.name || "Community Member"}
-                    </h3>
-                    <span className="text-xs text-white/70 uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-white/10">
-                      {relativeTime || "Just now"}
-                    </span>
-                  </div>
-                  <p className={`text-sm ${themeClasses.textMuted}`}>
-                    @{author?.username ?? "user"} ·{" "}
-                    {post.createdAt
-                      ? new Date(post.createdAt).toLocaleString()
-                      : "Live"}
-                  </p>
-                </div>
+            <div className="relative w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-transparent group-hover/header:ring-2 transition-all duration-300" style={{ ["--tw-ring-color" as any]: themeClasses.accentColor }}>
+              <MediaImage
+                src={profilePic}
+                alt="User avatar"
+                className="object-cover"
+                fill
+                fallbackSrc={defaultAvatar}
+                priority
+              />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className={`font-semibold text-lg ${themeClasses.text}`}>
+                  {author?.name || "Community Member"}
+                </h3>
+                <span className="text-xs text-white/70 uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-white/10">
+                  {relativeTime || "Just now"}
+                </span>
               </div>
+              <p className={`text-sm ${themeClasses.textMuted}`}>
+                @{author?.username ?? "user"} ·{" "}
+                {post.createdAt
+                  ? new Date(post.createdAt).toLocaleString()
+                  : "Live"}
+              </p>
+            </div>
+          </div>
 
-              {post.title && (
-                <h2 className={`text-2xl font-semibold ${themeClasses.text}`}>
-                  {post.title}
-                </h2>
+              {
+          post.title && (
+            <h2 className={`text-2xl font-semibold ${themeClasses.text}`}>
+              {post.title}
+            </h2>
+          )
+        }
+
+        {
+          post.content && (
+            <p
+              className={`text-base leading-relaxed ${themeClasses.text} font-light select-text ${!isExpanded && shouldClamp ? "line-clamp-3" : ""
+                }`}
+            >
+              {post.content}
+            </p>
+          )
+        }
+        {
+          shouldClamp && (
+            <button
+              className="self-start text-xs uppercase tracking-[0.3em] text-white/70 hover:text-white transition-colors"
+              onClick={(e) => toggleExpanded(e, post.id)}
+            >
+              {isExpanded ? "Show less" : "Show more"}
+            </button>
+          )
+        }
+
+        {
+          (videoUrl || images.length > 0) && (
+            <div className="rounded-2xl overflow-hidden space-y-4">
+              {videoUrl && (
+                <video
+                  src={videoUrl}
+                  controls
+                  className="w-full rounded-2xl max-h-[520px] bg-black/60"
+                />
               )}
 
-              {post.content && (
-                <p
-                  className={`text-base leading-relaxed ${themeClasses.text} font-light select-text ${!isExpanded && shouldClamp ? "line-clamp-3" : ""
-                    }`}
-                >
-                  {post.content}
-                </p>
-              )}
-              {shouldClamp && (
-                <button
-                  className="self-start text-xs uppercase tracking-[0.3em] text-white/70 hover:text-white transition-colors"
-                  onClick={(e) => toggleExpanded(e, post.id)}
-                >
-                  {isExpanded ? "Show less" : "Show more"}
-                </button>
-              )}
-
-              {(videoUrl || images.length > 0) && (
-                <div className="rounded-2xl overflow-hidden space-y-4">
-                  {videoUrl && (
-                    <video
-                      src={videoUrl}
-                      controls
-                      className="w-full rounded-2xl max-h-[520px] bg-black/60"
+              {images.length > 0 &&
+                (images.length === 1 ? (
+                  <div className="relative w-full overflow-hidden rounded-2xl h-full min-h-[320px]">
+                    <MediaImage
+                      src={images[0] || defaultPostImage}
+                      alt={post.title || "Post image"}
+                      className="object-cover transition-transform duration-700 group-hover:scale-[1.01]"
+                      fill
+                      fallbackSrc={defaultPostImage}
+                      priority
                     />
-                  )}
-
-                  {images.length > 0 &&
-                    (images.length === 1 ? (
-                      <div className="relative w-full overflow-hidden rounded-2xl h-full min-h-[320px]">
-                        <MediaImage
-                          src={images[0] || defaultPostImage}
-                          alt={post.title || "Post image"}
-                          className="object-cover transition-transform duration-700 group-hover:scale-[1.01]"
-                          fill
-                          fallbackSrc={defaultPostImage}
-                          priority
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 auto-rows-[160px] md:auto-rows-[220px] gap-3">
-                        {images.slice(0, 4).map((img, idx) => {
-                          const isHero = idx === 0 && images.length > 1;
-                          const remaining = images.length - 4;
-                          return (
-                            <div
-                              key={`${img}-${idx}`}
-                              className={`relative overflow-hidden rounded-2xl ${isHero ? "col-span-2 row-span-2" : ""
-                                }`}
-                            >
-                              <MediaImage
-                                src={img || defaultPostImage}
-                                alt={`Post image ${idx + 1}`}
-                                className="object-cover transition-transform duration-700 hover:scale-105"
-                                fill
-                                fallbackSrc={defaultPostImage}
-                                priority={idx === 0}
-                              />
-                              {remaining > 0 && idx === 3 && (
-                                <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white text-lg font-semibold">
-                                  +{remaining}
-                                </div>
-                              )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 auto-rows-[160px] md:auto-rows-[220px] gap-3">
+                    {images.slice(0, 4).map((img, idx) => {
+                      const isHero = idx === 0 && images.length > 1;
+                      const remaining = images.length - 4;
+                      return (
+                        <div
+                          key={`${img}-${idx}`}
+                          className={`relative overflow-hidden rounded-2xl ${isHero ? "col-span-2 row-span-2" : ""
+                            }`}
+                        >
+                          <MediaImage
+                            src={img || defaultPostImage}
+                            alt={`Post image ${idx + 1}`}
+                            className="object-cover transition-transform duration-700 hover:scale-105"
+                            fill
+                            fallbackSrc={defaultPostImage}
+                            priority={idx === 0}
+                          />
+                          {remaining > 0 && idx === 3 && (
+                            <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white text-lg font-semibold">
+                              +{remaining}
                             </div>
-                          );
-                        })}
-                      </div>
-                    ))}
-                </div>
-              )}
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+            </div>
+          )
+        }
 
               <div className="flex flex-wrap gap-3 text-xs uppercase tracking-[0.3em] text-white/70">
                 {post.comments > 0 && (
@@ -671,23 +658,25 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                 )}
               </div>
             </div>
-          </motion.article>
+          </motion.article >
         );
-      })}
+})}
 
-      {showCommentModal && selectedPost && (
-        <CommentModal
-          isOpen={showCommentModal}
-          onClose={() => {
-            setShowCommentModal(false);
-            setSelectedPost(null);
-          }}
-          postId={selectedPost.id}
-          postContent={selectedPost.content}
-          postAuthor={selectedPost.author?.name || "Unknown"}
-        />
-      )}
-    </div>
+{
+  showCommentModal && selectedPost && (
+    <CommentModal
+      isOpen={showCommentModal}
+      onClose={() => {
+        setShowCommentModal(false);
+        setSelectedPost(null);
+      }}
+      postId={selectedPost.id}
+      postContent={selectedPost.content}
+      postAuthor={selectedPost.author?.name || "Unknown"}
+    />
+  )
+}
+    </div >
   );
 }
 

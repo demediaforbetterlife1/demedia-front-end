@@ -307,8 +307,12 @@ export default function MessagingPage() {
     const sendMessage = async () => {
         if (!newMessage.trim() || !selectedConversation) return;
 
+        const messageContent = newMessage.trim();
         try {
-            console.log('Sending message to conversation:', selectedConversation.id);
+            console.log('=== SENDING MESSAGE ===');
+            console.log('Conversation ID:', selectedConversation.id);
+            console.log('Message content:', messageContent);
+            console.log('User ID:', user?.id);
 
             // Try main API with authentication
             const response = await apiFetch(`/api/conversations/${selectedConversation.id}/messages`, {
@@ -317,21 +321,34 @@ export default function MessagingPage() {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    content: newMessage.trim(),
-                    type: 'text'
+                    content: messageContent,
+                    type: 'text',
+                    receiverId: selectedConversation.participant.id
                 })
             }, user?.id);
 
+            console.log('API Response status:', response.status, response.ok);
+
             if (response.ok) {
                 const newMsg = await response.json();
-                console.log('Message sent successfully:', newMsg);
+                console.log('✅ Message sent successfully:', newMsg);
                 setMessages(prev => [...prev, newMsg]);
                 setNewMessage('');
+
+                // Refresh messages to ensure sync with server
+                setTimeout(() => {
+                    console.log('Refreshing messages to verify persistence...');
+                    fetchMessages(selectedConversation.id);
+                }, 500);
                 return;
+            } else {
+                const errorText = await response.text();
+                console.error('❌ API failed with status:', response.status);
+                console.error('Error response:', errorText);
             }
 
             // Fallback: Try direct fetch to backend
-            console.warn('Main API failed, trying direct fetch');
+            console.warn('Main API failed, trying direct fetch to backend...');
             const directResponse = await fetch(`https://demedia-backend.fly.dev/api/conversations/${selectedConversation.id}/messages`, {
                 method: 'POST',
                 headers: {
@@ -339,27 +356,36 @@ export default function MessagingPage() {
                 },
                 credentials: 'include',
                 body: JSON.stringify({
-                    content: newMessage.trim(),
-                    type: 'text'
+                    content: messageContent,
+                    type: 'text',
+                    receiverId: selectedConversation.participant.id
                 })
             });
 
+            console.log('Direct fetch response status:', directResponse.status, directResponse.ok);
+
             if (directResponse.ok) {
                 const newMsg = await directResponse.json();
-                console.log('Message sent via direct fetch:', newMsg);
+                console.log('✅ Message sent via direct fetch:', newMsg);
                 setMessages(prev => [...prev, newMsg]);
                 setNewMessage('');
+
+                // Refresh messages to ensure sync
+                setTimeout(() => {
+                    fetchMessages(selectedConversation.id);
+                }, 500);
                 return;
+            } else {
+                const errorText = await directResponse.text();
+                console.error('❌ Direct fetch failed:', errorText);
             }
 
-            // If both fail, log error
-            const errorText = await directResponse.text();
-            console.error('Failed to send message:', errorText);
-            alert('Failed to send message. Please try again.');
+            // If both fail, show detailed error
+            alert(`Failed to send message. Status: ${directResponse.status}. Please check console for details.`);
 
         } catch (err) {
-            console.error('Failed to send message:', err);
-            alert('Network error. Please check your connection and try again.');
+            console.error('❌ Network error sending message:', err);
+            alert(`Network error: ${err instanceof Error ? err.message : 'Unable to connect to server'}`);
         }
     };
 
@@ -553,8 +579,8 @@ export default function MessagingPage() {
                                     className={`flex ${message.senderId === Number(user?.id) ? 'justify-end' : 'justify-start'}`}
                                 >
                                     <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.senderId === Number(user?.id)
-                                            ? 'bg-purple-500 text-white'
-                                            : `${themeClasses.card} ${themeClasses.text}`
+                                        ? 'bg-purple-500 text-white'
+                                        : `${themeClasses.card} ${themeClasses.text}`
                                         }`}>
                                         <p className="text-sm">{message.content}</p>
                                         <div className="flex items-center justify-end mt-1 space-x-1">
