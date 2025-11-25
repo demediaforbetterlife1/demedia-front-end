@@ -121,12 +121,12 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       comment: "hover:text-yellow-300",
     },
     "super-dark": {
-      bg: "bg-black/95 backdrop-blur-md border border-gray-800 shadow-xl hover:shadow-2xl transition-all duration-300",
+      bg: "bg-black/90 backdrop-blur-xl border border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.15)] hover:shadow-[0_0_50px_rgba(168,85,247,0.3)] hover:border-purple-400/50 transition-all duration-500 overflow-hidden",
       text: "text-white",
-      textMuted: "text-gray-500",
+      textMuted: "text-gray-400",
       accent: "text-purple-400",
       accentColor: "#a78bfa",
-      like: "text-red-500 hover:text-red-600",
+      like: "text-red-400 hover:text-red-300",
       comment: "hover:text-purple-300",
     },
     "super-light": {
@@ -416,9 +416,13 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className={`group rounded-3xl p-5 md:p-8 cursor-pointer ${themeClasses.bg}`}
+            className={`group rounded-3xl p-5 md:p-8 cursor-pointer relative ${themeClasses.bg}`}
             onClick={() => goToPost(post.id)}
           >
+            {/* Shimmer overlay for super-dark theme */}
+            {theme === 'super-dark' && (
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-500/0 via-purple-500/5 to-pink-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+            )}
             <div className="flex items-start gap-4 mb-6 group/header" onClick={(e) => goToUser(e, author)}>
               <div className="relative w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-transparent group-hover/header:ring-2 transition-all duration-300" style={{ ["--tw-ring-color" as any]: themeClasses.accentColor }}>
                 <MediaImage
