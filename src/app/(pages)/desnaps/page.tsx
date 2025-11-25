@@ -22,30 +22,11 @@ import {
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import CreateDeSnapModal from '@/components/CreateDeSnapModal';
+import DeSnapsViewer from '@/components/DeSnapsViewer';
 import { apiFetch } from '@/lib/api';
 import { normalizeDeSnap } from '@/utils/desnapUtils';
 import { ensureAbsoluteMediaUrl } from '@/utils/mediaUtils';
-
-interface DeSnap {
-    id: number;
-    content: string;
-    thumbnail?: string;
-    duration: number;
-    visibility: 'public' | 'followers' | 'close_friends' | 'premium';
-    createdAt: string;
-    expiresAt: string;
-    likes: number;
-    comments: number;
-    views: number;
-    isLiked?: boolean;
-    isBookmarked?: boolean;
-    author: {
-        id: number;
-        name: string;
-        username: string;
-        profilePicture?: string;
-    };
-}
+import { DeSnap } from '@/types/desnap';
 
 export default function DeSnapsPage() {
     const { theme } = useTheme();
@@ -176,7 +157,7 @@ export default function DeSnapsPage() {
                 if (response.ok) {
                     data = await response.json();
                     console.log('DeSnaps data received:', data);
-                    const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap);
+                    const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap).filter(Boolean) as DeSnap[];
                     setDeSnaps(normalized);
                     return;
                 }
@@ -191,7 +172,7 @@ export default function DeSnapsPage() {
                     if (response.ok) {
                         data = await response.json();
                         console.log('User DeSnaps data received:', data);
-                        const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap);
+                        const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap).filter(Boolean) as DeSnap[];
                         setDeSnaps(normalized);
                         return;
                     }
@@ -209,7 +190,7 @@ export default function DeSnapsPage() {
                 if (directResponse.ok) {
                     data = await directResponse.json();
                     console.log('Direct DeSnaps data received:', data);
-                    const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap);
+                    const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap).filter(Boolean) as DeSnap[];
                     setDeSnaps(normalized);
                     return;
                 }
@@ -228,7 +209,7 @@ export default function DeSnapsPage() {
                     if (altResponse.ok) {
                         data = await altResponse.json();
                         console.log('Alternative DeSnaps data received:', data);
-                        const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap);
+                        const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap).filter(Boolean) as DeSnap[];
                         setDeSnaps(normalized);
                         return;
                     }
@@ -355,8 +336,8 @@ export default function DeSnapsPage() {
                                 key={filterType}
                                 onClick={() => setFilter(filterType as any)}
                                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${filter === filterType
-                                        ? 'bg-yellow-500 text-white'
-                                        : `${themeClasses.hover} ${themeClasses.textSecondary}`
+                                    ? 'bg-yellow-500 text-white'
+                                    : `${themeClasses.hover} ${themeClasses.textSecondary}`
                                     }`}
                             >
                                 {filterType.charAt(0).toUpperCase() + filterType.slice(1)}
@@ -479,6 +460,21 @@ export default function DeSnapsPage() {
                     fetchDeSnaps();
                 }}
             />
+
+            {/* DeSnap Viewer */}
+            {selectedDeSnap && (
+                <DeSnapsViewer
+                    isOpen={!!selectedDeSnap}
+                    onClose={() => {
+                        setSelectedDeSnap(null);
+                        setIsPlaying(null);
+                    }}
+                    deSnap={selectedDeSnap}
+                    onDeSnapUpdated={(updated) => {
+                        setDeSnaps(prev => prev.map(ds => ds.id === updated.id ? updated : ds));
+                    }}
+                />
+            )}
         </div>
     );
 }

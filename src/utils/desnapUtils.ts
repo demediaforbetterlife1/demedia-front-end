@@ -1,6 +1,7 @@
 import { ensureAbsoluteMediaUrl } from "./mediaUtils";
+import { DeSnap } from "@/types/desnap";
 
-export const normalizeDeSnap = (deSnap: any) => {
+export const normalizeDeSnap = (deSnap: any): DeSnap | null => {
   if (!deSnap) return null;
 
   const author = deSnap.author || deSnap.user || {
@@ -22,6 +23,9 @@ export const normalizeDeSnap = (deSnap: any) => {
     isLiked: Boolean(deSnap.isLiked || deSnap.liked),
     isBookmarked: Boolean(deSnap.isBookmarked || deSnap.bookmarked),
     createdAt: deSnap.createdAt || new Date().toISOString(),
+    expiresAt: deSnap.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Default 24 hours from now
+    visibility: deSnap.visibility || 'public',
   };
 };
+
 

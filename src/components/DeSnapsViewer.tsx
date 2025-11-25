@@ -24,20 +24,7 @@ import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { normalizeDeSnap } from "@/utils/desnapUtils";
 import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
-
-interface DeSnap {
-    id: number;
-    content: string;
-    thumbnail?: string;
-    createdAt: string;
-    likes: number;
-    comments: number;
-    views: number;
-    duration: number; // in seconds
-    visibility: 'public' | 'followers' | 'close_friends' | 'premium';
-    isLiked?: boolean;
-    isBookmarked?: boolean;
-}
+import { DeSnap } from "@/types/desnap";
 
 interface DeSnapsViewerProps {
     isOpen: boolean;

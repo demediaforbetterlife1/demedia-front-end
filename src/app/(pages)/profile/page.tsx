@@ -107,6 +107,7 @@ import { ensureAbsoluteMediaUrl, appendCacheBuster } from "@/utils/mediaUtils";
 import { normalizePost } from "@/utils/postUtils";
 import { normalizeDeSnap } from "@/utils/desnapUtils";
 import { resolveChatId } from "@/utils/chatUtils";
+import { DeSnap } from '@/types/desnap';
 const formatMediaUrl = (url?: string | null) => ensureAbsoluteMediaUrl(url) ?? null;
 interface Story {
     id: number;
@@ -119,19 +120,6 @@ interface Story {
     visibility?: 'public' | 'followers' | 'close_friends' | 'premium';
     type?: 'image' | 'video' | 'text';
     duration?: number; // in hours
-}
-interface DeSnap {
-    id: number;
-    content: string;
-    thumbnail?: string;
-    createdAt: string;
-    likes: number;
-    comments: number;
-    views: number;
-    duration: number; // in seconds
-    visibility: 'public' | 'followers' | 'close_friends' | 'premium';
-    isLiked?: boolean;
-    isBookmarked?: boolean;
 }
 interface Profile {
     id: number;
