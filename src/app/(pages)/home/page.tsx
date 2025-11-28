@@ -244,97 +244,6 @@ const BackgroundEffects = ({ theme }: { theme: string }) => {
   );
 };
 
-const WelcomeHeader = ({
-  theme,
-  themeClasses,
-}: {
-  theme: string;
-  themeClasses: any;
-}) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, delay: 0.2 }}
-      className="text-center py-8 px-4"
-    >
-      <motion.div
-        initial={{ scale: 0.9 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-        className="inline-flex items-center gap-2 mb-4"
-      >
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-        >
-          <Sparkles className={`w-6 h-6 ${themeClasses.textAccent}`} />
-        </motion.div>
-        <h1
-          className={`text-2xl font-bold bg-gradient-to-r ${
-            theme === "gold"
-              ? "from-yellow-400 via-amber-300 to-orange-400"
-              : theme === "super-dark"
-                ? "from-purple-400 via-blue-400 to-indigo-400"
-                : theme === "super-light"
-                  ? "from-blue-600 via-purple-600 to-indigo-600"
-                  : "from-blue-400 via-purple-500 to-pink-500"
-          } bg-clip-text text-transparent`}
-        >
-          Welcome to DeMedia
-        </h1>
-        <motion.div
-          animate={{ rotate: -360 }}
-          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-        >
-          <Zap className={`w-6 h-6 ${themeClasses.textAccent}`} />
-        </motion.div>
-      </motion.div>
-
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className={`${themeClasses.textSecondary} text-sm max-w-md mx-auto`}
-      >
-        Discover amazing content, connect with friends, and share your moments
-      </motion.p>
-
-      {/* Stats Row */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
-        className="flex justify-center gap-8 mt-6"
-      >
-        {[
-          { icon: Users, label: "Active Users", count: "2.5K+" },
-          { icon: TrendingUp, label: "Posts Today", count: "150+" },
-          { icon: Sparkles, label: "Stories", count: "45+" },
-        ].map((stat, index) => (
-          <motion.div
-            key={stat.label}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 1 + index * 0.1 }}
-            className={`text-center ${themeClasses.cardAccent} backdrop-blur-sm rounded-xl p-3 min-w-[80px]`}
-          >
-            <stat.icon
-              className={`w-5 h-5 mx-auto mb-1 ${themeClasses.textAccent}`}
-            />
-            <div className={`text-xs font-semibold ${themeClasses.text}`}>
-              {stat.count}
-            </div>
-            <div className={`text-xs ${themeClasses.textMuted}`}>
-              {stat.label}
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
-    </motion.div>
-  );
-};
-
 export default function HomePage() {
   const { theme } = useTheme();
   const themeClasses = getEnhancedThemeClasses(theme);
@@ -366,14 +275,11 @@ export default function HomePage() {
         transition={{ duration: 1 }}
         className="relative z-10 w-full max-w-2xl mx-auto"
       >
-        {/* Welcome Header */}
-        <WelcomeHeader theme={theme} themeClasses={themeClasses} />
-
         {/* Stories Section */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 1.2, duration: 0.6, ease: "easeOut" }}
+          transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
           className="pt-4 md:pt-8"
         >
           <Stories />
@@ -383,7 +289,7 @@ export default function HomePage() {
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 1.4, duration: 0.6, ease: "easeOut" }}
+          transition={{ delay: 0.4, duration: 0.6, ease: "easeOut" }}
           className="mt-6"
         >
           <Posts />

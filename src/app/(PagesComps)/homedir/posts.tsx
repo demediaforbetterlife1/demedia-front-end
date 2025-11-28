@@ -6,12 +6,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { apiFetch } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
 import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
-import {
-  frontendImageCache,
-  getImageDisplayUrl,
-  isCachedImage,
-  getPostDisplayImages,
-} from "@/utils/frontendImageCache";
+// Temporarily removed frontend image cache imports
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import CommentModal from "@/components/CommentModal";
@@ -154,14 +149,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   const defaultPostImage = "/images/default-post.svg";
   const defaultAvatar = "/images/default-avatar.svg";
 
-  const getImageSrc = (src?: string | null, imageId?: string) => {
-    // Try to get from frontend cache first for immediate display
-    const cachedUrl = getImageDisplayUrl(src || undefined, imageId);
-    if (isCachedImage(cachedUrl)) {
-      return cachedUrl;
-    }
-
-    // Fallback to normal URL processing
+  const getImageSrc = (src?: string | null) => {
     const normalized = ensureAbsoluteMediaUrl(src || undefined);
     return normalized || defaultPostImage;
   };
@@ -170,8 +158,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     try {
       setLoading(true);
 
-      // Clean up image cache periodically
-      frontendImageCache.cleanup();
+      // Removed image cache cleanup
 
       const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
       const res = await apiFetch(
@@ -231,8 +218,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         });
       });
 
-      // Additional cleanup for image cache
-      frontendImageCache.cleanup();
+      // Removed image cache cleanup
     } catch (err) {
       console.error("❌ Fetch posts error:", err);
       // Set empty posts if API fails completely
@@ -452,15 +438,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                 : []
         ) as string[];
 
-        // Try to get cached images first, then fallback to processed rawImages
-        const cachedImages = getPostDisplayImages(String(post.id), rawImages);
-        const images =
-          cachedImages.length > 0
-            ? cachedImages.filter(Boolean).slice(0, 4)
-            : rawImages
-                .map((img) => getImageSrc(img))
-                .filter((img): img is string => !!img)
-                .slice(0, 4);
+        const images = rawImages
+          .map((img) => getImageSrc(img))
+          .filter((img): img is string => !!img)
+          .slice(0, 4);
 
         const videoUrl = post.videoUrl
           ? ensureAbsoluteMediaUrl(post.videoUrl)

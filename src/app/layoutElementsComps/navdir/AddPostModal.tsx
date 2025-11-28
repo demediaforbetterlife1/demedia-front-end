@@ -8,10 +8,7 @@ import { getModalThemeClasses } from "@/utils/enhancedThemeUtils";
 import { contentModerationService } from "@/services/contentModeration";
 import { apiFetch } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
-import {
-  frontendImageCache,
-  processUploadedFiles,
-} from "@/utils/frontendImageCache";
+// Temporarily removed frontend image cache imports
 import {
   X,
   Image as ImageIcon,
@@ -122,15 +119,6 @@ export default function AddPostModal({
         }
 
         console.log("AddPostModal: Image moderation passed for:", file.name);
-      }
-
-      // Cache images for immediate display
-      try {
-        const postId = `temp_${Date.now()}`;
-        await processUploadedFiles(newFiles, postId);
-        console.log("✅ Images cached for immediate display");
-      } catch (error) {
-        console.error("Failed to cache images:", error);
       }
 
       setImages([...images, ...newFiles]);
@@ -448,8 +436,7 @@ export default function AddPostModal({
           }),
         );
 
-        // Clean up image cache if needed
-        frontendImageCache.cleanup();
+        // Removed image cache cleanup
 
         onClose();
       } catch {
