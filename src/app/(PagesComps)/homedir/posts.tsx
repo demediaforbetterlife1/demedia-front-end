@@ -159,7 +159,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       console.log("🚀 Starting to fetch posts...");
       setLoading(true);
 
-      const endpoint = "/api/posts";
+      const endpoint = "/api/test";
       const res = await fetch(endpoint, {
         cache: "no-store",
         headers: {
@@ -176,12 +176,12 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       const data = await res.json();
       console.log("📦 Raw data received:", data);
 
-      // Simple data extraction
+      // Simple data extraction - prioritize posts array
       let postsArray = [];
-      if (Array.isArray(data)) {
-        postsArray = data;
-      } else if (data.posts && Array.isArray(data.posts)) {
+      if (data.posts && Array.isArray(data.posts)) {
         postsArray = data.posts;
+      } else if (Array.isArray(data)) {
+        postsArray = data;
       } else if (data.data && Array.isArray(data.data)) {
         postsArray = data.data;
       }
