@@ -143,14 +143,14 @@ export default function MediaImage({
     onError?.();
   }, [src, onError, alt]);
 
+  // Determine the final image URL to use
+  const imageUrl = imageError ? getFallbackImage() : getValidImageUrl(src);
+
   const handleImageLoad = useCallback(() => {
     console.log(`MediaImage (${alt}): Successfully loaded:`, imageUrl);
     setIsLoading(false);
     onLoad?.();
   }, [onLoad, alt, imageUrl]);
-
-  // Determine the final image URL to use
-  const imageUrl = imageError ? getFallbackImage() : getValidImageUrl(src);
 
   // Build style object for img tag
   const imgStyle: React.CSSProperties = fill

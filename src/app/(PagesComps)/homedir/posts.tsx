@@ -71,7 +71,7 @@ function formatRelativeTime(dateString?: string) {
       const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
       return formatter.format(
         Math.round(duration * (diff > 0 ? -1 : 1)),
-        division.name as Intl.RelativeTimeFormatUnit
+        division.name as Intl.RelativeTimeFormatUnit,
       );
     }
     duration /= division.amount;
@@ -88,7 +88,9 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   const [loading, setLoading] = useState(true);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null);
-  const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<number>>(new Set());
+  const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<number>>(
+    new Set(),
+  );
   const [expandedPosts, setExpandedPosts] = useState<Set<number>>(new Set());
   const [shareStatus, setShareStatus] = useState<Record<number, string>>({});
 
@@ -161,7 +163,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           cache: "no-store",
           next: { revalidate: 0 },
         },
-        user?.id
+        user?.id,
       );
 
       if (!res.ok) throw new Error("Failed to fetch posts");
@@ -174,21 +176,22 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           : [data];
 
       const normalizedPosts = fetched
-        .map((p: any) => normalizePost(p))
+        .map((p: unknown) => normalizePost(p))
         .filter(Boolean)
         .reverse() as PostType[];
 
       setPosts(normalizedPosts);
 
       normalizedPosts.forEach((post) => {
-        const imgs =
-          (Array.isArray(post.images) && post.images.length > 0
+        const imgs = (
+          Array.isArray(post.images) && post.images.length > 0
             ? post.images
             : post.imageUrls && post.imageUrls.length > 0
               ? post.imageUrls
               : post.imageUrl
                 ? [post.imageUrl]
-                : []) as string[];
+                : []
+        ) as string[];
 
         imgs.forEach((img) => {
           if (typeof window === "undefined") return;
@@ -207,11 +210,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
   useEffect(() => {
     if (isVisible) fetchPosts();
-  }, [isVisible, postId, user?.id]);
+  }, [isVisible, postId, user?.id, fetchPosts]);
 
   useEffect(() => {
     const handlePostCreated = (event: Event) => {
-      const customEvent = event as CustomEvent<{ post?: any }>;
+      const customEvent = event as CustomEvent<{ post?: unknown }>;
       const newPostRaw = customEvent.detail?.post;
       if (!newPostRaw) return;
       const normalized = normalizePost(newPostRaw);
@@ -226,7 +229,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     return () => {
       window.removeEventListener(
         "post:created",
-        handlePostCreated as EventListener
+        handlePostCreated as EventListener,
       );
     };
   }, []);
@@ -249,7 +252,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     try {
       window.localStorage.setItem(
         "demedia:bookmarks",
-        JSON.stringify(Array.from(bookmarkedPosts))
+        JSON.stringify(Array.from(bookmarkedPosts)),
       );
     } catch (error) {
       console.warn("Failed to persist bookmarks", error);
@@ -262,9 +265,13 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     setPosts((prev) =>
       prev.map((p) =>
         p.id === id
-          ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 }
-          : p
-      )
+          ? {
+              ...p,
+              liked: !p.liked,
+              likes: p.liked ? p.likes - 1 : p.likes + 1,
+            }
+          : p,
+      ),
     );
 
     try {
@@ -274,7 +281,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           method: "POST",
           cache: "no-store",
         },
-        user?.id
+        user?.id,
       );
       if (!res.ok) throw new Error("Like request failed");
       const data = await res.json();
@@ -282,9 +289,13 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       setPosts((prev) =>
         prev.map((p) =>
           p.id === id
-            ? { ...p, liked: data.liked ?? p.liked, likes: data.likes ?? p.likes }
-            : p
-        )
+            ? {
+                ...p,
+                liked: data.liked ?? p.liked,
+                likes: data.likes ?? p.likes,
+              }
+            : p,
+        ),
       );
     } catch (err) {
       console.error("Like error:", err);
@@ -364,7 +375,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         showShareToast(post.id, "Share cancelled");
       }
     },
-    [showShareToast]
+    [showShareToast],
   );
 
   if (!isVisible) return null;
@@ -389,14 +400,15 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         const profilePic =
           ensureAbsoluteMediaUrl(author?.profilePicture) || defaultAvatar;
 
-        const rawImages =
-          (Array.isArray(post.images) && post.images.length > 0
+        const rawImages = (
+          Array.isArray(post.images) && post.images.length > 0
             ? post.images
             : post.imageUrls && post.imageUrls.length > 0
               ? post.imageUrls
               : post.imageUrl
                 ? [post.imageUrl]
-                : []) as string[];
+                : []
+        ) as string[];
 
         const images = rawImages
           .map((img) => getImageSrc(img))
@@ -416,14 +428,15 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className={`group rounded-3xl p-5 md:p-8 cursor-pointer relative ${themeClasses.bg} ${theme === 'super-dark'
-              ? 'ring-1 ring-purple-500/20 hover:ring-purple-400/40 before:absolute before:inset-0 before:rounded-3xl before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-700 before:bg-gradient-to-br before:from-purple-500/5 before:via-transparent before:to-pink-500/5 before:pointer-events-none'
-              : ''
-              }`}
+            className={`group rounded-3xl p-5 md:p-8 cursor-pointer relative ${themeClasses.bg} ${
+              theme === "super-dark"
+                ? "ring-1 ring-purple-500/20 hover:ring-purple-400/40 before:absolute before:inset-0 before:rounded-3xl before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-700 before:bg-gradient-to-br before:from-purple-500/5 before:via-transparent before:to-pink-500/5 before:pointer-events-none"
+                : ""
+            }`}
             onClick={() => goToPost(post.id)}
           >
             {/* Enhanced shimmer and glow effects for super-dark theme */}
-            {theme === 'super-dark' && (
+            {theme === "super-dark" && (
               <>
                 {/* Animated border glow */}
                 <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
@@ -439,13 +452,23 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                       linear-gradient(rgba(168, 85, 247, 0.1) 1px, transparent 1px),
                       linear-gradient(90deg, rgba(168, 85, 247, 0.1) 1px, transparent 1px)
                     `,
-                    backgroundSize: '32px 32px'
+                    backgroundSize: "32px 32px",
                   }}
                 />
               </>
             )}
-            <div className="flex items-start gap-4 mb-6 group/header" onClick={(e) => goToUser(e, author)}>
-              <div className="relative w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-transparent group-hover/header:ring-2 transition-all duration-300" style={{ ["--tw-ring-color" as any]: themeClasses.accentColor }}>
+            <div
+              className="flex items-start gap-4 mb-6 group/header"
+              onClick={(e) => goToUser(e, author)}
+            >
+              <div
+                className="relative w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-transparent group-hover/header:ring-2 transition-all duration-300"
+                style={
+                  {
+                    "--tw-ring-color": themeClasses.accentColor,
+                  } as React.CSSProperties
+                }
+              >
                 <MediaImage
                   src={profilePic}
                   alt="User avatar"
@@ -474,7 +497,9 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
             </div>
 
             {post.title && (
-              <h2 className={`text-2xl font-semibold ${themeClasses.text} mb-4`}>
+              <h2
+                className={`text-2xl font-semibold ${themeClasses.text} mb-4`}
+              >
                 {post.title}
               </h2>
             )}
@@ -482,8 +507,9 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
             <div className="flex flex-col gap-3 mb-6">
               {post.content && (
                 <p
-                  className={`text-base leading-relaxed ${themeClasses.text} font-light select-text ${!isExpanded && shouldClamp ? "line-clamp-3" : ""
-                    }`}
+                  className={`text-base leading-relaxed ${themeClasses.text} font-light select-text ${
+                    !isExpanded && shouldClamp ? "line-clamp-3" : ""
+                  }`}
                 >
                   {post.content}
                 </p>
@@ -530,8 +556,9 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                         return (
                           <div
                             key={`${img}-${idx}`}
-                            className={`relative overflow-hidden rounded-2xl ${isHero ? "col-span-2 row-span-2" : ""
-                              }`}
+                            className={`relative overflow-hidden rounded-2xl ${
+                              isHero ? "col-span-2 row-span-2" : ""
+                            }`}
                           >
                             <MediaImage
                               src={img || defaultPostImage}
@@ -578,10 +605,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   whileTap={{ scale: 0.9 }}
                   whileHover={{ scale: 1.05 }}
                   onClick={(e) => handleLike(e, post.id)}
-                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${theme === 'super-dark'
-                    ? `bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]`
-                    : 'bg-white/5 backdrop-blur-sm'
-                    } transition-all duration-300 ${post.liked ? themeClasses.like : themeClasses.textMuted}`}
+                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${
+                    theme === "super-dark"
+                      ? `bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]`
+                      : "bg-white/5 backdrop-blur-sm"
+                  } transition-all duration-300 ${post.liked ? themeClasses.like : themeClasses.textMuted}`}
                 >
                   <motion.svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -613,10 +641,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                     setSelectedPost(post);
                     setShowCommentModal(true);
                   }}
-                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${theme === 'super-dark'
-                    ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]'
-                    : 'bg-white/5 backdrop-blur-sm'
-                    } ${themeClasses.comment} transition-all duration-300`}
+                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${
+                    theme === "super-dark"
+                      ? "bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]"
+                      : "bg-white/5 backdrop-blur-sm"
+                  } ${themeClasses.comment} transition-all duration-300`}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -639,10 +668,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   whileTap={{ scale: 0.9 }}
                   whileHover={{ scale: 1.05 }}
                   onClick={(e) => toggleBookmark(e, post.id)}
-                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${theme === 'super-dark'
-                    ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]'
-                    : 'bg-white/5 backdrop-blur-sm'
-                    } transition-all duration-300 ${isBookmarked ? themeClasses.accent : themeClasses.textMuted}`}
+                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${
+                    theme === "super-dark"
+                      ? "bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]"
+                      : "bg-white/5 backdrop-blur-sm"
+                  } transition-all duration-300 ${isBookmarked ? themeClasses.accent : themeClasses.textMuted}`}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -665,10 +695,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   whileTap={{ scale: 0.9 }}
                   whileHover={{ scale: 1.05 }}
                   onClick={(e) => handleShare(e, post)}
-                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${theme === 'super-dark'
-                      ? 'bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]'
-                      : 'bg-white/5 backdrop-blur-sm'
-                    } text-white/80 hover:text-white transition-all duration-300`}
+                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${
+                    theme === "super-dark"
+                      ? "bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]"
+                      : "bg-white/5 backdrop-blur-sm"
+                  } text-white/80 hover:text-white transition-all duration-300`}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
