@@ -154,83 +154,79 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     return normalized || defaultPostImage;
   };
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
+      console.log("🚀 Starting to fetch posts...");
       setLoading(true);
 
-      // Removed image cache cleanup
-
-      const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
-      const res = await apiFetch(
-        endpoint,
-        {
-          cache: "no-store",
-          next: { revalidate: 0 },
+      const endpoint = "/api/posts";
+      const res = await fetch(endpoint, {
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json",
         },
-        user?.id,
-      );
-
-      if (!res.ok) throw new Error("Failed to fetch posts");
-      const data = await res.json();
-
-      // Handle both backend posts and local posts
-      const fetched = Array.isArray(data)
-        ? data
-        : Array.isArray(data.posts)
-          ? data.posts
-          : Array.isArray(data.data)
-            ? data.data
-            : [data];
-
-      const normalizedPosts = fetched
-        .map((p: unknown) => normalizePost(p))
-        .filter(Boolean) as PostType[];
-
-      // Sort posts by creation date (newest first)
-      const sortedPosts = normalizedPosts.sort(
-        (a, b) =>
-          new Date(b.createdAt || 0).getTime() -
-          new Date(a.createdAt || 0).getTime(),
-      );
-
-      setPosts(sortedPosts);
-
-      // Preload images for better UX
-      sortedPosts.forEach((post) => {
-        const imgs = (
-          Array.isArray(post.images) && post.images.length > 0
-            ? post.images
-            : post.imageUrls && post.imageUrls.length > 0
-              ? post.imageUrls
-              : post.imageUrl
-                ? [post.imageUrl]
-                : []
-        ) as string[];
-
-        imgs.forEach((img) => {
-          if (typeof window === "undefined") return;
-          // Skip base64 images as they don't need preloading
-          if (img.startsWith("data:")) return;
-
-          const src = getImageSrc(img);
-          const imageLoader = new Image();
-          imageLoader.src = src;
-        });
       });
 
-      // Removed image cache cleanup
+      console.log("📡 API Response status:", res.status);
+
+      if (!res.ok) {
+        throw new Error(`API Error: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("📦 Raw data received:", data);
+
+      // Simple data extraction
+      let postsArray = [];
+      if (Array.isArray(data)) {
+        postsArray = data;
+      } else if (data.posts && Array.isArray(data.posts)) {
+        postsArray = data.posts;
+      } else if (data.data && Array.isArray(data.data)) {
+        postsArray = data.data;
+      }
+
+      console.log("📋 Posts array:", postsArray.length, "posts");
+
+      // Basic normalization
+      const normalizedPosts = postsArray
+        .filter((post) => post && typeof post === "object")
+        .map((post) => ({
+          id: post.id,
+          title: post.title || null,
+          content: post.content || "",
+          imageUrl: post.imageUrl || null,
+          imageUrls: post.imageUrls || [],
+          videoUrl: post.videoUrl || null,
+          createdAt: post.createdAt || new Date().toISOString(),
+          updatedAt: post.updatedAt || new Date().toISOString(),
+          author: post.author ||
+            post.user || {
+              id: post.userId || 1,
+              username: "Unknown",
+              name: "Unknown User",
+              profilePicture: null,
+            },
+        }));
+
+      console.log("✨ Normalized posts:", normalizedPosts.length);
+
+      setPosts(normalizedPosts);
+      console.log("✅ Posts set successfully!");
     } catch (err) {
       console.error("❌ Fetch posts error:", err);
-      // Set empty posts if API fails completely
       setPosts([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    if (isVisible) fetchPosts();
-  }, [isVisible, postId, user?.id, fetchPosts]);
+    console.log("🎯 UseEffect triggered - isVisible:", isVisible);
+    if (isVisible) {
+      fetchPosts();
+    }
+  }, [isVisible, fetchPosts]);
 
   useEffect(() => {
     const handlePostCreated = (event: Event) => {
@@ -406,9 +402,20 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     [showShareToast],
   );
 
-  if (!isVisible) return null;
+  console.log("🎬 Render - Posts component state:", {
+    isVisible,
+    loading,
+    postsLength: posts.length,
+    posts: posts.slice(0, 2), // Show first 2 posts for debugging
+  });
+
+  if (!isVisible) {
+    console.log("❌ Posts not visible, returning null");
+    return null;
+  }
 
   if (loading) {
+    console.log("⏳ Posts loading, showing skeleton");
     return (
       <div className="flex flex-col gap-4 p-4 md:p-6 max-w-3xl mx-auto w-full">
         {Array.from({ length: 3 }).map((_, idx) => (
@@ -418,10 +425,15 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     );
   }
 
+  console.log("🎯 Rendering posts section with", posts.length, "posts");
+
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6 max-w-3xl mx-auto w-full">
       {posts.length === 0 && (
-        <EmptyState themeClasses={themeClasses} fetchPosts={fetchPosts} />
+        <div>
+          <p style={{ color: "red", padding: "20px" }}>DEBUG: No posts found</p>
+          <EmptyState themeClasses={themeClasses} fetchPosts={fetchPosts} />
+        </div>
       )}
       {posts.map((post) => {
         const author = post.author;
