@@ -190,8 +190,8 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
       // Basic normalization
       const normalizedPosts = postsArray
-        .filter((post) => post && typeof post === "object")
-        .map((post) => ({
+        .filter((post: any) => post && typeof post === "object")
+        .map((post: any) => ({
           id: post.id,
           title: post.title || null,
           content: post.content || "",
@@ -207,7 +207,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               name: "Unknown User",
               profilePicture: null,
             },
-        }));
+        })) as PostType[];
 
       console.log("✨ Normalized posts:", normalizedPosts.length);
 
