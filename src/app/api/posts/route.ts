@@ -63,9 +63,6 @@ export async function GET(request: NextRequest) {
 // ✅ إنشاء بوست جديد
 export async function POST(request: NextRequest) {
   try {
-    const backendUrl =
-      (process.env.BACKEND_URL || "https://demedia-backend.fly.dev") +
-      "/api/posts";
     const body = await request.json();
     const userId = request.headers.get("user-id");
 
@@ -85,6 +82,10 @@ export async function POST(request: NextRequest) {
         { status: 401 },
       );
     }
+
+    const backendUrl =
+      (process.env.BACKEND_URL || "https://demedia-backend.fly.dev") +
+      "/api/posts";
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",

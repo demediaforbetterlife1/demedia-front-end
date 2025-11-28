@@ -9,6 +9,10 @@ import { contentModerationService } from "@/services/contentModeration";
 import { apiFetch } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
 import {
+  frontendImageCache,
+  processUploadedFiles,
+} from "@/utils/frontendImageCache";
+import {
   X,
   Image as ImageIcon,
   Video as VideoIcon,
@@ -118,6 +122,15 @@ export default function AddPostModal({
         }
 
         console.log("AddPostModal: Image moderation passed for:", file.name);
+      }
+
+      // Cache images for immediate display
+      try {
+        const postId = `temp_${Date.now()}`;
+        await processUploadedFiles(newFiles, postId);
+        console.log("✅ Images cached for immediate display");
+      } catch (error) {
+        console.error("Failed to cache images:", error);
       }
 
       setImages([...images, ...newFiles]);
@@ -425,6 +438,7 @@ export default function AddPostModal({
       try {
         const newPost = JSON.parse(responseText);
         const normalizedPost = normalizePost(newPost) || newPost;
+
         alert("✅ Post created successfully!");
 
         // Dispatch event to refresh posts list
@@ -433,6 +447,9 @@ export default function AddPostModal({
             detail: { post: normalizedPost },
           }),
         );
+
+        // Clean up image cache if needed
+        frontendImageCache.cleanup();
 
         onClose();
       } catch {

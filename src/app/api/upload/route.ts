@@ -183,34 +183,6 @@ export async function POST(request: NextRequest) {
     } catch (backendError) {
       console.error("Upload API: Backend connection error", backendError);
 
-      // For development/fallback: Convert to base64
-      if (process.env.NODE_ENV === "development") {
-        console.log("Upload API: Using development fallback (base64)");
-        try {
-          const arrayBuffer = await file.arrayBuffer();
-          const base64 = Buffer.from(arrayBuffer).toString("base64");
-          const dataUrl = `data:${file.type};base64,${base64}`;
-
-          const fallbackResponse = {
-            success: true,
-            url: dataUrl,
-            imageUrl: dataUrl,
-            filename: file.name,
-            size: file.size,
-            type: type,
-            message: "File uploaded (development fallback)",
-          };
-
-          console.log("Upload API: Returning fallback response", {
-            filename: file.name,
-            size: file.size,
-          });
-          return NextResponse.json(fallbackResponse);
-        } catch (fallbackError) {
-          console.error("Upload API: Fallback failed", fallbackError);
-        }
-      }
-
       return NextResponse.json(
         {
           error: "Upload service unavailable",

@@ -6,6 +6,12 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { apiFetch } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
 import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
+import {
+  frontendImageCache,
+  getImageDisplayUrl,
+  isCachedImage,
+  getPostDisplayImages,
+} from "@/utils/frontendImageCache";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import CommentModal from "@/components/CommentModal";
@@ -148,7 +154,14 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   const defaultPostImage = "/images/default-post.svg";
   const defaultAvatar = "/images/default-avatar.svg";
 
-  const getImageSrc = (src?: string | null) => {
+  const getImageSrc = (src?: string | null, imageId?: string) => {
+    // Try to get from frontend cache first for immediate display
+    const cachedUrl = getImageDisplayUrl(src || undefined, imageId);
+    if (isCachedImage(cachedUrl)) {
+      return cachedUrl;
+    }
+
+    // Fallback to normal URL processing
     const normalized = ensureAbsoluteMediaUrl(src || undefined);
     return normalized || defaultPostImage;
   };
@@ -156,6 +169,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   const fetchPosts = async () => {
     try {
       setLoading(true);
+
+      // Clean up image cache periodically
+      frontendImageCache.cleanup();
+
       const endpoint = postId ? `/api/posts/${postId}` : "/api/posts";
       const res = await apiFetch(
         endpoint,
@@ -169,20 +186,30 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       if (!res.ok) throw new Error("Failed to fetch posts");
       const data = await res.json();
 
+      // Handle both backend posts and local posts
       const fetched = Array.isArray(data)
         ? data
-        : Array.isArray(data.data)
-          ? data.data
-          : [data];
+        : Array.isArray(data.posts)
+          ? data.posts
+          : Array.isArray(data.data)
+            ? data.data
+            : [data];
 
       const normalizedPosts = fetched
         .map((p: unknown) => normalizePost(p))
-        .filter(Boolean)
-        .reverse() as PostType[];
+        .filter(Boolean) as PostType[];
 
-      setPosts(normalizedPosts);
+      // Sort posts by creation date (newest first)
+      const sortedPosts = normalizedPosts.sort(
+        (a, b) =>
+          new Date(b.createdAt || 0).getTime() -
+          new Date(a.createdAt || 0).getTime(),
+      );
 
-      normalizedPosts.forEach((post) => {
+      setPosts(sortedPosts);
+
+      // Preload images for better UX
+      sortedPosts.forEach((post) => {
         const imgs = (
           Array.isArray(post.images) && post.images.length > 0
             ? post.images
@@ -195,13 +222,20 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
         imgs.forEach((img) => {
           if (typeof window === "undefined") return;
+          // Skip base64 images as they don't need preloading
+          if (img.startsWith("data:")) return;
+
           const src = getImageSrc(img);
           const imageLoader = new Image();
           imageLoader.src = src;
         });
       });
+
+      // Additional cleanup for image cache
+      frontendImageCache.cleanup();
     } catch (err) {
       console.error("❌ Fetch posts error:", err);
+      // Set empty posts if API fails completely
       setPosts([]);
     } finally {
       setLoading(false);
@@ -219,6 +253,14 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       if (!newPostRaw) return;
       const normalized = normalizePost(newPostRaw);
       if (!normalized) return;
+
+      console.log("✅ New post created:", {
+        id: normalized.id,
+        isLocal: (normalized as any).isLocalPost,
+        hasImages:
+          normalized.imageUrls?.length || normalized.images?.length || 0,
+      });
+
       setPosts((prev) => {
         const filtered = prev.filter((p) => p.id !== normalized.id);
         return [normalized as PostType, ...filtered];
@@ -410,9 +452,15 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                 : []
         ) as string[];
 
-        const images = rawImages
-          .map((img) => getImageSrc(img))
-          .filter((img): img is string => !!img);
+        // Try to get cached images first, then fallback to processed rawImages
+        const cachedImages = getPostDisplayImages(String(post.id), rawImages);
+        const images =
+          cachedImages.length > 0
+            ? cachedImages.filter(Boolean).slice(0, 4)
+            : rawImages
+                .map((img) => getImageSrc(img))
+                .filter((img): img is string => !!img)
+                .slice(0, 4);
 
         const videoUrl = post.videoUrl
           ? ensureAbsoluteMediaUrl(post.videoUrl)
