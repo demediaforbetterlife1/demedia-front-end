@@ -67,6 +67,10 @@ export default function DeSnapsViewer({
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [isDebugging, setIsDebugging] = useState(false);
+  const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(
+    null,
+  );
+  const [errorCount, setErrorCount] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
@@ -138,6 +142,28 @@ export default function DeSnapsViewer({
       const handleLoadedData = () => {
         console.log("✅ Video loaded successfully:", video.src);
         console.log("⏱️ Video duration:", video.duration);
+        // Clear any error state when video loads successfully
+        setVideoError(null);
+        setErrorCount(0);
+        if (loadingTimeout) {
+          clearTimeout(loadingTimeout);
+          setLoadingTimeout(null);
+        }
+      };
+
+      const handleLoadStart = () => {
+        console.log("🔄 Video load started:", video.src);
+        // Clear error when video starts loading
+        if (videoError) {
+          setVideoError(null);
+        }
+      };
+
+      const handleCanPlay = () => {
+        console.log("✅ Video can play:", video.src);
+        // Clear error when video becomes playable
+        setVideoError(null);
+        setErrorCount(0);
       };
 
       const handleError = (e: Event) => {
@@ -149,18 +175,36 @@ export default function DeSnapsViewer({
         };
         console.error("❌ Video loading error:", errorDetails);
 
-        const errorMessage = video.error?.message || "Video failed to load";
-        setVideoError(errorMessage);
+        // Increment error count but don't immediately show error
+        setErrorCount((prev) => prev + 1);
+
+        // Only show error after video has had sufficient time to load
+        setTimeout(() => {
+          if (video.readyState === 0 && video.networkState === 3) {
+            const errorMessage = video.error?.message || "Video failed to load";
+            setVideoError(errorMessage);
+          }
+        }, 8000); // Wait 8 seconds before showing error
       };
 
       video.addEventListener("timeupdate", handleTimeUpdate);
       video.addEventListener("ended", handleEnded);
       video.addEventListener("loadeddata", handleLoadedData);
+      video.addEventListener("loadstart", handleLoadStart);
+      video.addEventListener("canplay", handleCanPlay);
       video.addEventListener("error", handleError);
 
       // Auto-play when viewer opens
       if (isOpen) {
         console.log("▶️ Attempting autoplay...");
+
+        // Set a timeout to show loading error if video doesn't load within 15 seconds
+        const timeout = setTimeout(() => {
+          if (video.readyState === 0) {
+            setVideoError("Video is taking too long to load");
+          }
+        }, 15000);
+        setLoadingTimeout(timeout);
 
         // Wait a bit for video to be ready
         const attemptPlay = () => {
@@ -189,7 +233,12 @@ export default function DeSnapsViewer({
         video.removeEventListener("timeupdate", handleTimeUpdate);
         video.removeEventListener("ended", handleEnded);
         video.removeEventListener("loadeddata", handleLoadedData);
+        video.removeEventListener("loadstart", handleLoadStart);
+        video.removeEventListener("canplay", handleCanPlay);
         video.removeEventListener("error", handleError);
+        if (loadingTimeout) {
+          clearTimeout(loadingTimeout);
+        }
       };
     }
   }, [isOpen, deSnap.content]);
@@ -403,12 +452,16 @@ export default function DeSnapsViewer({
                   "🔄 Video load started:",
                   ensureAbsoluteMediaUrl(deSnap.content) || deSnap.content,
                 );
+                // Clear any existing error when video starts loading
+                setVideoError(null);
               }}
               onCanPlay={() => {
                 console.log(
                   "✅ Video can play:",
                   ensureAbsoluteMediaUrl(deSnap.content) || deSnap.content,
                 );
+                // Clear error when video becomes playable
+                setVideoError(null);
               }}
               onError={(e) => {
                 console.error("❌ Video element error event fired");
@@ -427,10 +480,6 @@ export default function DeSnapsViewer({
                   readyState: video.readyState,
                 });
 
-                const errorMessage =
-                  video.error?.message || "Video failed to load";
-                setVideoError(errorMessage);
-
                 // Try alternative URL formats with video debugger
                 const alternatives =
                   videoDebugger.getAlternativeUrls(originalUrl);
@@ -444,11 +493,41 @@ export default function DeSnapsViewer({
                     break;
                   }
                 }
+
+                // Only show error if no alternatives worked and video is truly failed
+                if (!triedAlternative) {
+                  setTimeout(() => {
+                    if (video.readyState === 0 && video.networkState === 3) {
+                      const errorMessage =
+                        video.error?.message || "Video failed to load";
+                      setVideoError(errorMessage);
+                    }
+                  }, 5000);
+                }
+
+                // Only set error after trying alternatives and waiting
+                if (!triedAlternative) {
+                  setTimeout(() => {
+                    if (video.readyState === 0) {
+                      // Don't immediately set error - let the retry mechanism work first
+                    }
+                  }, 1000);
+                }
               }}
             />
 
-            {/* Video error overlay */}
-            {videoError && (
+            {/* Loading indicator - show while video is loading */}
+            {!videoError && videoRef.current?.readyState === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                <div className="text-center text-white p-6">
+                  <div className="w-12 h-12 mx-auto mb-4 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                  <p className="text-sm">Loading video...</p>
+                </div>
+              </div>
+            )}
+
+            {/* Video error overlay - only show if video truly failed */}
+            {videoError && videoRef.current?.readyState === 0 && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/80">
                 <div className="text-center text-white p-6">
                   <div className="mb-4">
@@ -466,6 +545,7 @@ export default function DeSnapsViewer({
                   <button
                     onClick={() => {
                       setVideoError(null);
+                      setErrorCount(0);
                       if (videoRef.current) {
                         const finalUrl =
                           ensureAbsoluteMediaUrl(deSnap.content) ||
