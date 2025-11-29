@@ -159,13 +159,15 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       console.log("🚀 Starting to fetch posts...");
       setLoading(true);
 
-      const endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'https://demedia-backend.fly.dev'}/api/posts`;
-      const res = await fetch(endpoint, {
-        cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
+      // Use apiFetch to include authentication headers
+      const res = await apiFetch(
+        "/api/posts",
+        {
+          method: "GET",
+          cache: "no-store",
         },
-      });
+        user?.id,
+      );
 
       console.log("📡 API Response status:", res.status);
 
