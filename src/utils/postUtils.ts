@@ -72,6 +72,8 @@ export const normalizePost = (post: any) => {
     imageUrl: primaryImage,
     images: formattedImages,
     videoUrl,
+    likes: post.likes ?? post.likesCount ?? 0,
+    comments: post.comments ?? post.commentsCount ?? 0,
     liked: Boolean(post.liked || post.isLiked),
     bookmarked: Boolean(post.bookmarked || post.isBookmarked),
     createdAt: post.createdAt || post.created_at || new Date().toISOString(),

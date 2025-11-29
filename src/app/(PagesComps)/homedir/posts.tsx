@@ -190,7 +190,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
       console.log("📋 Posts array:", postsArray.length, "posts");
 
-      // Basic normalization - now includes likes and liked status from backen
+      // Basic normalization - now includes likes and liked status from backend
       const normalizedPosts = postsArray
         .filter((post: any) => post && typeof post === "object")
         .map((post: any) => ({
@@ -200,6 +200,9 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           imageUrl: post.imageUrl || null,
           imageUrls: post.imageUrls || [],
           videoUrl: post.videoUrl || null,
+          likes: post.likes || 0,
+          comments: post.comments || 0,
+          liked: post.liked || false,
           createdAt: post.createdAt || new Date().toISOString(),
           updatedAt: post.updatedAt || new Date().toISOString(),
           author: post.author ||
@@ -294,7 +297,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           ? {
               ...p,
               liked: !p.liked,
-              likes: p.liked ? p.likes - 1 : p.likes + 1,
+              likes: p.liked ? (p.likes || 1) - 1 : (p.likes || 0) + 1,
             }
           : p,
       ),
@@ -673,7 +676,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                       d="M12 21C12 21 4 13.667 4 8.667C4 5.4 6.4 3 9.667 3C11.389 3 13 4.067 13.833 5.533C14.667 4.067 16.278 3 18 3C21.267 3 23.667 5.4 23.667 8.667C23.667 13.667 16 21 16 21H12Z"
                     />
                   </motion.svg>
-                  <span>{post.likes}</span>
+                  <span>{post.likes || 0}</span>
                 </motion.button>
 
                 <motion.button
@@ -704,7 +707,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                       d="M7 8h10M7 12h6m5 8a9 9 0 10-9-9c0 1.52.38 2.96 1.05 4.23L7 20l4.77-2.05A9.01 9.01 0 0018 20z"
                     />
                   </svg>
-                  <span>{post.comments}</span>
+                  <span>{post.comments || 0}</span>
                 </motion.button>
 
                 <motion.button
