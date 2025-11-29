@@ -234,42 +234,102 @@ export default function ChatPage() {
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || isSending) return;
+    if (!newMessage.trim() || isSending || !user?.id) return;
 
     const messageContent = newMessage.trim();
     setNewMessage("");
     setIsSending(true);
+    setError(null);
+
+    // Create optimistic message
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`,
+      content: messageContent,
+      senderId: user.id,
+      chatId,
+      type: 'text',
+      createdAt: new Date().toISOString(),
+      status: 'sent',
+      sender: {
+        id: user.id,
+        name: user.name || 'You',
+        username: user.username || '',
+        profilePicture: user.profilePicture || undefined
+      }
+    };
+
+    // Add optimistic message to UI
+    setMessages(prev => [...prev, optimisticMessage]);
+    scrollToBottom();
 
     try {
-      const response = await apiFetch('/api/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chatId,
-          senderId: user?.id,
-          content: messageContent,
-          type: 'text'
-        })
-      }, user?.id);
+      // Try multiple API endpoints
+      let response;
+      let newMsg;
+      
+      // Try endpoint 1: /api/chats/:chatId/messages
+      try {
+        response = await apiFetch(`/api/chats/${chatId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            senderId: user.id,
+            content: messageContent,
+            type: 'text'
+          })
+        }, user.id);
 
-      if (response.ok) {
-        const newMsg = await response.json();
-        setMessages(prev => [...prev, newMsg]);
+        if (response.ok) {
+          newMsg = await response.json();
+        }
+      } catch (e) {
+        console.log('Endpoint 1 failed, trying endpoint 2');
+      }
+
+      // Try endpoint 2: /api/messages
+      if (!newMsg) {
+        response = await apiFetch(`/api/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chatId,
+            senderId: user.id,
+            content: messageContent,
+            type: 'text'
+          })
+        }, user.id);
+
+        if (response.ok) {
+          newMsg = await response.json();
+        }
+      }
+
+      if (newMsg) {
+        // Replace optimistic message with real one
+        setMessages(prev => prev.map(msg => 
+          msg.id === optimisticMessage.id ? newMsg : msg
+        ));
         
         // Play sound if enabled
         if (soundEnabled) {
           playMessageSound();
         }
       } else {
-        const errTxt = await response.text().catch(() => '');
-        console.error('Failed to send message', response.status, errTxt);
-        setError('Failed to send message');
+        const errTxt = await response?.text().catch(() => '') || '';
+        console.error('Failed to send message', response?.status, errTxt);
+        setError('Failed to send message. Please try again.');
+        // Remove optimistic message on failure
+        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
       }
     } catch (err) {
       console.error('Error sending message:', err);
-      setError('Failed to send message');
+      setError('Failed to send message. Please check your connection.');
+      // Remove optimistic message on failure
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
     } finally {
       setIsSending(false);
     }
@@ -439,34 +499,35 @@ export default function ChatPage() {
   return (
     <div className={`min-h-screen flex flex-col ${themeClasses.bg}`}>
       {/* Header */}
-      <div className={`sticky top-0 z-40 ${themeClasses.card} ${themeClasses.border} border-b px-4 py-4 ${themeClasses.shadow}`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+      <div className={`sticky top-0 z-40 ${themeClasses.card} ${themeClasses.border} border-b px-3 sm:px-4 py-3 sm:py-4 ${themeClasses.shadow}`}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
             <button
               onClick={() => router.push('/messeging')}
-              className={`p-2 rounded-lg ${themeClasses.hover} transition-colors`}
+              className={`p-2 rounded-lg ${themeClasses.hover} transition-colors flex-shrink-0`}
+              aria-label="Back to messages"
             >
               <FiArrowLeft size={20} />
             </button>
             
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold flex-shrink-0">
               {otherParticipant?.name?.charAt(0) || 'U'}
             </div>
             
-            <div>
-              <h1 className={`text-lg font-semibold ${themeClasses.text}`}>
+            <div className="min-w-0 flex-1">
+              <h1 className={`text-base sm:text-lg font-semibold ${themeClasses.text} truncate`}>
                 {otherParticipant?.name || 'Unknown User'}
               </h1>
-              <p className={`text-sm ${themeClasses.text} opacity-70`}>
+              <p className={`text-xs sm:text-sm ${themeClasses.text} opacity-70`}>
                 {showOnlineStatus ? 'Online' : 'Offline'}
               </p>
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
             <button
               onClick={() => setShowSettings(true)}
-              className={`p-2 rounded-lg ${themeClasses.hover} transition-colors`}
+              className={`p-2 rounded-lg ${themeClasses.hover} transition-colors hidden sm:block`}
               title="Settings"
             >
               <FiSettings size={20} />
@@ -474,7 +535,7 @@ export default function ChatPage() {
             
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`p-2 rounded-lg ${themeClasses.hover} transition-colors`}
+              className={`p-2 rounded-lg ${themeClasses.hover} transition-colors hidden sm:block`}
               title={soundEnabled ? "Mute sounds" : "Enable sounds"}
             >
               {soundEnabled ? <FiVolume2 size={20} /> : <FiVolumeX size={20} />}
@@ -484,22 +545,43 @@ export default function ChatPage() {
               <button
                 onClick={() => setShowChatMenu(!showChatMenu)}
                 className={`p-2 rounded-lg ${themeClasses.hover} transition-colors`}
+                aria-label="Chat options"
               >
                 <FiMoreVertical size={20} />
               </button>
               
               {showChatMenu && (
-                <div className={`absolute right-0 top-12 ${themeClasses.card} border ${themeClasses.border} rounded-lg shadow-lg z-50 min-w-48`}>
+                <div className={`absolute right-0 top-12 ${themeClasses.card} border ${themeClasses.border} rounded-lg shadow-xl z-50 min-w-48`}>
+                  <button
+                    onClick={() => {
+                      setShowSettings(true);
+                      setShowChatMenu(false);
+                    }}
+                    className={`w-full px-4 py-3 text-left ${themeClasses.hover} flex items-center gap-3 sm:hidden`}
+                  >
+                    <FiSettings size={16} />
+                    Settings
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSoundEnabled(!soundEnabled);
+                      setShowChatMenu(false);
+                    }}
+                    className={`w-full px-4 py-3 text-left ${themeClasses.hover} flex items-center gap-3 sm:hidden`}
+                  >
+                    {soundEnabled ? <FiVolume2 size={16} /> : <FiVolumeX size={16} />}
+                    {soundEnabled ? 'Mute' : 'Unmute'}
+                  </button>
                   <button
                     onClick={handleBlockUser}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-700 flex items-center gap-3 text-red-400"
+                    className={`w-full px-4 py-3 text-left ${themeClasses.hover} flex items-center gap-3 text-red-400`}
                   >
                     <FiUserX size={16} />
                     Block User
                   </button>
                   <button
                     onClick={handleDeleteChat}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-700 flex items-center gap-3 text-red-400"
+                    className={`w-full px-4 py-3 text-left ${themeClasses.hover} flex items-center gap-3 text-red-400`}
                   >
                     <FiTrash2 size={16} />
                     Delete Chat
@@ -512,7 +594,12 @@ export default function ChatPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div 
+        className="flex-1 overflow-y-auto p-4 space-y-4 pb-24 sm:pb-4"
+        style={{
+          paddingBottom: 'max(6rem, calc(70px + env(safe-area-inset-bottom)))'
+        }}
+      >
         {messages.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -527,13 +614,13 @@ export default function ChatPage() {
               key={message.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'} group`}
             >
-              <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+              <div className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-4 py-2.5 rounded-2xl ${
                 message.senderId === user?.id 
                   ? themeClasses.messageOwn 
                   : themeClasses.messageOther
-              }`}>
+              } break-words`}>
                 {editingMessage === message.id ? (
                   <div className="flex items-center space-x-2">
                     <input
@@ -624,45 +711,67 @@ export default function ChatPage() {
         )}
       </AnimatePresence>
 
-      {/* Message Input */}
-      <div className={`p-3 sm:p-4 border-t ${themeClasses.border} ${themeClasses.card} sticky bottom-0 z-40`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="flex items-center gap-2">
+      {/* Message Input - Mobile Optimized */}
+      <div 
+        className={`p-3 sm:p-4 border-t ${themeClasses.border} ${themeClasses.card} fixed sm:sticky bottom-0 left-0 right-0 z-50 safe-bottom shadow-lg`}
+        style={{ 
+          paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+          minHeight: '70px'
+        }}
+      >
+        {error && (
+          <div className="mb-2 text-red-400 text-xs sm:text-sm text-center bg-red-900/20 px-3 py-1.5 rounded-lg">
+            {error}
+          </div>
+        )}
+        
+        <div className="flex items-end gap-2 max-w-full">
           <button
             onClick={() => setShowStickers(!showStickers)}
-            className={`p-2 rounded-lg ${themeClasses.hover} transition-colors`}
-            >
-            <FiSmile size={20} />
+            className={`p-2.5 rounded-full ${themeClasses.hover} transition-colors flex-shrink-0 mb-0.5`}
+            aria-label="Show stickers"
+            type="button"
+          >
+            <FiSmile size={22} />
           </button>
           
-          <div className="flex-1 relative">
-            <input
-              type="text"
+          <div className="flex-1 relative min-w-0">
+            <textarea
               value={newMessage}
-              onChange={handleTyping}
-              onKeyDown={handleKeyDown}
+              onChange={(e) => {
+                setNewMessage(e.target.value);
+                handleTyping(e as any);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
               placeholder="Type a message..."
               aria-label="Message input"
-              className={`w-full px-4 py-3 rounded-full ${themeClasses.input} focus:outline-none focus:ring-2 focus:ring-cyan-500`}
+              rows={1}
+              className={`w-full px-4 py-3 rounded-2xl ${themeClasses.input} focus:outline-none focus:ring-2 focus:ring-cyan-500 text-base resize-none max-h-32 overflow-y-auto`}
               disabled={isSending}
+              style={{
+                minHeight: '44px',
+                fontSize: '16px' // Prevents zoom on iOS
+              }}
             />
-            {isTyping && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-              </div>
-            )}
           </div>
           
           <button
             onClick={handleSendMessage}
             disabled={!newMessage.trim() || isSending}
             aria-label="Send message"
-            className={`p-3 sm:p-3.5 rounded-full ${themeClasses.button} disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
+            type="button"
+            className={`p-3 rounded-full ${themeClasses.button} disabled:opacity-50 disabled:cursor-not-allowed transition-all flex-shrink-0 min-w-[48px] min-h-[48px] flex items-center justify-center active:scale-95`}
           >
-            <FiSend size={20} />
+            {isSending ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <FiSend size={22} />
+            )}
           </button>
         </div>
       </div>
