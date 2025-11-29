@@ -62,7 +62,22 @@ export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
     return cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
   }
 
-  // For any other relative path, prepend backend URL
+  // If it's a local asset (images, icons, etc from public folder), keep it local
+  if (
+    cleanUrl.startsWith("/images/") ||
+    cleanUrl.startsWith("/icons/") ||
+    cleanUrl.startsWith("/assets/")
+  ) {
+    return cleanUrl;
+  }
+
+  // For uploads path, prepend backend URL
+  if (cleanUrl.startsWith("/uploads/") || cleanUrl.startsWith("uploads/")) {
+    const normalized = cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
+    return `${BACKEND_URL}${normalized}`;
+  }
+
+  // For any other relative path without a clear indicator, assume it's from backend uploads
   const normalized = cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
   return `${BACKEND_URL}${normalized}`;
 }

@@ -474,6 +474,13 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         const videoUrl = post.videoUrl
           ? ensureAbsoluteMediaUrl(post.videoUrl)
           : null;
+
+        console.log(`🖼️ Post ${post.id} images:`, {
+          rawImages,
+          processedImages: images,
+          hasImages: images.length > 0,
+          videoUrl
+        });
         const isBookmarked = bookmarkedPosts.has(post.id);
         const isExpanded = expandedPosts.has(post.id);
         const shouldClamp = (post.content?.length || 0) > 320;
