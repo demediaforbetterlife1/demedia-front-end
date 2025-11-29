@@ -47,9 +47,22 @@ export const normalizePost = (post: any) => {
   const imagesFromPost = [imageUrls, photos, imgs, mediaUrls, mediaImgs, attachments]
     .find(arr => Array.isArray(arr) && arr.length > 0) || [];
 
+  console.log('normalizePost - images found:', {
+    postId: post.id,
+    imageUrls,
+    photos,
+    imgs,
+    imagesFromPost,
+    rawImageUrl: post.imageUrl
+  });
+
   // Normalize and drop placeholders
   const formattedImages = imagesFromPost
-    .map((url) => ensureAbsoluteMediaUrl(url) || url)
+    .map((url) => {
+      const normalized = ensureAbsoluteMediaUrl(url);
+      console.log('normalizePost - normalizing image:', url, '->', normalized);
+      return normalized || url;
+    })
     .filter((u) => !!u && !isPlaceholder(u)) as string[];
 
   // Compute primary image preferring explicit fields, but skip placeholders

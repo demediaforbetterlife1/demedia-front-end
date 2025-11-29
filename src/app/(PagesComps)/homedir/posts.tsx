@@ -193,26 +193,37 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       // Basic normalization - now includes likes and liked status from backend
       const normalizedPosts = postsArray
         .filter((post: any) => post && typeof post === "object")
-        .map((post: any) => ({
-          id: post.id,
-          title: post.title || null,
-          content: post.content || "",
-          imageUrl: post.imageUrl || null,
-          imageUrls: post.imageUrls || [],
-          videoUrl: post.videoUrl || null,
-          likes: post.likes || 0,
-          comments: post.comments || 0,
-          liked: post.liked || false,
-          createdAt: post.createdAt || new Date().toISOString(),
-          updatedAt: post.updatedAt || new Date().toISOString(),
-          author: post.author ||
-            post.user || {
-              id: post.userId || 1,
-              username: "Unknown",
-              name: "Unknown User",
-              profilePicture: null,
-            },
-        })) as PostType[];
+        .map((post: any) => {
+          console.log('📸 Post image data:', {
+            id: post.id,
+            imageUrl: post.imageUrl,
+            imageUrls: post.imageUrls,
+            images: post.images,
+            hasImages: !!(post.imageUrl || post.imageUrls?.length || post.images?.length)
+          });
+          
+          return {
+            id: post.id,
+            title: post.title || null,
+            content: post.content || "",
+            imageUrl: post.imageUrl || null,
+            imageUrls: post.imageUrls || post.images || [],
+            images: post.images || post.imageUrls || [],
+            videoUrl: post.videoUrl || null,
+            likes: post.likes || 0,
+            comments: post.comments || 0,
+            liked: post.liked || false,
+            createdAt: post.createdAt || new Date().toISOString(),
+            updatedAt: post.updatedAt || new Date().toISOString(),
+            author: post.author ||
+              post.user || {
+                id: post.userId || 1,
+                username: "Unknown",
+                name: "Unknown User",
+                profilePicture: null,
+              },
+          };
+        }) as PostType[];
 
       console.log("✨ Normalized posts:", normalizedPosts.length);
 

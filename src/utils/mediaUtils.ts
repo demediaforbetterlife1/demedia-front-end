@@ -49,7 +49,7 @@ export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
 
   const cleanUrl = url!.trim();
 
-  // Already absolute
+  // Already absolute (http/https or data URL)
   if (!needsPrefix(cleanUrl)) {
     return cleanUrl;
   }
@@ -62,6 +62,7 @@ export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
     return cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
   }
 
+  // For any other relative path, prepend backend URL
   const normalized = cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
   return `${BACKEND_URL}${normalized}`;
 }
