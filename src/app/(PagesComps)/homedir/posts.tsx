@@ -190,7 +190,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
       console.log("📋 Posts array:", postsArray.length, "posts");
 
-      // Basic normalization
+      // Basic normalization - now includes likes and liked status from backen
       const normalizedPosts = postsArray
         .filter((post: any) => post && typeof post === "object")
         .map((post: any) => ({
