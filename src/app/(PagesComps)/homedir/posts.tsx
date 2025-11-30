@@ -151,7 +151,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
   const getImageSrc = (src?: string | null) => {
     const normalized = ensureAbsoluteMediaUrl(src || undefined);
-    return normalized || defaultPostImage;
+    return normalized; // Don't return default, let the component handle it
   };
 
   const fetchPosts = useCallback(async () => {
@@ -468,7 +468,14 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
         const images = rawImages
           .map((img) => getImageSrc(img))
-          .filter((img): img is string => !!img)
+          .filter((img): img is string => {
+            // Filter out null, undefined, empty strings, and placeholder images
+            if (!img || img.trim() === '') return false;
+            if (img.includes('default-post.svg')) return false;
+            if (img.includes('default-placeholder.svg')) return false;
+            if (img.includes('placeholder.png')) return false;
+            return true;
+          })
           .slice(0, 4);
 
         const videoUrl = post.videoUrl
@@ -479,7 +486,8 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           rawImages,
           processedImages: images,
           hasImages: images.length > 0,
-          videoUrl
+          videoUrl,
+          willShowImageContainer: images.length > 0 || !!videoUrl
         });
         const isBookmarked = bookmarkedPosts.has(post.id);
         const isExpanded = expandedPosts.has(post.id);
