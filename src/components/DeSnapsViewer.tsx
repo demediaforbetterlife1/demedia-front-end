@@ -422,34 +422,18 @@ export default function DeSnapsViewer({
         exit={{ opacity: 0 }}
         className="fixed inset-0 bg-black z-50 flex items-center justify-center"
       >
-        {/* Enhanced Background overlay with gradient */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black" 
-          onClick={onClose} 
-        />
-
-        {/* Animated background particles */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        </div>
+        {/* Background overlay */}
+        <div className="absolute inset-0 bg-black/90" onClick={onClose} />
 
         {/* DeSnap content */}
         <div className="relative w-full h-full max-w-2xl mx-auto flex flex-col">
-          {/* Enhanced Close button */}
-          <motion.button
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            whileHover={{ scale: 1.1, rotate: 90 }}
-            whileTap={{ scale: 0.9 }}
+          {/* Close button */}
+          <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 text-white bg-black/50 backdrop-blur-md hover:bg-white/20 rounded-full p-3 transition-all shadow-lg border border-white/10"
+            className="absolute top-4 right-4 z-10 text-white hover:bg-white/20 rounded-full p-2 transition-colors"
           >
             <X size={24} />
-          </motion.button>
+          </button>
 
           {/* Video container */}
           <div className="flex-1 flex items-center justify-center relative bg-black">
@@ -646,254 +630,129 @@ export default function DeSnapsViewer({
                 </div>
               </div>
 
-              {/* Enhanced Right side - Ac
-              <div className="flex flex-col gap-3">
-                <motion
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+              {/* Right side - Actions */}
+              <div className="flex flex-col gap-4">
+                <button
                   onClick={handleLike}
-                  cla
-                 
-                      ? 0/25" 
-                      : "bg-b/30"
+                  className={`flex flex-col items-center gap-1 p-2 rounded-full transition-colors ${
+                    isLiked ? "bg-red-500/20" : "bg-white/10 hover:bg-white/20"
                   }`}
                 >
-                  <mon.div
-                    : {}}
-                    transition={{ duration: 0.3 }}
-                  >
-rt
-                      sze={28}
-                      className={
-                        isLiked ? "text-red-400 fill-current" : "text-white"
-                 
-                    />
-                  </motion.div>
-                  <span c
-button>
-
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ sc
-                  onClick={() => setShowCo)}
-                  className={`flex flex-col items-centew-lg ${
-                    s
-                 "
-                      : "bg"
-                  }`}
-                >
-                  <MessageCircle s} />
-                  <span className="text-white text-xs fots}</span>
-                </motion.button>
-
-                <mot
-                  whileHo
-: 0.9 }}
-                  onCli}
-                  className={`flex flex
-                    isBookmarked
-                 25"
-                      : "bg-black/40 border border-white/10 "
-                  }`}
-                >
-                  k
-                }
-{
-                      isBookmarked
-                        ? "t"
-                        : "texhite"
+                  <Heart
+                    size={24}
+                    className={
+                      isLiked ? "text-red-400 fill-current" : "text-white"
                     }
                   />
-                </motion.button>
+                  <span className="text-white text-xs">{likes}</span>
+                </button>
 
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileT
-                  onClick={handleShare}
-                  className="flex flex-col ite
+                <button
+                  onClick={() => setShowComments(!showComments)}
+                  className="flex flex-col items-center gap-1 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
                 >
-                  hite" />
-               .button>
-              </div> </motione="text-wlassNamsize={28} cShare <lg"ll shadow-ransition-ar-white/30 tver:borde/20 hoiter:bg-whte/10 hoveder-whier borrdblur-md boackdrop-lack/40 bed-2xl bg-b-3 round pnter gap-1.5ms-cee: 0.9 }} scalap={{t-wurrenfill-cyellow-400 text-  className=                     size={28 mar<Book
+                  <MessageCircle size={24} className="text-white" />
+                  <span className="text-white text-xs">{deSnap.comments}</span>
+                </button>
+
+                <button
+                  onClick={handleBookmark}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-full transition-colors ${
+                    isBookmarked
+                      ? "bg-yellow-500/20"
+                      : "bg-white/10 hover:bg-white/20"
+                  }`}
+                >
+                  <Bookmark
+                    size={24}
+                    className={
+                      isBookmarked
+                        ? "text-yellow-400 fill-current"
+                        : "text-white"
+                    }
+                  />
+                </button>
+
+                <button
+                  onClick={handleShare}
+                  className="flex flex-col items-center gap-1 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                >
+                  <Share size={24} className="text-white" />
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Enhanced Comments Section */}
+          {/* Comments section */}
           <AnimatePresence>
             {showComments && (
               <motion.div
-                initial={{ opacity: 0, y: 50 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 50 }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/95 to-black/80 backdrop-blur-xl border-t border-white/10 shadow-2xl"
-                style={{
-                  maxHeight: "60vh",
-                  borderTopLeftRadius: "24px",
-                  borderTopRightRadius: "24px",
-                }}
+                exit={{ opacity: 0, y: 20 }}
+                className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-md p-4 max-h-64 flex flex-col"
               >
-                {/* Drag handle */}
-                <div className="flex justify-center pt-3 pb-2">
-                  <div className="w-12 h-1.5 bg-white/30 rounded-full" />
-                </div>
+                <h4 className="font-semibold mb-2 text-white text-sm">
+                  Comments ({comments.length})
+                </h4>
 
-                {/* Header */}
-                <div className="px-6 py-3 border-b border-white/10">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-bold text-white text-lg flex items-center gap-2">
-                      <MessageCircle size={20} className="text-cyan-400" />
-                      Comments
-                      <span className="text-sm font-normal text-gray-400">
-                        ({comments.length})
-                      </span>
-                    </h4>
-                    <button
-                      onClick={() => setShowComments(false)}
-                      className="text-gray-400 hover:text-white transition-colors p-1"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Comments list with custom scrollbar */}
-                <div 
-                  className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
-                  style={{
-                    maxHeight: "calc(60vh - 180px)",
-                    scrollbarWidth: "thin",
-                    scrollbarColor: "rgba(255,255,255,0.3) transparent",
-                  }}
-                >
+                {/* Comments list */}
+                <div className="flex-1 overflow-y-auto space-y-2 mb-3">
                   {isLoadingComments ? (
-                    <div className="flex flex-col items-center justify-center py-12">
-                      <div className="w-10 h-10 border-3 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin mb-3" />
-                      <p className="text-gray-400 text-sm">Loading comments...</p>
-                    </div>
+                    <p className="text-gray-400 text-sm">Loading comments...</p>
                   ) : comments.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center mb-4">
-                        <MessageCircle size={28} className="text-cyan-400" />
-                      </div>
-                      <p className="text-gray-400 text-sm text-center">
-                        No comments yet
-                      </p>
-                      <p className="text-gray-500 text-xs text-center mt-1">
-                        Be the first to share your thoughts!
-                      </p>
-                    </div>
+                    <p className="text-gray-400 text-sm">
+                      No comments yet. Be the first to comment!
+                    </p>
                   ) : (
-                    comments.map((comment, index) => (
-                      <motion.div
-                        key={comment.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="group"
-                      >
-                        <div className="flex items-start gap-3 p-3 rounded-2xl hover:bg-white/5 transition-all duration-200">
-                          {/* Avatar */}
-                          <div className="relative flex-shrink-0">
-                            {comment.user?.profilePicture ? (
-                              <img
-                                src={comment.user.profilePicture}
-                                alt={comment.user.name}
-                                className="w-10 h-10 rounded-full ring-2 ring-cyan-400/30 object-cover"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center ring-2 ring-cyan-400/30">
-                                <span className="text-white font-bold text-sm">
-                                  {comment.user?.name?.charAt(0)?.toUpperCase() || "U"}
-                                </span>
-                              </div>
-                            )}
-                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-black" />
-                          </div>
-
-                          {/* Comment content */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-white text-sm">
-                                {comment.user?.name || "Unknown User"}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {comment.user?.username && `@${comment.user.username}`}
-                              </span>
-                              <span className="text-xs text-gray-600">•</span>
-                              <span className="text-xs text-gray-500">
-                                {new Date(comment.createdAt).toLocaleDateString()}
+                    comments.map((comment) => (
+                      <div key={comment.id} className="text-white text-sm">
+                        <div className="flex items-start gap-2">
+                          {comment.user?.profilePicture ? (
+                            <img
+                              src={comment.user.profilePicture}
+                              alt={comment.user.name}
+                              className="w-6 h-6 rounded-full"
+                            />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center">
+                              <span className="text-xs">
+                                {comment.user?.name?.charAt(0) || "U"}
                               </span>
                             </div>
-                            <p className="text-gray-200 text-sm leading-relaxed break-words">
+                          )}
+                          <div className="flex-1">
+                            <span className="font-semibold">
+                              {comment.user?.name || "Unknown"}
+                            </span>
+                            <span className="ml-2 text-gray-300">
                               {comment.content}
-                            </p>
-                            
-                            {/* Comment actions */}
-                            <div className="flex items-center gap-4 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button className="text-xs text-gray-400 hover:text-cyan-400 transition-colors flex items-center gap-1">
-                                <Heart size={12} />
-                                Like
-                              </button>
-                              <button className="text-xs text-gray-400 hover:text-cyan-400 transition-colors">
-                                Reply
-                              </button>
-                            </div>
+                            </span>
                           </div>
                         </div>
-                      </motion.div>
+                      </div>
                     ))
                   )}
                 </div>
 
-                {/* Enhanced Comment input */}
-                <div className="px-6 py-4 border-t border-white/10 bg-black/50">
-                  <form onSubmit={handleSubmitComment} className="flex gap-3">
-                    {/* User avatar */}
-                    <div className="flex-shrink-0">
-                      {user?.profilePicture ? (
-                        <img
-                          src={user.profilePicture}
-                          alt={user.name || "You"}
-                          className="w-10 h-10 rounded-full ring-2 ring-cyan-400/30 object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center ring-2 ring-cyan-400/30">
-                          <span className="text-white font-bold text-sm">
-                            {user?.name?.charAt(0)?.toUpperCase() || "Y"}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Input field */}
-                    <div className="flex-1 relative">
-                      <input
-                        type="text"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Share your thoughts..."
-                        className="w-full bg-white/10 text-white placeholder-gray-400 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:bg-white/15 transition-all backdrop-blur-sm border border-white/10"
-                        disabled={isSubmittingComment}
-                      />
-                      {newComment.trim() && (
-                        <motion.button
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          type="submit"
-                          disabled={isSubmittingComment}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl hover:from-cyan-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold shadow-lg shadow-cyan-500/25 transition-all"
-                        >
-                          {isSubmittingComment ? (
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          ) : (
-                            "Post"
-                          )}
-                        </motion.button>
-                      )}
-                    </div>
-                  </form>
-                </div>
+                {/* Comment input */}
+                <form onSubmit={handleSubmitComment} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Add a comment..."
+                    className="flex-1 bg-white/10 text-white placeholder-gray-400 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+                    disabled={isSubmittingComment}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newComment.trim() || isSubmittingComment}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  >
+                    {isSubmittingComment ? "..." : "Post"}
+                  </button>
+                </form>
               </motion.div>
             )}
           </AnimatePresence>
