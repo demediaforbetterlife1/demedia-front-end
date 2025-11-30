@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear DeMedia Cache</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+        .method {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .method h2 {
+            margin-top: 0;
+            color: #ffd700;
+        }
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            transform: scale(1.05);
+        }
+        .button:active {
+            transform: scale(0.95);
+        }
+        .code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.3);
+            border: 2px solid #4CAF50;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+        .warning {
+            background: rgba(255, 152, 0, 0.3);
+            border: 2px solid #FF9800;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear DeMedia Cache</h1>
+        <p class="subtitle">Choose a method to clear your browser cache and see the latest updates</p>
+
+        <div class="method">
+            <h2>⚡ Method 1: One-Click Clear (Recommended)</h2>
+            <p>Click the button below to automatically clear all caches:</p>
+            <button class="button" onclick="clearAllCaches()">Clear All Caches</button>
+            <div id="success" class="success">
+                ✅ Cache cleared successfully! Reloading page...
+            </div>
+        </div>
+
+        <div class="method">
+            <h2>🔄 Method 2: Hard Refresh</h2>
+            <p>Use keyboard shortcuts to force reload:</p>
+            <div class="code">
+                <strong>Windows/Linux:</strong> Ctrl + Shift + R or Ctrl + F5<br>
+                <strong>Mac:</strong> Cmd + Shift + R
+            </div>
+        </div>
+
+        <div class="method">
+            <h2>🛠️ Method 3: Manual Clear (DevTools)</h2>
+            <p>Follow these steps:</p>
+            <ol>
+                <li>Press <strong>F12</strong> to open DevTools</li>
+                <li>Go to <strong>Application</strong> tab</li>
+                <li>Click <strong>Clear storage</strong> in the left sidebar</li>
+                <li>Check all boxes</li>
+                <li>Click <strong>Clear site data</strong></li>
+                <li>Reload the page</li>
+            </ol>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Note:</strong> Clearing cache will log you out. You'll need to sign in again.
+        </div>
+
+        <div style="text-align: center; margin-top: 40px;">
+            <button class="button" onclick="window.location.href='/'">Back to DeMedia</button>
+        </div>
+    </div>
+
+    <script>
+        async function clearAllCaches() {
+            console.log('🧹 Starting cache cleanup...');
+            
+            try {
+                // Clear Service Worker caches
+                if ('caches' in window) {
+                    const names = await caches.keys();
+                    for (let name of names) {
+                        await caches.delete(name);
+                        console.log('✅ Deleted cache:', name);
+                    }
+                }
+                
+                // Unregister all service workers
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                        console.log('✅ Unregistered service worker');
+                    }
+                }
+                
+                // Clear localStorage
+                localStorage.clear();
+                console.log('✅ Cleared localStorage');
+                
+                // Clear sessionStorage
+                sessionStorage.clear();
+                console.log('✅ Cleared sessionStorage');
+                
+                // Clear IndexedDB
+                if ('indexedDB' in window && indexedDB.databases) {
+                    const databases = await indexedDB.databases();
+                    for (let db of databases) {
+                        if (db.name) {
+                            indexedDB.deleteDatabase(db.name);
+                            console.log('✅ Deleted IndexedDB:', db.name);
+                        }
+                    }
+                }
+                
+                console.log('🎉 Cache cleanup complete!');
+                
+                // Show success message
+                document.getElementById('success').style.display = 'block';
+                
+                // Reload after 2 seconds
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error clearing cache:', error);
+                alert('Error clearing cache. Please try Method 2 or 3.');
+            }
+        }
+    </script>
+</body>
+</html>

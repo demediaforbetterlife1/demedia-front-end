@@ -54,6 +54,11 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  other: {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  },
 };
 
 export default function RootLayout({
@@ -64,6 +69,12 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        <meta httpEquiv="Cache-Control" content="no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
+        <meta name="cache-control" content="no-cache, no-store, must-revalidate" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen min-w-screen antialiased`}
       >
