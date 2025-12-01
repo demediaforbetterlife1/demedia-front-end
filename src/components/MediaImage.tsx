@@ -12,6 +12,7 @@ interface MediaImageProps {
   height?: number;
   fill?: boolean;
   priority?: boolean;
+  sizes?: string;
   onError?: () => void;
   onLoad?: () => void;
 }
@@ -57,6 +58,7 @@ export default function MediaImage({
   height,
   fill = false,
   priority = false,
+  sizes,
   onError,
   onLoad,
 }: MediaImageProps) {
@@ -178,6 +180,7 @@ export default function MediaImage({
         onError={handleImageError}
         onLoad={handleImageLoad}
         loading={priority ? "eager" : "lazy"}
+        sizes={sizes}
         title={process.env.NODE_ENV === "development" ? imageUrl : alt}
       />
     </div>
