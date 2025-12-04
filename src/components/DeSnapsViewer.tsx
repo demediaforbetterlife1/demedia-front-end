@@ -683,21 +683,58 @@ export default function DeSnapsViewer({
             </div>
           </div>
 
-          {/* Comments section */}
+          {/* Professional Comments Section */}
           <AnimatePresence>
             {showComments && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-md p-4 max-h-64 flex flex-col"
+                exit={{ opacity: 0, y: 50 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/98 to-black/90 backdrop-blur-2xl border-t border-white/10 shadow-2xl"
+                style={{
+                  maxHeight: "65vh",
+                  borderTopLeftRadius: "28px",
+                  borderTopRightRadius: "28px",
+                }}
               >
-                <h4 className="font-semibold mb-2 text-white text-sm">
-                  Comments ({comments.length})
-                </h4>
+                {/* Drag Handle */}
+                <div className="flex justify-center pt-4 pb-2">
+                  <div className="w-14 h-1.5 bg-gradient-to-r from-cyan-500/50 via-purple-500/50 to-pink-500/50 rounded-full" />
+                </div>
 
-                {/* Comments list */}
-                <div className="flex-1 overflow-y-auto space-y-2 mb-3">
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-white/10 bg-gradient-to-r from-transparent via-white/5 to-transparent">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center backdrop-blur-sm border border-white/10">
+                        <MessageCircle size={20} className="text-cyan-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white text-lg">Comments</h4>
+                        <p className="text-xs text-gray-400">{comments.length} {comments.length === 1 ? 'comment' : 'comments'}</p>
+                      </div>
+                    </div>
+                    <motion.button
+                      whileHover={{ scale: 1.1, rotate: 90 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setShowComments(false)}
+                      className="text-gray-400 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/10"
+                    >
+                      <X size={22} />
+                    </motion.button>
+                  </div>
+                </div>
+
+                {/* Comments List with Professional Styling */}
+                <div 
+                  className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+                  style={{
+                    maxHeight: "calc(65vh - 200px)",
+                    scrollbarWidth: "thin",
+                    scrollbarColor: "rgba(6, 182, 212, 0.5) transparent",
+                  }}
+                >
                   {isLoadingComments ? (
                     <p className="text-gray-400 text-sm">Loading comments...</p>
                   ) : comments.length === 0 ? (
