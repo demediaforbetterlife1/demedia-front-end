@@ -6,7 +6,6 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { apiFetch } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
 import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
-// Temporarily removed frontend image cache imports
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import CommentModal from "@/components/CommentModal";
@@ -89,9 +88,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   const [loading, setLoading] = useState(true);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<PostType | null>(null);
-  const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<number>>(
-    new Set(),
-  );
+  const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<number>>(new Set());
   const [expandedPosts, setExpandedPosts] = useState<Set<number>>(new Set());
   const [shareStatus, setShareStatus] = useState<Record<number, string>>({});
 
@@ -151,7 +148,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
   const getImageSrc = (src?: string | null) => {
     const normalized = ensureAbsoluteMediaUrl(src || undefined);
-    return normalized; // Don't return default, let the component handle it
+    return normalized;
   };
 
   const fetchPosts = useCallback(async () => {
@@ -159,7 +156,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       console.log("🚀 Starting to fetch posts...");
       setLoading(true);
 
-      // Use apiFetch to include authentication headers
       const res = await apiFetch(
         "/api/posts",
         {
@@ -178,7 +174,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       const data = await res.json();
       console.log("📦 Raw data received:", data);
 
-      // Simple data extraction - prioritize posts array
       let postsArray = [];
       if (data.posts && Array.isArray(data.posts)) {
         postsArray = data.posts;
@@ -190,7 +185,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
       console.log("📋 Posts array:", postsArray.length, "posts");
 
-      // Basic normalization - now includes likes and liked status from backend
       const normalizedPosts = postsArray
         .filter((post: any) => post && typeof post === "object")
         .map((post: any) => {
@@ -422,7 +416,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
     isVisible,
     loading,
     postsLength: posts.length,
-    posts: posts.slice(0, 2), // Show first 2 posts for debugging
+    posts: posts.slice(0, 2),
   });
 
   if (!isVisible) {
@@ -444,7 +438,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   console.log("🎯 Rendering posts section with", posts.length, "posts");
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6 max-w-3xl mx-auto w-full">
+    <div className="flex flex-col gap-4 md:gap-6 p-2 md:p-4 max-w-3xl mx-auto w-full">
       {posts.length === 0 && (
         <div>
           <p style={{ color: "red", padding: "20px" }}>DEBUG: No posts found</p>
@@ -469,7 +463,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         const images = rawImages
           .map((img) => getImageSrc(img))
           .filter((img): img is string => {
-            // Filter out null, undefined, empty strings, and placeholder images
             if (!img || img.trim() === '') return false;
             if (img.includes('default-post.svg')) return false;
             if (img.includes('default-placeholder.svg')) return false;
@@ -482,13 +475,16 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
           ? ensureAbsoluteMediaUrl(post.videoUrl)
           : null;
 
+        const hasMedia = videoUrl || images.length > 0;
+        
         console.log(`🖼️ Post ${post.id} images:`, {
           rawImages,
           processedImages: images,
           hasImages: images.length > 0,
           videoUrl,
-          willShowImageContainer: images.length > 0 || !!videoUrl
+          hasMedia
         });
+        
         const isBookmarked = bookmarkedPosts.has(post.id);
         const isExpanded = expandedPosts.has(post.id);
         const shouldClamp = (post.content?.length || 0) > 320;
@@ -500,25 +496,21 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className={`group rounded-3xl p-5 md:p-8 cursor-pointer relative ${themeClasses.bg} ${
+            className={`group rounded-2xl md:rounded-3xl p-4 md:p-6 cursor-pointer relative ${themeClasses.bg} ${
               theme === "super-dark"
-                ? "ring-1 ring-purple-500/20 hover:ring-purple-400/40 before:absolute before:inset-0 before:rounded-3xl before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-700 before:bg-gradient-to-br before:from-purple-500/5 before:via-transparent before:to-pink-500/5 before:pointer-events-none"
+                ? "ring-1 ring-purple-500/20 hover:ring-purple-400/40 before:absolute before:inset-0 before:rounded-2xl md:before:rounded-3xl before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-700 before:bg-gradient-to-br before:from-purple-500/5 before:via-transparent before:to-pink-500/5 before:pointer-events-none"
                 : ""
-            }`}
+            } min-h-0`}
             onClick={() => goToPost(post.id)}
           >
-            {/* Enhanced shimmer and glow effects for super-dark theme */}
             {theme === "super-dark" && (
               <>
-                {/* Animated border glow */}
-                <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20 blur-xl animate-pulse" />
+                <div className="absolute inset-0 rounded-2xl md:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+                  <div className="absolute inset-0 rounded-2xl md:rounded-3xl bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20 blur-xl animate-pulse" />
                 </div>
-                {/* Shimmer overlay */}
-                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-500/0 via-purple-400/10 to-pink-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-                {/* Subtle grid pattern */}
+                <div className="absolute inset-0 rounded-2xl md:rounded-3xl bg-gradient-to-br from-purple-500/0 via-purple-400/10 to-pink-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                 <div
-                  className="absolute inset-0 rounded-3xl opacity-[0.02] pointer-events-none"
+                  className="absolute inset-0 rounded-2xl md:rounded-3xl opacity-[0.02] pointer-events-none"
                   style={{
                     backgroundImage: `
                       linear-gradient(rgba(168, 85, 247, 0.1) 1px, transparent 1px),
@@ -529,272 +521,286 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                 />
               </>
             )}
-            <div
-              className="flex items-start gap-4 mb-6 group/header"
-              onClick={(e) => goToUser(e, author)}
-            >
+            
+            <div className="flex flex-col gap-4">
+              {/* Header Section */}
               <div
-                className="relative w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-transparent group-hover/header:ring-2 transition-all duration-300"
-                style={
-                  {
-                    "--tw-ring-color": themeClasses.accentColor,
-                  } as React.CSSProperties
-                }
+                className="flex items-start gap-3 group/header"
+                onClick={(e) => goToUser(e, author)}
               >
-                <MediaImage
-                  src={profilePic}
-                  alt="User avatar"
-                  className="object-cover"
-                  fill
-                  fallbackSrc={defaultAvatar}
-                  priority
-                />
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className={`font-semibold text-lg ${themeClasses.text}`}>
-                    {author?.name || "Community Member"}
-                  </h3>
-                  <span className="text-xs text-white/70 uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-white/10">
-                    {relativeTime || "Just now"}
-                  </span>
-                </div>
-                <p className={`text-sm ${themeClasses.textMuted}`}>
-                  @{author?.username ?? "user"} ·{" "}
-                  {post.createdAt
-                    ? new Date(post.createdAt).toLocaleString()
-                    : "Live"}
-                </p>
-              </div>
-            </div>
-
-            {post.title && (
-              <h2
-                className={`text-2xl font-semibold ${themeClasses.text} mb-4`}
-              >
-                {post.title}
-              </h2>
-            )}
-
-            <div className="flex flex-col gap-3 mb-6">
-              {post.content && (
-                <p
-                  className={`text-base leading-relaxed ${themeClasses.text} font-light select-text ${
-                    !isExpanded && shouldClamp ? "line-clamp-3" : ""
-                  }`}
+                <div
+                  className="relative w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl overflow-hidden ring-2 ring-transparent group-hover/header:ring-2 transition-all duration-300 shrink-0"
+                  style={
+                    {
+                      "--tw-ring-color": themeClasses.accentColor,
+                    } as React.CSSProperties
+                  }
                 >
-                  {post.content}
-                </p>
-              )}
-              {shouldClamp && (
-                <button
-                  className="self-start text-xs uppercase tracking-[0.3em] text-white/70 hover:text-white transition-colors"
-                  onClick={(e) => toggleExpanded(e, post.id)}
-                >
-                  {isExpanded ? "Show less" : "Show more"}
-                </button>
-              )}
-            </div>
-
-            {(videoUrl || images.length > 0) && (
-              <div className="rounded-2xl overflow-hidden space-y-4 mb-6">
-                {videoUrl && (
-                  <video
-                    src={videoUrl}
-                    controls
-                    playsInline
-                    className="w-full rounded-2xl max-h-[520px] bg-black/60"
+                  <MediaImage
+                    src={profilePic}
+                    alt="User avatar"
+                    className="object-cover"
+                    fill
+                    sizes="(max-width: 768px) 48px, 56px"
+                    fallbackSrc={defaultAvatar}
+                    priority
                   />
+                </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className={`font-semibold text-base md:text-lg ${themeClasses.text} truncate`}>
+                      {author?.name || "Community Member"}
+                    </h3>
+                    <span className="text-xs text-white/70 uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-white/10 shrink-0">
+                      {relativeTime || "Just now"}
+                    </span>
+                  </div>
+                  <p className={`text-xs md:text-sm ${themeClasses.textMuted} truncate`}>
+                    @{author?.username ?? "user"} ·{" "}
+                    {post.createdAt
+                      ? new Date(post.createdAt).toLocaleString()
+                      : "Live"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Title Section */}
+              {post.title && (
+                <h2
+                  className={`text-xl md:text-2xl font-semibold ${themeClasses.text} break-words`}
+                >
+                  {post.title}
+                </h2>
+              )}
+
+              {/* Content Section */}
+              <div className="flex flex-col gap-2 md:gap-3">
+                {post.content && (
+                  <p
+                    className={`text-sm md:text-base leading-relaxed ${themeClasses.text} font-light select-text break-words ${
+                      !isExpanded && shouldClamp ? "line-clamp-3" : ""
+                    }`}
+                  >
+                    {post.content}
+                  </p>
                 )}
+                {shouldClamp && (
+                  <button
+                    className="self-start text-xs uppercase tracking-[0.3em] text-white/70 hover:text-white transition-colors"
+                    onClick={(e) => toggleExpanded(e, post.id)}
+                  >
+             {isExpanded ? "Show less" : "Show more"}
+                  </button>
+                )}
+              </div>
 
-                {images.length > 0 &&
-                  (images.length === 1 ? (
-                    <div className="relative w-full overflow-hidden rounded-2xl h-full min-h-[320px]">
-                      <MediaImage
-                        src={images[0] || defaultPostImage}
-                        alt={post.title || "Post image"}
-                        className="object-cover transition-transform duration-700 group-hover:scale-[1.01]"
-                        fill
-                        fallbackSrc={defaultPostImage}
-                        priority
+              {/* Media Section - Only renders if media exists */}
+              {hasMedia && (
+                <div className="mt-2 md:mt-4 rounded-xl md:rounded-2xl overflow-hidden">
+                  {videoUrl && (
+                    <div className="relative w-full overflow-hidden rounded-xl md:rounded-2xl bg-black/60 aspect-video">
+                      <video
+                        src={videoUrl}
+                        controls
+                        playsInline
+                        className="w-full h-full object-contain"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-2 auto-rows-[160px] md:auto-rows-[220px] gap-3">
-                      {images.slice(0, 4).map((img, idx) => {
-                        const isHero = idx === 0 && images.length > 1;
-                        const remaining = images.length - 4;
-                        return (
-                          <div
-                            key={`${img}-${idx}`}
-                            className={`relative overflow-hidden rounded-2xl ${
-                              isHero ? "col-span-2 row-span-2" : ""
-                            }`}
-                          >
-                            <MediaImage
-                              src={img || defaultPostImage}
-                              alt={`Post image ${idx + 1}`}
-                              className="object-cover transition-transform duration-700 hover:scale-105"
-                              fill
-                              fallbackSrc={defaultPostImage}
-                              priority={idx === 0}
-                            />
-                            {remaining > 0 && idx === 3 && (
-                              <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white text-lg font-semibold">
-                                +{remaining}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
+                  )}
+
+                  {images.length > 0 &&
+                    (images.length === 1 ? (
+                      <div className="relative w-full overflow-hidden rounded-xl md:rounded-2xl">
+                        <MediaImage
+                          src={images[0] || defaultPostImage}
+                          alt={post.title || "Post image"}
+                          className="object-cover transition-transform duration-700 group-hover:scale-[1.01]"
+                          width={800}
+                          height={600}
+                          fallbackSrc={defaultPostImage}
+                          priority
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2 md:gap-3">
+                        {images.slice(0, 4).map((img, idx) => {
+                          const isHero = idx === 0 && images.length > 1;
+                          const remaining = images.length - 4;
+                          return (
+                            <div
+                              key={`${img}-${idx}`}
+                              className={`relative overflow-hidden rounded-xl md:rounded-2xl ${
+                                isHero ? "col-span-2 row-span-2 aspect-video" : "aspect-square"
+                              }`}
+                            >
+                              <MediaImage
+                                src={img || defaultPostImage}
+                                alt={`Post image ${idx + 1}`}
+                                className="object-cover transition-transform duration-700 hover:scale-105"
+                                fill={!isHero}
+                                sizes={isHero ? "(max-width: 768px) 100vw, 800px" : "(max-width: 768px) 50vw, 400px"}
+                                fallbackSrc={defaultPostImage}
+                                priority={idx === 0}
+                              />
+                              {remaining > 0 && idx === 3 && (
+                                <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white text-lg font-semibold">
+                                  +{remaining}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                </div>
+              )}
+
+              {/* Tags Section */}
+              <div className="flex flex-wrap gap-2 text-xs uppercase tracking-[0.3em] text-white/70">
+                {post.comments > 0 && (
+                  <span className="px-2 py-1 rounded-full bg-white/10">
+                    {post.comments} Comments
+                  </span>
+                )}
+                {post.likes > 0 && (
+                  <span className="px-2 py-1 rounded-full bg-white/10">
+                    {post.likes} Likes
+                  </span>
+                )}
+                {videoUrl && (
+                  <span className="px-2 py-1 rounded-full bg-white/10">
+                    Video
+                  </span>
+                )}
               </div>
-            )}
 
-            <div className="flex flex-wrap gap-3 text-xs uppercase tracking-[0.3em] text-white/70 mb-6">
-              {post.comments > 0 && (
-                <span className="px-3 py-1 rounded-full bg-white/10">
-                  {post.comments} Comments
-                </span>
-              )}
-              {post.likes > 0 && (
-                <span className="px-3 py-1 rounded-full bg-white/10">
-                  {post.likes} Likes
-                </span>
-              )}
-              {videoUrl && (
-                <span className="px-3 py-1 rounded-full bg-white/10">
-                  Video
-                </span>
-              )}
-            </div>
+              {/* Actions Section */}
+              <div className="flex flex-col gap-2 md:gap-3 pt-3 md:pt-4 border-t border-white/10">
+                <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    onClick={(e) => handleLike(e, post.id)}
+                    className={`flex items-center gap-1 md:gap-2 text-sm font-semibold px-3 py-1.5 md:px-4 md:py-2 rounded-full ${
+                      theme === "super-dark"
+                        ? `bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]`
+                        : "bg-white/5 backdrop-blur-sm"
+                    } transition-all duration-300 ${post.liked ? themeClasses.like : themeClasses.textMuted}`}
+                  >
+                    <motion.svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill={post.liked ? "currentColor" : "none"}
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      className="w-4 h-4 md:w-5 md:h-5"
+                      animate={{
+                        scale: post.liked ? [1, 1.4, 1] : 1,
+                        rotate: post.liked ? [0, -10, 10, 0] : 0,
+                      }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 21C12 21 4 13.667 4 8.667C4 5.4 6.4 3 9.667 3C11.389 3 13 4.067 13.833 5.533C14.667 4.067 16.278 3 18 3C21.267 3 23.667 5.4 23.667 8.667C23.667 13.667 16 21 16 21H12Z"
+                      />
+                    </motion.svg>
+                    <span>{post.likes || 0}</span>
+                  </motion.button>
 
-            <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
-              <div className="flex flex-wrap items-center gap-4">
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  whileHover={{ scale: 1.05 }}
-                  onClick={(e) => handleLike(e, post.id)}
-                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${
-                    theme === "super-dark"
-                      ? `bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]`
-                      : "bg-white/5 backdrop-blur-sm"
-                  } transition-all duration-300 ${post.liked ? themeClasses.like : themeClasses.textMuted}`}
-                >
-                  <motion.svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill={post.liked ? "currentColor" : "none"}
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    className="w-5 h-5"
-                    animate={{
-                      scale: post.liked ? [1, 1.4, 1] : 1,
-                      rotate: post.liked ? [0, -10, 10, 0] : 0,
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPost(post);
+                      setShowCommentModal(true);
                     }}
-                    transition={{ duration: 0.4 }}
+                    className={`flex items-center gap-1 md:gap-2 text-sm font-semibold px-3 py-1.5 md:px-4 md:py-2 rounded-full ${
+                      theme === "super-dark"
+                        ? "bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]"
+                        : "bg-white/5 backdrop-blur-sm"
+                    } ${themeClasses.comment} transition-all duration-300`}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 21C12 21 4 13.667 4 8.667C4 5.4 6.4 3 9.667 3C11.389 3 13 4.067 13.833 5.533C14.667 4.067 16.278 3 18 3C21.267 3 23.667 5.4 23.667 8.667C23.667 13.667 16 21 16 21H12Z"
-                    />
-                  </motion.svg>
-                  <span>{post.likes || 0}</span>
-                </motion.button>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      className="w-4 h-4 md:w-5 md:h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M7 8h10M7 12h6m5 8a9 9 0 10-9-9c0 1.52.38 2.96 1.05 4.23L7 20l4.77-2.05A9.01 9.01 0 0018 20z"
+                      />
+                    </svg>
+                    <span>{post.comments || 0}</span>
+                  </motion.button>
 
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  whileHover={{ scale: 1.05 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPost(post);
-                    setShowCommentModal(true);
-                  }}
-                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${
-                    theme === "super-dark"
-                      ? "bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]"
-                      : "bg-white/5 backdrop-blur-sm"
-                  } ${themeClasses.comment} transition-all duration-300`}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    className="w-5 h-5"
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    onClick={(e) => toggleBookmark(e, post.id)}
+                    className={`flex items-center gap-1 md:gap-2 text-sm font-semibold px-3 py-1.5 md:px-4 md:py-2 rounded-full ${
+                      theme === "super-dark"
+                        ? "bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]"
+                        : "bg-white/5 backdrop-blur-sm"
+                    } transition-all duration-300 ${isBookmarked ? themeClasses.accent : themeClasses.textMuted}`}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M7 8h10M7 12h6m5 8a9 9 0 10-9-9c0 1.52.38 2.96 1.05 4.23L7 20l4.77-2.05A9.01 9.01 0 0018 20z"
-                    />
-                  </svg>
-                  <span>{post.comments || 0}</span>
-                </motion.button>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill={isBookmarked ? "currentColor" : "none"}
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      className="w-4 h-4 md:w-5 md:h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v18l-7-4-7 4V5z"
+                      />
+                    </svg>
+                    <span>{isBookmarked ? "Saved" : "Save"}</span>
+                  </motion.button>
 
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  whileHover={{ scale: 1.05 }}
-                  onClick={(e) => toggleBookmark(e, post.id)}
-                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${
-                    theme === "super-dark"
-                      ? "bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]"
-                      : "bg-white/5 backdrop-blur-sm"
-                  } transition-all duration-300 ${isBookmarked ? themeClasses.accent : themeClasses.textMuted}`}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill={isBookmarked ? "currentColor" : "none"}
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    className="w-5 h-5"
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    onClick={(e) => handleShare(e, post)}
+                    className={`flex items-center gap-1 md:gap-2 text-sm font-semibold px-3 py-1.5 md:px-4 md:py-2 rounded-full ${
+                      theme === "super-dark"
+                        ? "bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]"
+                        : "bg-white/5 backdrop-blur-sm"
+                    } text-white/80 hover:text-white transition-all duration-300`}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v18l-7-4-7 4V5z"
-                    />
-                  </svg>
-                  <span>{isBookmarked ? "Saved" : "Save"}</span>
-                </motion.button>
-
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  whileHover={{ scale: 1.05 }}
-                  onClick={(e) => handleShare(e, post)}
-                  className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full ${
-                    theme === "super-dark"
-                      ? "bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-purple-400/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]"
-                      : "bg-white/5 backdrop-blur-sm"
-                  } text-white/80 hover:text-white transition-all duration-300`}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    className="w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M7 9l5-5m0 0l5 5m-5-5v12"
-                    />
-                  </svg>
-                  <span>Share</span>
-                </motion.button>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      className="w-4 h-4 md:w-5 md:h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M7 9l5-5m0 0l5 5m-5-5v12"
+                      />
+                    </svg>
+                    <span>Share</span>
+                  </motion.button>
+                </div>
+                {shareStatus[post.id] && (
+                  <span className="text-xs text-white/70">
+                    {shareStatus[post.id]}
+                  </span>
+                )}
               </div>
-              {shareStatus[post.id] && (
-                <span className="text-xs text-white/70">
-                  {shareStatus[post.id]}
-                </span>
-              )}
             </div>
           </motion.article>
         );
@@ -819,21 +825,20 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 function PostSkeleton({ themeClasses }: { themeClasses: ThemeClasses }) {
   return (
     <div
-      className={`rounded-3xl p-5 md:p-8 border border-white/5 shadow-inner ${themeClasses.bg}`}
+      className={`rounded-2xl md:rounded-3xl p-4 md:p-6 border border-white/5 shadow-inner ${themeClasses.bg}`}
     >
-      <div className="flex items-center gap-4 mb-6">
-        <div className="w-14 h-14 rounded-2xl bg-white/20 animate-pulse" />
+      <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
+        <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white/20 animate-pulse" />
         <div className="flex-1 space-y-2">
-          <div className="w-1/3 h-4 bg-white/20 rounded animate-pulse" />
-          <div className="w-1/4 h-3 bg-white/10 rounded animate-pulse" />
+          <div className="w-1/3 h-3 md:h-4 bg-white/20 rounded animate-pulse" />
+          <div className="w-1/4 h-2 md:h-3 bg-white/10 rounded animate-pulse" />
         </div>
       </div>
-      <div className="space-y-3">
-        <div className="w-3/4 h-4 bg-white/15 rounded animate-pulse" />
-        <div className="w-full h-4 bg-white/10 rounded animate-pulse" />
-        <div className="w-2/3 h-4 bg-white/10 rounded animate-pulse" />
+      <div className="space-y-2 md:space-y-3">
+        <div className="w-3/4 h-3 md:h-4 bg-white/15 rounded animate-pulse" />
+        <div className="w-full h-3 md:h-4 bg-white/10 rounded animate-pulse" />
+        <div className="w-2/3 h-3 md:h-4 bg-white/10 rounded animate-pulse" />
       </div>
-      <div className="mt-6 h-52 bg-white/10 rounded-2xl animate-pulse" />
     </div>
   );
 }
@@ -847,17 +852,17 @@ function EmptyState({
 }) {
   return (
     <div
-      className={`rounded-3xl p-10 text-center border border-dashed border-white/10 ${themeClasses.bg}`}
+      className={`rounded-2xl md:rounded-3xl p-6 md:p-10 text-center border border-dashed border-white/10 ${themeClasses.bg}`}
     >
-      <div className="text-3xl mb-4">🚀</div>
-      <p className={`text-lg ${themeClasses.text} mb-2`}>
+      <div className="text-2xl md:text-3xl mb-3 md:mb-4">🚀</div>
+      <p className={`text-base md:text-lg ${themeClasses.text} mb-2`}>
         Everything is ready for the next big story.
       </p>
-      <p className={`${themeClasses.textMuted} mb-6`}>
+      <p className={`${themeClasses.textMuted} mb-4 md:mb-6 text-sm md:text-base`}>
         Be the first to share something with the community.
       </p>
       <button
-        className="px-6 py-3 rounded-full bg-white/10 text-white/90 hover:bg-white/20 transition-colors text-sm tracking-[0.3em]"
+        className="px-4 py-2 md:px-6 md:py-3 rounded-full bg-white/10 text-white/90 hover:bg-white/20 transition-colors text-xs md:text-sm tracking-[0.3em]"
         onClick={fetchPosts}
       >
         Refresh Feed
