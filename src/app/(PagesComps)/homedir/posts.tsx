@@ -460,16 +460,31 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                 : []
         ) as string[];
 
+        console.log(`🔍 Post ${post.id} raw images:`, rawImages);
+
         const images = rawImages
-          .map((img) => getImageSrc(img))
+          .map((img) => {
+            const processed = getImageSrc(img);
+            console.log(`  📸 Processing image: ${img} -> ${processed}`);
+            return processed;
+          })
           .filter((img): img is string => {
-            if (!img || img.trim() === '') return false;
-            if (img.includes('default-post.svg')) return false;
-            if (img.includes('default-placeholder.svg')) return false;
-            if (img.includes('placeholder.png')) return false;
+            if (!img || img.trim() === '') {
+              console.log(`  ❌ Filtered out: empty or null`);
+              return false;
+            }
+            if (img.includes('default-post.svg') || 
+                img.includes('default-placeholder.svg') || 
+                img.includes('placeholder.png')) {
+              console.log(`  ❌ Filtered out: default placeholder - ${img}`);
+              return false;
+            }
+            console.log(`  ✅ Keeping image: ${img}`);
             return true;
           })
           .slice(0, 4);
+
+        console.log(`✨ Post ${post.id} final images:`, images);
 
         const videoUrl = post.videoUrl
           ? ensureAbsoluteMediaUrl(post.videoUrl)
