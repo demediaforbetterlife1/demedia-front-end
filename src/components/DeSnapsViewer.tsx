@@ -354,26 +354,50 @@ export default function DeSnapsViewer({
     e.preventDefault();
     if (!newComment.trim() || isSubmittingComment) return;
 
+    console.log('📝 Submitting comment:', {
+      deSnapId: deSnap.id,
+      content: newComment.trim(),
+      userId: user?.id
+    });
+
     setIsSubmittingComment(true);
     try {
       const response = await apiFetch(
         `/api/desnaps/${deSnap.id}/comments`,
         {
           method: "POST",
-          body: JSON.stringify({ content: newComment.trim() }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            content: newComment.trim(),
+            userId: user?.id 
+          }),
         },
         user?.id,
       );
 
+      console.log('📡 Comment response:', response.status);
+
       if (response.ok) {
         const newCommentData = await response.json();
+        console.log('✅ Comment created:', newCommentData);
+        
         setComments((prev) => [newCommentData, ...prev]);
         setNewComment("");
         // Update comment count
         mergeAndEmitUpdate({ comments: deSnap.comments + 1 });
+        
+        // Show success feedback
+        alert('Comment posted successfully!');
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Comment failed:', response.status, errorText);
+        alert(`Failed to post comment: ${errorText || response.statusText}`);
       }
     } catch (error) {
-      console.error("Error submitting comment:", error);
+      console.error("❌ Error submitting comment:", error);
+      alert(`Error posting comment: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmittingComment(false);
     }
@@ -434,6 +458,34 @@ export default function DeSnapsViewer({
           >
             <X size={24} />
           </button>
+
+          {/* User Header */}
+          <div className="absolute top-4 left-4 z-10 flex items-center gap-3 bg-black/50 backdrop-blur-md rounded-full px-4 py-2 border border-white/10">
+            {/* User Avatar */}
+            {deSnap.author?.profilePicture ? (
+              <img
+                src={ensureAbsoluteMediaUrl(deSnap.author.profilePicture) || deSnap.author.profilePicture}
+                alt={deSnap.author.name}
+                className="w-10 h-10 rounded-full object-cover ring-2 ring-cyan-400/50"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center ring-2 ring-cyan-400/50">
+                <span className="text-white font-bold text-sm">
+                  {deSnap.author?.name?.charAt(0)?.toUpperCase() || 'U'}
+                </span>
+              </div>
+            )}
+            
+            {/* User Info */}
+            <div className="flex flex-col">
+              <span className="text-white font-semibold text-sm">
+                {deSnap.author?.name || 'Unknown User'}
+              </span>
+              <span className="text-gray-400 text-xs">
+                @{deSnap.author?.username || 'user'}
+              </span>
+            </div>
+          </div>
 
           {/* Video container */}
           <div className="flex-1 flex items-center justify-center relative bg-black">
@@ -736,60 +788,140 @@ export default function DeSnapsViewer({
                   }}
                 >
                   {isLoadingComments ? (
-                    <p className="text-gray-400 text-sm">Loading comments...</p>
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <div className="relative">
+                        <div className="w-12 h-12 border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
+                        <div className="absolute inset-0 w-12 h-12 border-4 border-purple-500/20 border-b-purple-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+                      </div>
+                      <p className="text-gray-400 text-sm mt-4 font-medium">Loading comments...</p>
+                    </div>
                   ) : comments.length === 0 ? (
-                    <p className="text-gray-400 text-sm">
-                      No comments yet. Be the first to comment!
-                    </p>
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-500/10 via-purple-500/10 to-pink-500/10 flex items-center justify-center mb-4 backdrop-blur-sm border border-white/10">
+                        <MessageCircle size={36} className="text-cyan-400" />
+                      </div>
+                      <p className="text-white text-base font-semibold mb-1">No comments yet</p>
+                      <p className="text-gray-400 text-sm text-center max-w-xs">
+                        Be the first to share your thoughts on this DeSnap!
+                      </p>
+                    </div>
                   ) : (
-                    comments.map((comment) => (
-                      <div key={comment.id} className="text-white text-sm">
-                        <div className="flex items-start gap-2">
-                          {comment.user?.profilePicture ? (
-                            <img
-                              src={comment.user.profilePicture}
-                              alt={comment.user.name}
-                              className="w-6 h-6 rounded-full"
-                            />
-                          ) : (
-                            <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center">
-                              <span className="text-xs">
-                                {comment.user?.name?.charAt(0) || "U"}
+                    comments.map((comment, index) => (
+                      <motion.div
+                        key={comment.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="group"
+                      >
+                        <div className="flex items-start gap-3 p-4 rounded-2xl hover:bg-white/5 transition-all duration-200 border border-transparent hover:border-white/10">
+                          {/* Avatar */}
+                          <div className="relative flex-shrink-0">
+                            {comment.user?.profilePicture ? (
+                              <img
+                                src={ensureAbsoluteMediaUrl(comment.user.profilePicture) || comment.user.profilePicture}
+                                alt={comment.user.name}
+                                className="w-11 h-11 rounded-full ring-2 ring-cyan-400/30 object-cover"
+                              />
+                            ) : (
+                              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center ring-2 ring-cyan-400/30">
+                                <span className="text-white font-bold text-sm">
+                                  {comment.user?.name?.charAt(0)?.toUpperCase() || "U"}
+                                </span>
+                              </div>
+                            )}
+                            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-black" />
+                          </div>
+
+                          {/* Comment Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                              <span className="font-semibold text-white text-sm">
+                                {comment.user?.name || "Unknown User"}
+                              </span>
+                              {comment.user?.username && (
+                                <span className="text-xs text-gray-500">
+                                  @{comment.user.username}
+                                </span>
+                              )}
+                              <span className="text-xs text-gray-600">•</span>
+                              <span className="text-xs text-gray-500">
+                                {new Date(comment.createdAt).toLocaleDateString()}
                               </span>
                             </div>
-                          )}
-                          <div className="flex-1">
-                            <span className="font-semibold">
-                              {comment.user?.name || "Unknown"}
-                            </span>
-                            <span className="ml-2 text-gray-300">
+                            <p className="text-gray-200 text-sm leading-relaxed break-words">
                               {comment.content}
-                            </span>
+                            </p>
+                            
+                            {/* Comment Actions */}
+                            <div className="flex items-center gap-4 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button className="text-xs text-gray-400 hover:text-cyan-400 transition-colors flex items-center gap-1">
+                                <Heart size={12} />
+                                Like
+                              </button>
+                              <button className="text-xs text-gray-400 hover:text-cyan-400 transition-colors">
+                                Reply
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     ))
                   )}
                 </div>
 
-                {/* Comment input */}
-                <form onSubmit={handleSubmitComment} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Add a comment..."
-                    className="flex-1 bg-white/10 text-white placeholder-gray-400 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
-                    disabled={isSubmittingComment}
-                  />
-                  <button
-                    type="submit"
-                    disabled={!newComment.trim() || isSubmittingComment}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  >
-                    {isSubmittingComment ? "..." : "Post"}
-                  </button>
-                </form>
+                {/* Enhanced Comment Input */}
+                <div className="px-4 sm:px-6 py-4 sm:py-5 border-t border-white/10 bg-gradient-to-b from-black/50 to-black">
+                  <form onSubmit={handleSubmitComment} className="flex gap-3 items-end">
+                    {/* User Avatar */}
+                    <div className="flex-shrink-0 hidden sm:block">
+                      {user?.profilePicture ? (
+                        <img
+                          src={ensureAbsoluteMediaUrl(user.profilePicture) || user.profilePicture}
+                          alt={user.name || "You"}
+                          className="w-11 h-11 rounded-full ring-2 ring-cyan-400/30 object-cover"
+                        />
+                      ) : (
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center ring-2 ring-cyan-400/30">
+                          <span className="text-white font-bold text-sm">
+                            {user?.name?.charAt(0)?.toUpperCase() || "Y"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Input Field */}
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder="Share your thoughts..."
+                        className="w-full bg-white/10 text-white placeholder-gray-400 rounded-2xl px-4 sm:px-5 py-3 sm:py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:bg-white/15 transition-all backdrop-blur-sm border border-white/10"
+                        disabled={isSubmittingComment}
+                        style={{ fontSize: '16px' }}
+                      />
+                    </div>
+
+                    {/* Always Visible Post Button */}
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      type="submit"
+                      disabled={isSubmittingComment || !newComment.trim()}
+                      className="px-5 sm:px-6 py-3 sm:py-3.5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-2xl hover:from-cyan-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold shadow-lg shadow-cyan-500/25 transition-all flex items-center gap-2 min-w-[80px] justify-center"
+                    >
+                      {isSubmittingComment ? (
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <MessageCircle size={16} />
+                          <span className="hidden sm:inline">Post</span>
+                        </>
+                      )}
+                    </motion.button>
+                  </form>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
