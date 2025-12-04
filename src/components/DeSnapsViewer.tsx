@@ -743,7 +743,7 @@ export default function DeSnapsViewer({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 50 }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/98 to-black/90 backdrop-blur-2xl border-t border-white/10 shadow-2xl"
+                className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/98 to-black/90 backdrop-blur-2xl border-t border-white/10 shadow-2xl flex flex-col z-50"
                 style={{
                   maxHeight: "65vh",
                   borderTopLeftRadius: "28px",
@@ -780,9 +780,8 @@ export default function DeSnapsViewer({
 
                 {/* Comments List with Professional Styling */}
                 <div 
-                  className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+                  className="flex-1 overflow-y-auto px-6 py-4 space-y-4 min-h-0"
                   style={{
-                    maxHeight: "calc(65vh - 200px)",
                     scrollbarWidth: "thin",
                     scrollbarColor: "rgba(6, 182, 212, 0.5) transparent",
                   }}
@@ -871,7 +870,7 @@ export default function DeSnapsViewer({
                 </div>
 
                 {/* Enhanced Comment Input */}
-                <div className="px-4 sm:px-6 py-4 sm:py-5 border-t border-white/10 bg-gradient-to-b from-black/50 to-black">
+                <div className="px-4 sm:px-6 py-4 sm:py-5 border-t border-white/10 bg-gradient-to-b from-black/50 to-black flex-shrink-0">
                   <form onSubmit={handleSubmitComment} className="flex gap-3 items-end">
                     {/* User Avatar */}
                     <div className="flex-shrink-0 hidden sm:block">
@@ -909,7 +908,8 @@ export default function DeSnapsViewer({
                       whileTap={{ scale: 0.95 }}
                       type="submit"
                       disabled={isSubmittingComment || !newComment.trim()}
-                      className="px-5 sm:px-6 py-3 sm:py-3.5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-2xl hover:from-cyan-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold shadow-lg shadow-cyan-500/25 transition-all flex items-center gap-2 min-w-[80px] justify-center"
+                      className="px-5 sm:px-6 py-3 sm:py-3.5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-2xl hover:from-cyan-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold shadow-lg shadow-cyan-500/25 transition-all flex items-center gap-2 min-w-[80px] justify-center pointer-events-auto z-10"
+                      style={{ touchAction: 'manipulation' }}
                     >
                       {isSubmittingComment ? (
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
