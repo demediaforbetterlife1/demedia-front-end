@@ -49,6 +49,11 @@ export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
 
   const cleanUrl = url!.trim();
 
+  // IMPORTANT: Don't touch local-photo:// URLs - they're handled by LocalPhotoImage component
+  if (cleanUrl.startsWith("local-photo://")) {
+    return cleanUrl;
+  }
+
   // Already absolute (http/https or data URL)
   if (!needsPrefix(cleanUrl)) {
     return cleanUrl;

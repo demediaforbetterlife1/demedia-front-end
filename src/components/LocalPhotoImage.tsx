@@ -40,31 +40,46 @@ export default function LocalPhotoImage({
 
     const resolveSrc = async () => {
       try {
+        console.log('🔍 LocalPhotoImage: Resolving src:', src);
         setLoading(true);
         setError(false);
 
         // Check if this is a local photo reference
         if (src.startsWith('local-photo://')) {
           const photoId = src.replace('local-photo://', '');
-          console.log('📸 Loading local photo:', photoId);
+          console.log('📸 LocalPhotoImage: Loading local photo:', photoId);
           
-          const url = await photoStorageService.getPhotoUrl(photoId);
-          
-          if (mounted) {
-            console.log('✅ Local photo loaded:', photoId, url);
-            setResolvedSrc(url);
-            setLoading(false);
+          try {
+            // Initialize storage service if needed
+            await photoStorageService.initialize();
+            console.log('✅ LocalPhotoImage: Storage initialized');
+            
+            const url = await photoStorageService.getPhotoUrl(photoId);
+            
+            if (mounted) {
+              console.log('✅ LocalPhotoImage: Local photo loaded:', photoId, url);
+              setResolvedSrc(url);
+              setLoading(false);
+            }
+          } catch (storageErr) {
+            console.error('❌ LocalPhotoImage: Storage error:', storageErr);
+            if (mounted) {
+              setError(true);
+              setLoading(false);
+            }
           }
         } else {
           // Regular backend URL
+          console.log('🌐 LocalPhotoImage: Using backend URL:', src);
           const url = ensureAbsoluteMediaUrl(src);
           if (mounted) {
+            console.log('✅ LocalPhotoImage: Backend URL resolved:', url);
             setResolvedSrc(url);
             setLoading(false);
           }
         }
       } catch (err) {
-        console.error('❌ Failed to load photo:', src, err);
+        console.error('❌ LocalPhotoImage: Failed to load photo:', src, err);
         if (mounted) {
           setError(true);
           setLoading(false);
@@ -82,12 +97,13 @@ export default function LocalPhotoImage({
   if (loading) {
     return (
       <div className={`${className} bg-gray-800/50 animate-pulse flex items-center justify-center`}>
-        <div className="text-gray-400 text-sm">Loading...</div>
+        <div className="text-gray-400 text-sm">Loading photo...</div>
       </div>
     );
   }
 
   if (error || !resolvedSrc) {
+    console.warn('⚠️ LocalPhotoImage: Showing fallback for:', src);
     return (
       <MediaImage
         src={fallbackSrc || '/images/default-post.svg'}

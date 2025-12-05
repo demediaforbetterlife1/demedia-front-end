@@ -132,12 +132,11 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
   // build URL (API_BASE may be empty => same-origin)
   let url = `${API_BASE}${path}`;
 
-  // cache-busting for GET requests
+  // AGGRESSIVE cache-busting for ALL requests (not just GET)
   const method = ((options.method || "GET") as string).toUpperCase();
-  if (method === "GET") {
-    const cb = Date.now();
-    url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}cb=${cb}&v=client-1`;
-  }
+  const cb = Date.now();
+  const random = Math.random().toString(36).substring(7);
+  url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}cb=${cb}&r=${random}&v=no-cache-${Date.now()}`;
 
   const isPostsEndpoint = path.includes("/posts");
   const isAuthEndpoint = path.includes("/auth");
@@ -149,14 +148,18 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const timeout = timeouts[attempt];
     try {
-      // choose fetch options
+      // choose fetch options with AGGRESSIVE cache prevention
       let fetchOptions: RequestInit;
       if (isPostsEndpoint || isAuthEndpoint) {
         // don't abort posts/auth requests (to avoid mid-flight aborts)
         fetchOptions = {
           ...options,
-          headers,
-          cache: "no-cache",
+          headers: {
+            ...headers,
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma': 'no-cache',
+          },
+          cache: "no-store", // Changed from no-cache to no-store (more aggressive)
           mode: "cors",
           credentials: "include", // Always include cookies
         };
@@ -167,9 +170,13 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
 
         fetchOptions = {
           ...options,
-          headers,
+          headers: {
+            ...headers,
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma': 'no-cache',
+          },
           signal: controller.signal,
-          cache: "no-cache",
+          cache: "no-store", // Changed from no-cache to no-store (more aggressive)
           mode: "cors",
           credentials: "include", // Always include cookies
         };

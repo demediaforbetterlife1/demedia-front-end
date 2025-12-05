@@ -27,15 +27,16 @@ const nextConfig = {
     unoptimized: false,
   },
 
-  // Add headers to disable caching
+  // Aggressive cache prevention - NEVER cache anything
   async headers() {
     return [
       {
+        // Disable caching for all pages
         source: '/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0, stale-while-revalidate=0',
           },
           {
             key: 'Pragma',
@@ -45,10 +46,49 @@ const nextConfig = {
             key: 'Expires',
             value: '0',
           },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
         ],
       },
       {
+        // Disable caching for API routes
         source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+        ],
+      },
+      {
+        // Disable caching for static assets
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+        ],
+      },
+      {
+        // Disable caching for images
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+        ],
+      },
+      {
+        // Disable caching for uploads
+        source: '/uploads/:path*',
         headers: [
           {
             key: 'Cache-Control',

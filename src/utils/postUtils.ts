@@ -59,6 +59,12 @@ export const normalizePost = (post: any) => {
   // Normalize and drop placeholders
   const formattedImages = imagesFromPost
     .map((url) => {
+      // Don't normalize local-photo:// URLs - keep them as-is
+      if (url.startsWith('local-photo://')) {
+        console.log('normalizePost - keeping local photo URL:', url);
+        return url;
+      }
+      
       const normalized = ensureAbsoluteMediaUrl(url);
       console.log('normalizePost - normalizing image:', url, '->', normalized);
       return normalized || url;
@@ -69,7 +75,11 @@ export const normalizePost = (post: any) => {
   const explicitCandidates = [post.imageUrl, post.coverImage, post.thumbnail, post.primaryImage]
     .filter((u) => !!u && !isPlaceholder(u));
   const primaryCandidate = explicitCandidates[0] || formattedImages[0] || post.media?.[0]?.url || null;
-  const primaryImage = ensureAbsoluteMediaUrl(primaryCandidate) || null;
+  
+  // Don't normalize local-photo:// URLs
+  const primaryImage = primaryCandidate?.startsWith('local-photo://') 
+    ? primaryCandidate 
+    : (ensureAbsoluteMediaUrl(primaryCandidate) || null);
 
   const videoUrl =
     ensureAbsoluteMediaUrl(

@@ -240,9 +240,22 @@ export default function AddPostModal({
       }
 
       // Store images locally using frontend storage
+      console.log("📦 AddPostModal: Starting to store", images.length, "images locally");
       const imageUrls: string[] = [];
+      
+      try {
+        // Initialize storage service first
+        await photoStorageService.initialize();
+        console.log("✅ AddPostModal: Storage service initialized");
+      } catch (initErr) {
+        console.error("❌ AddPostModal: Failed to initialize storage:", initErr);
+        setError(`❌ Failed to initialize photo storage: ${initErr instanceof Error ? initErr.message : 'Unknown error'}`);
+        setLoading(false);
+        return;
+      }
+      
       for (const image of images) {
-        console.log("📸 Storing image locally:", image.name, "Size:", image.size);
+        console.log("📸 AddPostModal: Storing image locally:", image.name, "Size:", image.size);
 
         try {
           // Store photo in browser storage (IndexedDB or localStorage)
@@ -252,14 +265,17 @@ export default function AddPostModal({
           const localPhotoUrl = `local-photo://${photoId}`;
           imageUrls.push(localPhotoUrl);
           
-          console.log("✅ Image stored locally:", photoId);
+          console.log("✅ AddPostModal: Image stored locally with ID:", photoId);
+          console.log("✅ AddPostModal: Local photo URL:", localPhotoUrl);
         } catch (err) {
-          console.error("Failed to store image locally:", err);
+          console.error("❌ AddPostModal: Failed to store image locally:", err);
           setError(`❌ Failed to store image: ${err instanceof Error ? err.message : 'Unknown error'}`);
           setLoading(false);
           return;
         }
       }
+      
+      console.log("✅ AddPostModal: All images stored. URLs:", imageUrls);
 
       // Videos still upload to backend (for now, focusing on photos)
       const videoUrls: string[] = [];
