@@ -239,12 +239,12 @@ export default function AddPostModal({
         return;
       }
 
-      // Convert images to Base64 and store directly in post
-      console.log("📦 AddPostModal: Converting", images.length, "images to Base64");
+      // Convert images to Base64 and store in localStorage
+      console.log("📦 AddPostModal: Processing", images.length, "images");
       const imageUrls: string[] = [];
       
       for (const image of images) {
-        console.log("📸 AddPostModal: Converting image:", image.name, "Size:", image.size);
+        console.log("📸 AddPostModal: Processing image:", image.name, "Size:", image.size);
 
         try {
           // Convert image to Base64
@@ -261,17 +261,33 @@ export default function AddPostModal({
             reader.readAsDataURL(image);
           });
           
-          imageUrls.push(base64);
-          console.log("✅ AddPostModal: Image converted to Base64:", image.name);
+          // Generate unique ID for this photo
+          const photoId = crypto.randomUUID();
+          
+          // Store Base64 in localStorage
+          try {
+            localStorage.setItem(`demedia_photo_${photoId}`, base64);
+            console.log("✅ AddPostModal: Stored in localStorage:", photoId);
+          } catch (storageErr) {
+            console.warn("⚠️ AddPostModal: localStorage full, using Base64 directly");
+            // If localStorage is full, use Base64 directly
+            imageUrls.push(base64);
+            continue;
+          }
+          
+          // Use reference URL
+          const photoUrl = `local-storage://${photoId}`;
+          imageUrls.push(photoUrl);
+          console.log("✅ AddPostModal: Photo URL:", photoUrl);
         } catch (err) {
-          console.error("❌ AddPostModal: Failed to convert image:", err);
+          console.error("❌ AddPostModal: Failed to process image:", err);
           setError(`❌ Failed to process image: ${err instanceof Error ? err.message : 'Unknown error'}`);
           setLoading(false);
           return;
         }
       }
       
-      console.log("✅ AddPostModal: All images converted. Count:", imageUrls.length);
+      console.log("✅ AddPostModal: All images processed. URLs:", imageUrls);
 
       // Videos still upload to backend (for now, focusing on photos)
       const videoUrls: string[] = [];

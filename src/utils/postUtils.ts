@@ -65,7 +65,13 @@ export const normalizePost = (post: any) => {
         return url;
       }
       
-      // Don't normalize local-photo:// URLs - keep them as-is
+      // Don't normalize localStorage references - keep them as-is
+      if (url.startsWith('local-storage://')) {
+        console.log('normalizePost - keeping localStorage URL:', url);
+        return url;
+      }
+      
+      // Don't normalize local-photo:// URLs - keep them as-is (legacy)
       if (url.startsWith('local-photo://')) {
         console.log('normalizePost - keeping local photo URL:', url);
         return url;
@@ -82,8 +88,10 @@ export const normalizePost = (post: any) => {
     .filter((u) => !!u && !isPlaceholder(u));
   const primaryCandidate = explicitCandidates[0] || formattedImages[0] || post.media?.[0]?.url || null;
   
-  // Don't normalize Base64 data URLs or local-photo:// URLs
-  const primaryImage = (primaryCandidate?.startsWith('data:image/') || primaryCandidate?.startsWith('local-photo://'))
+  // Don't normalize Base64 data URLs, localStorage refs, or local-photo:// URLs
+  const primaryImage = (primaryCandidate?.startsWith('data:image/') || 
+                        primaryCandidate?.startsWith('local-storage://') ||
+                        primaryCandidate?.startsWith('local-photo://'))
     ? primaryCandidate 
     : (ensureAbsoluteMediaUrl(primaryCandidate) || null);
 

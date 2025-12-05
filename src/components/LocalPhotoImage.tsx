@@ -54,7 +54,35 @@ export default function LocalPhotoImage({
           return;
         }
 
-        // Check if this is a local photo reference (legacy)
+        // Check if this is a localStorage reference
+        if (src.startsWith('local-storage://')) {
+          const photoId = src.replace('local-storage://', '');
+          console.log('📸 LocalPhotoImage: Loading from localStorage:', photoId);
+          
+          try {
+            const base64 = localStorage.getItem(`demedia_photo_${photoId}`);
+            if (base64 && mounted) {
+              console.log('✅ LocalPhotoImage: Photo loaded from localStorage');
+              setResolvedSrc(base64);
+              setLoading(false);
+            } else {
+              console.error('❌ LocalPhotoImage: Photo not found in localStorage');
+              if (mounted) {
+                setError(true);
+                setLoading(false);
+              }
+            }
+          } catch (storageErr) {
+            console.error('❌ LocalPhotoImage: localStorage error:', storageErr);
+            if (mounted) {
+              setError(true);
+              setLoading(false);
+            }
+          }
+          return;
+        }
+
+        // Check if this is a local photo reference (legacy IndexedDB)
         if (src.startsWith('local-photo://')) {
           const photoId = src.replace('local-photo://', '');
           console.log('📸 LocalPhotoImage: Loading local photo:', photoId);

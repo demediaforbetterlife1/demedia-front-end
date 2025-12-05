@@ -54,7 +54,12 @@ export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
     return cleanUrl;
   }
 
-  // IMPORTANT: Don't touch local-photo:// URLs - they're handled by LocalPhotoImage component
+  // IMPORTANT: Don't touch localStorage references - they're handled by LocalPhotoImage component
+  if (cleanUrl.startsWith("local-storage://")) {
+    return cleanUrl;
+  }
+
+  // IMPORTANT: Don't touch local-photo:// URLs - they're handled by LocalPhotoImage component (legacy)
   if (cleanUrl.startsWith("local-photo://")) {
     return cleanUrl;
   }
