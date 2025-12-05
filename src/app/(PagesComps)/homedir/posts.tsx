@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import CommentModal from "@/components/CommentModal";
 import MediaImage from "@/components/MediaImage";
+import LocalPhotoImage from "@/components/LocalPhotoImage";
 
 type AuthorType = {
   id: number;
@@ -145,11 +146,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
   const defaultPostImage = "/images/default-post.svg";
   const defaultAvatar = "/images/default-avatar.svg";
-
-  const getImageSrc = (src?: string | null) => {
-    const normalized = ensureAbsoluteMediaUrl(src || undefined);
-    return normalized;
-  };
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -450,6 +446,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         const profilePic =
           ensureAbsoluteMediaUrl(author?.profilePicture) || defaultAvatar;
 
+        // Collect all possible image sources
         const rawImages = (
           Array.isArray(post.images) && post.images.length > 0
             ? post.images
@@ -462,29 +459,42 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
         console.log(`🔍 Post ${post.id} raw images:`, rawImages);
 
+        // For local photos, we need to resolve them asynchronously
+        // For now, we'll keep the raw references and resolve them in the MediaImage component
         const images = rawImages
-          .map((img) => {
-            const processed = getImageSrc(img);
-            console.log(`  📸 Processing image: ${img} -> ${processed}`);
-            return processed;
-          })
           .filter((img): img is string => {
+            // Filter out null/undefined/empty
             if (!img || img.trim() === '') {
               console.log(`  ❌ Filtered out: empty or null`);
               return false;
             }
-            if (img.includes('default-post.svg') || 
-                img.includes('default-placeholder.svg') || 
-                img.includes('placeholder.png')) {
+            
+            // Keep local photo references
+            if (img.startsWith('local-photo://')) {
+              console.log(`  ✅ Keeping local photo: ${img}`);
+              return true;
+            }
+            
+            // Filter out obvious placeholders and defaults
+            const lowerImg = img.toLowerCase();
+            if (lowerImg.includes('default-post.svg') || 
+                lowerImg.includes('default-placeholder.svg') || 
+                lowerImg.includes('default-avatar.svg') ||
+                lowerImg.includes('default-cover.svg') ||
+                lowerImg.endsWith('placeholder.png') ||
+                lowerImg.endsWith('placeholder.jpg') ||
+                lowerImg.endsWith('placeholder.svg')) {
               console.log(`  ❌ Filtered out: default placeholder - ${img}`);
               return false;
             }
+            
+            // Keep everything else - real images should have actual filenames
             console.log(`  ✅ Keeping image: ${img}`);
             return true;
           })
           .slice(0, 4);
 
-        console.log(`✨ Post ${post.id} final images:`, images);
+        console.log(`✨ Post ${post.id} final images (${images.length}):`, images);
 
         const videoUrl = post.videoUrl
           ? ensureAbsoluteMediaUrl(post.videoUrl)
@@ -626,7 +636,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   {images.length > 0 &&
                     (images.length === 1 ? (
                       <div className="relative w-full overflow-hidden rounded-xl md:rounded-2xl">
-                        <MediaImage
+                        <LocalPhotoImage
                           src={images[0] || defaultPostImage}
                           alt={post.title || "Post image"}
                           className="object-cover transition-transform duration-700 group-hover:scale-[1.01]"
@@ -649,7 +659,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                                 isHero ? "col-span-2 row-span-2 aspect-video" : "aspect-square"
                               }`}
                             >
-                              <MediaImage
+                              <LocalPhotoImage
                                 src={img || defaultPostImage}
                                 alt={`Post image ${idx + 1}`}
                                 className="object-cover transition-transform duration-700 hover:scale-105"

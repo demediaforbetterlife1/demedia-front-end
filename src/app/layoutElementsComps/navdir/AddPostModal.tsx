@@ -8,7 +8,7 @@ import { getModalThemeClasses } from "@/utils/enhancedThemeUtils";
 import { contentModerationService } from "@/services/contentModeration";
 import { apiFetch } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
-// Temporarily removed frontend image cache imports
+import { photoStorageService } from "@/services/storage";
 import {
   X,
   Image as ImageIcon,
@@ -239,135 +239,31 @@ export default function AddPostModal({
         return;
       }
 
-      // Upload images if any
+      // Store images locally using frontend storage
       const imageUrls: string[] = [];
       for (const image of images) {
-        console.log("Uploading image:", image.name, "Size:", image.size);
-
-        const formData = new FormData();
-        formData.append("file", image); // Use 'file' as the field name
-        formData.append("type", "post"); // Specify this is for a post
-
-        const uploadResponse = await fetch("/api/upload", {
-          method: "POST",
-          headers: {
-            "user-id": String(userId),
-          },
-          body: formData,
-          credentials: "include",
-        });
-
-        const uploadText = await uploadResponse.text();
-        console.log("Upload response:", uploadResponse.status, uploadText);
-
-        if (!uploadResponse.ok) {
-          let errorMessage = `Image upload failed (${uploadResponse.status})`;
-          try {
-            const errorData = JSON.parse(uploadText);
-            errorMessage = errorData.error || errorMessage;
-          } catch {
-            errorMessage = uploadText || errorMessage;
-          }
-          setError(`❌ ${errorMessage}`);
-          setLoading(false);
-          return;
-        }
+        console.log("📸 Storing image locally:", image.name, "Size:", image.size);
 
         try {
-          const uploadData = JSON.parse(uploadText);
-          console.log("Upload successful:", uploadData);
-
-          if (!uploadData.success) {
-            setError(
-              `❌ Upload failed: ${uploadData.error || "Unknown error"}`,
-            );
-            setLoading(false);
-            return;
-          }
-
-          const imageUrl = uploadData.url || uploadData.imageUrl;
-          if (!imageUrl) {
-            setError(`❌ No URL returned from upload`);
-            setLoading(false);
-            return;
-          }
-
-          imageUrls.push(imageUrl);
-          console.log("Image URL added:", imageUrl);
+          // Store photo in browser storage (IndexedDB or localStorage)
+          const photoId = await photoStorageService.storePhoto(image);
+          
+          // Use a special prefix to indicate this is a local photo
+          const localPhotoUrl = `local-photo://${photoId}`;
+          imageUrls.push(localPhotoUrl);
+          
+          console.log("✅ Image stored locally:", photoId);
         } catch (err) {
-          console.error("Failed to parse upload response:", err);
-          setError(`❌ Invalid upload response: ${uploadText}`);
+          console.error("Failed to store image locally:", err);
+          setError(`❌ Failed to store image: ${err instanceof Error ? err.message : 'Unknown error'}`);
           setLoading(false);
           return;
         }
       }
 
-      // Upload videos if any
+      // Videos still upload to backend (for now, focusing on photos)
       const videoUrls: string[] = [];
-      for (const video of videos) {
-        console.log("Uploading video:", video.name, "Size:", video.size);
-
-        const formData = new FormData();
-        formData.append("file", video); // Use 'file' as the field name
-        formData.append("type", "video"); // Specify this is for a video
-
-        const uploadResponse = await fetch("/api/upload", {
-          method: "POST",
-          headers: {
-            "user-id": String(userId),
-          },
-          body: formData,
-          credentials: "include",
-        });
-
-        const uploadText = await uploadResponse.text();
-        console.log(
-          "Video upload response:",
-          uploadResponse.status,
-          uploadText,
-        );
-
-        if (!uploadResponse.ok) {
-          let errorMessage = `Video upload failed (${uploadResponse.status})`;
-          try {
-            const errorData = JSON.parse(uploadText);
-            errorMessage = errorData.error || errorMessage;
-          } catch {
-            errorMessage = uploadText || errorMessage;
-          }
-          setError(`❌ ${errorMessage}`);
-          setLoading(false);
-          return;
-        }
-
-        try {
-          const uploadData = JSON.parse(uploadText);
-          console.log("Video upload successful:", uploadData);
-
-          if (!uploadData.success) {
-            setError(
-              `❌ Video upload failed: ${uploadData.error || "Unknown error"}`,
-            );
-            setLoading(false);
-            return;
-          }
-
-          const videoUrl = uploadData.videoUrl || uploadData.url;
-          if (!videoUrl) {
-            setError(`❌ No URL returned from video upload`);
-            setLoading(false);
-            return;
-          }
-
-          videoUrls.push(videoUrl);
-          console.log("Video URL added:", videoUrl);
-        } catch (err) {
-          console.error("Failed to parse video upload response:", err);
-          setError(`❌ Invalid video upload response: ${uploadText}`);
-          setLoading(false);
-          return;
-        }
-      }
+      // TODO: Implement local video storage similar to photos
 
       console.log("Creating post with data:", {
         title: title || null,
