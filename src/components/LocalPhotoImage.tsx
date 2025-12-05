@@ -40,11 +40,21 @@ export default function LocalPhotoImage({
 
     const resolveSrc = async () => {
       try {
-        console.log('🔍 LocalPhotoImage: Resolving src:', src);
+        console.log('🔍 LocalPhotoImage: Resolving src:', src?.substring(0, 50) + '...');
         setLoading(true);
         setError(false);
 
-        // Check if this is a local photo reference
+        // Check if this is a Base64 data URL (starts with data:image/)
+        if (src.startsWith('data:image/')) {
+          console.log('📸 LocalPhotoImage: Using Base64 data URL directly');
+          if (mounted) {
+            setResolvedSrc(src);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Check if this is a local photo reference (legacy)
         if (src.startsWith('local-photo://')) {
           const photoId = src.replace('local-photo://', '');
           console.log('📸 LocalPhotoImage: Loading local photo:', photoId);
@@ -70,16 +80,16 @@ export default function LocalPhotoImage({
           }
         } else {
           // Regular backend URL
-          console.log('🌐 LocalPhotoImage: Using backend URL:', src);
+          console.log('🌐 LocalPhotoImage: Using backend URL');
           const url = ensureAbsoluteMediaUrl(src);
           if (mounted) {
-            console.log('✅ LocalPhotoImage: Backend URL resolved:', url);
+            console.log('✅ LocalPhotoImage: Backend URL resolved');
             setResolvedSrc(url);
             setLoading(false);
           }
         }
       } catch (err) {
-        console.error('❌ LocalPhotoImage: Failed to load photo:', src, err);
+        console.error('❌ LocalPhotoImage: Failed to load photo:', err);
         if (mounted) {
           setError(true);
           setLoading(false);

@@ -49,6 +49,11 @@ export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
 
   const cleanUrl = url!.trim();
 
+  // IMPORTANT: Don't touch Base64 data URLs - they're already complete
+  if (cleanUrl.startsWith("data:image/")) {
+    return cleanUrl;
+  }
+
   // IMPORTANT: Don't touch local-photo:// URLs - they're handled by LocalPhotoImage component
   if (cleanUrl.startsWith("local-photo://")) {
     return cleanUrl;

@@ -239,43 +239,39 @@ export default function AddPostModal({
         return;
       }
 
-      // Store images locally using frontend storage
-      console.log("📦 AddPostModal: Starting to store", images.length, "images locally");
+      // Convert images to Base64 and store directly in post
+      console.log("📦 AddPostModal: Converting", images.length, "images to Base64");
       const imageUrls: string[] = [];
       
-      try {
-        // Initialize storage service first
-        await photoStorageService.initialize();
-        console.log("✅ AddPostModal: Storage service initialized");
-      } catch (initErr) {
-        console.error("❌ AddPostModal: Failed to initialize storage:", initErr);
-        setError(`❌ Failed to initialize photo storage: ${initErr instanceof Error ? initErr.message : 'Unknown error'}`);
-        setLoading(false);
-        return;
-      }
-      
       for (const image of images) {
-        console.log("📸 AddPostModal: Storing image locally:", image.name, "Size:", image.size);
+        console.log("📸 AddPostModal: Converting image:", image.name, "Size:", image.size);
 
         try {
-          // Store photo in browser storage (IndexedDB or localStorage)
-          const photoId = await photoStorageService.storePhoto(image);
+          // Convert image to Base64
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              if (typeof reader.result === 'string') {
+                resolve(reader.result);
+              } else {
+                reject(new Error('Failed to convert to base64'));
+              }
+            };
+            reader.onerror = () => reject(new Error('FileReader error'));
+            reader.readAsDataURL(image);
+          });
           
-          // Use a special prefix to indicate this is a local photo
-          const localPhotoUrl = `local-photo://${photoId}`;
-          imageUrls.push(localPhotoUrl);
-          
-          console.log("✅ AddPostModal: Image stored locally with ID:", photoId);
-          console.log("✅ AddPostModal: Local photo URL:", localPhotoUrl);
+          imageUrls.push(base64);
+          console.log("✅ AddPostModal: Image converted to Base64:", image.name);
         } catch (err) {
-          console.error("❌ AddPostModal: Failed to store image locally:", err);
-          setError(`❌ Failed to store image: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          console.error("❌ AddPostModal: Failed to convert image:", err);
+          setError(`❌ Failed to process image: ${err instanceof Error ? err.message : 'Unknown error'}`);
           setLoading(false);
           return;
         }
       }
       
-      console.log("✅ AddPostModal: All images stored. URLs:", imageUrls);
+      console.log("✅ AddPostModal: All images converted. Count:", imageUrls.length);
 
       // Videos still upload to backend (for now, focusing on photos)
       const videoUrls: string[] = [];
