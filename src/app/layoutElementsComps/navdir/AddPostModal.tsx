@@ -8,7 +8,6 @@ import { getModalThemeClasses } from "@/utils/enhancedThemeUtils";
 import { contentModerationService } from "@/services/contentModeration";
 import { apiFetch } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
-import { photoStorageService } from "@/services/storage";
 import {
   X,
   Image as ImageIcon,
@@ -239,55 +238,53 @@ export default function AddPostModal({
         return;
       }
 
-      // Convert images to Base64 and store in localStorage
-      console.log("📦 AddPostModal: Processing", images.length, "images");
+      // Upload images to backend server
+      console.log("📦 AddPostModal: Uploading", images.length, "images to backend");
       const imageUrls: string[] = [];
       
       for (const image of images) {
-        console.log("📸 AddPostModal: Processing image:", image.name, "Size:", image.size);
+        console.log("📸 AddPostModal: Uploading image:", image.name, "Size:", image.size);
 
         try {
-          // Convert image to Base64
-          const base64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              if (typeof reader.result === 'string') {
-                resolve(reader.result);
-              } else {
-                reject(new Error('Failed to convert to base64'));
-              }
-            };
-            reader.onerror = () => reject(new Error('FileReader error'));
-            reader.readAsDataURL(image);
+          // Create FormData for upload
+          const formData = new FormData();
+          formData.append("file", image);
+          formData.append("type", "post");
+
+          // Upload to backend
+          const uploadRes = await fetch("/api/upload", {
+            method: "POST",
+            headers: {
+              "user-id": String(userId),
+            },
+            body: formData,
+            credentials: "include",
           });
-          
-          // Generate unique ID for this photo
-          const photoId = crypto.randomUUID();
-          
-          // Store Base64 in localStorage
-          try {
-            localStorage.setItem(`demedia_photo_${photoId}`, base64);
-            console.log("✅ AddPostModal: Stored in localStorage:", photoId);
-          } catch (storageErr) {
-            console.warn("⚠️ AddPostModal: localStorage full, using Base64 directly");
-            // If localStorage is full, use Base64 directly
-            imageUrls.push(base64);
-            continue;
+
+          if (!uploadRes.ok) {
+            const errorText = await uploadRes.text();
+            console.error("❌ AddPostModal: Upload failed:", uploadRes.status, errorText);
+            throw new Error(`Upload failed: ${errorText}`);
           }
-          
-          // Use reference URL
-          const photoUrl = `local-storage://${photoId}`;
-          imageUrls.push(photoUrl);
-          console.log("✅ AddPostModal: Photo URL:", photoUrl);
+
+          const uploadData = await uploadRes.json();
+          console.log("✅ AddPostModal: Upload response:", uploadData);
+
+          if (uploadData.url) {
+            imageUrls.push(uploadData.url);
+            console.log("✅ AddPostModal: Image uploaded:", uploadData.url);
+          } else {
+            throw new Error("No URL returned from upload");
+          }
         } catch (err) {
-          console.error("❌ AddPostModal: Failed to process image:", err);
-          setError(`❌ Failed to process image: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          console.error("❌ AddPostModal: Failed to upload image:", err);
+          setError(`❌ Failed to upload image: ${err instanceof Error ? err.message : 'Unknown error'}`);
           setLoading(false);
           return;
         }
       }
       
-      console.log("✅ AddPostModal: All images processed. URLs:", imageUrls);
+      console.log("✅ AddPostModal: All images uploaded. URLs:", imageUrls);
 
       // Videos still upload to backend (for now, focusing on photos)
       const videoUrls: string[] = [];

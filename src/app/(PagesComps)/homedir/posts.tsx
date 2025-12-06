@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import CommentModal from "@/components/CommentModal";
 import MediaImage from "@/components/MediaImage";
-import LocalPhotoImage from "@/components/LocalPhotoImage";
 
 type AuthorType = {
   id: number;
@@ -459,8 +458,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
         console.log(`🔍 Post ${post.id} raw images:`, rawImages);
 
-        // For local photos, we need to resolve them asynchronously
-        // For now, we'll keep the raw references and resolve them in the MediaImage component
+        // Filter and process images - only keep valid backend URLs
         const images = rawImages
           .filter((img): img is string => {
             // Filter out null/undefined/empty
@@ -469,10 +467,10 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               return false;
             }
             
-            // Keep local photo references
-            if (img.startsWith('local-photo://')) {
-              console.log(`  ✅ Keeping local photo: ${img}`);
-              return true;
+            // Filter out local storage references - they don't work across devices
+            if (img.startsWith('local-storage://') || img.startsWith('local-photo://')) {
+              console.log(`  ❌ Filtered out: local storage reference - ${img}`);
+              return false;
             }
             
             // Filter out obvious placeholders and defaults
@@ -488,9 +486,15 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               return false;
             }
             
-            // Keep everything else - real images should have actual filenames
-            console.log(`  ✅ Keeping image: ${img}`);
-            return true;
+            // Keep valid URLs (http/https, data URLs, or relative paths)
+            if (img.startsWith('http://') || img.startsWith('https://') || 
+                img.startsWith('data:image/') || img.startsWith('/')) {
+              console.log(`  ✅ Keeping valid image: ${img}`);
+              return true;
+            }
+            
+            console.log(`  ❌ Filtered out: invalid URL format - ${img}`);
+            return false;
           })
           .slice(0, 4);
 
@@ -636,7 +640,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   {images.length > 0 &&
                     (images.length === 1 ? (
                       <div className="relative w-full overflow-hidden rounded-xl md:rounded-2xl">
-                        <LocalPhotoImage
+                        <MediaImage
                           src={images[0] || defaultPostImage}
                           alt={post.title || "Post image"}
                           className="object-cover transition-transform duration-700 group-hover:scale-[1.01]"
@@ -659,7 +663,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                                 isHero ? "col-span-2 row-span-2 aspect-video" : "aspect-square"
                               }`}
                             >
-                              <LocalPhotoImage
+                              <MediaImage
                                 src={img || defaultPostImage}
                                 alt={`Post image ${idx + 1}`}
                                 className="object-cover transition-transform duration-700 hover:scale-105"
