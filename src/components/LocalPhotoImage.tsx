@@ -61,12 +61,15 @@ export default function LocalPhotoImage({
           
           try {
             const base64 = localStorage.getItem(`demedia_photo_${photoId}`);
-            if (base64 && mounted) {
-              console.log('✅ LocalPhotoImage: Photo loaded from localStorage');
-              setResolvedSrc(base64);
-              setLoading(false);
+            if (base64) {
+              console.log('✅ LocalPhotoImage: Photo loaded from localStorage, length:', base64.length);
+              if (mounted) {
+                setResolvedSrc(base64);
+                setLoading(false);
+              }
             } else {
-              console.error('❌ LocalPhotoImage: Photo not found in localStorage');
+              console.error('❌ LocalPhotoImage: Photo not found in localStorage for key:', `demedia_photo_${photoId}`);
+              console.log('📋 LocalPhotoImage: Available keys:', Object.keys(localStorage).filter(k => k.startsWith('demedia_photo_')));
               if (mounted) {
                 setError(true);
                 setLoading(false);

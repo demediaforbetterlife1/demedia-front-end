@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test localStorage Photo Storage</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #1a1a1a; color: #fff; }
+        button { padding: 10px 20px; margin: 10px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        img { max-width: 300px; margin: 10px; border: 2px solid #4CAF50; }
+        .log { background: #000; padding: 10px; margin: 10px 0; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>Test localStorage Photo Storage</h1>
+    
+    <input type="file" id="photoInput" accept="image/*">
+    <button onclick="testStorage()">Test Storage</button>
+    <button onclick="listPhotos()">List Photos</button>
+    <button onclick="clearAll()">Clear All</button>
+    
+    <div id="log" class="log"></div>
+    <div id="photos"></div>
+
+    <script>
+        function log(msg) {
+            document.getElementById('log').innerHTML += msg + '<br>';
+        }
+
+        async function testStorage() {
+            const file = document.getElementById('photoInput').files[0];
+            if (!file) {
+                log('❌ Please select a photo first');
+                return;
+            }
+
+            log('📸 Converting to Base64...');
+            
+            const base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            const photoId = crypto.randomUUID();
+            log('🆔 Generated ID: ' + photoId);
+
+            try {
+                localStorage.setItem(`demedia_photo_${photoId}`, base64);
+                log('✅ Stored in localStorage!');
+                log('🔗 URL: local-storage://' + photoId);
+                
+                // Test retrieval
+                const retrieved = localStorage.getItem(`demedia_photo_${photoId}`);
+                if (retrieved) {
+                    log('✅ Retrieved successfully!');
+                    const img = document.createElement('img');
+                    img.src = retrieved;
+                    document.getElementById('photos').appendChild(img);
+                } else {
+                    log('❌ Failed to retrieve');
+                }
+            } catch (err) {
+                log('❌ Error: ' + err.message);
+            }
+        }
+
+        function listPhotos() {
+            log('📋 Listing all photos in localStorage...');
+            let count = 0;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('demedia_photo_')) {
+                    count++;
+                    const id = key.replace('demedia_photo_', '');
+                    log(`${count}. ${id}`);
+                }
+            }
+            log(`Total: ${count} photos`);
+        }
+
+        function clearAll() {
+            if (!confirm('Clear all photos?')) return;
+            const keys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('demedia_photo_')) {
+                    keys.push(key);
+                }
+            }
+            keys.forEach(key => localStorage.removeItem(key));
+            log(`✅ Cleared ${keys.length} photos`);
+            document.getElementById('photos').innerHTML = '';
+        }
+    </script>
+</body>
+</html>

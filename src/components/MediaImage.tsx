@@ -38,8 +38,12 @@ const isValidImageUrl = (url: string | null | undefined): boolean => {
     if (url.startsWith("/")) {
       return true;
     }
-    // Data URLs
+    // Data URLs (Base64)
     if (url.startsWith("data:")) {
+      return true;
+    }
+    // Blob URLs (from localStorage/IndexedDB)
+    if (url.startsWith("blob:")) {
       return true;
     }
   } catch {
@@ -115,6 +119,12 @@ export default function MediaImage({
       // Handle base64 data URLs
       if (url!.startsWith("data:")) {
         console.log(`MediaImage (${alt}): Using data URL (base64)`);
+        return url!;
+      }
+
+      // Handle blob URLs (from localStorage/IndexedDB)
+      if (url!.startsWith("blob:")) {
+        console.log(`MediaImage (${alt}): Using blob URL from storage`);
         return url!;
       }
 
