@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: "50mb", // لو الصور أو الفيديوهات كبيرة
-    },
-  },
-};
+// Note: In Next.js App Router, we use route segment config instead of api config
+// The bodyParser config below is for Pages Router and won't work here
+// For App Router, we need to handle large payloads differently
+
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Allow up to 60 seconds for large uploads
 
 // ✅ جلب كل البوستات
 export async function GET(request: NextRequest) {
@@ -103,10 +102,23 @@ export async function GET(request: NextRequest) {
       }
 
       const data = JSON.parse(text);
-      console.log(
-        "✅ Backend data parsed successfully, posts count:",
-        data.posts?.length || data.length || 0,
-      );
+      
+      // Log image info for debugging
+      const posts = data.posts || data || [];
+      if (Array.isArray(posts) && posts.length > 0) {
+        const postsWithImages = posts.filter((p: any) => 
+          p.imageUrl || (p.imageUrls && p.imageUrls.length > 0)
+        );
+        console.log("✅ Backend data parsed successfully:", {
+          totalPosts: posts.length,
+          postsWithImages: postsWithImages.length,
+          firstPostHasBase64: posts[0]?.imageUrl?.startsWith('data:image/') || 
+                              posts[0]?.imageUrls?.[0]?.startsWith('data:image/'),
+        });
+      } else {
+        console.log("✅ Backend data parsed, posts count:", posts.length || 0);
+      }
+      
       return NextResponse.json(data, { status: 200 });
     } catch (fetchError) {
       console.error("🚨 Backend fetch failed:", fetchError);
@@ -154,7 +166,18 @@ export async function GET(request: NextRequest) {
 // ✅ إنشاء بوست جديد
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // Parse the request body - handle large Base64 payloads
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error("❌ Failed to parse request body:", parseError);
+      return NextResponse.json(
+        { error: true, message: "Invalid request body - possibly too large" },
+        { status: 400 },
+      );
+    }
+
     const userId = request.headers.get("user-id");
 
     // Try to get token from cookie first, then fall back to Authorization header
@@ -173,6 +196,14 @@ export async function POST(request: NextRequest) {
         { status: 401 },
       );
     }
+
+    // Log image info for debugging
+    const imageUrls = body.imageUrls || [];
+    console.log("📸 Post creation - Image info:", {
+      imageCount: imageUrls.length,
+      hasBase64: imageUrls.some((url: string) => url?.startsWith('data:image/')),
+      firstImageSize: imageUrls[0] ? Math.round(imageUrls[0].length / 1024) + 'KB' : 'none',
+    });
 
     const backendUrl =
       (process.env.BACKEND_URL || "https://demedia-backend.fly.dev") +
@@ -193,11 +224,11 @@ export async function POST(request: NextRequest) {
 
     const text = await res.text();
     if (!res.ok) {
-      console.error("❌ Backend returned error:", text);
+      console.error("❌ Backend returned error:", text.substring(0, 500));
 
       // Provide specific error messages based on status code
       let errorMessage = "Failed to create post";
-      let details = text;
+      let details = text.substring(0, 200);
 
       switch (res.status) {
         case 401:
@@ -233,6 +264,13 @@ export async function POST(request: NextRequest) {
     }
 
     const data = JSON.parse(text);
+    
+    // Log successful creation
+    console.log("✅ Post created successfully:", {
+      postId: data.id,
+      hasImages: !!(data.imageUrls?.length || data.imageUrl),
+    });
+    
     return NextResponse.json(data, { status: 201 });
   } catch (error: unknown) {
     console.error("❌ Post creation error:", error);

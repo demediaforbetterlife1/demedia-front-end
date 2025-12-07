@@ -445,7 +445,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         const profilePic =
           ensureAbsoluteMediaUrl(author?.profilePicture) || defaultAvatar;
 
-        // Collect all possible image sources
+        // Collect all possible image sources - check multiple fields
         const rawImages = (
           Array.isArray(post.images) && post.images.length > 0
             ? post.images
@@ -456,20 +456,22 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                 : []
         ) as string[];
 
-        console.log(`🔍 Post ${post.id} raw images:`, rawImages);
+        console.log(`🔍 Post ${post.id} raw images:`, {
+          count: rawImages.length,
+          firstImagePreview: rawImages[0]?.substring(0, 80),
+          isBase64: rawImages[0]?.startsWith('data:image/'),
+        });
 
         // Filter and process images - prioritize Base64 data URLs for 100% frontend display
         const images = rawImages
           .filter((img): img is string => {
             // Filter out null/undefined/empty
-            if (!img || img.trim() === '') {
-              console.log(`  ❌ Filtered out: empty or null`);
+            if (!img || typeof img !== 'string' || img.trim() === '') {
               return false;
             }
             
             // Filter out local storage references - they don't work across devices
             if (img.startsWith('local-storage://') || img.startsWith('local-photo://')) {
-              console.log(`  ❌ Filtered out: local storage reference - ${img}`);
               return false;
             }
             
@@ -482,28 +484,31 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                 lowerImg.endsWith('placeholder.png') ||
                 lowerImg.endsWith('placeholder.jpg') ||
                 lowerImg.endsWith('placeholder.svg')) {
-              console.log(`  ❌ Filtered out: default placeholder - ${img}`);
               return false;
             }
             
             // PRIORITY: Base64 data URLs - these are 100% frontend and always work
             if (img.startsWith('data:image/')) {
-              console.log(`  ✅ Keeping Base64 data URL (frontend storage)`);
-              return true;
+              // Validate the Base64 has actual content (not truncated)
+              const commaIndex = img.indexOf(',');
+              if (commaIndex > 0 && img.length > commaIndex + 100) {
+                console.log(`  ✅ Post ${post.id}: Valid Base64 image (${Math.round(img.length / 1024)}KB)`);
+                return true;
+              }
+              console.log(`  ❌ Post ${post.id}: Base64 appears truncated or invalid`);
+              return false;
             }
             
             // Keep valid URLs (http/https or relative paths)
             if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('/')) {
-              console.log(`  ✅ Keeping valid URL: ${img.substring(0, 50)}...`);
               return true;
             }
             
-            console.log(`  ❌ Filtered out: invalid URL format - ${img}`);
             return false;
           })
           .slice(0, 4);
 
-        console.log(`✨ Post ${post.id} final images (${images.length}):`, images);
+        console.log(`✨ Post ${post.id} final images: ${images.length} valid images`);
 
         const videoUrl = post.videoUrl
           ? ensureAbsoluteMediaUrl(post.videoUrl)

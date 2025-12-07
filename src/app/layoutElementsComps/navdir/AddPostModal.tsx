@@ -246,14 +246,30 @@ export default function AddPostModal({
       if (images.length > 0) {
         try {
           // Convert all images to Base64 data URLs
-          imageUrls = await filesToBase64(images, 1200, 0.8);
+          // Use slightly lower quality (0.7) to keep file sizes manageable
+          // Max width 1000px to balance quality and size
+          imageUrls = await filesToBase64(images, 1000, 0.7);
           console.log("✅ AddPostModal: All images converted to Base64. Count:", imageUrls.length);
           
-          // Log sizes for debugging
+          // Log sizes for debugging and validate
+          let totalSizeKB = 0;
           imageUrls.forEach((url, i) => {
             const sizeKB = Math.round(url.length / 1024);
+            totalSizeKB += sizeKB;
             console.log(`📸 Image ${i + 1}: ${sizeKB}KB (Base64)`);
+            
+            // Validate the Base64 data URL
+            if (!url.startsWith('data:image/')) {
+              console.error(`❌ Image ${i + 1} is not a valid Base64 data URL`);
+            }
           });
+          
+          console.log(`📊 Total images size: ${totalSizeKB}KB`);
+          
+          // Warn if total size is very large (over 5MB)
+          if (totalSizeKB > 5000) {
+            console.warn("⚠️ Total image size is large, this may cause issues");
+          }
         } catch (err) {
           console.error("❌ AddPostModal: Failed to convert images:", err);
           setError(`❌ Failed to process images: ${err instanceof Error ? err.message : 'Unknown error'}`);

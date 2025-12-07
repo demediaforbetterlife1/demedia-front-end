@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
 
 interface MediaImageProps {
@@ -24,6 +24,12 @@ const DEFAULT_POST_IMAGE = "/images/default-post.svg";
 // Backend URL for constructing absolute URLs
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://demedia-backend.fly.dev";
 
+// Check if a string is a valid Base64 data URL
+const isBase64DataUrl = (url: string | null | undefined): boolean => {
+  if (!url) return false;
+  return url.startsWith("data:image/");
+};
+
 // Validate that a URL is actually loadable
 const isValidImageUrl = (url: string | null | undefined): boolean => {
   if (!url) return false;
@@ -32,6 +38,15 @@ const isValidImageUrl = (url: string | null | undefined): boolean => {
 
   // Check if it's a valid URL format
   try {
+    // PRIORITY: Base64 data URLs - always valid if they start with data:image/
+    if (url.startsWith("data:image/")) {
+      // Validate it has actual content after the header
+      const commaIndex = url.indexOf(",");
+      if (commaIndex > 0 && url.length > commaIndex + 10) {
+        return true;
+      }
+      return false;
+    }
     // Absolute URLs
     if (url.startsWith("http://") || url.startsWith("https://")) {
       new URL(url);
@@ -39,10 +54,6 @@ const isValidImageUrl = (url: string | null | undefined): boolean => {
     }
     // Relative URLs (local paths)
     if (url.startsWith("/")) {
-      return true;
-    }
-    // Data URLs (Base64)
-    if (url.startsWith("data:")) {
       return true;
     }
     // Blob URLs (from localStorage/IndexedDB)
@@ -73,19 +84,30 @@ export default function MediaImage({
   const [isLoading, setIsLoading] = useState(true);
   const [attemptedSrc, setAttemptedSrc] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string>("");
+  const [processedSrc, setProcessedSrc] = useState<string | null>(null);
 
   // Reset state when src changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (src !== attemptedSrc) {
+      const isBase64 = isBase64DataUrl(src);
       console.log("MediaImage: Source changed", {
-        old: attemptedSrc,
-        new: src,
+        old: attemptedSrc?.substring(0, 50),
+        new: src?.substring(0, 50),
         alt,
+        isBase64,
+        srcLength: src?.length || 0,
       });
       setImageError(false);
       setIsLoading(true);
       setAttemptedSrc(src || null);
       setDebugInfo("");
+      
+      // For Base64 images, use them directly without any processing
+      if (isBase64 && src) {
+        setProcessedSrc(src);
+      } else {
+        setProcessedSrc(null);
+      }
     }
   }, [src, attemptedSrc, alt]);
 
@@ -104,9 +126,21 @@ export default function MediaImage({
   // Validate and clean the image URL
   const getValidImageUrl = useCallback(
     (url: string | null | undefined): string => {
+      // PRIORITY: Handle Base64 data URLs FIRST - these are 100% frontend and always work
+      if (url && url.startsWith("data:image/")) {
+        // Validate the Base64 data URL has actual content
+        const commaIndex = url.indexOf(",");
+        if (commaIndex > 0 && url.length > commaIndex + 100) {
+          console.log(`MediaImage (${alt}): Using Base64 data URL (${Math.round(url.length / 1024)}KB)`);
+          return url;
+        } else {
+          console.warn(`MediaImage (${alt}): Base64 data URL appears truncated or invalid`);
+        }
+      }
+
       // If URL is invalid, return fallback immediately
       if (!isValidImageUrl(url)) {
-        const message = `Invalid image URL: ${url}, using fallback`;
+        const message = `Invalid image URL: ${url?.substring(0, 50)}, using fallback`;
         console.warn(`MediaImage (${alt}):`, message);
         setDebugInfo(message);
         return getFallbackImage();
@@ -119,12 +153,6 @@ export default function MediaImage({
         return localUrl;
       }
 
-      // PRIORITY: Handle Base64 data URLs - these are 100% frontend and always work
-      if (url!.startsWith("data:")) {
-        console.log(`MediaImage (${alt}): Using Base64 data URL (100% frontend storage)`);
-        return url!;
-      }
-
       // Handle blob URLs (from localStorage/IndexedDB)
       if (url!.startsWith("blob:")) {
         console.log(`MediaImage (${alt}): Using blob URL from storage`);
@@ -134,15 +162,15 @@ export default function MediaImage({
       // Use shared helper that handles relative paths (with/without leading slash)
       const normalized = ensureAbsoluteMediaUrl(url);
       if (!normalized) {
-        const message = `Failed to normalize URL: ${url}, using fallback`;
+        const message = `Failed to normalize URL: ${url?.substring(0, 50)}, using fallback`;
         console.warn(`MediaImage (${alt}):`, message);
         setDebugInfo(message);
         return getFallbackImage();
       }
 
       console.log(`MediaImage (${alt}): Normalized URL:`, {
-        original: url,
-        normalized,
+        original: url?.substring(0, 50),
+        normalized: normalized?.substring(0, 50),
       });
       return normalized;
     },
@@ -151,9 +179,10 @@ export default function MediaImage({
 
   const handleImageError = useCallback(() => {
     const srcPreview = src?.substring(0, 100) || 'null';
+    const isBase64 = isBase64DataUrl(src);
     const message = `Image failed to load: ${srcPreview}...`;
     console.warn(`MediaImage (${alt}):`, message, "switching to fallback");
-    console.warn(`MediaImage (${alt}): Full src length:`, src?.length || 0);
+    console.warn(`MediaImage (${alt}): Full src length:`, src?.length || 0, "isBase64:", isBase64);
     setDebugInfo(message);
     setImageError(true);
     setIsLoading(false);
@@ -161,7 +190,10 @@ export default function MediaImage({
   }, [src, onError, alt]);
 
   // Determine the final image URL to use
-  const imageUrl = imageError ? getFallbackImage() : getValidImageUrl(src);
+  // For Base64 images that were pre-processed, use them directly
+  const imageUrl = imageError 
+    ? getFallbackImage() 
+    : (processedSrc || getValidImageUrl(src));
 
   const handleImageLoad = useCallback(() => {
     console.log(`MediaImage (${alt}): Successfully loaded:`, imageUrl);
