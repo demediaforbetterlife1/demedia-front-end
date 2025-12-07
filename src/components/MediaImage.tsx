@@ -21,6 +21,9 @@ interface MediaImageProps {
 const DEFAULT_AVATAR = "/images/default-avatar.svg";
 const DEFAULT_POST_IMAGE = "/images/default-post.svg";
 
+// Backend URL for constructing absolute URLs
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://demedia-backend.fly.dev";
+
 // Validate that a URL is actually loadable
 const isValidImageUrl = (url: string | null | undefined): boolean => {
   if (!url) return false;
@@ -116,9 +119,9 @@ export default function MediaImage({
         return localUrl;
       }
 
-      // Handle base64 data URLs
+      // PRIORITY: Handle Base64 data URLs - these are 100% frontend and always work
       if (url!.startsWith("data:")) {
-        console.log(`MediaImage (${alt}): Using data URL (base64)`);
+        console.log(`MediaImage (${alt}): Using Base64 data URL (100% frontend storage)`);
         return url!;
       }
 

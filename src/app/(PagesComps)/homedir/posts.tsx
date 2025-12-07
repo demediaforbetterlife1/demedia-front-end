@@ -458,7 +458,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
         console.log(`🔍 Post ${post.id} raw images:`, rawImages);
 
-        // Filter and process images - only keep valid backend URLs
+        // Filter and process images - prioritize Base64 data URLs for 100% frontend display
         const images = rawImages
           .filter((img): img is string => {
             // Filter out null/undefined/empty
@@ -486,10 +486,15 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               return false;
             }
             
-            // Keep valid URLs (http/https, data URLs, or relative paths)
-            if (img.startsWith('http://') || img.startsWith('https://') || 
-                img.startsWith('data:image/') || img.startsWith('/')) {
-              console.log(`  ✅ Keeping valid image: ${img}`);
+            // PRIORITY: Base64 data URLs - these are 100% frontend and always work
+            if (img.startsWith('data:image/')) {
+              console.log(`  ✅ Keeping Base64 data URL (frontend storage)`);
+              return true;
+            }
+            
+            // Keep valid URLs (http/https or relative paths)
+            if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('/')) {
+              console.log(`  ✅ Keeping valid URL: ${img.substring(0, 50)}...`);
               return true;
             }
             

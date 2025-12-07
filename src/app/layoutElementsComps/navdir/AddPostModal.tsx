@@ -8,6 +8,7 @@ import { getModalThemeClasses } from "@/utils/enhancedThemeUtils";
 import { contentModerationService } from "@/services/contentModeration";
 import { apiFetch } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
+import { filesToBase64 } from "@/utils/imageToBase64";
 import {
   X,
   Image as ImageIcon,
@@ -238,53 +239,30 @@ export default function AddPostModal({
         return;
       }
 
-      // Upload images to backend server
-      console.log("📦 AddPostModal: Uploading", images.length, "images to backend");
-      const imageUrls: string[] = [];
+      // Convert images to Base64 data URLs (100% frontend storage)
+      console.log("📦 AddPostModal: Converting", images.length, "images to Base64");
+      let imageUrls: string[] = [];
       
-      for (const image of images) {
-        console.log("📸 AddPostModal: Uploading image:", image.name, "Size:", image.size);
-
+      if (images.length > 0) {
         try {
-          // Create FormData for upload
-          const formData = new FormData();
-          formData.append("file", image);
-          formData.append("type", "post");
-
-          // Upload to backend
-          const uploadRes = await fetch("/api/upload", {
-            method: "POST",
-            headers: {
-              "user-id": String(userId),
-            },
-            body: formData,
-            credentials: "include",
+          // Convert all images to Base64 data URLs
+          imageUrls = await filesToBase64(images, 1200, 0.8);
+          console.log("✅ AddPostModal: All images converted to Base64. Count:", imageUrls.length);
+          
+          // Log sizes for debugging
+          imageUrls.forEach((url, i) => {
+            const sizeKB = Math.round(url.length / 1024);
+            console.log(`📸 Image ${i + 1}: ${sizeKB}KB (Base64)`);
           });
-
-          if (!uploadRes.ok) {
-            const errorText = await uploadRes.text();
-            console.error("❌ AddPostModal: Upload failed:", uploadRes.status, errorText);
-            throw new Error(`Upload failed: ${errorText}`);
-          }
-
-          const uploadData = await uploadRes.json();
-          console.log("✅ AddPostModal: Upload response:", uploadData);
-
-          if (uploadData.url) {
-            imageUrls.push(uploadData.url);
-            console.log("✅ AddPostModal: Image uploaded:", uploadData.url);
-          } else {
-            throw new Error("No URL returned from upload");
-          }
         } catch (err) {
-          console.error("❌ AddPostModal: Failed to upload image:", err);
-          setError(`❌ Failed to upload image: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          console.error("❌ AddPostModal: Failed to convert images:", err);
+          setError(`❌ Failed to process images: ${err instanceof Error ? err.message : 'Unknown error'}`);
           setLoading(false);
           return;
         }
       }
       
-      console.log("✅ AddPostModal: All images uploaded. URLs:", imageUrls);
+      console.log("✅ AddPostModal: All images processed. Count:", imageUrls.length);
 
       // Videos still upload to backend (for now, focusing on photos)
       const videoUrls: string[] = [];
