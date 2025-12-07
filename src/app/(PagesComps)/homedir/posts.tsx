@@ -644,13 +644,13 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
                   {images.length > 0 &&
                     (images.length === 1 ? (
-                      <div className="relative w-full overflow-hidden rounded-xl md:rounded-2xl">
+                      <div className="relative w-full overflow-hidden rounded-xl md:rounded-2xl aspect-video">
                         <MediaImage
                           src={images[0] || defaultPostImage}
                           alt={post.title || "Post image"}
                           className="object-cover transition-transform duration-700 group-hover:scale-[1.01]"
-                          width={800}
-                          height={600}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 800px"
                           fallbackSrc={defaultPostImage}
                           priority
                         />

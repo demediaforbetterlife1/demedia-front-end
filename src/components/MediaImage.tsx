@@ -150,8 +150,10 @@ export default function MediaImage({
   );
 
   const handleImageError = useCallback(() => {
-    const message = `Image failed to load: ${src}`;
+    const srcPreview = src?.substring(0, 100) || 'null';
+    const message = `Image failed to load: ${srcPreview}...`;
     console.warn(`MediaImage (${alt}):`, message, "switching to fallback");
+    console.warn(`MediaImage (${alt}): Full src length:`, src?.length || 0);
     setDebugInfo(message);
     setImageError(true);
     setIsLoading(false);
