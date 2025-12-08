@@ -17,7 +17,7 @@ import {
     IoStarOutline,
 } from "react-icons/io5";
 import { useAuth } from "@/contexts/AuthContext";
-import AddPostModal from "@/app/layoutElementsComps/navdir/AddPostModal";
+import CreateContentModal from "@/components/CreateContentModal";
 import SettingsItems from "@/app/(PagesComps)/settingsdir/settingsItems";
 import { useRouter } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -36,7 +36,7 @@ export default function Navbar() {
 
     const { user, logout } = useAuth();
     const router = useRouter();
-    const [showAddPost, setShowAddPost] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [showEnhancedSearch, setShowEnhancedSearch] = useState(false);
     const { showWelcomeNotification } = useNotifications();
@@ -278,14 +278,14 @@ export default function Navbar() {
                 <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">
                     <LanguageSwitcher />
                     
-                    {/* Create Post Button */}
+                    {/* Create Content Button */}
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => setShowAddPost(true)}
+                        onClick={() => setShowCreateModal(true)}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 
                             text-white font-medium text-sm shadow-lg hover:shadow-green-500/30 transition-all duration-200"
-                        title="Create Post"
+                        title="Create Content"
                     >
                         <IoAddCircleOutline size={18} />
                         <span className="hidden xl:inline">Create</span>
@@ -543,11 +543,11 @@ export default function Navbar() {
                                 </button>
 
                                 <button 
-                                    onClick={() => { setMobileOpen(false); setShowAddPost(true); }}
+                                    onClick={() => { setMobileOpen(false); setShowCreateModal(true); }}
                                     className="flex items-center space-x-3 w-full p-2.5 rounded-lg theme-text-muted hover:text-green-400 hover:theme-bg-primary transition"
                                 >
                                     <IoAddCircleOutline size={20} />
-                                    <span>Create Post</span>
+                                    <span>Create Content</span>
                                 </button>
 
                                 <button 
@@ -653,9 +653,10 @@ export default function Navbar() {
             </AnimatePresence>
 
             {/* Modals */}
-            {showAddPost && (
-                <AddPostModal isOpen={showAddPost} onClose={() => setShowAddPost(false)} authorId={Number(user?.id) || 0} />
-            )}
+            <CreateContentModal
+                isOpen={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+            />
             {showSettings && (
                 <div className="fixed inset-0 z-[60]">
                     <SettingsItems />
