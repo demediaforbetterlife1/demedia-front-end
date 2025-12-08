@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
 
 interface MediaImageProps {
@@ -21,9 +21,6 @@ interface MediaImageProps {
 const DEFAULT_AVATAR = "/images/default-avatar.svg";
 const DEFAULT_POST_IMAGE = "/images/default-post.svg";
 
-// Backend URL for constructing absolute URLs
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://demedia-backend.fly.dev";
-
 // Check if a string is a valid Base64 data URL
 const isBase64DataUrl = (url: string | null | undefined): boolean => {
   if (!url) return false;
@@ -40,7 +37,7 @@ const isValidImageUrl = (url: string | null | undefined): boolean => {
   try {
     // PRIORITY: Base64 data URLs - always valid if they start with data:image/
     if (url.startsWith("data:image/")) {
-      // Validate it has actual content after the header
+      // Validate it has actual content after the header (reduced threshold for small images)
       const commaIndex = url.indexOf(",");
       if (commaIndex > 0 && url.length > commaIndex + 10) {
         return true;
@@ -82,34 +79,34 @@ export default function MediaImage({
 }: MediaImageProps) {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [attemptedSrc, setAttemptedSrc] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string>("");
   const [processedSrc, setProcessedSrc] = useState<string | null>(null);
+  const lastSrcRef = useRef<string | null | undefined>(null);
 
   // Reset state when src changes
   useEffect(() => {
-    if (src !== attemptedSrc) {
-      const isBase64 = isBase64DataUrl(src);
-      console.log("MediaImage: Source changed", {
-        old: attemptedSrc?.substring(0, 50),
-        new: src?.substring(0, 50),
-        alt,
-        isBase64,
-        srcLength: src?.length || 0,
-      });
-      setImageError(false);
-      setIsLoading(true);
-      setAttemptedSrc(src || null);
-      setDebugInfo("");
-      
-      // For Base64 images, use them directly without any processing
-      if (isBase64 && src) {
-        setProcessedSrc(src);
-      } else {
-        setProcessedSrc(null);
-      }
+    // Skip if src hasn't changed
+    if (src === lastSrcRef.current) return;
+    lastSrcRef.current = src;
+    
+    const isBase64 = isBase64DataUrl(src);
+    console.log("MediaImage: Source changed", {
+      new: src?.substring(0, 60),
+      alt,
+      isBase64,
+      srcLength: src?.length || 0,
+    });
+    setImageError(false);
+    setIsLoading(true);
+    setDebugInfo("");
+    
+    // For Base64 images, use them directly without any processing
+    if (isBase64 && src) {
+      setProcessedSrc(src);
+    } else {
+      setProcessedSrc(null);
     }
-  }, [src, attemptedSrc, alt]);
+  }, [src, alt]);
 
   // Determine the appropriate fallback image
   const getFallbackImage = useCallback(() => {

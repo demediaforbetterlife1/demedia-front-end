@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { postPhotoCache } from "@/services/storage/PostPhotoCache";
 
 interface PostImageProps {
@@ -22,7 +22,7 @@ const DEFAULT_POST_IMAGE = "/images/default-post.svg";
  * PostImage component - Ensures photos always display
  * 
  * Priority order:
- * 1. Base64 data URL from src prop (if valid)
+ * 1. Base64 data URL from src prop (if valid) - HIGHEST PRIORITY for frontend-only display
  * 2. Cached photo from IndexedDB (by postId + photoIndex)
  * 3. Backend URL from src prop
  * 4. Fallback placeholder
@@ -42,7 +42,8 @@ export default function PostImage({
   const [imageSrc, setImageSrc] = useState<string>(DEFAULT_POST_IMAGE);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [attemptedSources, setAttemptedSources] = useState<Set<string>>(new Set());
+  const attemptedSourcesRef = useRef<Set<string>>(new Set());
+  const lastSrcRef = useRef<string | null | undefined>(null);
 
   // Check if a string is a valid Base64 data URL with actual content
   const isValidBase64 = useCallback((url: string | null | undefined): boolean => {
@@ -50,39 +51,54 @@ export default function PostImage({
     if (!url.startsWith('data:image/')) return false;
     
     const commaIndex = url.indexOf(',');
-    // Must have comma and at least 100 chars of data after it
-    return commaIndex > 0 && url.length > commaIndex + 100;
+    // Must have comma and at least 50 chars of data after it (reduced threshold)
+    return commaIndex > 0 && url.length > commaIndex + 50;
   }, []);
 
   // Check if URL is a valid http/https URL
   const isValidHttpUrl = useCallback((url: string | null | undefined): boolean => {
     if (!url || typeof url !== 'string') return false;
-    return url.startsWith('http://') || url.startsWith('https://');
+    return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/');
   }, []);
 
   // Load image from various sources
   useEffect(() => {
+    // Skip if src hasn't changed
+    if (src === lastSrcRef.current) return;
+    lastSrcRef.current = src;
+    
     let isMounted = true;
+    attemptedSourcesRef.current = new Set();
 
     const loadImage = async () => {
       setIsLoading(true);
       setHasError(false);
 
-      // Priority 1: Check if src is already a valid Base64 data URL
+      // PRIORITY 1: Check if src is already a valid Base64 data URL
+      // This is the most reliable for frontend-only display
       if (isValidBase64(src)) {
-        console.log(`📸 PostImage [${postId}]: Using Base64 from src (${Math.round(src!.length / 1024)}KB)`);
+        const sizeKB = Math.round(src!.length / 1024);
+        console.log(`📸 PostImage [${postId}][${photoIndex}]: Using Base64 from src (${sizeKB}KB)`);
         if (isMounted) {
           setImageSrc(src!);
           setIsLoading(false);
+          
+          // Also cache it for future use
+          try {
+            await postPhotoCache.storePhotosForPost(postId, [src!]);
+          } catch (e) {
+            // Ignore cache errors
+          }
         }
         return;
       }
 
-      // Priority 2: Try to get from local cache
+      // PRIORITY 2: Try to get from local IndexedDB cache
       try {
         const cachedPhoto = await postPhotoCache.getPhotoForPost(postId, photoIndex);
         if (cachedPhoto && isValidBase64(cachedPhoto)) {
-          console.log(`📸 PostImage [${postId}]: Using cached photo (${Math.round(cachedPhoto.length / 1024)}KB)`);
+          const sizeKB = Math.round(cachedPhoto.length / 1024);
+          console.log(`📸 PostImage [${postId}][${photoIndex}]: Using cached photo (${sizeKB}KB)`);
           if (isMounted) {
             setImageSrc(cachedPhoto);
             setIsLoading(false);
@@ -93,9 +109,9 @@ export default function PostImage({
         console.warn(`PostImage [${postId}]: Cache lookup failed:`, err);
       }
 
-      // Priority 3: Try backend URL if valid
+      // PRIORITY 3: Try backend URL if valid (http/https or relative path)
       if (isValidHttpUrl(src)) {
-        console.log(`📸 PostImage [${postId}]: Trying backend URL:`, src?.substring(0, 50));
+        console.log(`📸 PostImage [${postId}][${photoIndex}]: Trying URL:`, src?.substring(0, 80));
         if (isMounted) {
           setImageSrc(src!);
           setIsLoading(false);
@@ -103,8 +119,8 @@ export default function PostImage({
         return;
       }
 
-      // Priority 4: Fallback to placeholder
-      console.log(`📸 PostImage [${postId}]: No valid source, using placeholder`);
+      // PRIORITY 4: Fallback to placeholder
+      console.log(`📸 PostImage [${postId}][${photoIndex}]: No valid source, using placeholder. src was:`, src?.substring(0, 50));
       if (isMounted) {
         setImageSrc(DEFAULT_POST_IMAGE);
         setIsLoading(false);
@@ -121,19 +137,19 @@ export default function PostImage({
 
   // Handle image load error - try next source
   const handleError = useCallback(async () => {
-    console.warn(`📸 PostImage [${postId}]: Failed to load:`, imageSrc?.substring(0, 50));
+    console.warn(`📸 PostImage [${postId}][${photoIndex}]: Failed to load:`, imageSrc?.substring(0, 80));
     
     // Mark this source as attempted
-    setAttemptedSources(prev => new Set(prev).add(imageSrc));
+    attemptedSourcesRef.current.add(imageSrc);
 
-    // If we failed on a backend URL, try cache
-    if (isValidHttpUrl(imageSrc) && !attemptedSources.has('cache')) {
+    // If we failed on a URL, try cache as fallback
+    if (isValidHttpUrl(imageSrc) && !attemptedSourcesRef.current.has('cache')) {
       try {
         const cachedPhoto = await postPhotoCache.getPhotoForPost(postId, photoIndex);
         if (cachedPhoto && isValidBase64(cachedPhoto)) {
-          console.log(`📸 PostImage [${postId}]: Fallback to cached photo`);
+          console.log(`📸 PostImage [${postId}][${photoIndex}]: Fallback to cached photo`);
           setImageSrc(cachedPhoto);
-          setAttemptedSources(prev => new Set(prev).add('cache'));
+          attemptedSourcesRef.current.add('cache');
           return;
         }
       } catch (err) {
@@ -142,13 +158,16 @@ export default function PostImage({
     }
 
     // Final fallback to placeholder
-    setImageSrc(DEFAULT_POST_IMAGE);
+    if (imageSrc !== DEFAULT_POST_IMAGE) {
+      setImageSrc(DEFAULT_POST_IMAGE);
+    }
     setHasError(true);
     onError?.();
-  }, [postId, photoIndex, imageSrc, attemptedSources, isValidBase64, isValidHttpUrl, onError]);
+  }, [postId, photoIndex, imageSrc, isValidBase64, isValidHttpUrl, onError]);
 
   const handleLoad = useCallback(() => {
     setIsLoading(false);
+    setHasError(false);
     onLoad?.();
   }, [onLoad]);
 

@@ -181,39 +181,63 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
       console.log("📋 Posts array:", postsArray.length, "posts");
 
-      const normalizedPosts = postsArray
-        .filter((post: any) => post && typeof post === "object")
-        .map((post: any) => {
-          console.log('📸 Post image data:', {
-            id: post.id,
-            imageUrl: post.imageUrl,
-            imageUrls: post.imageUrls,
-            images: post.images,
-            hasImages: !!(post.imageUrl || post.imageUrls?.length || post.images?.length)
-          });
-          
-          return {
-            id: post.id,
-            title: post.title || null,
-            content: post.content || "",
-            imageUrl: post.imageUrl || null,
-            imageUrls: post.imageUrls || post.images || [],
-            images: post.images || post.imageUrls || [],
-            videoUrl: post.videoUrl || null,
-            likes: post.likes || 0,
-            comments: post.comments || 0,
-            liked: post.liked || false,
-            createdAt: post.createdAt || new Date().toISOString(),
-            updatedAt: post.updatedAt || new Date().toISOString(),
-            author: post.author ||
-              post.user || {
-                id: post.userId || 1,
-                username: "Unknown",
-                name: "Unknown User",
-                profilePicture: null,
-              },
-          };
-        }) as PostType[];
+      // Import postPhotoCache for caching Base64 images
+      const { postPhotoCache } = await import('@/services/storage/PostPhotoCache');
+
+      const normalizedPosts = await Promise.all(
+        postsArray
+          .filter((post: any) => post && typeof post === "object")
+          .map(async (post: any) => {
+            // Collect all image sources
+            const allImages = [
+              ...(post.imageUrls || []),
+              ...(post.images || []),
+              post.imageUrl,
+            ].filter((img): img is string => 
+              img && typeof img === 'string' && img.trim() !== ''
+            );
+
+            // Find Base64 images and cache them
+            const base64Images = allImages.filter(img => img.startsWith('data:image/'));
+            if (base64Images.length > 0 && post.id) {
+              try {
+                await postPhotoCache.storePhotosForPost(post.id, base64Images);
+                console.log(`📦 Cached ${base64Images.length} Base64 images for post ${post.id}`);
+              } catch (e) {
+                console.warn(`Failed to cache images for post ${post.id}:`, e);
+              }
+            }
+
+            console.log('📸 Post image data:', {
+              id: post.id,
+              totalImages: allImages.length,
+              base64Count: base64Images.length,
+              firstImagePreview: allImages[0]?.substring(0, 50),
+            });
+            
+            return {
+              id: post.id,
+              title: post.title || null,
+              content: post.content || "",
+              imageUrl: post.imageUrl || null,
+              imageUrls: post.imageUrls || post.images || [],
+              images: post.images || post.imageUrls || [],
+              videoUrl: post.videoUrl || null,
+              likes: post.likes || 0,
+              comments: post.comments || 0,
+              liked: post.liked || false,
+              createdAt: post.createdAt || new Date().toISOString(),
+              updatedAt: post.updatedAt || new Date().toISOString(),
+              author: post.author ||
+                post.user || {
+                  id: post.userId || 1,
+                  username: "Unknown",
+                  name: "Unknown User",
+                  profilePicture: null,
+                },
+            };
+          })
+      ) as PostType[];
 
       console.log("✨ Normalized posts:", normalizedPosts.length);
 
