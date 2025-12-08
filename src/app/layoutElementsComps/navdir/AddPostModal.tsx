@@ -342,16 +342,33 @@ export default function AddPostModal({
         const newPost = JSON.parse(responseText);
         const normalizedPost = normalizePost(newPost) || newPost;
 
+        // Store photos in local cache for reliable retrieval
+        if (imageUrls.length > 0 && newPost.id) {
+          try {
+            const { postPhotoCache } = await import('@/services/storage/PostPhotoCache');
+            await postPhotoCache.storePhotosForPost(newPost.id, imageUrls);
+            console.log(`✅ Cached ${imageUrls.length} photos for post ${newPost.id}`);
+          } catch (cacheErr) {
+            console.warn('Failed to cache photos locally:', cacheErr);
+            // Continue anyway - photos are still in backend
+          }
+        }
+
         alert("✅ Post created successfully!");
 
-        // Dispatch event to refresh posts list
+        // Dispatch event to refresh posts list with the Base64 images included
+        const postWithImages = {
+          ...normalizedPost,
+          imageUrls: imageUrls.length > 0 ? imageUrls : normalizedPost.imageUrls,
+          images: imageUrls.length > 0 ? imageUrls : normalizedPost.images,
+          imageUrl: imageUrls[0] || normalizedPost.imageUrl,
+        };
+        
         window.dispatchEvent(
           new CustomEvent("post:created", {
-            detail: { post: normalizedPost },
+            detail: { post: postWithImages },
           }),
         );
-
-        // Removed image cache cleanup
 
         onClose();
       } catch {

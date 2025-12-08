@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import CommentModal from "@/components/CommentModal";
 import MediaImage from "@/components/MediaImage";
+import PostImage from "@/components/PostImage";
 
 type AuthorType = {
   id: number;
@@ -650,13 +651,14 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   {images.length > 0 &&
                     (images.length === 1 ? (
                       <div className="relative w-full overflow-hidden rounded-xl md:rounded-2xl aspect-video">
-                        <MediaImage
+                        <PostImage
+                          postId={post.id}
+                          photoIndex={0}
                           src={images[0] || defaultPostImage}
                           alt={post.title || "Post image"}
                           className="object-cover transition-transform duration-700 group-hover:scale-[1.01]"
                           fill
                           sizes="(max-width: 768px) 100vw, 800px"
-                          fallbackSrc={defaultPostImage}
                           priority
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
@@ -668,18 +670,19 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                           const remaining = images.length - 4;
                           return (
                             <div
-                              key={`${img}-${idx}`}
+                              key={`${post.id}-img-${idx}`}
                               className={`relative overflow-hidden rounded-xl md:rounded-2xl ${
                                 isHero ? "col-span-2 row-span-2 aspect-video" : "aspect-square"
                               }`}
                             >
-                              <MediaImage
+                              <PostImage
+                                postId={post.id}
+                                photoIndex={idx}
                                 src={img || defaultPostImage}
                                 alt={`Post image ${idx + 1}`}
                                 className="object-cover transition-transform duration-700 hover:scale-105"
                                 fill={!isHero}
                                 sizes={isHero ? "(max-width: 768px) 100vw, 800px" : "(max-width: 768px) 50vw, 400px"}
-                                fallbackSrc={defaultPostImage}
                                 priority={idx === 0}
                               />
                               {remaining > 0 && idx === 3 && (
