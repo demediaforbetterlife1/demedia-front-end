@@ -90,31 +90,54 @@ export async function PUT(
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
     }
 
-    // Forward update to backend API to keep logic centralized
-    const authHeader = request.headers.get('authorization');
-    const currentUserId = request.headers.get('user-id') || '';
+    // Get authorization from header or cookie
+    let authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      const token = request.cookies.get('token')?.value;
+      if (token) {
+        authHeader = `Bearer ${token}`;
+      }
+    }
 
+    // Extract current user id from JWT
+    let currentUserId: string | null = null;
+    if (authHeader) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const part = token.split('.')[1];
+        const decoded = JSON.parse(Buffer.from(part, 'base64').toString('utf-8'));
+        currentUserId = (decoded.sub || decoded.userId || decoded.id)?.toString?.() || null;
+      } catch (_) {}
+    }
+
+    // Forward update to backend API - use /api/user/:userId (not /profile)
+    // The backend PUT handler is at /api/user/:userId, not /api/user/:userId/profile
     try {
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/user/${userId}/profile`, {
+      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/user/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': authHeader || '',
-          'user-id': currentUserId,
+          'user-id': currentUserId || request.headers.get('user-id') || '',
         },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(15000) // Increased timeout for profile updates
       });
 
       if (backendResponse.ok) {
-        const updatedUser = await backendResponse.json();
-        return NextResponse.json(updatedUser);
+        const result = await backendResponse.json();
+        // Return the user object from the response
+        return NextResponse.json(result.user || result);
       }
 
       const errorText = await backendResponse.text();
+      console.error('❌ Backend profile update failed:', backendResponse.status, errorText);
       return NextResponse.json({ error: errorText || 'Failed to update profile' }, { status: backendResponse.status });
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ Backend update failed:', err);
+      if (err.name === 'AbortError') {
+        return NextResponse.json({ error: 'Request timeout' }, { status: 504 });
+      }
       return NextResponse.json({ error: 'Backend unavailable' }, { status: 503 });
     }
   } catch (error) {
