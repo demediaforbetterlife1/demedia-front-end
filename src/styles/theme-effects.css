@@ -1,6 +1,6 @@
 /* Theme-specific effects and animations */
 
-/* Gold theme shimmer effect */
+/* Gold theme shimmer effect - Professional & Subtle */
 .gold-shimmer {
   position: relative;
   overflow: hidden;
@@ -10,26 +10,105 @@
   content: "";
   position: absolute;
   top: 0;
-  left: -40%;
-  width: 40%;
+  left: -100%;
+  width: 50%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
-  transform: skewX(-20deg);
-  animation: shimmer 1.8s infinite;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(201, 162, 39, 0.04), 
+    transparent);
+  transform: skewX(-15deg);
+  animation: shimmer-professional 4s ease-in-out infinite;
 }
 
-@keyframes shimmer {
-  to {
-    left: 120%;
-  }
+@keyframes shimmer-professional {
+  0% { left: -100%; opacity: 0; }
+  50% { opacity: 1; }
+  100% { left: 150%; opacity: 0; }
 }
 
-/* Gold glow effect */
+/* Gold glow effect - Refined & Elegant */
 .gold-glow {
-  background: linear-gradient(135deg, rgba(255,215,0,0.06), rgba(255,215,0,0.01));
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.08);
-  border: 1px solid rgba(255,215,0,0.14);
-  backdrop-filter: blur(6px);
+  background: linear-gradient(180deg, 
+    rgba(22, 22, 22, 0.98) 0%, 
+    rgba(18, 18, 18, 0.95) 100%);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(201, 162, 39, 0.05);
+  border: 1px solid rgba(201, 162, 39, 0.08);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.gold-glow:hover {
+  border-color: rgba(201, 162, 39, 0.15);
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 8px 24px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(201, 162, 39, 0.08);
+}
+
+/* Gold accent underline */
+.gold-underline {
+  position: relative;
+}
+
+.gold-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(201, 162, 39, 0.5), 
+    transparent);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.gold-underline:hover::after {
+  transform: scaleX(1);
+}
+
+/* Gold badge/tag styling */
+.gold-badge {
+  background: linear-gradient(135deg, 
+    rgba(201, 162, 39, 0.15) 0%, 
+    rgba(184, 134, 11, 0.1) 100%);
+  border: 1px solid rgba(201, 162, 39, 0.2);
+  color: #d4af37;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Gold divider */
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(201, 162, 39, 0.2) 50%, 
+    transparent 100%);
+  border: none;
+  margin: 16px 0;
+}
+
+/* Gold icon styling */
+.gold-icon {
+  color: #c9a227;
+  filter: drop-shadow(0 0 4px rgba(201, 162, 39, 0.2));
+  transition: all 0.2s ease;
+}
+
+.gold-icon:hover {
+  color: #d4af37;
+  filter: drop-shadow(0 0 8px rgba(201, 162, 39, 0.3));
 }
 
 /* Super dark theme effects */
@@ -57,9 +136,12 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
-/* Gold theme specific hover */
+/* Gold theme specific hover - Professional */
 .gold-theme .post-card-hover:hover {
-  box-shadow: 0 10px 25px rgba(255, 215, 0, 0.2);
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 0 1px rgba(201, 162, 39, 0.2);
+  border-color: rgba(201, 162, 39, 0.15);
 }
 
 /* Super dark theme specific hover */
@@ -77,16 +159,47 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Gold button specific */
+/* Gold button specific - Professional & Elegant */
 .gold-button {
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  color: #000;
+  background: linear-gradient(135deg, #c9a227 0%, #d4af37 100%);
+  color: #0f0f0f;
   font-weight: 600;
+  border: none;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease;
 }
 
 .gold-button:hover {
-  background: linear-gradient(135deg, #ffed4e, #ffd700);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, #d4af37 0%, #e6c547 100%);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(201, 162, 39, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.gold-button:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Gold outline button variant */
+.gold-button-outline {
+  background: transparent;
+  color: #c9a227;
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.gold-button-outline:hover {
+  background: rgba(201, 162, 39, 0.1);
+  border-color: rgba(201, 162, 39, 0.5);
+  color: #d4af37;
 }
 
 /* Profile picture effects */
@@ -99,9 +212,17 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Gold theme profile picture */
+/* Gold theme profile picture - Elegant ring effect */
+.gold-theme .profile-picture {
+  border: 2px solid transparent;
+  background: linear-gradient(#161616, #161616) padding-box,
+              linear-gradient(135deg, rgba(201, 162, 39, 0.3), rgba(184, 134, 11, 0.2)) border-box;
+}
+
 .gold-theme .profile-picture:hover {
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(#161616, #161616) padding-box,
+              linear-gradient(135deg, rgba(201, 162, 39, 0.5), rgba(212, 175, 55, 0.4)) border-box;
 }
 
 /* Loading animations */
@@ -125,7 +246,68 @@
   background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
 }
 
-/* Gold theme loading */
+/* Gold theme loading - Subtle & Professional */
 .gold-theme .loading-shimmer {
-  background: linear-gradient(90deg, rgba(255,215,0,0.1) 25%, rgba(255,215,0,0.2) 50%, rgba(255,215,0,0.1) 75%);
+  background: linear-gradient(90deg, 
+    rgba(22, 22, 22, 1) 25%, 
+    rgba(30, 30, 30, 1) 50%, 
+    rgba(22, 22, 22, 1) 75%);
+  background-size: 200% 100%;
+}
+
+/* Additional gold theme utilities */
+.gold-theme .text-gold {
+  color: #c9a227;
+}
+
+.gold-theme .text-gold-light {
+  color: #d4af37;
+}
+
+.gold-theme .bg-gold-subtle {
+  background: rgba(201, 162, 39, 0.05);
+}
+
+.gold-theme .border-gold {
+  border-color: rgba(201, 162, 39, 0.15);
+}
+
+.gold-theme .border-gold-strong {
+  border-color: rgba(201, 162, 39, 0.3);
+}
+
+/* Gold theme link styling */
+.gold-theme a {
+  color: #c9a227;
+  transition: color 0.2s ease;
+}
+
+.gold-theme a:hover {
+  color: #d4af37;
+}
+
+/* Gold theme focus states */
+.gold-theme *:focus-visible {
+  outline: 2px solid rgba(201, 162, 39, 0.5);
+  outline-offset: 2px;
+}
+
+/* Gold theme placeholder text */
+.gold-theme ::placeholder {
+  color: rgba(138, 138, 138, 0.7);
+}
+
+/* Gold theme disabled states */
+.gold-theme [disabled],
+.gold-theme .disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Gold theme tooltip */
+.gold-theme .tooltip {
+  background: rgba(22, 22, 22, 0.95);
+  border: 1px solid rgba(201, 162, 39, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  color: #f5f5f5;
 }

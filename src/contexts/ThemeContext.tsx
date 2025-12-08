@@ -115,15 +115,19 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         break;
         
       case 'gold':
-        root.style.setProperty('--bg-primary', '#1a1a1a');
-        root.style.setProperty('--bg-secondary', '#2d2d2d');
-        root.style.setProperty('--bg-tertiary', '#3a3a3a');
-        root.style.setProperty('--text-primary', '#ffd700');
-        root.style.setProperty('--text-secondary', '#ffed4e');
-        root.style.setProperty('--text-tertiary', '#b8860b');
-        root.style.setProperty('--border-color', '#4a4a4a');
-        root.style.setProperty('--accent-color', '#ffd700');
-        root.style.setProperty('--hover-bg', '#2d2d2d');
+        // Professional gold theme - elegant and sophisticated
+        root.style.setProperty('--bg-primary', '#0f0f0f');
+        root.style.setProperty('--bg-secondary', '#161616');
+        root.style.setProperty('--bg-tertiary', '#1e1e1e');
+        root.style.setProperty('--text-primary', '#f5f5f5');
+        root.style.setProperty('--text-secondary', '#d4d4d4');
+        root.style.setProperty('--text-tertiary', '#8a8a8a');
+        root.style.setProperty('--border-color', 'rgba(201, 162, 39, 0.15)');
+        root.style.setProperty('--accent-color', '#c9a227');
+        root.style.setProperty('--hover-bg', '#1e1e1e');
+        root.style.setProperty('--gold-primary', '#c9a227');
+        root.style.setProperty('--gold-secondary', '#d4af37');
+        root.style.setProperty('--gold-highlight', '#e6c547');
         break;
     }
   };

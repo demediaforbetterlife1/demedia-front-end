@@ -41,9 +41,9 @@ const themes = [
   {
     id: 'gold' as const,
     name: 'Gold',
-    description: 'Luxurious gold theme with shimmer effects',
-    preview: 'bg-gradient-to-br from-yellow-900 to-yellow-800 relative overflow-hidden',
-    icon: '✨'
+    description: 'Elegant dark theme with refined gold accents',
+    preview: 'bg-gradient-to-br from-neutral-900 to-neutral-950 relative overflow-hidden',
+    icon: '👑'
   },
   {
     id: 'iron' as const,
@@ -127,10 +127,13 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
                       )}
                       {themeOption.id === 'gold' && (
                         <div className="w-full h-full relative">
-                          <div className="absolute top-1 left-1 w-1 h-1 bg-yellow-300 rounded-full opacity-80 animate-pulse"></div>
-                          <div className="absolute top-2 right-2 w-0.5 h-0.5 bg-yellow-400 rounded-full opacity-60 animate-pulse"></div>
-                          <div className="absolute bottom-2 left-2 w-1 h-1 bg-yellow-200 rounded-full opacity-70 animate-pulse"></div>
-                          <div className="absolute top-1/2 left-1/2 w-0.5 h-0.5 bg-yellow-500 rounded-full opacity-90 animate-ping"></div>
+                          {/* Elegant gold accent line */}
+                          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent opacity-60"></div>
+                          {/* Subtle gold corner accents */}
+                          <div className="absolute top-1 right-1 w-2 h-px bg-amber-600 opacity-40"></div>
+                          <div className="absolute top-1 right-1 w-px h-2 bg-amber-600 opacity-40"></div>
+                          <div className="absolute bottom-1 left-1 w-2 h-px bg-amber-600 opacity-40"></div>
+                          <div className="absolute bottom-1 left-1 w-px h-2 bg-amber-600 opacity-40"></div>
                         </div>
                       )}
                     </div>
