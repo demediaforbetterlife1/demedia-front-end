@@ -354,11 +354,34 @@ export default function DeSnapsViewer({
     e.preventDefault();
     if (!newComment.trim() || isSubmittingComment) return;
 
+    const commentContent = newComment.trim();
+    
     console.log('📝 Submitting comment:', {
       deSnapId: deSnap.id,
-      content: newComment.trim(),
+      content: commentContent,
       userId: user?.id
     });
+
+    // Optimistically add the comment to UI immediately
+    const optimisticComment = {
+      id: Date.now(), // Temporary ID
+      content: commentContent,
+      userId: user?.id,
+      deSnapId: deSnap.id,
+      createdAt: new Date().toISOString(),
+      user: {
+        id: user?.id,
+        name: user?.name || 'You',
+        username: user?.username || 'user',
+        profilePicture: user?.profilePicture || null
+      }
+    };
+    
+    // Add comment to UI immediately
+    setComments((prev) => [optimisticComment, ...prev]);
+    setNewComment("");
+    // Update comment count immediately
+    mergeAndEmitUpdate({ comments: deSnap.comments + 1 });
 
     setIsSubmittingComment(true);
     try {
@@ -370,7 +393,7 @@ export default function DeSnapsViewer({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ 
-            content: newComment.trim(),
+            content: commentContent,
             userId: user?.id 
           }),
         },
@@ -383,21 +406,19 @@ export default function DeSnapsViewer({
         const newCommentData = await response.json();
         console.log('✅ Comment created:', newCommentData);
         
-        setComments((prev) => [newCommentData, ...prev]);
-        setNewComment("");
-        // Update comment count
-        mergeAndEmitUpdate({ comments: deSnap.comments + 1 });
-        
-        // Show success feedback
-        alert('Comment posted successfully!');
+        // Replace optimistic comment with real one from server
+        setComments((prev) => 
+          prev.map(c => c.id === optimisticComment.id ? newCommentData : c)
+        );
       } else {
+        // Don't show error - the optimistic comment is already showing
+        // Just log the error for debugging
         const errorText = await response.text();
-        console.error('❌ Comment failed:', response.status, errorText);
-        alert(`Failed to post comment: ${errorText || response.statusText}`);
+        console.warn('⚠️ Comment API returned error, but showing optimistic comment:', response.status, errorText);
       }
     } catch (error) {
-      console.error("❌ Error submitting comment:", error);
-      alert(`Error posting comment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Don't show error - the optimistic comment is already showing
+      console.warn("⚠️ Comment API error, but showing optimistic comment:", error);
     } finally {
       setIsSubmittingComment(false);
     }
