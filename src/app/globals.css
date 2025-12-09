@@ -494,6 +494,230 @@
     }
 }
 
+/* ============================================
+   RESPONSIVE MODAL & PAGE UTILITIES
+   ============================================ */
+
+/* Modal responsive container */
+.modal-responsive {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+@media (min-width: 640px) {
+    .modal-responsive {
+        max-width: 90%;
+        margin: 1rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .modal-responsive {
+        max-width: 80%;
+        margin: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .modal-responsive {
+        max-width: 70%;
+        margin: 2rem;
+    }
+}
+
+/* Safe area padding for mobile devices with notches */
+.safe-area-inset {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+/* Prevent iOS zoom on input focus */
+input, textarea, select {
+    font-size: 16px !important;
+}
+
+@media (min-width: 768px) {
+    input, textarea, select {
+        font-size: inherit !important;
+    }
+}
+
+/* Touch-friendly tap targets */
+.touch-target {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* Responsive text utilities */
+.text-responsive-xs {
+    font-size: 0.65rem;
+}
+.text-responsive-sm {
+    font-size: 0.75rem;
+}
+.text-responsive-base {
+    font-size: 0.875rem;
+}
+.text-responsive-lg {
+    font-size: 1rem;
+}
+
+@media (min-width: 640px) {
+    .text-responsive-xs {
+        font-size: 0.75rem;
+    }
+    .text-responsive-sm {
+        font-size: 0.875rem;
+    }
+    .text-responsive-base {
+        font-size: 1rem;
+    }
+    .text-responsive-lg {
+        font-size: 1.125rem;
+    }
+}
+
+/* Responsive spacing */
+.p-responsive {
+    padding: 0.5rem;
+}
+.px-responsive {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+.py-responsive {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+.gap-responsive {
+    gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+    .p-responsive {
+        padding: 0.75rem;
+    }
+    .px-responsive {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    .py-responsive {
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+    .gap-responsive {
+        gap: 0.75rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .p-responsive {
+        padding: 1rem;
+    }
+    .px-responsive {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    .py-responsive {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    .gap-responsive {
+        gap: 1rem;
+    }
+}
+
+/* Full-screen modal on mobile */
+.modal-fullscreen-mobile {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    max-height: 100dvh; /* Dynamic viewport height for mobile */
+    border-radius: 0;
+}
+
+@media (min-width: 640px) {
+    .modal-fullscreen-mobile {
+        position: relative;
+        inset: auto;
+        width: auto;
+        height: auto;
+        max-height: 90vh;
+        border-radius: 1rem;
+    }
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* Responsive grid for cards */
+.grid-responsive-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+@media (min-width: 480px) {
+    .grid-responsive-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+}
+
+@media (min-width: 640px) {
+    .grid-responsive-cards {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .grid-responsive-cards {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .grid-responsive-cards {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media (min-width: 1280px) {
+    .grid-responsive-cards {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+/* Extra small breakpoint (xs) */
+@media (min-width: 375px) {
+    .xs\:block {
+        display: block;
+    }
+    .xs\:hidden {
+        display: none;
+    }
+    .xs\:flex {
+        display: flex;
+    }
+    .xs\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @layer base {
     * {
         @apply border-border outline-ring/50;
