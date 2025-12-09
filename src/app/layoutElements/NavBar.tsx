@@ -15,6 +15,7 @@ import {
     IoSettingsOutline,
     IoVideocamOutline,
     IoStarOutline,
+    IoGridOutline,
 } from "react-icons/io5";
 import { useAuth } from "@/contexts/AuthContext";
 import CreateContentModal from "@/components/CreateContentModal";
@@ -39,6 +40,7 @@ export default function Navbar() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [showEnhancedSearch, setShowEnhancedSearch] = useState(false);
+    const [showPagesModal, setShowPagesModal] = useState(false);
     const { showWelcomeNotification } = useNotifications();
 
 
@@ -272,6 +274,58 @@ export default function Navbar() {
                             );
                         })}
                     </div>
+
+                    {/* Pages Modal Button - for smaller screens */}
+                    <div className="lg:hidden relative">
+                        <button
+                            onClick={() => {
+                                setShowPagesModal(!showPagesModal);
+                                setShowNotifications(false);
+                                setShowProfileMenu(false);
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-full theme-bg-tertiary/40 
+                                theme-text-muted hover:text-cyan-400 hover:shadow-[0_0_12px_rgba(34,211,238,0.5)] transition-all duration-200 text-sm font-medium"
+                            title="Pages"
+                        >
+                            <IoGridOutline size={18} />
+                            <span>Pages</span>
+                        </button>
+                        <AnimatePresence>
+                            {showPagesModal && (
+                                <motion.div
+                                    variants={dropdownVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                    exit="exit"
+                                    transition={{ duration: 0.2 }}
+                                    className="absolute top-full left-0 mt-2 w-56 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-3 z-50"
+                                >
+                                    <h4 className="font-bold text-cyan-400 mb-3 text-sm flex items-center gap-2">
+                                        <IoGridOutline size={16} />
+                                        Navigate to
+                                    </h4>
+                                    <div className="space-y-1">
+                                        {navItems.map((item) => {
+                                            const Icon = item.icon;
+                                            return (
+                                                <button
+                                                    key={item.id}
+                                                    onClick={() => {
+                                                        router.push(item.path);
+                                                        setShowPagesModal(false);
+                                                    }}
+                                                    className={`flex items-center gap-3 w-full p-2.5 rounded-lg theme-text-muted ${item.color} hover:theme-bg-primary transition-all duration-200 text-sm`}
+                                                >
+                                                    <Icon size={20} />
+                                                    <span>{item.label}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </div>
 
                 {/* Right Section - Actions & Profile */}
@@ -298,6 +352,7 @@ export default function Navbar() {
                                 setShowNotifications(!showNotifications);
                                 setShowMessages(false);
                                 setShowProfileMenu(false);
+                                setShowPagesModal(false);
                             }}
                             className="w-9 h-9 rounded-full theme-bg-tertiary/60 flex items-center justify-center
                                 theme-text-muted hover:text-cyan-400 hover:shadow-[0_0_12px_rgba(34,211,238,0.5)] transition"
@@ -346,6 +401,7 @@ export default function Navbar() {
                                 setShowProfileMenu(!showProfileMenu);
                                 setShowNotifications(false);
                                 setShowMessages(false);
+                                setShowPagesModal(false);
                             }}
                             className="flex items-center gap-2 p-1 pr-2 rounded-full theme-bg-tertiary/40 hover:theme-bg-tertiary/60 
                                 hover:shadow-[0_0_12px_rgba(139,92,246,0.4)] transition-all duration-200"
