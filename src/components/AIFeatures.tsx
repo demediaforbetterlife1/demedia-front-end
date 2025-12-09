@@ -236,7 +236,7 @@ export default function AIFeatures({ videoUrl, onAnalysisComplete, isAnalyzing, 
                 <button
                     onClick={analyzeVideo}
                     disabled={isAnalyzing}
-                    className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg shadow-lg"
+                    className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl sm:rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-base sm:text-lg shadow-lg touch-target w-full sm:w-auto"
                 >
                     {isAnalyzing ? (
                         <div className="flex items-center gap-3">
@@ -253,7 +253,7 @@ export default function AIFeatures({ videoUrl, onAnalysisComplete, isAnalyzing, 
             </div>
 
             {/* AI Features Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
                 {aiFeatures.map((feature) => {
                     const Icon = feature.icon;
                     const isSelected = selectedFeatures.includes(feature.id);
@@ -264,16 +264,16 @@ export default function AIFeatures({ videoUrl, onAnalysisComplete, isAnalyzing, 
                             onClick={() => toggleFeature(feature.id)}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className={`p-4 rounded-xl border transition-all ${
+                            className={`p-3 sm:p-4 rounded-xl border transition-all touch-target ${
                                 isSelected
                                     ? "border-purple-400 bg-purple-400/10 shadow-lg"
                                     : "border-gray-600 bg-gray-800/50 hover:border-gray-500"
                             }`}
                         >
-                            <div className="flex flex-col items-center space-y-2 text-center">
-                                <Icon className={`w-6 h-6 ${feature.color}`} />
-                                <h3 className="font-semibold text-white text-sm">{feature.name}</h3>
-                                <p className="text-xs text-gray-400">{feature.description}</p>
+                            <div className="flex flex-col items-center space-y-1 sm:space-y-2 text-center">
+                                <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${feature.color}`} />
+                                <h3 className="font-semibold text-white text-xs sm:text-sm">{feature.name}</h3>
+                                <p className="text-[10px] sm:text-xs text-gray-400 line-clamp-2">{feature.description}</p>
                             </div>
                         </motion.button>
                     );
@@ -287,14 +287,14 @@ export default function AIFeatures({ videoUrl, onAnalysisComplete, isAnalyzing, 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-2xl p-6 border border-purple-500/20"
+                        className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-purple-500/20"
                     >
                         <div className="flex items-center gap-3 mb-4">
                             <Brain className="w-6 h-6 text-purple-400" />
                             <h3 className="text-xl font-bold text-white">AI Analysis Results</h3>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             {/* Mood & Energy */}
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between">

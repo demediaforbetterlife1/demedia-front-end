@@ -220,7 +220,7 @@ export default function CollaborativeFeatures({ deSnapId, onCollaborationUpdate 
             </div>
 
             {/* Features Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4">
                 {uniqueFeatures.map((feature) => {
                     const Icon = feature.icon;
                     const isActive = activeFeature === feature.id;
@@ -231,7 +231,7 @@ export default function CollaborativeFeatures({ deSnapId, onCollaborationUpdate 
                             onClick={() => setActiveFeature(isActive ? null : feature.id)}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className={`relative p-4 rounded-xl border transition-all ${
+                            className={`relative p-3 sm:p-4 rounded-xl border transition-all touch-target ${
                                 isActive
                                     ? "border-yellow-400 bg-yellow-400/10 shadow-lg"
                                     : "border-gray-600 bg-gray-800/50 hover:border-gray-500"
@@ -239,15 +239,15 @@ export default function CollaborativeFeatures({ deSnapId, onCollaborationUpdate 
                         >
                             {/* Unique Badge */}
                             {feature.unique && (
-                                <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                                    <Zap className="w-3 h-3 text-white" />
+                                <div className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                                    <Zap className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
                                 </div>
                             )}
                             
-                            <div className="flex flex-col items-center space-y-2 text-center">
-                                <Icon className={`w-6 h-6 ${feature.color}`} />
-                                <h3 className="font-semibold text-white text-sm">{feature.name}</h3>
-                                <p className="text-xs text-gray-400">{feature.description}</p>
+                            <div className="flex flex-col items-center space-y-1 sm:space-y-2 text-center">
+                                <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${feature.color}`} />
+                                <h3 className="font-semibold text-white text-xs sm:text-sm">{feature.name}</h3>
+                                <p className="text-[10px] sm:text-xs text-gray-400 line-clamp-2">{feature.description}</p>
                             </div>
                         </motion.button>
                     );

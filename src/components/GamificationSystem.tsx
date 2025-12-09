@@ -383,43 +383,43 @@ export default function GamificationSystem() {
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-r from-blue-900/20 to-blue-700/20 rounded-xl p-4 border border-blue-500/20">
-                    <div className="flex items-center gap-3">
-                        <Crown className="w-6 h-6 text-blue-400" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+                <div className="bg-gradient-to-r from-blue-900/20 to-blue-700/20 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-blue-500/20">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <Crown className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                         <div>
-                            <p className="text-blue-300 text-sm">Level</p>
-                            <p className="text-white text-2xl font-bold">{userStats.level}</p>
+                            <p className="text-blue-300 text-xs sm:text-sm">Level</p>
+                            <p className="text-white text-xl sm:text-2xl font-bold">{userStats.level}</p>
                         </div>
                     </div>
                 </div>
                 
-                <div className="bg-gradient-to-r from-green-900/20 to-green-700/20 rounded-xl p-4 border border-green-500/20">
-                    <div className="flex items-center gap-3">
-                        <Flame className="w-6 h-6 text-green-400" />
+                <div className="bg-gradient-to-r from-green-900/20 to-green-700/20 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-green-500/20">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
                         <div>
-                            <p className="text-green-300 text-sm">Streak</p>
-                            <p className="text-white text-2xl font-bold">{userStats.streak} days</p>
+                            <p className="text-green-300 text-xs sm:text-sm">Streak</p>
+                            <p className="text-white text-xl sm:text-2xl font-bold">{userStats.streak}<span className="text-sm sm:text-base"> days</span></p>
                         </div>
                     </div>
                 </div>
                 
-                <div className="bg-gradient-to-r from-purple-900/20 to-purple-700/20 rounded-xl p-4 border border-purple-500/20">
-                    <div className="flex items-center gap-3">
-                        <Target className="w-6 h-6 text-purple-400" />
+                <div className="bg-gradient-to-r from-purple-900/20 to-purple-700/20 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-purple-500/20">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <Target className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
                         <div>
-                            <p className="text-purple-300 text-sm">Rank</p>
-                            <p className="text-white text-2xl font-bold">#{userStats.rank}</p>
+                            <p className="text-purple-300 text-xs sm:text-sm">Rank</p>
+                            <p className="text-white text-xl sm:text-2xl font-bold">#{userStats.rank || '-'}</p>
                         </div>
                     </div>
                 </div>
                 
-                <div className="bg-gradient-to-r from-yellow-900/20 to-yellow-700/20 rounded-xl p-4 border border-yellow-500/20">
-                    <div className="flex items-center gap-3">
-                        <Diamond className="w-6 h-6 text-yellow-400" />
+                <div className="bg-gradient-to-r from-yellow-900/20 to-yellow-700/20 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-yellow-500/20">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <Diamond className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />
                         <div>
-                            <p className="text-yellow-300 text-sm">Tokens</p>
-                            <p className="text-white text-2xl font-bold">{userStats.tokens}</p>
+                            <p className="text-yellow-300 text-xs sm:text-sm">Tokens</p>
+                            <p className="text-white text-xl sm:text-2xl font-bold">{userStats.tokens}</p>
                         </div>
                     </div>
                 </div>
@@ -441,26 +441,26 @@ export default function GamificationSystem() {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex space-x-1 bg-gray-800/50 rounded-xl p-1">
+            <div className="flex space-x-1 bg-gray-800/50 rounded-lg sm:rounded-xl p-1 overflow-x-auto scrollbar-hide">
                 {[
                     { id: 'stats', label: 'Stats', icon: TrendingUp },
                     { id: 'challenges', label: 'Challenges', icon: Target },
                     { id: 'rewards', label: 'Rewards', icon: Gift },
-                    { id: 'leaderboard', label: 'Leaderboard', icon: Trophy }
+                    { id: 'leaderboard', label: 'Leaders', icon: Trophy }
                 ].map((tab) => {
                     const Icon = tab.icon;
                     return (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg transition-all ${
+                            className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 px-2 sm:px-4 rounded-lg transition-all touch-target min-w-fit ${
                                 activeTab === tab.id
                                     ? "bg-purple-600 text-white shadow-lg"
                                     : "text-gray-400 hover:text-white hover:bg-gray-700/50"
                             }`}
                         >
-                            <Icon className="w-4 h-4" />
-                            <span className="text-sm font-medium">{tab.label}</span>
+                            <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <span className="text-xs sm:text-sm font-medium whitespace-nowrap">{tab.label}</span>
                         </button>
                     );
                 })}
@@ -474,9 +474,9 @@ export default function GamificationSystem() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className="space-y-4"
+                        className="space-y-3 sm:space-y-4"
                     >
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                             <div className="bg-gray-800/50 rounded-xl p-4">
                                 <div className="flex items-center gap-3 mb-3">
                                     <Eye className="w-5 h-5 text-blue-400" />
@@ -553,7 +553,7 @@ export default function GamificationSystem() {
                         exit={{ opacity: 0, y: -20 }}
                         className="space-y-4"
                     >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                             {badges.map((badge) => {
                                 const Icon = badge.icon;
                                 const rarityColor = getRarityColor(badge.rarity);

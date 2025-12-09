@@ -359,34 +359,34 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-3xl p-0 max-w-4xl w-full max-h-[90vh] overflow-hidden border border-gray-700 shadow-2xl"
+                    className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-none sm:rounded-3xl p-0 w-full sm:max-w-4xl max-h-[100dvh] sm:max-h-[90vh] overflow-hidden border-0 sm:border border-gray-700 shadow-2xl"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                        <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full flex items-center justify-center">
-                                <Zap className="w-5 h-5 text-white" />
+                    <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-700 safe-area-inset">
+                        <div className="flex items-center space-x-2 sm:space-x-3">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full flex items-center justify-center">
+                                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-white">Create DeSnap</h2>
-                                <p className="text-sm text-gray-400">Share your moment with the world</p>
+                                <h2 className="text-lg sm:text-xl font-bold text-white">Create DeSnap</h2>
+                                <p className="text-xs sm:text-sm text-gray-400 hidden xs:block">Share your moment with the world</p>
                             </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors"
+                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors touch-target"
                         >
-                            <X className="w-4 h-4 text-white" />
+                            <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                         </button>
                     </div>
 
                     {/* Tab Navigation */}
-                    <div className="flex border-b border-gray-700 overflow-x-auto">
+                    <div className="flex border-b border-gray-700 overflow-x-auto scrollbar-hide">
                         {[
                             { id: "upload", label: "Upload", icon: Upload },
-                            { id: "ai", label: "AI Features", icon: Zap },
-                            { id: "collaborate", label: "Collaborate", icon: Users },
+                            { id: "ai", label: "AI", icon: Zap },
+                            { id: "collaborate", label: "Collab", icon: Users },
                             { id: "gamify", label: "Gamify", icon: Sparkles },
                             { id: "visibility", label: "Visibility", icon: Eye },
                             { id: "settings", label: "Settings", icon: Settings }
@@ -396,20 +396,20 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id as any)}
-                                    className={`flex-shrink-0 flex items-center justify-center space-x-2 py-4 px-4 transition-colors ${
+                                    className={`flex-shrink-0 flex items-center justify-center space-x-1 sm:space-x-2 py-3 sm:py-4 px-2 sm:px-4 transition-colors touch-target ${
                                         activeTab === tab.id
                                             ? "text-yellow-400 border-b-2 border-yellow-400 bg-yellow-400/5"
                                             : "text-gray-400 hover:text-white hover:bg-gray-800/50"
                                     }`}
                                 >
                                     <Icon className="w-4 h-4" />
-                                    <span className="text-sm font-medium">{tab.label}</span>
+                                    <span className="text-xs sm:text-sm font-medium">{tab.label}</span>
                                 </button>
                             );
                         })}
                     </div>
 
-                    <div className="p-6 max-h-[60vh] overflow-y-auto">
+                    <div className="p-3 sm:p-6 max-h-[calc(100dvh-200px)] sm:max-h-[60vh] overflow-y-auto scrollbar-hide">
                         <AnimatePresence mode="wait">
                             {/* Upload Tab */}
                             {activeTab === "upload" && (
@@ -655,25 +655,25 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                     )}
 
                     {/* Footer Actions */}
-                    <div className="flex items-center justify-between p-6 border-t border-gray-700 bg-gray-900/50">
-                        <div className="flex items-center space-x-2 text-sm text-gray-400">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 sm:p-6 border-t border-gray-700 bg-gray-900/50 gap-3 sm:gap-0 safe-area-inset">
+                        <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-400">
                             <Zap className="w-4 h-4" />
                             <span>DeSnap</span>
                             <span>•</span>
                             <span>{visibilityOptions.find(v => v.id === settings.visibility)?.name}</span>
                         </div>
-                        <div className="flex space-x-3">
+                        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="px-6 py-2 text-gray-400 hover:text-white transition-colors"
+                                className="px-6 py-3 sm:py-2 text-gray-400 hover:text-white transition-colors text-center touch-target"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting || !videoFile}
-                                className="px-8 py-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl hover:from-yellow-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                                className="px-8 py-3 sm:py-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl hover:from-yellow-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium touch-target"
                             >
                                 {isSubmitting ? "Creating..." : "Create DeSnap"}
                             </button>

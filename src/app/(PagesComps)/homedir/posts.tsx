@@ -279,11 +279,49 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       });
     };
 
+    // Listen for profile updates to refresh author profile pictures
+    const handleProfileUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent<{ 
+        userId?: string | number; 
+        profilePicture?: string;
+        name?: string;
+        username?: string;
+      }>;
+      const { userId, profilePicture, name, username } = customEvent.detail || {};
+      
+      if (!userId) return;
+      
+      console.log("👤 Profile updated, refreshing author data in posts:", userId);
+      
+      // Update all posts by this author with the new profile picture
+      setPosts((prev) => 
+        prev.map((post) => {
+          if (post.author && String(post.author.id) === String(userId)) {
+            return {
+              ...post,
+              author: {
+                ...post.author,
+                profilePicture: profilePicture || post.author.profilePicture,
+                name: name || post.author.name,
+                username: username || post.author.username,
+              }
+            };
+          }
+          return post;
+        })
+      );
+    };
+
     window.addEventListener("post:created", handlePostCreated as EventListener);
+    window.addEventListener("profile:updated", handleProfileUpdated as EventListener);
     return () => {
       window.removeEventListener(
         "post:created",
         handlePostCreated as EventListener,
+      );
+      window.removeEventListener(
+        "profile:updated",
+        handleProfileUpdated as EventListener,
       );
     };
   }, []);

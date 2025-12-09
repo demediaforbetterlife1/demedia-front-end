@@ -257,6 +257,17 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                         preferredLang: profileData.preferredLang,
                     });
                     
+                    // Dispatch global event so posts and other components can update
+                    window.dispatchEvent(new CustomEvent('profile:updated', {
+                        detail: {
+                            userId: user?.id,
+                            profilePicture: profileData.profilePicture,
+                            coverPhoto: profileData.coverPhoto,
+                            name: profileData.name,
+                            username: profileData.username,
+                        }
+                    }));
+                    
                     if (onProfileUpdated) {
                         onProfileUpdated(finalProfile);
                     }

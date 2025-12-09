@@ -134,12 +134,47 @@ export default function DeSnapsPage() {
             setDeSnaps(prev => prev.map(ds => ds.id === normalized.id ? normalized : ds));
         };
 
+        // Listen for profile updates to refresh author profile pictures
+        const handleProfileUpdated = (event: Event) => {
+            const customEvent = event as CustomEvent<{ 
+                userId?: string | number; 
+                profilePicture?: string;
+                name?: string;
+                username?: string;
+            }>;
+            const { userId, profilePicture, name, username } = customEvent.detail || {};
+            
+            if (!userId) return;
+            
+            console.log("👤 Profile updated, refreshing author data in DeSnaps:", userId);
+            
+            // Update all DeSnaps by this author with the new profile picture
+            setDeSnaps(prev => 
+                prev.map(deSnap => {
+                    if (deSnap.author && String(deSnap.author.id) === String(userId)) {
+                        return {
+                            ...deSnap,
+                            author: {
+                                ...deSnap.author,
+                                profilePicture: profilePicture || deSnap.author.profilePicture,
+                                name: name || deSnap.author.name,
+                                username: username || deSnap.author.username,
+                            }
+                        };
+                    }
+                    return deSnap;
+                })
+            );
+        };
+
         window.addEventListener('desnap:created', handleCreated as EventListener);
         window.addEventListener('desnap:updated', handleUpdated as EventListener);
+        window.addEventListener('profile:updated', handleProfileUpdated as EventListener);
 
         return () => {
             window.removeEventListener('desnap:created', handleCreated as EventListener);
             window.removeEventListener('desnap:updated', handleUpdated as EventListener);
+            window.removeEventListener('profile:updated', handleProfileUpdated as EventListener);
         };
     }, []);
 
