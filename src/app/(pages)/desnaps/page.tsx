@@ -376,36 +376,72 @@ export default function DeSnapsPage() {
                         <div className={`relative w-32 h-32 mx-auto mb-8`}>
                             <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${themeClasses.accent} opacity-20 blur-2xl`}></div>
                             <div className={`relative w-full h-full rounded-full ${themeClasses.card} flex items-center justify-center border ${themeClasses.border}`}>
-                                <Video className={`w-12 h-12 ${themeClasses.textSecondary}`} />
+                                {filter === 'following' ? (
+                                    <Users className={`w-12 h-12 ${themeClasses.textSecondary}`} />
+                                ) : filter === 'trending' ? (
+                                    <Flame className={`w-12 h-12 ${themeClasses.textSecondary}`} />
+                                ) : (
+                                    <Video className={`w-12 h-12 ${themeClasses.textSecondary}`} />
+                                )}
                             </div>
                         </div>
                         <h3 className={`text-2xl font-bold ${themeClasses.text} mb-3`}>
-                            {searchQuery ? 'No results found' : 'No DeSnaps yet'}
+                            {searchQuery 
+                                ? 'No results found' 
+                                : filter === 'following' 
+                                    ? 'No DeSnaps from people you follow'
+                                    : filter === 'trending'
+                                        ? 'No trending DeSnaps yet'
+                                        : 'No DeSnaps yet'}
                         </h3>
                         <p className={`${themeClasses.textSecondary} mb-8 max-w-md mx-auto`}>
                             {searchQuery 
                                 ? 'Try adjusting your search or explore different content' 
-                                : 'Be the first to share a moment! Create your first DeSnap and start the trend.'}
+                                : filter === 'following'
+                                    ? "Follow some creators to see their DeSnaps here, or check out the 'For You' feed to discover new content!"
+                                    : filter === 'trending'
+                                        ? 'Be the first to create a viral DeSnap!'
+                                        : 'Be the first to share a moment! Create your first DeSnap and start the trend.'}
                         </p>
-                        {!searchQuery && (
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => setShowCreateModal(true)}
-                                className={`inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r ${themeClasses.accent} text-white rounded-2xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300`}
-                            >
-                                <Sparkles className="w-5 h-5" />
-                                Create Your First DeSnap
-                            </motion.button>
-                        )}
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                            {filter === 'following' && (
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => setFilter('all')}
+                                    className={`inline-flex items-center gap-2 px-6 py-3 ${themeClasses.card} border ${themeClasses.border} ${themeClasses.text} rounded-xl font-semibold transition-all duration-300`}
+                                >
+                                    <Sparkles className="w-5 h-5" />
+                                    Explore For You
+                                </motion.button>
+                            )}
+                            {!searchQuery && (
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => setShowCreateModal(true)}
+                                    className={`inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r ${themeClasses.accent} text-white rounded-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300`}
+                                >
+                                    <Plus className="w-5 h-5" />
+                                    Create DeSnap
+                                </motion.button>
+                            )}
+                        </div>
                     </motion.div>
                 ) : (
                     <>
                         {/* Stats Bar */}
                         <div className="flex items-center justify-between mb-6">
-                            <p className={`text-sm ${themeClasses.textSecondary}`}>
-                                <span className={`font-semibold ${themeClasses.text}`}>{filteredDeSnaps.length}</span> DeSnaps
-                            </p>
+                            <div className="flex items-center gap-2">
+                                <p className={`text-sm ${themeClasses.textSecondary}`}>
+                                    <span className={`font-semibold ${themeClasses.text}`}>{filteredDeSnaps.length}</span> DeSnaps
+                                </p>
+                                {filter !== 'all' && (
+                                    <span className={`px-2 py-0.5 rounded-full text-xs ${themeClasses.badge}`}>
+                                        {filter === 'following' ? 'Following' : 'Trending'}
+                                    </span>
+                                )}
+                            </div>
                             <div className={`flex items-center gap-2 text-xs ${themeClasses.textSecondary}`}>
                                 <Clock className="w-3.5 h-3.5" />
                                 <span>Updated just now</span>

@@ -97,14 +97,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No authorization token' }, { status: 401 });
     }
     
-    console.log('Fetching DeSnaps via backend');
+    // Get filter parameter from URL
+    const { searchParams } = new URL(request.url);
+    const filter = searchParams.get('filter') || 'all';
+    
+    console.log('Fetching DeSnaps via backend with filter:', filter);
 
-    // Forward request to backend
+    // Forward request to backend with filter parameter
     const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
     console.log('🔄 Connecting to backend:', backendUrl);
     
     try {
-      const response = await fetch(`${backendUrl}/api/desnaps`, {
+      const response = await fetch(`${backendUrl}/api/desnaps?filter=${filter}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -122,7 +126,7 @@ export async function GET(request: NextRequest) {
       }
 
       const data = await response.json();
-      console.log('✅ Fetched DeSnaps via backend:', data.length, 'DeSnaps');
+      console.log('✅ Fetched DeSnaps via backend:', data.length, 'DeSnaps (filter:', filter, ')');
       return NextResponse.json(data);
     } catch (backendError) {
       console.error('❌ Backend connection failed:', backendError);
