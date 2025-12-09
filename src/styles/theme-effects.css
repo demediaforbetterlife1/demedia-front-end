@@ -1,30 +1,42 @@
 /* Theme-specific effects and animations */
+/* Performance optimized with GPU acceleration */
 
 /* Gold theme shimmer effect - Professional & Subtle */
 .gold-shimmer {
   position: relative;
   overflow: hidden;
+  contain: layout style;
 }
 
 .gold-shimmer::after {
   content: "";
   position: absolute;
   top: 0;
-  left: -100%;
+  left: 0;
   width: 50%;
   height: 100%;
   background: linear-gradient(90deg, 
     transparent, 
     rgba(201, 162, 39, 0.04), 
     transparent);
-  transform: skewX(-15deg);
+  transform: translateX(-100%) skewX(-15deg);
   animation: shimmer-professional 4s ease-in-out infinite;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 @keyframes shimmer-professional {
-  0% { left: -100%; opacity: 0; }
+  0% { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
   50% { opacity: 1; }
-  100% { left: 150%; opacity: 0; }
+  100% { transform: translateX(300%) skewX(-15deg); opacity: 0; }
+}
+
+/* Disable shimmer on low-end devices */
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+  .gold-shimmer::after {
+    animation: none;
+    display: none;
+  }
 }
 
 /* Gold glow effect - Refined & Elegant */
@@ -38,7 +50,9 @@
     inset 0 1px 0 rgba(201, 162, 39, 0.05);
   border: 1px solid rgba(201, 162, 39, 0.08);
   backdrop-filter: blur(8px);
-  transition: all 0.3s ease;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  will-change: box-shadow, border-color;
+  contain: layout style;
 }
 
 .gold-glow:hover {
@@ -47,6 +61,18 @@
     0 2px 6px rgba(0, 0, 0, 0.35),
     0 8px 24px rgba(0, 0, 0, 0.25),
     inset 0 1px 0 rgba(201, 162, 39, 0.08);
+}
+
+/* Simplified glow on mobile for performance */
+@media (max-width: 768px) {
+  .gold-glow {
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .gold-glow:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
 }
 
 /* Gold accent underline */
@@ -126,13 +152,16 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Post card hover effects */
+/* Post card hover effects - GPU optimized */
 .post-card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform, box-shadow;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .post-card-hover:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) translateZ(0);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
@@ -147,6 +176,13 @@
 /* Super dark theme specific hover */
 .super-dark-theme .post-card-hover:hover {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+/* Disable hover transforms on touch devices for better performance */
+@media (hover: none), (max-width: 768px) {
+  .post-card-hover:hover {
+    transform: none;
+  }
 }
 
 /* Button hover effects */
@@ -225,11 +261,13 @@
               linear-gradient(135deg, rgba(201, 162, 39, 0.5), rgba(212, 175, 55, 0.4)) border-box;
 }
 
-/* Loading animations */
+/* Loading animations - GPU optimized */
 .loading-shimmer {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: loading 1.5s infinite;
+  will-change: background-position;
+  contain: layout style;
 }
 
 @keyframes loading {
@@ -238,6 +276,14 @@
   }
   100% {
     background-position: -200% 0;
+  }
+}
+
+/* Reduce animation on low-end devices */
+@media (prefers-reduced-motion: reduce) {
+  .loading-shimmer {
+    animation: none;
+    background: #e8e8e8;
   }
 }
 

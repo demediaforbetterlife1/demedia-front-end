@@ -452,24 +452,36 @@
     }
 }
 
-/* Smooth Transitions */
+/* Smooth Transitions - GPU optimized */
 .transition-theme {
     transition:
-        background-color 0.3s ease,
-        color 0.3s ease,
-        border-color 0.3s ease;
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
+    will-change: background-color, color, border-color;
 }
 
 .transition-glow {
     transition:
-        box-shadow 0.3s ease,
-        transform 0.3s ease;
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+    will-change: box-shadow, transform;
 }
 
 .transition-glass {
     transition:
-        backdrop-filter 0.3s ease,
-        background 0.3s ease;
+        backdrop-filter 0.2s ease,
+        background 0.2s ease;
+    will-change: backdrop-filter, background;
+}
+
+/* Performance-optimized transitions for low-end devices */
+@media (max-width: 768px), (hover: none) {
+    .transition-theme,
+    .transition-glow,
+    .transition-glass {
+        transition-duration: 0.15s;
+    }
 }
 
 /* Responsive Enhancements */
@@ -485,6 +497,13 @@
     .gold-shimmer::after {
         display: none;
     }
+    
+    /* Disable all transitions for reduced motion */
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
 @media (max-width: 768px) {
@@ -492,6 +511,44 @@
     .super-dark-glow {
         box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
     }
+    
+    /* Performance optimizations for mobile/tablet */
+    .backdrop-blur-xl {
+        backdrop-filter: blur(8px);
+    }
+    
+    .backdrop-blur-2xl {
+        backdrop-filter: blur(12px);
+    }
+    
+    /* Reduce shadow complexity on mobile */
+    .theme-shadow {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Disable expensive hover effects on touch devices */
+    @media (hover: none) {
+        .hover\:shadow-xl:hover,
+        .hover\:shadow-lg:hover {
+            box-shadow: none;
+        }
+        
+        .group-hover\:scale-\[1\.01\]:hover {
+            transform: none;
+        }
+    }
+}
+
+/* GPU acceleration for animated elements */
+.animate-pulse-slow,
+.animate-float,
+.animate-glow,
+.animate-shimmer,
+.animate-particle,
+.gold-shimmer::after {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 /* ============================================
@@ -721,16 +778,47 @@ input, textarea, select {
 @layer base {
     * {
         @apply border-border outline-ring/50;
-        transition:
-            background-color 0.3s ease,
-            color 0.3s ease,
-            border-color 0.3s ease;
     }
+    
+    /* Apply transitions only to elements that need them */
+    body,
+    .theme-transition,
+    [class*="theme-bg"],
+    [class*="theme-text"],
+    [class*="theme-border"] {
+        transition:
+            background-color 0.2s ease,
+            color 0.2s ease,
+            border-color 0.2s ease;
+    }
+    
     body {
         @apply bg-background text-foreground;
-        transition:
-            background-color 0.3s ease,
-            color 0.3s ease,
-            border-color 0.3s ease;
+        /* Optimize text rendering */
+        text-rendering: optimizeSpeed;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Performance hints for frequently animated elements */
+    .motion-safe {
+        will-change: transform, opacity;
+    }
+    
+    /* Contain layout for better performance */
+    article, section, aside, nav {
+        contain: layout style;
+    }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
     }
 }

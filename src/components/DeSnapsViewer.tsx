@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -80,6 +80,33 @@ export default function DeSnapsViewer({
   const [errorCount, setErrorCount] = useState(0);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  // Check for reduced motion preference
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+    
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  // Memoized animation variants for performance
+  const animationConfig = useMemo(() => ({
+    container: {
+      initial: prefersReducedMotion ? { opacity: 1 } : { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: prefersReducedMotion ? { opacity: 1 } : { opacity: 0 },
+    },
+    content: {
+      initial: prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 },
+      animate: { opacity: 1, y: 0 },
+      exit: prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -50 },
+      transition: { duration: prefersReducedMotion ? 0 : 0.2 }
+    }
+  }), [prefersReducedMotion]);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
@@ -564,9 +591,9 @@ export default function DeSnapsViewer({
     <AnimatePresence>
       <motion.div
         ref={containerRef}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        initial={animationConfig.container.initial}
+        animate={animationConfig.container.animate}
+        exit={animationConfig.container.exit}
         className="fixed inset-0 bg-black z-50 flex items-center justify-center overflow-hidden"
       >
         {/* Background overlay */}
@@ -593,20 +620,22 @@ export default function DeSnapsViewer({
             </div>
 
             {/* Scroll hint - shows briefly */}
-            <motion.div
-              initial={{ opacity: 1 }}
-              animate={{ opacity: 0 }}
-              transition={{ delay: 2, duration: 1 }}
-              className="absolute bottom-32 left-1/2 transform -translate-x-1/2 z-20 text-white/60 text-sm flex flex-col items-center gap-2"
-            >
-              <span>Scroll to see more</span>
+            {!prefersReducedMotion && (
               <motion.div
-                animate={{ y: [0, 8, 0] }}
-                transition={{ repeat: 3, duration: 1 }}
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 0 }}
+                transition={{ delay: 2, duration: 1 }}
+                className="absolute bottom-32 left-1/2 transform -translate-x-1/2 z-20 text-white/60 text-sm flex flex-col items-center gap-2"
               >
-                <ChevronRight className="w-5 h-5 rotate-90" />
+                <span>Scroll to see more</span>
+                <motion.div
+                  animate={{ y: [0, 8, 0] }}
+                  transition={{ repeat: 2, duration: 1 }}
+                >
+                  <ChevronRight className="w-5 h-5 rotate-90" />
+                </motion.div>
               </motion.div>
-            </motion.div>
+            )}
 
             {/* Up arrow indicator */}
             {hasPrev && (
@@ -638,10 +667,10 @@ export default function DeSnapsViewer({
         {/* DeSnap content */}
         <motion.div 
           key={deSnap.id}
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -50 }}
-          transition={{ duration: 0.3 }}
+          initial={animationConfig.content.initial}
+          animate={animationConfig.content.animate}
+          exit={animationConfig.content.exit}
+          transition={animationConfig.content.transition}
           className="relative w-full h-full max-w-2xl mx-auto flex flex-col"
         >
           {/* Close button */}
