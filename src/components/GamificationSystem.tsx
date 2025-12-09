@@ -18,8 +18,11 @@ import {
     Diamond,
     Heart,
     Eye,
-    Share
+    Share,
+    Loader2
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiFetch } from "@/lib/api";
 
 interface UserStats {
     level: number;
@@ -32,6 +35,9 @@ interface UserStats {
     rank: number;
     badges: Badge[];
     tokens: number;
+    deSnapsCount: number;
+    followersCount: number;
+    followingCount: number;
 }
 
 interface Badge {
@@ -56,22 +62,178 @@ interface Challenge {
     type: 'daily' | 'weekly' | 'monthly' | 'special';
 }
 
+interface LeaderboardUser {
+    id: number;
+    name: string;
+    username: string;
+    profilePicture: string | null;
+    xp: number;
+    level: number;
+    totalViews: number;
+}
+
 export default function GamificationSystem() {
+    const { user } = useAuth();
+    const [loading, setLoading] = useState(true);
+    const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
     const [userStats, setUserStats] = useState<UserStats>({
-        level: 15,
-        xp: 2450,
-        xpToNext: 500,
-        streak: 7,
-        totalViews: 125000,
-        totalLikes: 8900,
-        totalShares: 1200,
-        rank: 42,
+        level: 1,
+        xp: 0,
+        xpToNext: 100,
+        streak: 0,
+        totalViews: 0,
+        totalLikes: 0,
+        totalShares: 0,
+        rank: 0,
         badges: [],
-        tokens: 1250
+        tokens: 0,
+        deSnapsCount: 0,
+        followersCount: 0,
+        followingCount: 0
     });
 
     const [activeTab, setActiveTab] = useState<'stats' | 'challenges' | 'rewards' | 'leaderboard'>('stats');
 
+    // Fetch real user stats
+    useEffect(() => {
+        const fetchUserStats = async () => {
+            if (!user?.id) {
+                setLoading(false);
+                return;
+            }
+            
+            try {
+                setLoading(true);
+                
+                // Fetch user profile data
+                const profileResponse = await apiFetch(`/api/users/${user.id}/profile`, {}, user.id);
+                let profileData = null;
+                if (profileResponse.ok) {
+                    profileData = await profileResponse.json();
+                }
+                
+                // Fetch user's DeSnaps for stats
+                const deSnapsResponse = await apiFetch(`/api/desnaps/user/${user.id}`, {}, user.id);
+                let deSnapsData: any[] = [];
+                if (deSnapsResponse.ok) {
+                    deSnapsData = await deSnapsResponse.json();
+                }
+                
+                // Calculate stats from real data
+                const totalViews = deSnapsData.reduce((sum: number, ds: any) => sum + (ds.views || 0), 0);
+                const totalLikes = deSnapsData.reduce((sum: number, ds: any) => sum + (ds.likes || ds._count?.likes || 0), 0);
+                const deSnapsCount = deSnapsData.length;
+                
+                // Calculate XP based on activity
+                const xpFromViews = Math.floor(totalViews / 100);
+                const xpFromLikes = totalLikes * 5;
+                const xpFromDeSnaps = deSnapsCount * 50;
+                const totalXp = xpFromViews + xpFromLikes + xpFromDeSnaps;
+                
+                // Calculate level (100 XP per level, increasing)
+                const calculateLevel = (xp: number) => {
+                    let level = 1;
+                    let xpNeeded = 100;
+                    let remainingXp = xp;
+                    while (remainingXp >= xpNeeded) {
+                        remainingXp -= xpNeeded;
+                        level++;
+                        xpNeeded = Math.floor(100 * Math.pow(1.2, level - 1));
+                    }
+                    return { level, currentXp: remainingXp, xpToNext: xpNeeded };
+                };
+                
+                const levelData = calculateLevel(totalXp);
+                
+                // Calculate tokens (1 token per 10 XP)
+                const tokens = Math.floor(totalXp / 10);
+                
+                setUserStats({
+                    level: levelData.level,
+                    xp: levelData.currentXp,
+                    xpToNext: levelData.xpToNext,
+                    streak: profileData?.streak || Math.min(deSnapsCount, 7),
+                    totalViews,
+                    totalLikes,
+                    totalShares: Math.floor(totalLikes * 0.1), // Estimate shares
+                    rank: 0, // Will be calculated from leaderboard
+                    badges: [],
+                    tokens,
+                    deSnapsCount,
+                    followersCount: profileData?.followersCount || profileData?._count?.followers || 0,
+                    followingCount: profileData?.followingCount || profileData?._count?.following || 0
+                });
+                
+                // Fetch leaderboard
+                await fetchLeaderboard();
+                
+            } catch (error) {
+                console.error('Error fetching user stats:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        fetchUserStats();
+    }, [user?.id]);
+    
+    const fetchLeaderboard = async () => {
+        try {
+            // Fetch all users for leaderboard (simplified - in production would have dedicated endpoint)
+            const response = await apiFetch('/api/desnaps', {}, user?.id);
+            if (response.ok) {
+                const allDeSnaps = await response.json();
+                
+                // Group by user and calculate stats
+                const userStatsMap = new Map<number, LeaderboardUser>();
+                
+                allDeSnaps.forEach((ds: any) => {
+                    const userId = ds.userId || ds.author?.id;
+                    if (!userId) return;
+                    
+                    const existing = userStatsMap.get(userId);
+                    const views = ds.views || 0;
+                    const likes = ds.likes || ds._count?.likes || 0;
+                    
+                    if (existing) {
+                        existing.totalViews += views;
+                        existing.xp += Math.floor(views / 100) + likes * 5 + 50;
+                    } else {
+                        userStatsMap.set(userId, {
+                            id: userId,
+                            name: ds.author?.name || 'User',
+                            username: ds.author?.username || 'user',
+                            profilePicture: ds.author?.profilePicture || null,
+                            totalViews: views,
+                            xp: Math.floor(views / 100) + likes * 5 + 50,
+                            level: 1
+                        });
+                    }
+                });
+                
+                // Calculate levels and sort
+                const leaderboardData = Array.from(userStatsMap.values())
+                    .map(u => ({
+                        ...u,
+                        level: Math.floor(Math.log(u.xp / 100 + 1) / Math.log(1.2)) + 1
+                    }))
+                    .sort((a, b) => b.xp - a.xp)
+                    .slice(0, 10);
+                
+                setLeaderboard(leaderboardData);
+                
+                // Update user's rank
+                const userRank = leaderboardData.findIndex(u => u.id === user?.id) + 1;
+                if (userRank > 0) {
+                    setUserStats(prev => ({ ...prev, rank: userRank }));
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching leaderboard:', error);
+        }
+    };
+
+    // Calculate badges based on real user stats
     const badges: Badge[] = [
         {
             id: "first-deSnap",
@@ -79,85 +241,102 @@ export default function GamificationSystem() {
             description: "Created your first DeSnap",
             icon: Zap,
             rarity: "common",
-            earned: true
+            earned: userStats.deSnapsCount >= 1,
+            progress: Math.min(userStats.deSnapsCount, 1),
+            maxProgress: 1
+        },
+        {
+            id: "content-creator",
+            name: "Content Creator",
+            description: "Create 10 DeSnaps",
+            icon: Rocket,
+            rarity: "rare",
+            earned: userStats.deSnapsCount >= 10,
+            progress: Math.min(userStats.deSnapsCount, 10),
+            maxProgress: 10
         },
         {
             id: "viral-creator",
             name: "Viral Creator",
-            description: "Get 10K views on a single DeSnap",
+            description: "Get 10K total views",
             icon: TrendingUp,
             rarity: "rare",
-            earned: true
+            earned: userStats.totalViews >= 10000,
+            progress: Math.min(userStats.totalViews, 10000),
+            maxProgress: 10000
         },
         {
             id: "streak-master",
             name: "Streak Master",
-            description: "Maintain a 30-day posting streak",
+            description: "Maintain a 7-day posting streak",
             icon: Flame,
             rarity: "epic",
-            earned: false,
-            progress: 7,
-            maxProgress: 30
+            earned: userStats.streak >= 7,
+            progress: Math.min(userStats.streak, 7),
+            maxProgress: 7
         },
         {
-            id: "collaboration-king",
-            name: "Collaboration King",
-            description: "Collaborate with 50 different creators",
+            id: "community-builder",
+            name: "Community Builder",
+            description: "Get 100 followers",
             icon: Users,
-            rarity: "legendary",
-            earned: false,
-            progress: 12,
-            maxProgress: 50
-        },
-        {
-            id: "trend-setter",
-            name: "Trend Setter",
-            description: "Start a trending hashtag",
-            icon: Sparkles,
             rarity: "epic",
-            earned: true
+            earned: userStats.followersCount >= 100,
+            progress: Math.min(userStats.followersCount, 100),
+            maxProgress: 100
         },
         {
             id: "engagement-expert",
             name: "Engagement Expert",
-            description: "Get 1M total likes across all DeSnaps",
+            description: "Get 1K total likes",
             icon: Heart,
             rarity: "legendary",
-            earned: false,
-            progress: 8900,
-            maxProgress: 1000000
+            earned: userStats.totalLikes >= 1000,
+            progress: Math.min(userStats.totalLikes, 1000),
+            maxProgress: 1000
         }
     ];
 
+    // Calculate challenges based on real user stats
     const challenges: Challenge[] = [
         {
             id: "daily-poster",
             title: "Daily Creator",
-            description: "Post a DeSnap every day this week",
+            description: "Post 5 DeSnaps this week",
             reward: 100,
             deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            progress: 3,
-            maxProgress: 7,
+            progress: Math.min(userStats.deSnapsCount, 5),
+            maxProgress: 5,
             type: "daily"
         },
         {
-            id: "collaboration-challenge",
-            title: "Team Player",
-            description: "Collaborate with 5 different creators",
+            id: "engagement-boost",
+            title: "Engagement Boost",
+            description: "Get 500 total likes",
             reward: 250,
             deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-            progress: 2,
-            maxProgress: 5,
+            progress: Math.min(userStats.totalLikes, 500),
+            maxProgress: 500,
             type: "weekly"
         },
         {
             id: "viral-challenge",
             title: "Go Viral",
-            description: "Get 50K views on a single DeSnap",
+            description: "Get 5K total views",
             reward: 500,
             deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            progress: 0,
-            maxProgress: 1,
+            progress: Math.min(userStats.totalViews, 5000),
+            maxProgress: 5000,
+            type: "monthly"
+        },
+        {
+            id: "community-growth",
+            title: "Community Growth",
+            description: "Gain 50 followers",
+            reward: 300,
+            deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            progress: Math.min(userStats.followersCount, 50),
+            maxProgress: 50,
             type: "monthly"
         }
     ];
@@ -181,6 +360,15 @@ export default function GamificationSystem() {
             default: return 'bg-gray-500/10';
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="w-10 h-10 text-purple-500 animate-spin mb-4" />
+                <p className="text-gray-400">Loading your stats...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -427,28 +615,61 @@ export default function GamificationSystem() {
                         <div className="bg-gray-800/50 rounded-xl p-4">
                             <h3 className="text-white font-semibold mb-4">Global Leaderboard</h3>
                             <div className="space-y-3">
-                                {[1, 2, 3, 4, 5].map((rank) => (
-                                    <div key={rank} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                                                rank === 1 ? 'bg-yellow-500 text-black' :
-                                                rank === 2 ? 'bg-gray-400 text-black' :
-                                                rank === 3 ? 'bg-orange-500 text-white' :
-                                                'bg-gray-600 text-white'
-                                            }`}>
-                                                {rank}
+                                {leaderboard.length > 0 ? (
+                                    leaderboard.map((leaderUser, index) => {
+                                        const rank = index + 1;
+                                        const isCurrentUser = leaderUser.id === user?.id;
+                                        return (
+                                            <div 
+                                                key={leaderUser.id} 
+                                                className={`flex items-center justify-between p-3 rounded-lg ${
+                                                    isCurrentUser ? 'bg-purple-600/30 border border-purple-500/50' : 'bg-gray-700/50'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                                                        rank === 1 ? 'bg-yellow-500 text-black' :
+                                                        rank === 2 ? 'bg-gray-400 text-black' :
+                                                        rank === 3 ? 'bg-orange-500 text-white' :
+                                                        'bg-gray-600 text-white'
+                                                    }`}>
+                                                        {rank}
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        {leaderUser.profilePicture ? (
+                                                            <img 
+                                                                src={leaderUser.profilePicture} 
+                                                                alt={leaderUser.name}
+                                                                className="w-8 h-8 rounded-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm">
+                                                                {leaderUser.name[0]?.toUpperCase() || 'U'}
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <p className="text-white font-medium">
+                                                                {leaderUser.name}
+                                                                {isCurrentUser && <span className="text-purple-400 text-xs ml-2">(You)</span>}
+                                                            </p>
+                                                            <p className="text-gray-400 text-sm">@{leaderUser.username}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-white font-semibold">Level {leaderUser.level}</p>
+                                                    <p className="text-gray-400 text-sm">{leaderUser.xp.toLocaleString()} XP</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-white font-medium">Creator {rank}</p>
-                                                <p className="text-gray-400 text-sm">{Math.floor(Math.random() * 1000000)} XP</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-white font-semibold">Level {15 + rank}</p>
-                                            <p className="text-gray-400 text-sm">{Math.floor(Math.random() * 100)}K views</p>
-                                        </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="text-center py-8 text-gray-400">
+                                        <Trophy className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                        <p>No leaderboard data yet</p>
+                                        <p className="text-sm">Create DeSnaps to appear on the leaderboard!</p>
                                     </div>
-                                ))}
+                                )}
                             </div>
                         </div>
                     </motion.div>

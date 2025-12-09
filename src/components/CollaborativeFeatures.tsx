@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
     Users, 
@@ -13,15 +13,29 @@ import {
     Crown,
     Timer,
     MapPin,
-    Gift
+    Gift,
+    Search,
+    X,
+    Check,
+    Loader2
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiFetch } from "@/lib/api";
 
 interface Collaborator {
     id: string;
     name: string;
+    username: string;
     avatar: string;
     role: 'creator' | 'contributor' | 'viewer';
     contribution?: string;
+}
+
+interface SearchUser {
+    id: number;
+    name: string;
+    username: string;
+    profilePicture: string | null;
 }
 
 interface CollaborativeFeaturesProps {
@@ -30,9 +44,57 @@ interface CollaborativeFeaturesProps {
 }
 
 export default function CollaborativeFeatures({ deSnapId, onCollaborationUpdate }: CollaborativeFeaturesProps) {
+    const { user } = useAuth();
     const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [activeFeature, setActiveFeature] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
+    const [searching, setSearching] = useState(false);
+    const [enabledFeatures, setEnabledFeatures] = useState<Set<string>>(new Set());
+
+    // Search for users to invite
+    useEffect(() => {
+        const searchUsers = async () => {
+            if (searchQuery.length < 2) {
+                setSearchResults([]);
+                return;
+            }
+            
+            setSearching(true);
+            try {
+                // In a real app, this would be a dedicated search endpoint
+                const response = await apiFetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`, {}, user?.id);
+                if (response.ok) {
+                    const data = await response.json();
+                    setSearchResults(Array.isArray(data) ? data.filter((u: SearchUser) => u.id !== user?.id) : []);
+                } else {
+                    // Fallback: show empty results
+                    setSearchResults([]);
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                setSearchResults([]);
+            } finally {
+                setSearching(false);
+            }
+        };
+        
+        const debounce = setTimeout(searchUsers, 300);
+        return () => clearTimeout(debounce);
+    }, [searchQuery, user?.id]);
+
+    const toggleFeature = (featureId: string) => {
+        setEnabledFeatures(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(featureId)) {
+                newSet.delete(featureId);
+            } else {
+                newSet.add(featureId);
+            }
+            return newSet;
+        });
+    };
 
     const uniqueFeatures = [
         {
@@ -109,14 +171,39 @@ export default function CollaborativeFeatures({ deSnapId, onCollaborationUpdate 
         }
     ];
 
-    const addCollaborator = (collaborator: Collaborator) => {
-        setCollaborators(prev => [...prev, collaborator]);
-        onCollaborationUpdate([...collaborators, collaborator]);
+    const addCollaborator = (searchUser: SearchUser) => {
+        // Check if already added
+        if (collaborators.some(c => c.id === String(searchUser.id))) {
+            return;
+        }
+        
+        const newCollaborator: Collaborator = {
+            id: String(searchUser.id),
+            name: searchUser.name,
+            username: searchUser.username,
+            avatar: searchUser.profilePicture || '',
+            role: 'contributor'
+        };
+        
+        const updatedCollaborators = [...collaborators, newCollaborator];
+        setCollaborators(updatedCollaborators);
+        onCollaborationUpdate(updatedCollaborators);
+        setSearchQuery('');
+        setSearchResults([]);
     };
 
     const removeCollaborator = (id: string) => {
-        setCollaborators(prev => prev.filter(c => c.id !== id));
-        onCollaborationUpdate(collaborators.filter(c => c.id !== id));
+        const updatedCollaborators = collaborators.filter(c => c.id !== id);
+        setCollaborators(updatedCollaborators);
+        onCollaborationUpdate(updatedCollaborators);
+    };
+    
+    const updateCollaboratorRole = (id: string, role: 'creator' | 'contributor' | 'viewer') => {
+        const updatedCollaborators = collaborators.map(c => 
+            c.id === id ? { ...c, role } : c
+        );
+        setCollaborators(updatedCollaborators);
+        onCollaborationUpdate(updatedCollaborators);
     };
 
     return (
