@@ -203,6 +203,9 @@ export default function MediaImage({
     ? { width: "100%", height: "100%", objectFit: "cover" as const }
     : { width: width || "auto", height: height || "auto" };
 
+  // Check if we're showing the fallback due to an error
+  const showingFallback = imageError && imageUrl === getFallbackImage();
+
   return (
     <div className={`relative ${fill ? "w-full h-full" : ""}`}>
       {isLoading && !imageError && (

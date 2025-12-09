@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
 import { apiFetch } from "@/lib/api";
@@ -92,25 +92,6 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<number>>(new Set());
   const [expandedPosts, setExpandedPosts] = useState<Set<number>>(new Set());
   const [shareStatus, setShareStatus] = useState<Record<number, string>>({});
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  // Check for reduced motion preference
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
-    
-    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, []);
-
-  // Memoized animation variants for performance
-  const postAnimationVariants = useMemo(() => ({
-    initial: prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: prefersReducedMotion ? 0 : 0.2 }
-  }), [prefersReducedMotion]);
 
   const allThemes: Record<string, ThemeClasses> = {
     light: {
@@ -557,6 +538,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               return false;
             }
             
+            // Filter out blob URLs - they're session-specific and won't work after refresh
+            if (img.startsWith('blob:')) {
+              return false;
+            }
+            
             // Filter out obvious placeholders and defaults
             const lowerImg = img.toLowerCase();
             if (lowerImg.includes('default-post.svg') || 
@@ -582,7 +568,23 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
             }
             
             // Keep valid URLs (http/https or relative paths)
+            // But only if they look like actual image URLs
             if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('/')) {
+              // Check if it looks like an image URL
+              const hasImageExtension = /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?.*)?$/i.test(img);
+              const hasUploadsPath = img.includes('/uploads/') || img.includes('/images/') || img.includes('/media/');
+              
+              if (hasImageExtension || hasUploadsPath) {
+                return true;
+              }
+              
+              // If it's a relative path starting with /, it might be a local image
+              if (img.startsWith('/') && !img.startsWith('//')) {
+                return true;
+              }
+              
+              // For http URLs without clear image indicators, still include them
+              // but they might fail to load
               return true;
             }
             
@@ -614,22 +616,22 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         return (
           <motion.article
             key={post.id}
-            initial={postAnimationVariants.initial}
-            animate={postAnimationVariants.animate}
-            transition={postAnimationVariants.transition}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
             className={`group rounded-2xl md:rounded-3xl p-4 md:p-6 cursor-pointer relative ${themeClasses.bg} ${
-              theme === "super-dark" && !prefersReducedMotion
-                ? "ring-1 ring-purple-500/20 hover:ring-purple-400/40 before:absolute before:inset-0 before:rounded-2xl md:before:rounded-3xl before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-500 before:bg-gradient-to-br before:from-purple-500/5 before:via-transparent before:to-pink-500/5 before:pointer-events-none"
-                : theme === "super-dark" ? "ring-1 ring-purple-500/20" : ""
+              theme === "super-dark"
+                ? "ring-1 ring-purple-500/20 hover:ring-purple-400/40 before:absolute before:inset-0 before:rounded-2xl md:before:rounded-3xl before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-700 before:bg-gradient-to-br before:from-purple-500/5 before:via-transparent before:to-pink-500/5 before:pointer-events-none"
+                : ""
             } min-h-0`}
             onClick={() => goToPost(post.id)}
           >
-            {theme === "super-dark" && !prefersReducedMotion && (
+            {theme === "super-dark" && (
               <>
-                <div className="absolute inset-0 rounded-2xl md:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-                  <div className="absolute inset-0 rounded-2xl md:rounded-3xl bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20 blur-xl" />
+                <div className="absolute inset-0 rounded-2xl md:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+                  <div className="absolute inset-0 rounded-2xl md:rounded-3xl bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20 blur-xl animate-pulse" />
                 </div>
-                <div className="absolute inset-0 rounded-2xl md:rounded-3xl bg-gradient-to-br from-purple-500/0 via-purple-400/10 to-pink-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                <div className="absolute inset-0 rounded-2xl md:rounded-3xl bg-gradient-to-br from-purple-500/0 via-purple-400/10 to-pink-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                 <div
                   className="absolute inset-0 rounded-2xl md:rounded-3xl opacity-[0.02] pointer-events-none"
                   style={{

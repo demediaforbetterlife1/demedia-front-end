@@ -120,25 +120,14 @@ export default function Navbar() {
     };
 
     useEffect(() => {
-        let ticking = false;
-        let lastScrollY = 0;
-        
         const handleScroll = () => {
-            lastScrollY = window.scrollY;
-            
-            if (!ticking) {
-                // Use requestAnimationFrame for smooth, throttled updates
-                requestAnimationFrame(() => {
-                    const shouldShrink = lastScrollY > 40;
-                    setIsShrunk(prev => prev !== shouldShrink ? shouldShrink : prev);
-                    ticking = false;
-                });
-                ticking = true;
+            if (window.scrollY > 40) {
+                setIsShrunk(true);
+            } else {
+                setIsShrunk(false);
             }
         };
-        
-        // Use passive listener for better scroll performance
-        window.addEventListener("scroll", handleScroll, { passive: true });
+        window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 

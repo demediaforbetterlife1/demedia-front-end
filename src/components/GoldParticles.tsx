@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface Particle {
@@ -13,58 +13,34 @@ interface Particle {
   opacity: number;
 }
 
-// Check if device prefers reduced motion or is low-end
-const prefersReducedMotion = () => {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-};
-
-const isLowEndDevice = () => {
-  if (typeof window === 'undefined') return false;
-  // Check for low memory or slow connection
-  const nav = navigator as any;
-  const lowMemory = nav.deviceMemory && nav.deviceMemory < 4;
-  const slowConnection = nav.connection && 
-    (nav.connection.effectiveType === '2g' || nav.connection.effectiveType === 'slow-2g');
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  return lowMemory || slowConnection || (isMobile && window.innerWidth < 768);
-};
-
 export default function GoldParticles() {
   const { theme } = useTheme();
   const [particles, setParticles] = useState<Particle[]>([]);
-  const [shouldRender, setShouldRender] = useState(true);
 
-  // Check device capabilities on mount
-  useEffect(() => {
-    if (prefersReducedMotion() || isLowEndDevice()) {
-      setShouldRender(false);
-    }
-  }, []);
-
-  // Memoize particle generation with device-aware count
-  const generateParticles = useCallback(() => {
-    const newParticles: Particle[] = [];
-    // Reduced particle count - even fewer on mobile
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    const particleCount = isMobile ? 4 : 6;
-    
-    for (let i = 0; i < particleCount; i++) {
-      newParticles.push({
-        id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: Math.random() * 2 + 1,
-        delay: Math.random() * 10,
-        duration: 18 + Math.random() * 12, // Slower for less CPU usage
-        opacity: 0.15 + Math.random() * 0.25
-      });
-    }
-    return newParticles;
+  // Memoize particle generation to prevent unnecessary recalculations
+  const generateParticles = useMemo(() => {
+    return () => {
+      const newParticles: Particle[] = [];
+      // Reduced particle count for a more elegant, less cluttered look
+      const particleCount = 8;
+      
+      for (let i = 0; i < particleCount; i++) {
+        newParticles.push({
+          id: i,
+          x: Math.random() * 100,
+          y: Math.random() * 100,
+          size: Math.random() * 2 + 1, // Smaller particles (1-3px)
+          delay: Math.random() * 8, // Longer delays for staggered effect
+          duration: 15 + Math.random() * 10, // Slower, more elegant movement
+          opacity: 0.2 + Math.random() * 0.3 // Subtle opacity (0.2-0.5)
+        });
+      }
+      return newParticles;
+    };
   }, []);
 
   useEffect(() => {
-    if (theme !== 'gold' || !shouldRender) {
+    if (theme !== 'gold') {
       setParticles([]);
       return;
     }
@@ -72,15 +48,15 @@ export default function GoldParticles() {
     // Create floating gold particles
     setParticles(generateParticles());
     
-    // Regenerate particles less frequently
+    // Regenerate particles less frequently for smoother experience
     const interval = setInterval(() => {
       setParticles(generateParticles());
-    }, 30000); // Increased interval for better performance
+    }, 20000);
 
     return () => clearInterval(interval);
-  }, [theme, generateParticles, shouldRender]);
+  }, [theme, generateParticles]);
 
-  if (theme !== 'gold' || particles.length === 0 || !shouldRender) return null;
+  if (theme !== 'gold' || particles.length === 0) return null;
 
   return (
     <div className="gold-particles-container" aria-hidden="true">
@@ -109,36 +85,27 @@ export default function GoldParticles() {
           pointer-events: none;
           z-index: 0;
           overflow: hidden;
-          contain: strict;
         }
         .gold-particle {
           position: absolute;
-          background: radial-gradient(circle, rgba(201, 162, 39, 0.5) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(201, 162, 39, 0.6) 0%, transparent 70%);
           border-radius: 50%;
           animation: gold-float-elegant linear infinite;
-          will-change: transform, opacity;
-          transform: translateZ(0);
-          backface-visibility: hidden;
         }
         @keyframes gold-float-elegant {
           0% {
-            transform: translate3d(0, 0, 0);
+            transform: translateY(0) translateX(0);
             opacity: 0;
           }
           10% {
-            opacity: var(--particle-opacity, 0.25);
+            opacity: var(--particle-opacity, 0.3);
           }
           90% {
-            opacity: var(--particle-opacity, 0.25);
+            opacity: var(--particle-opacity, 0.3);
           }
           100% {
-            transform: translate3d(15px, -100vh, 0);
+            transform: translateY(-100vh) translateX(20px);
             opacity: 0;
-          }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .gold-particles-container {
-            display: none;
           }
         }
       `}</style>
