@@ -32,6 +32,10 @@ interface DeSnapsViewerProps {
   onClose: () => void;
   deSnap: DeSnap;
   onDeSnapUpdated?: (updatedDeSnap: DeSnap) => void;
+  // New props for scroll navigation
+  allDeSnaps?: DeSnap[];
+  currentIndex?: number;
+  onNavigate?: (index: number) => void;
 }
 
 const visibilityIcons = {
@@ -50,6 +54,9 @@ export default function DeSnapsViewer({
   onClose,
   deSnap,
   onDeSnapUpdated,
+  allDeSnaps = [],
+  currentIndex = 0,
+  onNavigate,
 }: DeSnapsViewerProps) {
   const { user } = useAuth();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -71,9 +78,103 @@ export default function DeSnapsViewer({
     null,
   );
   const [errorCount, setErrorCount] = useState(0);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Navigation helpers
+  const hasNext = allDeSnaps.length > 0 && currentIndex < allDeSnaps.length - 1;
+  const hasPrev = allDeSnaps.length > 0 && currentIndex > 0;
+
+  const goToNext = useCallback(() => {
+    if (hasNext && onNavigate && !isTransitioning) {
+      setIsTransitioning(true);
+      // Pause current video
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+      onNavigate(currentIndex + 1);
+      setTimeout(() => setIsTransitioning(false), 300);
+    }
+  }, [hasNext, onNavigate, currentIndex, isTransitioning]);
+
+  const goToPrev = useCallback(() => {
+    if (hasPrev && onNavigate && !isTransitioning) {
+      setIsTransitioning(true);
+      // Pause current video
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+      onNavigate(currentIndex - 1);
+      setTimeout(() => setIsTransitioning(false), 300);
+    }
+  }, [hasPrev, onNavigate, currentIndex, isTransitioning]);
+
+  // Handle scroll/swipe for navigation
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !isOpen) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Prevent default scroll
+      e.preventDefault();
+      
+      // Only navigate if not in comments section
+      if (showComments) return;
+      
+      // Scroll down = next, scroll up = prev
+      if (e.deltaY > 50) {
+        goToNext();
+      } else if (e.deltaY < -50) {
+        goToPrev();
+      }
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      setTouchStartY(e.touches[0].clientY);
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (touchStartY === null || showComments) return;
+      
+      const touchEndY = e.changedTouches[0].clientY;
+      const diff = touchStartY - touchEndY;
+      
+      // Swipe up = next, swipe down = prev (threshold of 50px)
+      if (diff > 50) {
+        goToNext();
+      } else if (diff < -50) {
+        goToPrev();
+      }
+      
+      setTouchStartY(null);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown' || e.key === 'j') {
+        e.preventDefault();
+        goToNext();
+      } else if (e.key === 'ArrowUp' || e.key === 'k') {
+        e.preventDefault();
+        goToPrev();
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchend', handleTouchEnd, { passive: true });
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, goToNext, goToPrev, touchStartY, showComments]);
 
   const mergeAndEmitUpdate = useCallback(
     (partial: Partial<DeSnap>) => {
@@ -462,16 +563,87 @@ export default function DeSnapsViewer({
   return (
     <AnimatePresence>
       <motion.div
+        ref={containerRef}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black z-50 flex items-center justify-center"
+        className="fixed inset-0 bg-black z-50 flex items-center justify-center overflow-hidden"
       >
         {/* Background overlay */}
         <div className="absolute inset-0 bg-black/90" onClick={onClose} />
 
+        {/* Navigation indicators */}
+        {allDeSnaps.length > 1 && (
+          <>
+            {/* Progress dots */}
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-1">
+              {allDeSnaps.slice(0, Math.min(allDeSnaps.length, 10)).map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`h-1 rounded-full transition-all duration-300 ${
+                    idx === currentIndex 
+                      ? 'w-6 bg-white' 
+                      : 'w-1 bg-white/40'
+                  }`}
+                />
+              ))}
+              {allDeSnaps.length > 10 && (
+                <span className="text-white/60 text-xs ml-1">+{allDeSnaps.length - 10}</span>
+              )}
+            </div>
+
+            {/* Scroll hint - shows briefly */}
+            <motion.div
+              initial={{ opacity: 1 }}
+              animate={{ opacity: 0 }}
+              transition={{ delay: 2, duration: 1 }}
+              className="absolute bottom-32 left-1/2 transform -translate-x-1/2 z-20 text-white/60 text-sm flex flex-col items-center gap-2"
+            >
+              <span>Scroll to see more</span>
+              <motion.div
+                animate={{ y: [0, 8, 0] }}
+                transition={{ repeat: 3, duration: 1 }}
+              >
+                <ChevronRight className="w-5 h-5 rotate-90" />
+              </motion.div>
+            </motion.div>
+
+            {/* Up arrow indicator */}
+            {hasPrev && (
+              <button
+                onClick={goToPrev}
+                className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20 text-white/60 hover:text-white transition-colors p-2"
+              >
+                <ChevronLeft className="w-8 h-8 rotate-90" />
+              </button>
+            )}
+
+            {/* Down arrow indicator */}
+            {hasNext && (
+              <button
+                onClick={goToNext}
+                className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-20 text-white/60 hover:text-white transition-colors p-2"
+              >
+                <ChevronRight className="w-8 h-8 rotate-90" />
+              </button>
+            )}
+
+            {/* Counter */}
+            <div className="absolute top-4 right-16 z-20 bg-black/50 backdrop-blur-sm text-white text-sm px-3 py-1 rounded-full">
+              {currentIndex + 1} / {allDeSnaps.length}
+            </div>
+          </>
+        )}
+
         {/* DeSnap content */}
-        <div className="relative w-full h-full max-w-2xl mx-auto flex flex-col">
+        <motion.div 
+          key={deSnap.id}
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -50 }}
+          transition={{ duration: 0.3 }}
+          className="relative w-full h-full max-w-2xl mx-auto flex flex-col"
+        >
           {/* Close button */}
           <button
             onClick={onClose}
@@ -946,7 +1118,7 @@ export default function DeSnapsViewer({
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
       </motion.div>
     </AnimatePresence>
   );

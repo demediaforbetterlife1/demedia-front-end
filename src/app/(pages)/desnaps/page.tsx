@@ -461,7 +461,7 @@ export default function DeSnapsPage() {
                 }}
             />
 
-            {/* DeSnap Viewer */}
+            {/* DeSnap Viewer with scroll navigation */}
             {selectedDeSnap && (
                 <DeSnapsViewer
                     isOpen={!!selectedDeSnap}
@@ -472,6 +472,15 @@ export default function DeSnapsPage() {
                     deSnap={selectedDeSnap}
                     onDeSnapUpdated={(updated) => {
                         setDeSnaps(prev => prev.map(ds => ds.id === updated.id ? updated : ds));
+                    }}
+                    allDeSnaps={filteredDeSnaps}
+                    currentIndex={filteredDeSnaps.findIndex(ds => ds.id === selectedDeSnap.id)}
+                    onNavigate={(index) => {
+                        const nextDeSnap = filteredDeSnaps[index];
+                        if (nextDeSnap) {
+                            setSelectedDeSnap(nextDeSnap);
+                            setIsPlaying(nextDeSnap.id);
+                        }
                     }}
                 />
             )}
