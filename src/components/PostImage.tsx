@@ -48,11 +48,36 @@ export default function PostImage({
   // Check if a string is a valid Base64 data URL with actual content
   const isValidBase64 = useCallback((url: string | null | undefined): boolean => {
     if (!url || typeof url !== 'string') return false;
-    if (!url.startsWith('data:image/')) return false;
     
-    const commaIndex = url.indexOf(',');
-    // Must have comma and at least 50 chars of data after it (reduced threshold)
-    return commaIndex > 0 && url.length > commaIndex + 50;
+    // Direct Base64 data URL
+    if (url.startsWith('data:image/')) {
+      const commaIndex = url.indexOf(',');
+      return commaIndex > 0 && url.length > commaIndex + 50;
+    }
+    
+    return false;
+  }, []);
+  
+  // Extract Base64 data URL if it's embedded in a malformed URL
+  const extractBase64 = useCallback((url: string | null | undefined): string | null => {
+    if (!url || typeof url !== 'string') return null;
+    
+    // If it already starts with data:image/, return as-is
+    if (url.startsWith('data:image/')) {
+      return url;
+    }
+    
+    // Check if Base64 is embedded in a malformed URL (e.g., https://server/data:image/...)
+    if (url.includes('data:image/')) {
+      const base64Start = url.indexOf('data:image/');
+      if (base64Start > 0) {
+        const extracted = url.substring(base64Start);
+        console.log(`📸 Extracted Base64 from malformed URL`);
+        return extracted;
+      }
+    }
+    
+    return null;
   }, []);
 
   // Check if URL is a valid http/https URL that's likely to work
@@ -92,9 +117,29 @@ export default function PostImage({
         length: src?.length || 0,
         preview: src?.substring(0, 100),
         isBase64: src?.startsWith('data:image/'),
+        containsBase64: src?.includes('data:image/'),
         isHttp: src?.startsWith('http'),
         isRelative: src?.startsWith('/'),
       });
+
+      // PRIORITY 0: Try to extract Base64 from malformed URL (e.g., https://server/data:image/...)
+      const extractedBase64 = extractBase64(src);
+      if (extractedBase64 && isValidBase64(extractedBase64)) {
+        const sizeKB = Math.round(extractedBase64.length / 1024);
+        console.log(`📸 PostImage [${postId}][${photoIndex}]: ✅ Using extracted Base64 (${sizeKB}KB)`);
+        if (isMounted) {
+          setImageSrc(extractedBase64);
+          setIsLoading(false);
+          
+          // Also cache it for future use
+          try {
+            await postPhotoCache.storePhotosForPost(postId, [extractedBase64]);
+          } catch (e) {
+            // Ignore cache errors
+          }
+        }
+        return;
+      }
 
       // PRIORITY 1: Check if src is already a valid Base64 data URL
       // This is the most reliable for frontend-only display

@@ -50,7 +50,20 @@ export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
   const cleanUrl = url!.trim();
 
   // IMPORTANT: Don't touch Base64 data URLs - they're already complete
-  if (cleanUrl.startsWith("data:image/")) {
+  if (cleanUrl.startsWith("data:image/") || cleanUrl.startsWith("data:")) {
+    return cleanUrl;
+  }
+
+  // Check if URL contains embedded Base64 data (malformed URL like https://server/data:image/...)
+  if (cleanUrl.includes("data:image/") || cleanUrl.includes(";base64,")) {
+    // Extract the Base64 data URL from the malformed URL
+    const base64Start = cleanUrl.indexOf("data:image/");
+    if (base64Start > 0) {
+      const extractedBase64 = cleanUrl.substring(base64Start);
+      console.log("ensureAbsoluteMediaUrl: Extracted Base64 from malformed URL");
+      return extractedBase64;
+    }
+    // If it contains base64 marker but we can't extract it cleanly, return as-is
     return cleanUrl;
   }
 
@@ -152,6 +165,20 @@ export function normalizeMediaUrl(
   }
 
   const cleanUrl = url.trim();
+
+  // PRIORITY: Base64 data URLs - return as-is
+  if (cleanUrl.startsWith("data:image/") || cleanUrl.startsWith("data:")) {
+    return cleanUrl;
+  }
+
+  // Check if URL contains embedded Base64 data (malformed URL)
+  if (cleanUrl.includes("data:image/") || cleanUrl.includes(";base64,")) {
+    const base64Start = cleanUrl.indexOf("data:image/");
+    if (base64Start > 0) {
+      return cleanUrl.substring(base64Start);
+    }
+    return cleanUrl;
+  }
 
   // If it's already a full URL, return as is
   if (cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://")) {

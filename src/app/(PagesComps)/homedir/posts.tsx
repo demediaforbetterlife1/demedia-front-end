@@ -527,20 +527,20 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
 
         // Filter and process images - prioritize Base64 data URLs for 100% frontend display
         const images = rawImages
-          .filter((img): img is string => {
+          .map((img): string | null => {
             // Filter out null/undefined/empty
             if (!img || typeof img !== 'string' || img.trim() === '') {
-              return false;
+              return null;
             }
             
             // Filter out local storage references - they don't work across devices
             if (img.startsWith('local-storage://') || img.startsWith('local-photo://')) {
-              return false;
+              return null;
             }
             
             // Filter out blob URLs - they're session-specific and won't work after refresh
             if (img.startsWith('blob:')) {
-              return false;
+              return null;
             }
             
             // Filter out obvious placeholders and defaults
@@ -552,7 +552,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                 lowerImg.endsWith('placeholder.png') ||
                 lowerImg.endsWith('placeholder.jpg') ||
                 lowerImg.endsWith('placeholder.svg')) {
-              return false;
+              return null;
             }
             
             // PRIORITY: Base64 data URLs - these are 100% frontend and always work
@@ -561,10 +561,23 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               const commaIndex = img.indexOf(',');
               if (commaIndex > 0 && img.length > commaIndex + 100) {
                 console.log(`  ✅ Post ${post.id}: Valid Base64 image (${Math.round(img.length / 1024)}KB)`);
-                return true;
+                return img;
               }
               console.log(`  ❌ Post ${post.id}: Base64 appears truncated or invalid`);
-              return false;
+              return null;
+            }
+            
+            // Check if Base64 is embedded in a malformed URL (e.g., https://server/data:image/...)
+            if (img.includes('data:image/')) {
+              const base64Start = img.indexOf('data:image/');
+              if (base64Start > 0) {
+                const extractedBase64 = img.substring(base64Start);
+                const commaIndex = extractedBase64.indexOf(',');
+                if (commaIndex > 0 && extractedBase64.length > commaIndex + 100) {
+                  console.log(`  ✅ Post ${post.id}: Extracted Base64 from malformed URL (${Math.round(extractedBase64.length / 1024)}KB)`);
+                  return extractedBase64;
+                }
+              }
             }
             
             // Keep valid URLs (http/https or relative paths)
@@ -575,21 +588,22 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
               const hasUploadsPath = img.includes('/uploads/') || img.includes('/images/') || img.includes('/media/');
               
               if (hasImageExtension || hasUploadsPath) {
-                return true;
+                return img;
               }
               
               // If it's a relative path starting with /, it might be a local image
               if (img.startsWith('/') && !img.startsWith('//')) {
-                return true;
+                return img;
               }
               
               // For http URLs without clear image indicators, still include them
               // but they might fail to load
-              return true;
+              return img;
             }
             
-            return false;
+            return null;
           })
+          .filter((img): img is string => img !== null)
           .slice(0, 4);
 
         console.log(`✨ Post ${post.id} final images: ${images.length} valid images`);
