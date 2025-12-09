@@ -223,7 +223,7 @@ export default function GamificationSystem() {
                 setLeaderboard(leaderboardData);
                 
                 // Update user's rank
-                const userRank = leaderboardData.findIndex(u => u.id === user?.id) + 1;
+                const userRank = leaderboardData.findIndex(u => String(u.id) === String(user?.id)) + 1;
                 if (userRank > 0) {
                     setUserStats(prev => ({ ...prev, rank: userRank }));
                 }
@@ -618,7 +618,7 @@ export default function GamificationSystem() {
                                 {leaderboard.length > 0 ? (
                                     leaderboard.map((leaderUser, index) => {
                                         const rank = index + 1;
-                                        const isCurrentUser = leaderUser.id === user?.id;
+                                        const isCurrentUser = String(leaderUser.id) === String(user?.id);
                                         return (
                                             <div 
                                                 key={leaderUser.id} 

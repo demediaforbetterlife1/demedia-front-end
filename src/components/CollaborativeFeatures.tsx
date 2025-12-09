@@ -67,7 +67,8 @@ export default function CollaborativeFeatures({ deSnapId, onCollaborationUpdate 
                 const response = await apiFetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`, {}, user?.id);
                 if (response.ok) {
                     const data = await response.json();
-                    setSearchResults(Array.isArray(data) ? data.filter((u: SearchUser) => u.id !== user?.id) : []);
+                    const userId = user?.id ? String(user.id) : '';
+                    setSearchResults(Array.isArray(data) ? data.filter((u: SearchUser) => String(u.id) !== userId) : []);
                 } else {
                     // Fallback: show empty results
                     setSearchResults([]);
