@@ -505,21 +505,36 @@ export default function DeSnapsViewer({
 
       if (response.ok) {
         const newCommentData = await response.json();
-        console.log('✅ Comment created:', newCommentData);
+        console.log('✅ Comment created and saved:', newCommentData);
         
         // Replace optimistic comment with real one from server
         setComments((prev) => 
           prev.map(c => c.id === optimisticComment.id ? newCommentData : c)
         );
       } else {
-        // Don't show error - the optimistic comment is already showing
-        // Just log the error for debugging
+        // API failed - remove the optimistic comment and revert count
         const errorText = await response.text();
-        console.warn('⚠️ Comment API returned error, but showing optimistic comment:', response.status, errorText);
+        console.error('❌ Comment API failed:', response.status, errorText);
+        
+        // Remove the optimistic comment
+        setComments((prev) => prev.filter(c => c.id !== optimisticComment.id));
+        // Revert comment count
+        mergeAndEmitUpdate({ comments: deSnap.comments });
+        
+        // Show error to user
+        alert('Failed to save comment. Please try again.');
       }
     } catch (error) {
-      // Don't show error - the optimistic comment is already showing
-      console.warn("⚠️ Comment API error, but showing optimistic comment:", error);
+      // API error - remove the optimistic comment and revert count
+      console.error("❌ Comment API error:", error);
+      
+      // Remove the optimistic comment
+      setComments((prev) => prev.filter(c => c.id !== optimisticComment.id));
+      // Revert comment count
+      mergeAndEmitUpdate({ comments: deSnap.comments });
+      
+      // Show error to user
+      alert('Failed to save comment. Please try again.');
     } finally {
       setIsSubmittingComment(false);
     }

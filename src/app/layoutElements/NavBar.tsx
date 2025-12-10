@@ -18,6 +18,7 @@ import {
     IoGridOutline,
 } from "react-icons/io5";
 import { useAuth } from "@/contexts/AuthContext";
+import { useI18n } from "@/contexts/I18nContext";
 import CreateContentModal from "@/components/CreateContentModal";
 import SettingsItems from "@/app/(PagesComps)/settingsdir/settingsItems";
 import { useRouter } from "next/navigation";
@@ -36,6 +37,7 @@ export default function Navbar() {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const { user, logout } = useAuth();
+    const { t } = useI18n();
     const router = useRouter();
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
@@ -131,12 +133,12 @@ export default function Navbar() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    // Navigation items for desktop
+    // Navigation items for desktop - using translations
     const navItems = [
-        { id: 'home', label: 'Home', icon: IoHomeOutline, path: '/home', color: 'hover:text-blue-400', hoverShadow: 'hover:shadow-[0_0_12px_rgba(59,130,246,0.5)]' },
-        { id: 'desnaps', label: 'DeSnaps', icon: IoVideocamOutline, path: '/desnaps', color: 'hover:text-orange-400', hoverShadow: 'hover:shadow-[0_0_12px_rgba(251,146,60,0.5)]' },
-        { id: 'messages', label: 'Messages', icon: IoChatbubbleEllipsesOutline, path: '/messeging', color: 'hover:text-purple-400', hoverShadow: 'hover:shadow-[0_0_12px_rgba(168,85,247,0.5)]' },
-        { id: 'pricing', label: 'Premium', icon: IoStarOutline, path: '/pricing', color: 'hover:text-yellow-400', hoverShadow: 'hover:shadow-[0_0_12px_rgba(251,191,36,0.5)]' },
+        { id: 'home', label: t('nav.home'), icon: IoHomeOutline, path: '/home', color: 'hover:text-blue-400', hoverShadow: 'hover:shadow-[0_0_12px_rgba(59,130,246,0.5)]' },
+        { id: 'desnaps', label: t('nav.desnaps'), icon: IoVideocamOutline, path: '/desnaps', color: 'hover:text-orange-400', hoverShadow: 'hover:shadow-[0_0_12px_rgba(251,146,60,0.5)]' },
+        { id: 'messages', label: t('nav.messages'), icon: IoChatbubbleEllipsesOutline, path: '/messeging', color: 'hover:text-purple-400', hoverShadow: 'hover:shadow-[0_0_12px_rgba(168,85,247,0.5)]' },
+        { id: 'pricing', label: t('nav.premium'), icon: IoStarOutline, path: '/pricing', color: 'hover:text-yellow-400', hoverShadow: 'hover:shadow-[0_0_12px_rgba(251,191,36,0.5)]' },
     ];
 
     return (
@@ -175,7 +177,7 @@ export default function Navbar() {
                         <div className="relative flex items-center">
                             <input
                                 type="text"
-                                placeholder="Search..."
+                                placeholder={t('nav.search')}
                                 value={searchQuery}
                                 onChange={handleSearchInputChange}
                                 onKeyDown={(e) => {
@@ -216,11 +218,11 @@ export default function Navbar() {
                                     transition={{ duration: 0.2 }}
                                     className="absolute top-full left-0 right-0 mt-2 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-3 max-h-72 overflow-y-auto z-50"
                                 >
-                                    <h4 className="font-bold text-cyan-400 mb-2 text-xs">Search Results</h4>
+                                    <h4 className="font-bold text-cyan-400 mb-2 text-xs">{t('content.searchResults')}</h4>
                                     {searchError ? (
                                         <div className="text-red-400 text-xs text-center py-3">{searchError}</div>
                                     ) : searchResults.length === 0 ? (
-                                        <div className="text-gray-400 text-xs text-center py-3">No results found</div>
+                                        <div className="text-gray-400 text-xs text-center py-3">{t('content.noResults')}</div>
                                     ) : (
                                         <div className="space-y-1">
                                             {searchResults.map((result, index) => (
@@ -285,10 +287,10 @@ export default function Navbar() {
                             }}
                             className="flex items-center gap-1.5 px-3 py-2 rounded-full theme-bg-tertiary/40 
                                 theme-text-muted hover:text-cyan-400 hover:shadow-[0_0_12px_rgba(34,211,238,0.5)] transition-all duration-200 text-sm font-medium"
-                            title="Pages"
+                            title={t('nav.pages')}
                         >
                             <IoGridOutline size={18} />
-                            <span>Pages</span>
+                            <span>{t('nav.pages')}</span>
                         </button>
                         <AnimatePresence>
                             {showPagesModal && (
@@ -302,7 +304,7 @@ export default function Navbar() {
                                 >
                                     <h4 className="font-bold text-cyan-400 mb-3 text-sm flex items-center gap-2">
                                         <IoGridOutline size={16} />
-                                        Navigate to
+                                        {t('nav.navigateTo')}
                                     </h4>
                                     <div className="space-y-1">
                                         {navItems.map((item) => {
@@ -339,10 +341,10 @@ export default function Navbar() {
                         onClick={() => setShowCreateModal(true)}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 
                             text-white font-medium text-sm shadow-lg hover:shadow-green-500/30 transition-all duration-200"
-                        title="Create Content"
+                        title={t('nav.create')}
                     >
                         <IoAddCircleOutline size={18} />
-                        <span className="hidden xl:inline">Create</span>
+                        <span className="hidden xl:inline">{t('nav.create')}</span>
                     </motion.button>
 
                     {/* Notifications */}
@@ -356,7 +358,7 @@ export default function Navbar() {
                             }}
                             className="w-9 h-9 rounded-full theme-bg-tertiary/60 flex items-center justify-center
                                 theme-text-muted hover:text-cyan-400 hover:shadow-[0_0_12px_rgba(34,211,238,0.5)] transition"
-                            title="Notifications"
+                            title={t('nav.notifications')}
                         >
                             <IoNotificationsOutline size={20} />
                             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
@@ -371,7 +373,7 @@ export default function Navbar() {
                                     transition={{ duration: 0.2 }}
                                     className="absolute right-0 mt-2 w-72 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-4 z-50"
                                 >
-                                    <h4 className="font-bold text-cyan-400 mb-3 text-sm">Notifications</h4>
+                                    <h4 className="font-bold text-cyan-400 mb-3 text-sm">{t('nav.notifications')}</h4>
                                     <ul className="space-y-2 max-h-60 overflow-y-auto">
                                         {notifications.map((note, i) => (
                                             <li key={i} className="theme-text-muted hover:text-cyan-400 cursor-pointer text-sm transition p-2 rounded-lg hover:theme-bg-primary">
@@ -389,7 +391,7 @@ export default function Navbar() {
                         onClick={() => setShowSettings(true)}
                         className="w-9 h-9 rounded-full theme-bg-tertiary/60 flex items-center justify-center
                             theme-text-muted hover:text-purple-400 hover:shadow-[0_0_12px_rgba(168,85,247,0.5)] transition"
-                        title="Settings"
+                        title={t('nav.settings')}
                     >
                         <IoSettingsOutline size={20} />
                     </button>
@@ -463,21 +465,21 @@ export default function Navbar() {
                                             className="flex items-center space-x-2 p-2 rounded-lg theme-text-muted hover:text-cyan-400 hover:theme-bg-primary cursor-pointer text-sm transition"
                                         >
                                             <IoPersonOutline size={18} />
-                                            <span>View Profile</span>
+                                            <span>{t('action.viewProfile')}</span>
                                         </li>
                                         <li
                                             onClick={() => { setShowSettings(true); setShowProfileMenu(false); }}
                                             className="flex items-center space-x-2 p-2 rounded-lg theme-text-muted hover:text-cyan-400 hover:theme-bg-primary cursor-pointer text-sm transition"
                                         >
                                             <IoSettingsOutline size={18} />
-                                            <span>Settings</span>
+                                            <span>{t('nav.settings')}</span>
                                         </li>
                                         <li
                                             onClick={() => { logout(); setShowProfileMenu(false); }}
                                             className="flex items-center space-x-2 p-2 rounded-lg text-red-500 hover:text-red-400 hover:theme-bg-primary cursor-pointer text-sm transition"
                                         >
                                             <IoLogOutOutline size={18} />
-                                            <span>Logout</span>
+                                            <span>{t('nav.logout')}</span>
                                         </li>
                                     </ul>
                                 </motion.div>
@@ -549,7 +551,7 @@ export default function Navbar() {
                             <div className="relative">
                                 <input
                                     type="text"
-                                    placeholder="Search users, posts..."
+                                    placeholder={t('nav.search')}
                                     value={searchQuery}
                                     onChange={handleSearchInputChange}
                                     onKeyDown={(e) => {

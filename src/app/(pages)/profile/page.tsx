@@ -79,6 +79,7 @@ import {
 import { getUserProfile, apiFetch, getAuthHeaders } from "../../../lib/api"; // Fixed duplicate import
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useI18n } from "@/contexts/I18nContext";
 import { getEnhancedThemeClasses } from "@/utils/enhancedThemeUtils";
 import { notificationService } from "@/services/notificationService";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -141,6 +142,7 @@ interface Profile {
 export default function ProfilePage() {
     const { user, isLoading: authLoading, updateUser } = useAuth();
     const { theme } = useTheme();
+    const { t } = useI18n();
     const router = useRouter();
     const searchParams = useSearchParams();
     const userIdFromUrl = searchParams.get('userId');
@@ -945,7 +947,7 @@ export default function ProfilePage() {
                                         className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300 backdrop-blur-sm`}
                                     >
                                         <div className={`text-2xl font-bold ${themeClasses.text} mb-1`}>{followersCount}</div>
-                                        <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>Followers</div>
+                                        <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>{t("profile.followers")}</div>
                                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
                                             <div className="bg-gradient-to-r from-cyan-500 to-purple-600 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (followersCount / 1000) * 100)}%` }}></div>
                                         </div>
@@ -958,7 +960,7 @@ export default function ProfilePage() {
                                         className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300 backdrop-blur-sm`}
                                     >
                                         <div className={`text-2xl font-bold ${themeClasses.text} mb-1`}>{followingCount}</div>
-                                        <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>Following</div>
+                                        <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>{t("profile.following")}</div>
                                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
                                             <div className="bg-gradient-to-r from-pink-500 to-rose-600 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (followingCount / 500) * 100)}%` }}></div>
                                         </div>
@@ -969,7 +971,7 @@ export default function ProfilePage() {
                                         className={`text-center p-4 rounded-xl ${themeClasses.accentBg} border ${themeClasses.border} cursor-pointer hover:shadow-lg transition-all duration-300 backdrop-blur-sm`}
                                     >
                                         <div className={`text-2xl font-bold ${themeClasses.text} mb-1`}>{likesCount}</div>
-                                        <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>Likes</div>
+                                        <div className={`text-xs font-medium ${themeClasses.textSecondary}`}>{t("profile.likes", "Likes")}</div>
                                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
                                             <div className="bg-gradient-to-r from-yellow-500 to-orange-600 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (likesCount / 10000) * 100)}%` }}></div>
                                         </div>
@@ -987,7 +989,7 @@ export default function ProfilePage() {
                                                 className={`flex-1 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${themeClasses.button} text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
                                             >
                                                 <Edit size={18} />
-                                                <span>Edit Profile</span>
+                                                <span>{t("profile.editProfile")}</span>
                                             </motion.button>
 
                                             {/* Profile Photo Upload Button */}
@@ -1002,7 +1004,7 @@ export default function ProfilePage() {
                                                 className={`px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${themeClasses.buttonSecondary} flex items-center space-x-2 text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
                                             >
                                                 <Camera size={18} />
-                                                <span>Change Photo</span>
+                                                <span>{t("profile.changePhoto", "Change Photo")}</span>
                                             </motion.button>
 
                                             {/* Profile Customization Button */}
@@ -1029,7 +1031,7 @@ export default function ProfilePage() {
                                                     : `${themeClasses.button}`
                                                     } ${busyFollow ? "opacity-70 cursor-wait" : ""} text-sm sm:text-base shadow-lg hover:shadow-xl backdrop-blur-sm`}
                                             >
-                                                {busyFollow ? "..." : isFollowing ? "Following" : "Follow"}
+                                                {busyFollow ? "..." : isFollowing ? t("profile.following", "Following") : t("action.follow")}
                                             </motion.button>
 
                                             {/* Chat Button */}
@@ -1041,7 +1043,7 @@ export default function ProfilePage() {
                                                 className={`px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${themeClasses.button} flex items-center space-x-2 text-sm sm:text-base shadow-lg hover:shadow-xl`}
                                             >
                                                 <MessageCircle size={18} />
-                                                <span>Chat</span>
+                                                <span>{t("nav.messages")}</span>
                                             </motion.button>
 
                                             <motion.button

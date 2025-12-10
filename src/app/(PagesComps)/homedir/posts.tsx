@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useI18n } from "@/contexts/I18nContext";
 import { apiFetch } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
 import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
@@ -83,6 +84,7 @@ function formatRelativeTime(dateString?: string) {
 
 export default function Posts({ isVisible = true, postId }: PostsProps) {
   const { theme } = useTheme();
+  const { t } = useI18n();
   const router = useRouter();
   const { user } = useAuth();
   const [posts, setPosts] = useState<PostType[]>([]);
@@ -500,7 +502,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       {posts.length === 0 && (
         <div>
           <p style={{ color: "red", padding: "20px" }}>DEBUG: No posts found</p>
-          <EmptyState themeClasses={themeClasses} fetchPosts={fetchPosts} />
+          <EmptyState themeClasses={themeClasses} fetchPosts={fetchPosts} t={t} />
         </div>
       )}
       {posts.map((post) => {
@@ -726,7 +728,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                     className="self-start text-xs uppercase tracking-[0.3em] text-white/70 hover:text-white transition-colors"
                     onClick={(e) => toggleExpanded(e, post.id)}
                   >
-             {isExpanded ? "Show less" : "Show more"}
+             {isExpanded ? t("action.showLess") : t("action.showMore")}
                   </button>
                 )}
               </div>
@@ -904,7 +906,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                         d="M5 5a2 2 0 012-2h10a2 2 0 012 2v18l-7-4-7 4V5z"
                       />
                     </svg>
-                    <span>{isBookmarked ? "Saved" : "Save"}</span>
+                    <span>{isBookmarked ? t("action.saved", "Saved") : t("action.save")}</span>
                   </motion.button>
 
                   <motion.button
@@ -931,7 +933,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                         d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M7 9l5-5m0 0l5 5m-5-5v12"
                       />
                     </svg>
-                    <span>Share</span>
+                    <span>{t("action.share")}</span>
                   </motion.button>
                 </div>
                 {shareStatus[post.id] && (
@@ -985,9 +987,11 @@ function PostSkeleton({ themeClasses }: { themeClasses: ThemeClasses }) {
 function EmptyState({
   themeClasses,
   fetchPosts,
+  t,
 }: {
   themeClasses: ThemeClasses;
   fetchPosts: () => Promise<void>;
+  t: (key: string, fallback?: string) => string;
 }) {
   return (
     <div
@@ -995,16 +999,16 @@ function EmptyState({
     >
       <div className="text-2xl md:text-3xl mb-3 md:mb-4">🚀</div>
       <p className={`text-base md:text-lg ${themeClasses.text} mb-2`}>
-        Everything is ready for the next big story.
+        {t("posts.readyForStory", "Everything is ready for the next big story.")}
       </p>
       <p className={`${themeClasses.textMuted} mb-4 md:mb-6 text-sm md:text-base`}>
-        Be the first to share something with the community.
+        {t("posts.beFirst", "Be the first to share something with the community.")}
       </p>
       <button
         className="px-4 py-2 md:px-6 md:py-3 rounded-full bg-white/10 text-white/90 hover:bg-white/20 transition-colors text-xs md:text-sm tracking-[0.3em]"
         onClick={fetchPosts}
       >
-        Refresh Feed
+        {t("action.refresh")}
       </button>
     </div>
   );

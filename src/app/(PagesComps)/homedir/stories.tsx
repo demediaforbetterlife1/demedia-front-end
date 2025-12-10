@@ -263,13 +263,13 @@ export default function Stories() {
             <Sparkles className="w-3 h-3 text-white" />
           </div>
           <h3 className={`text-sm font-semibold ${themeClasses.text}`}>
-            Stories
+            {t("stories.title", "Stories")}
           </h3>
         </div>
         <button
           onClick={fetchStories}
           className={`p-1.5 rounded-full ${themeClasses.hover} transition-all duration-200 hover:scale-105`}
-          title="Refresh stories"
+          title={t("action.refresh")}
         >
           <svg
             className={`w-3 h-3 ${themeClasses.textSecondary}`}
@@ -304,7 +304,7 @@ export default function Stories() {
           <span
             className={`mt-1 text-xs font-medium ${themeClasses.textSecondary} text-center`}
           >
-            {t("stories.add", "Add")}
+            {t("content.addStory")}
           </span>
         </motion.div>
 

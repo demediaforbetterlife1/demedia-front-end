@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, FileText, Video, Plus, Sparkles } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useI18n } from "@/contexts/I18nContext";
 import CreateDeSnapModal from "./CreateDeSnapModal";
 import AddPostModal from "@/app/layoutElementsComps/navdir/AddPostModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +19,7 @@ export default function CreateContentModal({
   onClose,
 }: CreateContentModalProps) {
   const { theme } = useTheme();
+  const { t } = useI18n();
   const { user } = useAuth();
   const [showPostModal, setShowPostModal] = useState(false);
   const [showDeSnapModal, setShowDeSnapModal] = useState(false);
@@ -129,7 +131,7 @@ export default function CreateContentModal({
                   <Plus className="w-4 h-4 text-white" />
                 </div>
                 <h2 className={`text-xl font-bold ${themeClasses.text}`}>
-                  Create Content
+                  {t("nav.create")}
                 </h2>
               </div>
               <button
@@ -155,10 +157,10 @@ export default function CreateContentModal({
                   </div>
                   <div className="flex-1 text-left">
                     <h3 className={`font-semibold ${themeClasses.text}`}>
-                      Create Post
+                      {t("posts.createPost")}
                     </h3>
                     <p className={`text-sm opacity-70 ${themeClasses.text}`}>
-                      Share your thoughts, images, and stories
+                      {t("posts.shareThoughts", "Share your thoughts, images, and stories")}
                     </p>
                   </div>
                   <Sparkles className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -178,10 +180,10 @@ export default function CreateContentModal({
                   </div>
                   <div className="flex-1 text-left">
                     <h3 className={`font-semibold ${themeClasses.text}`}>
-                      Create DeSnap
+                      {t("desnaps.create", "Create DeSnap")}
                     </h3>
                     <p className={`text-sm opacity-70 ${themeClasses.text}`}>
-                      Share temporary videos and moments
+                      {t("desnaps.shareTemporary", "Share temporary videos and moments")}
                     </p>
                   </div>
                   <Sparkles className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -194,7 +196,7 @@ export default function CreateContentModal({
               <p
                 className={`text-xs text-center opacity-60 ${themeClasses.text}`}
               >
-                Choose what you&apos;d like to create
+                {t("content.chooseCreate", "Choose what you'd like to create")}
               </p>
             </div>
           </motion.div>

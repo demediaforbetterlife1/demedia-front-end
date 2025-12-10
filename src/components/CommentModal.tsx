@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Heart, Reply, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useI18n } from "@/contexts/I18nContext";
 import { apiFetch } from "@/lib/api";
 import { contentModerationService } from "@/services/contentModeration";
 import PremiumComment from "./PremiumComment";
@@ -37,6 +38,7 @@ interface CommentModalProps {
 export default function CommentModal({ isOpen, onClose, postId, postContent, postAuthor, isDeSnap = false }: CommentModalProps) {
     const { user } = useAuth();
     const { theme } = useTheme();
+    const { t } = useI18n();
     const [comments, setComments] = useState<Comment[]>([]);
     const [newComment, setNewComment] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -319,7 +321,7 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
                     {/* Header */}
                     <div className={`flex items-center justify-between p-4 border-b ${themeClasses.border}`}>
                         <div>
-                            <h2 className={`text-xl font-bold ${themeClasses.text}`}>Comments</h2>
+                            <h2 className={`text-xl font-bold ${themeClasses.text}`}>{t("comments.title", "Comments")}</h2>
                             <p className={`text-sm ${themeClasses.textSecondary}`}>@{postAuthor}</p>
                         </div>
                         <button
@@ -343,7 +345,7 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
                             </div>
                         ) : comments.length === 0 ? (
                             <div className="text-center p-8 text-gray-400">
-                                No comments yet. Be the first to comment!
+                                {t("comments.noComments", "No comments yet. Be the first to comment!")}
                             </div>
                         ) : (
                             <div className="p-4 space-y-4">
@@ -381,7 +383,7 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
                                                 </button>
                                                 <button className="flex items-center space-x-1 text-xs text-gray-400 hover:text-blue-500 transition-colors">
                                                     <Reply size={14} />
-                                                    <span>Reply</span>
+                                                    <span>{t("comments.reply", "Reply")}</span>
                                                 </button>
                                                 {canEditOrDelete(comment) && (
                                                     <>
@@ -425,7 +427,7 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
                                         type="text"
                                         value={editContent}
                                         onChange={(e) => setEditContent(e.target.value)}
-                                        placeholder="Edit your comment..."
+                                        placeholder={t("comments.editPlaceholder", "Edit your comment...")}
                                         className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-full text-white placeholder-gray-400 focus:outline-none focus:border-cyan-400 text-sm"
                                     />
                                     <button
@@ -441,7 +443,7 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
                                         }}
                                         className="px-4 py-2 bg-gray-600 text-white rounded-full hover:bg-gray-500 transition-colors"
                                     >
-                                        Cancel
+                                        {t("action.cancel")}
                                     </button>
                                 </div>
                             </div>
@@ -459,7 +461,7 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
                                     type="text"
                                     value={newComment}
                                     onChange={(e) => setNewComment(e.target.value)}
-                                    placeholder="Add a comment..."
+                                    placeholder={t("comments.addPlaceholder", "Add a comment...")}
                                     className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-full text-white placeholder-gray-400 focus:outline-none focus:border-cyan-400 text-sm"
                                     disabled={isSubmitting}
                                 />

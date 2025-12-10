@@ -472,7 +472,7 @@ export default function ChatPage() {
       <div className={`min-h-screen flex items-center justify-center ${themeClasses.bg}`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-400 mx-auto mb-4"></div>
-          <p className={`text-cyan-400 text-lg ${themeClasses.text}`}>Loading chat...</p>
+          <p className={`text-cyan-400 text-lg ${themeClasses.text}`}>{t("content.loading")}</p>
         </div>
       </div>
     );
@@ -482,12 +482,12 @@ export default function ChatPage() {
     return (
       <div className={`min-h-screen flex items-center justify-center ${themeClasses.bg}`}>
         <div className="text-center">
-          <p className={`text-red-400 text-lg ${themeClasses.text}`}>Chat not found</p>
+          <p className={`text-red-400 text-lg ${themeClasses.text}`}>{t("chat.notFound", "Chat not found")}</p>
           <button
             onClick={() => router.push('/messeging')}
             className={`mt-4 px-4 py-2 rounded-lg ${themeClasses.button}`}
           >
-            Back to Messages
+            {t("chat.backToMessages", "Back to Messages")}
           </button>
         </div>
       </div>
@@ -505,7 +505,7 @@ export default function ChatPage() {
             <button
               onClick={() => router.push('/messeging')}
               className={`p-2 rounded-lg ${themeClasses.hover} transition-colors flex-shrink-0`}
-              aria-label="Back to messages"
+              aria-label={t("action.back")}
             >
               <FiArrowLeft size={20} />
             </button>
@@ -519,7 +519,7 @@ export default function ChatPage() {
                 {otherParticipant?.name || 'Unknown User'}
               </h1>
               <p className={`text-xs sm:text-sm ${themeClasses.text} opacity-70`}>
-                {showOnlineStatus ? 'Online' : 'Offline'}
+                {showOnlineStatus ? t("chat.online") : t("chat.offline")}
               </p>
             </div>
           </div>
@@ -528,7 +528,7 @@ export default function ChatPage() {
             <button
               onClick={() => setShowSettings(true)}
               className={`p-2 rounded-lg ${themeClasses.hover} transition-colors hidden sm:block`}
-              title="Settings"
+              title={t("nav.settings")}
             >
               <FiSettings size={20} />
             </button>
@@ -536,7 +536,7 @@ export default function ChatPage() {
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
               className={`p-2 rounded-lg ${themeClasses.hover} transition-colors hidden sm:block`}
-              title={soundEnabled ? "Mute sounds" : "Enable sounds"}
+              title={soundEnabled ? t("chat.muteSounds", "Mute sounds") : t("chat.enableSounds", "Enable sounds")}
             >
               {soundEnabled ? <FiVolume2 size={20} /> : <FiVolumeX size={20} />}
             </button>
@@ -560,7 +560,7 @@ export default function ChatPage() {
                     className={`w-full px-4 py-3 text-left ${themeClasses.hover} flex items-center gap-3 sm:hidden`}
                   >
                     <FiSettings size={16} />
-                    Settings
+                    {t("nav.settings")}
                   </button>
                   <button
                     onClick={() => {
@@ -570,21 +570,21 @@ export default function ChatPage() {
                     className={`w-full px-4 py-3 text-left ${themeClasses.hover} flex items-center gap-3 sm:hidden`}
                   >
                     {soundEnabled ? <FiVolume2 size={16} /> : <FiVolumeX size={16} />}
-                    {soundEnabled ? 'Mute' : 'Unmute'}
+                    {soundEnabled ? t("chat.mute", "Mute") : t("chat.unmute", "Unmute")}
                   </button>
                   <button
                     onClick={handleBlockUser}
                     className={`w-full px-4 py-3 text-left ${themeClasses.hover} flex items-center gap-3 text-red-400`}
                   >
                     <FiUserX size={16} />
-                    Block User
+                    {t("chat.blockUser", "Block User")}
                   </button>
                   <button
                     onClick={handleDeleteChat}
                     className={`w-full px-4 py-3 text-left ${themeClasses.hover} flex items-center gap-3 text-red-400`}
                   >
                     <FiTrash2 size={16} />
-                    Delete Chat
+                    {t("chat.deleteChat", "Delete Chat")}
                   </button>
                 </div>
               )}
@@ -605,8 +605,8 @@ export default function ChatPage() {
             <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <FiSend size={24} className="text-gray-400" />
             </div>
-            <p className={`${themeClasses.text} opacity-70`}>No messages yet</p>
-            <p className={`text-sm ${themeClasses.text} opacity-50`}>Start a conversation!</p>
+            <p className={`${themeClasses.text} opacity-70`}>{t("chat.noMessages")}</p>
+            <p className={`text-sm ${themeClasses.text} opacity-50`}>{t("chat.startConversation", "Start a conversation!")}</p>
           </div>
         ) : (
           messages.map((message) => (
@@ -729,7 +729,7 @@ export default function ChatPage() {
           <button
             onClick={() => setShowStickers(!showStickers)}
             className={`p-2.5 rounded-full ${themeClasses.hover} transition-colors flex-shrink-0 mb-0.5`}
-            aria-label="Show stickers"
+            aria-label={t("chat.showStickers", "Show stickers")}
             type="button"
           >
             <FiSmile size={22} />
@@ -748,8 +748,8 @@ export default function ChatPage() {
                   handleSendMessage();
                 }
               }}
-              placeholder="Type a message..."
-              aria-label="Message input"
+              placeholder={t("chat.typeMessage")}
+              aria-label={t("chat.typeMessage")}
               rows={1}
               className={`w-full px-4 py-3 rounded-2xl ${themeClasses.input} focus:outline-none focus:ring-2 focus:ring-cyan-500 text-base resize-none max-h-32 overflow-y-auto`}
               disabled={isSending}

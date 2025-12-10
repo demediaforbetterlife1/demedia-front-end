@@ -54,7 +54,7 @@ export default function MobileNavBar({
     logout
 }: MobileNavBarProps) {
     const { user } = useAuth();
-    const { language, setLanguage, supportedLocales } = useI18n();
+    const { language, setLanguage, supportedLocales, t } = useI18n();
     const router = useRouter();
 
     const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,7 +82,7 @@ export default function MobileNavBar({
                 <div className="flex-1 mx-2 relative">
                     <input
                         type="text"
-                        placeholder="Search..."
+                        placeholder={t("nav.search")}
                         value={searchQuery}
                         onChange={handleSearchInputChange}
                         onBlur={() => setTimeout(() => hideSearchResults(), 200)}
@@ -107,14 +107,14 @@ export default function MobileNavBar({
                                 transition={{ duration: 0.2 }}
                                 className="absolute top-full left-0 right-0 mt-2 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-3 max-h-60 overflow-y-auto z-50"
                             >
-                                <h4 className="font-bold text-cyan-400 mb-2 text-xs">Search Results</h4>
+                                <h4 className="font-bold text-cyan-400 mb-2 text-xs">{t("content.searchResults")}</h4>
                                 {searchError ? (
                                     <div className="text-red-400 text-xs text-center py-2">
                                         {searchError}
                                     </div>
                                 ) : searchResults.length === 0 ? (
                                     <div className="text-gray-400 text-xs text-center py-2">
-                                        No results found
+                                        {t("content.noResults")}
                                     </div>
                                 ) : (
                                     <div className="space-y-1">
@@ -176,7 +176,7 @@ export default function MobileNavBar({
                         className="w-7 h-7 rounded-full theme-bg-tertiary/60 flex items-center justify-center
                        theme-text-muted hover:text-purple-400 hover:shadow-[0_0_8px_rgba(168,85,247,0.5)]
                        transition"
-                        title="Chat"
+                        title={t("nav.messages")}
                     >
                         <IoChatbubbleEllipsesOutline size={16} />
                     </button>
@@ -186,7 +186,7 @@ export default function MobileNavBar({
                         className="w-7 h-7 rounded-full theme-bg-tertiary/60 flex items-center justify-center
                        theme-text-muted hover:text-green-400 hover:shadow-[0_0_8px_rgba(34,197,94,0.5)]
                        transition"
-                        title="Add Post"
+                        title={t("posts.createPost")}
                     >
                         <span className="text-xs font-bold">+</span>
                     </button>
@@ -200,7 +200,7 @@ export default function MobileNavBar({
                             className="w-7 h-7 rounded-full theme-bg-tertiary/60 flex items-center justify-center
                            theme-text-muted hover:text-cyan-400 hover:shadow-[0_0_8px_rgba(6,182,212,0.5)]
                            transition relative"
-                            title="Notifications"
+                            title={t("nav.notifications")}
                         >
                             <IoNotificationsOutline size={16} />
                             {notifications.length > 0 && (
@@ -221,7 +221,7 @@ export default function MobileNavBar({
                                     transition={{ duration: 0.2 }}
                                     className="absolute right-0 top-full mt-2 w-80 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-4 z-50"
                                 >
-                                    <h4 className="font-bold text-cyan-400 mb-3 text-sm">Notifications</h4>
+                                    <h4 className="font-bold text-cyan-400 mb-3 text-sm">{t("nav.notifications")}</h4>
                                     <ul className="space-y-2">
                                         {notifications.map((note, i) => (
                                             <li
@@ -291,7 +291,7 @@ export default function MobileNavBar({
                                             className="w-full text-left px-3 py-2 text-sm theme-text-muted hover:text-cyan-400 hover:theme-bg-primary rounded-lg transition"
                                         >
                                             <IoPersonOutline size={16} className="inline mr-2" />
-                                            Profile
+                                            {t("nav.profile")}
                                         </button>
                                         <button
                                             onClick={() => {
@@ -300,7 +300,7 @@ export default function MobileNavBar({
                                             }}
                                             className="w-full text-left px-3 py-2 text-sm theme-text-muted hover:text-cyan-400 hover:theme-bg-primary rounded-lg transition"
                                         >
-                                            Settings
+                                            {t("nav.settings")}
                                         </button>
                                         <button
                                             onClick={() => {
@@ -310,7 +310,7 @@ export default function MobileNavBar({
                                             className="w-full text-left px-3 py-2 text-sm text-red-500 hover:text-red-400 hover:theme-bg-primary rounded-lg transition"
                                         >
                                             <IoLogOutOutline size={16} className="inline mr-2" />
-                                            Logout
+                                            {t("nav.logout")}
                                         </button>
                                     </div>
                                 </motion.div>

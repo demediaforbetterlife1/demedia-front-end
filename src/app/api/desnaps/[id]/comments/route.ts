@@ -147,25 +147,10 @@ export async function POST(
         return NextResponse.json(data);
       }
 
-      // Handle specific error cases
+      // Handle specific error cases - return actual errors so frontend knows comment wasn't saved
       if (response.status === 404) {
-        // DeSnap not found - but don't show "not found" error to user
-        // Instead, create a mock successful response for better UX
-        console.log('⚠️ DeSnap not found on backend, returning mock success');
-        const mockComment = {
-          id: Date.now(),
-          content: body.content.trim(),
-          userId: parseInt(finalUserId || '0'),
-          deSnapId: parseInt(id),
-          createdAt: new Date().toISOString(),
-          user: {
-            id: parseInt(finalUserId || '0'),
-            name: 'You',
-            username: 'user',
-            profilePicture: null
-          }
-        };
-        return NextResponse.json(mockComment);
+        console.error('❌ DeSnap not found on backend:', id);
+        return NextResponse.json({ error: 'DeSnap not found' }, { status: 404 });
       }
 
       const errorText = await response.text();
@@ -174,23 +159,10 @@ export async function POST(
     } catch (error: any) {
       console.error('Error creating DeSnap comment:', error);
       
-      // For timeout or network errors, return a mock success for better UX
+      // Return actual error so frontend knows the comment wasn't saved
       if (error.name === 'AbortError' || error.message?.includes('timeout')) {
-        console.log('⚠️ Request timed out, returning mock success');
-        const mockComment = {
-          id: Date.now(),
-          content: body.content.trim(),
-          userId: parseInt(finalUserId || '0'),
-          deSnapId: parseInt(id),
-          createdAt: new Date().toISOString(),
-          user: {
-            id: parseInt(finalUserId || '0'),
-            name: 'You',
-            username: 'user',
-            profilePicture: null
-          }
-        };
-        return NextResponse.json(mockComment);
+        console.error('❌ Request timed out while creating comment');
+        return NextResponse.json({ error: 'Request timed out. Please try again.' }, { status: 504 });
       }
       
       return NextResponse.json({ error: 'Failed to create comment' }, { status: 500 });
