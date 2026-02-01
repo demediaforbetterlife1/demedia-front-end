@@ -61,8 +61,8 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         console.log('AuthGuard: Unauthenticated user on public route - allowing access');
         return;
       } else {
-        console.log('AuthGuard: Unauthenticated user on protected route - redirecting to sign-in');
-        router.replace('/sign-in');
+        console.log('AuthGuard: Unauthenticated user on protected route - redirecting to sign-up');
+        router.replace('/sign-up');
         return;
       }
     }
