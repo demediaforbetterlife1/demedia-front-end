@@ -16,7 +16,7 @@ import {
     Grid3X3,
     LayoutGrid,
     MessageCircle,
-    Flame
+    Flame,
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
