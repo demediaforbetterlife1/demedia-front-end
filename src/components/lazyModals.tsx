@@ -86,7 +86,7 @@ export const LazyPhotoUploadModal = dynamic(
  * Validates: Requirements 3.6
  */
 export const LazyThemeModal = dynamic(
-  () => import('./ThemeModal'),
+  () => import('./ThemeModal').then(mod => ({ default: mod.ThemeModal })),
   {
     loading: () => <ModalLoadingFallback />,
     ssr: false,

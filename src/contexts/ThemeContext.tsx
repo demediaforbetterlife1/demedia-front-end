@@ -1,5 +1,6 @@
+"use client";
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type Theme = 'dark' | 'light' | 'super-dark' | 'super-light' | 'gold' | 'iron';
 
@@ -117,11 +118,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [themeColors, setThemeColors] = useState<ThemeColors>(themeConfigs.dark);
   const [isChanging, setIsChanging] = useState(false);
 
-  // Load theme from AsyncStorage on mount
+  // Load theme from localStorage on mount
   useEffect(() => {
-    const loadTheme = async () => {
+    const loadTheme = () => {
       try {
-        const savedTheme = await AsyncStorage.getItem('theme');
+        const savedTheme = localStorage.getItem('theme');
         if (savedTheme && Object.keys(themeConfigs).includes(savedTheme)) {
           setThemeState(savedTheme as Theme);
           setThemeColors(themeConfigs[savedTheme as Theme]);
@@ -134,8 +135,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     loadTheme();
   }, []);
 
-  // Save theme to AsyncStorage and update colors
-  const setTheme = async (newTheme: Theme) => {
+  // Save theme to localStorage and update colors
+  const setTheme = (newTheme: Theme) => {
     if (isChanging || newTheme === theme) return;
     
     setIsChanging(true);
@@ -143,7 +144,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     setThemeColors(themeConfigs[newTheme]);
     
     try {
-      await AsyncStorage.setItem('theme', newTheme);
+      localStorage.setItem('theme', newTheme);
     } catch (error) {
       console.error('Failed to save theme:', error);
     }

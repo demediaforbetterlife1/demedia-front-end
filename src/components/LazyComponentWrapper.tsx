@@ -2,7 +2,7 @@
 
 import React, { Suspense, ComponentType, ReactNode, useState, useCallback } from 'react';
 import { LoadingSkeleton } from './LoadingSkeleton';
-import { ErrorBoundary } from './ErrorBoundary';
+import ErrorBoundary from './ErrorBoundary';
 
 interface LazyComponentWrapperProps {
   /**

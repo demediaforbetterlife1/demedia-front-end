@@ -324,7 +324,6 @@ export const LazyVideo: React.FC<LazyVideoProps> = ({
       autoPlay={autoPlay && isInView}
       muted={muted}
       loop={loop}
-      loading="lazy"
       onPlay={onPlay}
       onPause={onPause}
       onError={handleError}
