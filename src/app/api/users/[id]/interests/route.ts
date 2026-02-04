@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = params.id;
+    const { id: userId } = await params;
     
     // Try to get token from cookie first, then fall back to Authorization header
     let token = request.cookies.get('token')?.value;

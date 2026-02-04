@@ -4,7 +4,7 @@ export async function POST(request: NextRequest) {
   console.log('[complete-setup] API called');
   
   // Get request body
-  let body = {};
+  let body: any = {};
   try {
     body = await request.json();
     console.log('[complete-setup] Request body:', body);
