@@ -499,7 +499,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const res = await apiFetch("/api/auth/complete-setup", {
         method: "POST",
-        body: JSON.stringify({}),
+        body: JSON.stringify({ finalSetup: true }),
       });
 
       console.log("[Auth] Complete setup response status:", res.status);
@@ -511,8 +511,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log("[Auth] Complete setup response data:", data);
       } catch (jsonError) {
         console.error("[Auth] Failed to parse response JSON:", jsonError);
-        // If we can't parse JSON, assume success
-        data = { success: true, user: { isSetupComplete: true } };
+        // If we can't parse JSON, assume success but don't mark as complete unless it's final setup
+        data = { success: true, user: { isSetupComplete: false } };
       }
 
       // Update user state regardless of response status
@@ -520,8 +520,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log("[Auth] Setup completed successfully with user data");
         setUser((prev) => prev ? { ...prev, ...data.user } : data.user);
       } else {
-        console.log("[Auth] Setup completed, updating local state");
-        setUser((prev) => (prev ? { ...prev, isSetupComplete: true } : null));
+        console.log("[Auth] Setup step completed, but not marking as complete yet");
+        // Don't set isSetupComplete here - let the API response control it
       }
 
       // Always return success
@@ -534,12 +534,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (err: any) {
       console.error("[Auth] completeSetup error:", err);
       
-      // Don't fail - just update local state and continue
-      console.log("[Auth] Error occurred, but updating local state anyway");
-      setUser((prev) => (prev ? { ...prev, isSetupComplete: true } : null));
+      // Don't fail - just update local state but don't mark as complete unless it's final
+      console.log("[Auth] Error occurred, but not marking as complete");
       return { 
         success: true, 
-        message: "Setup completed locally despite connection issues" 
+        message: "Setup step completed locally despite connection issues" 
       };
     } finally {
       setIsLoading(false);

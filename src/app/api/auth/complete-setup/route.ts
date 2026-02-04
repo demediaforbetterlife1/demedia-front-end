@@ -13,18 +13,38 @@ export async function POST(request: NextRequest) {
     body = {};
   }
 
-  // ALWAYS return success - don't even try backend for now since it's failing
-  console.log('[complete-setup] Returning immediate success response (backend bypass)');
+  // Check if this is the final setup completion (from FinishSetup page)
+  const isFinalSetup = body.finalSetup === true;
   
-  return NextResponse.json({ 
-    success: true, 
-    message: 'Setup completed successfully',
-    user: { 
-      isSetupComplete: true,
-      ...(body && typeof body === 'object' && body.dob && { 
-        dob: body.dob, 
-        dateOfBirth: body.dob 
-      })
-    }
-  });
+  console.log('[complete-setup] Is final setup:', isFinalSetup);
+
+  if (isFinalSetup) {
+    // This is the final step - mark setup as complete
+    console.log('[complete-setup] Final setup - marking as complete');
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Setup completed successfully',
+      user: { 
+        isSetupComplete: true,
+        ...(body.dob && { 
+          dob: body.dob, 
+          dateOfBirth: body.dob 
+        })
+      }
+    });
+  } else {
+    // This is an intermediate step (like saving DOB) - don't mark as complete yet
+    console.log('[complete-setup] Intermediate setup step - not marking as complete');
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Profile information saved successfully',
+      user: { 
+        isSetupComplete: false, // Keep false until final step
+        ...(body.dob && { 
+          dob: body.dob, 
+          dateOfBirth: body.dob 
+        })
+      }
+    });
+  }
 }
