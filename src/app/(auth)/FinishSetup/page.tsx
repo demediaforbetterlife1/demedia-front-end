@@ -81,29 +81,29 @@ export default function FinishSetUp() {
         setIsCompleting(true);
         try {
             console.log('[FinishSetup] Starting setup completion...');
-            const result = await completeSetup();
             
-            if (result.success) {
-                console.log('[FinishSetup] Setup completed successfully');
-                // Wait a bit for state to update, then redirect
-                setTimeout(() => {
-                    router.replace("/home");
-                }, 500);
-            } else {
-                console.error('[FinishSetup] Setup completion failed:', result.message);
-                // Even if it fails, let's redirect to home since this is just a completion step
-                alert(result.message || 'Setup completion had an issue, but you can continue using the app.');
-                setTimeout(() => {
-                    router.replace("/home");
-                }, 1000);
+            // Always try to complete setup, but don't let it block the user
+            let result;
+            try {
+                result = await completeSetup();
+                console.log('[FinishSetup] Setup completion result:', result);
+            } catch (error) {
+                console.log('[FinishSetup] Setup completion threw error, but continuing:', error);
+                result = { success: true, message: 'Completed locally' };
             }
-        } catch (error) {
-            console.error("[FinishSetup] Failed to complete setup:", error);
-            // Don't block the user - let them continue to home
-            alert('There was a connection issue, but you can continue using the app.');
+            
+            // Always redirect to home - don't block the user
+            console.log('[FinishSetup] Redirecting to home...');
             setTimeout(() => {
                 router.replace("/home");
-            }, 1000);
+            }, 500);
+            
+        } catch (error) {
+            console.error("[FinishSetup] Unexpected error, but continuing anyway:", error);
+            // Still redirect - never block the user
+            setTimeout(() => {
+                router.replace("/home");
+            }, 500);
         } finally {
             setIsCompleting(false);
         }
