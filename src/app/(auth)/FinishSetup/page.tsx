@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Stars, OrbitControls } from "@react-three/drei";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
 import { motion } from "framer-motion";
@@ -73,16 +73,39 @@ function CameraController() {
 export default function FinishSetUp() {
     const router = useRouter();
     const { completeSetup, user } = useAuth();
+    const [isCompleting, setIsCompleting] = useState(false);
 
     const handleComplete = async () => {
+        if (isCompleting) return; // Prevent double clicks
+        
+        setIsCompleting(true);
         try {
-            await completeSetup();
-            // Wait a bit for state to update, then redirect
+            console.log('[FinishSetup] Starting setup completion...');
+            const result = await completeSetup();
+            
+            if (result.success) {
+                console.log('[FinishSetup] Setup completed successfully');
+                // Wait a bit for state to update, then redirect
+                setTimeout(() => {
+                    router.replace("/home");
+                }, 500);
+            } else {
+                console.error('[FinishSetup] Setup completion failed:', result.message);
+                // Even if it fails, let's redirect to home since this is just a completion step
+                alert(result.message || 'Setup completion had an issue, but you can continue using the app.');
+                setTimeout(() => {
+                    router.replace("/home");
+                }, 1000);
+            }
+        } catch (error) {
+            console.error("[FinishSetup] Failed to complete setup:", error);
+            // Don't block the user - let them continue to home
+            alert('There was a connection issue, but you can continue using the app.');
             setTimeout(() => {
                 router.replace("/home");
-            }, 500);
-        } catch (error) {
-            console.error("Failed to complete setup:", error);
+            }, 1000);
+        } finally {
+            setIsCompleting(false);
         }
     };
 
@@ -130,7 +153,7 @@ export default function FinishSetUp() {
                 </motion.h1>
 
                 <motion.button
-                    className="relative px-8 py-4 bg-gradient-to-r from-purple-400 via-cyan-300 to-purple-600 rounded-full text-white font-semibold shadow-lg hover:scale-105 transition-transform overflow-hidden"
+                    className="relative px-8 py-4 bg-gradient-to-r from-purple-400 via-cyan-300 to-purple-600 rounded-full text-white font-semibold shadow-lg hover:scale-105 transition-transform overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
                     initial={{ y: 50, opacity: 0 }}
                     animate={{ 
                         y: 0, 
@@ -154,12 +177,22 @@ export default function FinishSetUp() {
                         }
                     }}
                     onClick={handleComplete}
+                    disabled={isCompleting}
                 >
                     {/* Glowing background effect */}
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-400 via-cyan-300 to-purple-600 rounded-full opacity-75 blur-sm animate-pulse"></div>
                     
                     {/* Button content */}
-                    <span className="relative z-10">Join Our Community!</span>
+                    <span className="relative z-10 flex items-center gap-2">
+                        {isCompleting ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Completing...
+                            </>
+                        ) : (
+                            'Join Our Community!'
+                        )}
+                    </span>
                 </motion.button>
             </div>
         </div>
