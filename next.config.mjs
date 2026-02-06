@@ -10,10 +10,9 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
 
-  // Disable all caching
+  // Generate unique build ID to bust cache on every deployment
   generateBuildId: async () => {
-    // Generate a new build ID on every build to bust cache
-    return `build-${Date.now()}`;
+    return `build-${Date.now()}-${Math.random().toString(36).substring(7)}`;
   },
 
   images: {
@@ -27,16 +26,16 @@ const nextConfig = {
     unoptimized: false,
   },
 
-  // Aggressive cache prevention - NEVER cache anything
+  // EXTREME cache prevention - NEVER cache anything, EVER
   async headers() {
     return [
       {
-        // Disable caching for all pages
+        // Disable ALL caching for all pages and routes
         source: '/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0, stale-while-revalidate=0',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0, stale-while-revalidate=0, stale-if-error=0',
           },
           {
             key: 'Pragma',
@@ -47,14 +46,44 @@ const nextConfig = {
             value: '0',
           },
           {
+            key: 'Surrogate-Control',
+            value: 'no-store',
+          },
+          {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
           },
         ],
       },
       {
-        // Disable caching for API routes
+        // API routes - absolutely no caching
         source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
+          },
+        ],
+      },
+      {
+        // Next.js static files - no caching
+        source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
@@ -67,8 +96,8 @@ const nextConfig = {
         ],
       },
       {
-        // Disable caching for static assets
-        source: '/_next/static/:path*',
+        // Next.js data files - no caching
+        source: '/_next/data/:path*',
         headers: [
           {
             key: 'Cache-Control',
@@ -77,7 +106,7 @@ const nextConfig = {
         ],
       },
       {
-        // Disable caching for images
+        // Images - no caching
         source: '/images/:path*',
         headers: [
           {
@@ -87,8 +116,42 @@ const nextConfig = {
         ],
       },
       {
-        // Disable caching for uploads
+        // Assets - no caching
+        source: '/assets/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+        ],
+      },
+      {
+        // Uploads - no caching
         source: '/uploads/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+        ],
+      },
+      {
+        // Service Worker - no caching
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+          {
+            key: 'Service-Worker-Allowed',
+            value: '/',
+          },
+        ],
+      },
+      {
+        // Manifest - no caching
+        source: '/manifest.json',
         headers: [
           {
             key: 'Cache-Control',

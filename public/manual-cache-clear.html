@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Manual Cache Clear - DeMEDIA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .status {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        
+        .status.success {
+            background: #f0fdf4;
+            border-left-color: #10b981;
+        }
+        
+        .status.error {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .info-box {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .info-box h3 {
+            color: #374151;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .info-box li {
+            padding: 8px 0;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+        }
+        
+        .info-box li:before {
+            content: "✓";
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .log {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Manual Cache Clear</h1>
+        <p class="subtitle">Clear all caches and force fresh content</p>
+        
+        <div id="status" class="status">
+            <strong>Status:</strong> Ready to clear cache
+        </div>
+        
+        <button id="clearBtn" onclick="clearAllCaches()">
+            🗑️ Clear All Caches Now
+        </button>
+        
+        <button onclick="window.location.href='/'">
+            🏠 Return to Home
+        </button>
+        
+        <div class="info-box">
+            <h3>What will be cleared:</h3>
+            <ul>
+                <li>Browser Cache Storage</li>
+                <li>Service Worker Caches</li>
+                <li>Local Storage (except auth)</li>
+                <li>Session Storage</li>
+                <li>Service Worker Registration</li>
+            </ul>
+        </div>
+        
+        <div id="log" class="log" style="display: none;"></div>
+    </div>
+    
+    <script>
+        const statusEl = document.getElementById('status');
+        const logEl = document.getElementById('log');
+        const clearBtn = document.getElementById('clearBtn');
+        
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.style.display = 'block';
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+        
+        async function clearAllCaches() {
+            clearBtn.disabled = true;
+            updateStatus('Clearing caches...', 'info');
+            log('🧹 Starting cache clearing process...');
+            
+            try {
+                // 1. Clear Cache Storage
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    log(`Found ${cacheNames.length} cache(s)`);
+                    
+                    for (const name of cacheNames) {
+                        await caches.delete(name);
+                        log(`✓ Deleted cache: ${name}`);
+                    }
+                }
+                
+                // 2. Unregister Service Workers
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    log(`Found ${registrations.length} service worker(s)`);
+                    
+                    for (const registration of registrations) {
+                        await registration.unregister();
+                        log(`✓ Unregistered service worker`);
+                    }
+                }
+                
+                // 3. Clear Local Storage (except auth)
+                const authToken = localStorage.getItem('token');
+                const userId = localStorage.getItem('userId');
+                
+                localStorage.clear();
+                log('✓ Cleared localStorage');
+                
+                if (authToken) {
+                    localStorage.setItem('token', authToken);
+                    localStorage.setItem('userId', userId);
+                    log('✓ Restored auth tokens');
+                }
+                
+                // 4. Clear Session Storage
+                sessionStorage.clear();
+                log('✓ Cleared sessionStorage');
+                
+                // 5. Set new version
+                localStorage.setItem('app_version', Date.now().toString());
+                log('✓ Set new app version');
+                
+                updateStatus('✅ All caches cleared successfully!', 'success');
+                log('🎉 Cache clearing complete!');
+                
+                // Reload after 2 seconds
+                setTimeout(() => {
+                    log('🔄 Reloading page...');
+                    window.location.reload(true);
+                }, 2000);
+                
+            } catch (error) {
+                updateStatus('❌ Error clearing caches: ' + error.message, 'error');
+                log('❌ Error: ' + error.message);
+                clearBtn.disabled = false;
+            }
+        }
+        
+        // Auto-clear on load if ?auto=true
+        if (window.location.search.includes('auto=true')) {
+            setTimeout(clearAllCaches, 500);
+        }
+    </script>
+</body>
+</html>

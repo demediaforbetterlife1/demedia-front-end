@@ -1,55 +1,52 @@
-// Service Worker for Push Notifications
-const CACHE_NAME = 'demedia-cache-v1';
-const urlsToCache = [
-  '/',
-  '/home',
-  '/sign-in',
-  '/sign-up',
-  '/favicon.ico',
-];
+// Service Worker for Push Notifications ONLY - NO CACHING
+// This service worker handles push notifications but does NOT cache any content
+// All content is always fetched fresh from the network
 
-// Install event
+const CACHE_NAME = 'demedia-no-cache-v1';
+
+// Install event - Skip caching entirely
 self.addEventListener('install', (event) => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    console.log('Opened cache');
-    
-    // Filter assets before adding and wrap in try/catch
-    const okUrls = [];
-    for (const url of urlsToCache) {
-      try {
-        const response = await fetch(url, { cache: 'no-store' });
-        if (response.ok) {
-          okUrls.push(url);
-        } else {
-          console.warn('sw: asset fetch failed (not ok)', url, response.status);
-        }
-      } catch (e) {
-        console.warn('sw: asset fetch failed', url, e);
-      }
-    }
-    
-    try {
-      if (okUrls.length > 0) {
-        await cache.addAll(okUrls);
-        console.log('sw: cached', okUrls.length, 'assets');
-      } else {
-        console.warn('sw: no assets to cache');
-      }
-    } catch (e) {
-      console.warn('sw: cache.addAll partial failure', e);
-    }
-  })());
+  console.log('Service Worker installed - NO CACHING MODE');
+  // Skip waiting to activate immediately
+  self.skipWaiting();
 });
 
-// Fetch event
+// Activate event - Clear all caches
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker activated - Clearing all caches');
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          console.log('Deleting cache:', cacheName);
+          return caches.delete(cacheName);
+        })
+      );
+    }).then(() => {
+      // Take control of all pages immediately
+      return self.clients.claim();
+    })
+  );
+});
+
+// Fetch event - ALWAYS fetch from network, NEVER use cache
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request);
-      })
+    fetch(event.request, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    }).catch((error) => {
+      console.error('Fetch failed:', error);
+      // Return a basic error response instead of cached content
+      return new Response('Network error occurred', {
+        status: 408,
+        headers: { 'Content-Type': 'text/plain' }
+      });
+    })
   );
 });
 
@@ -68,8 +65,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body || 'You have a new notification',
-    icon: data.icon || '/favicon.ico',
-    badge: data.badge || '/favicon.ico',
+    icon: data.icon || '/assets/images/head.png',
+    badge: data.badge || '/assets/images/head.png',
     tag: data.tag || 'default',
     data: data.data || {},
     actions: data.actions || [],
@@ -128,5 +125,19 @@ self.addEventListener('sync', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  
+  // Handle cache clear requests
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => caches.delete(cacheName))
+        );
+      }).then(() => {
+        console.log('All caches cleared');
+        event.ports[0].postMessage({ success: true });
+      })
+    );
   }
 });

@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build ",
+    "prebuild": "node scripts/update-version.js",
+    "build": "next build",
+    "postbuild": "node scripts/update-version.js",
     "start": "node index.js",
     "lint": "eslint",
     "test": "jest",

@@ -326,160 +326,152 @@ export default function Stories() {
       {/* Stories Scroll Container */}
       <div className="relative px-4 py-4">
         <div className="flex overflow-x-auto gap-4 scrollbar-hide pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          {/* Add Story Card - Premium Enhanced */}
+          {/* Add Story Card - Redesigned for Better Responsiveness */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            whileHover={{ scale: 1.08, y: -6 }}
-            whileTap={{ scale: 0.92 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             transition={{ 
               type: "spring", 
-              stiffness: 400, 
-              damping: 17,
-              mass: 0.8
+              stiffness: 300, 
+              damping: 20
             }}
-            className="flex flex-col items-center min-w-[80px] cursor-pointer group relative"
+            className="flex-shrink-0 w-[100px] sm:w-[110px] cursor-pointer group"
             onClick={handleAddStory}
           >
             <div className="relative">
-              {/* Animated Gradient Ring with Pulse */}
+              {/* Animated Gradient Border */}
               <motion.div 
                 animate={{ 
-                  rotate: [0, 360],
-                  scale: [1, 1.1, 1]
+                  rotate: 360
                 }}
                 transition={{ 
-                  rotate: { duration: 4, repeat: Infinity, ease: "linear" },
-                  scale: { duration: 2, repeat: Infinity, ease: "easeInOut" }
-                }}
-                className="absolute -inset-1.5 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 rounded-2xl opacity-60 group-hover:opacity-100 blur-md transition-all duration-500"
-              />
-              
-              {/* Secondary Glow Layer */}
-              <motion.div 
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  opacity: [0.3, 0.6, 0.3]
-                }}
-                transition={{ 
-                  duration: 3, 
+                  duration: 8, 
                   repeat: Infinity, 
-                  ease: "easeInOut" 
+                  ease: "linear" 
                 }}
-                className="absolute -inset-2 bg-gradient-to-r from-cyan-300 via-purple-400 to-pink-400 rounded-2xl blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-500"
+                className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-xl opacity-75 group-hover:opacity-100 blur-sm transition-opacity duration-300"
               />
               
-              {/* Story Circle with Glass Effect */}
-              <div
-                className={`relative w-16 h-16 rounded-2xl ${themeClasses.card} flex items-center justify-center border-2 border-dashed border-cyan-400/40 group-hover:border-cyan-400/80 shadow-2xl transition-all duration-500 overflow-hidden backdrop-blur-xl`}
-              >
-                {/* Animated Background Gradient */}
-                <motion.div 
+              {/* Main Card */}
+              <div className={`relative h-[140px] sm:h-[150px] rounded-xl ${themeClasses.card} overflow-hidden shadow-xl border border-white/10 group-hover:border-white/20 transition-all duration-300`}>
+                {/* Background Gradient */}
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-purple-500/20 to-pink-500/20 opacity-50 group-hover:opacity-70 transition-opacity duration-300" />
+                
+                {/* Animated Mesh Background */}
+                <motion.div
                   animate={{ 
-                    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
+                    backgroundPosition: ['0% 0%', '100% 100%']
                   }}
                   transition={{ 
-                    duration: 5, 
+                    duration: 10, 
                     repeat: Infinity, 
-                    ease: "linear" 
+                    ease: "linear",
+                    repeatType: "reverse"
                   }}
-                  className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 via-purple-500/10 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ backgroundSize: '200% 200%' }}
+                  className="absolute inset-0 opacity-30"
+                  style={{
+                    backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(6, 182, 212, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.3) 0%, transparent 50%)',
+                    backgroundSize: '200% 200%'
+                  }}
                 />
                 
-                {/* Shimmer Effect */}
+                {/* Content Container */}
+                <div className="relative h-full flex flex-col items-center justify-center p-3">
+                  {/* Plus Icon Circle */}
+                  <motion.div
+                    whileHover={{ rotate: 90, scale: 1.1 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                    className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center shadow-lg mb-3 group-hover:shadow-cyan-500/50 transition-shadow duration-300"
+                  >
+                    <Plus className="w-6 h-6 text-white" strokeWidth={3} />
+                  </motion.div>
+                  
+                  {/* Text */}
+                  <div className="text-center">
+                    <p className={`text-xs font-bold ${themeClasses.text} mb-0.5 group-hover:text-cyan-400 transition-colors duration-300`}>
+                      {t("content.addStory", "Add Story")}
+                    </p>
+                    <p className={`text-[10px] ${themeClasses.textSecondary} group-hover:text-purple-400 transition-colors duration-300`}>
+                      Share moment
+                    </p>
+                  </div>
+                  
+                  {/* Sparkle Effects */}
+                  <motion.div
+                    animate={{ 
+                      scale: [1, 1.2, 1],
+                      opacity: [0.5, 1, 0.5]
+                    }}
+                    transition={{ 
+                      duration: 2, 
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                    className="absolute top-2 right-2"
+                  >
+                    <Sparkles className="w-3 h-3 text-yellow-400" />
+                  </motion.div>
+                  
+                  <motion.div
+                    animate={{ 
+                      scale: [1, 1.2, 1],
+                      opacity: [0.5, 1, 0.5]
+                    }}
+                    transition={{ 
+                      duration: 2, 
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: 1
+                    }}
+                    className="absolute bottom-2 left-2"
+                  >
+                    <Sparkles className="w-3 h-3 text-pink-400" />
+                  </motion.div>
+                </div>
+                
+                {/* Shimmer Effect on Hover */}
                 <motion.div
-                  animate={{ 
-                    x: ['-100%', '200%']
-                  }}
-                  transition={{ 
-                    duration: 3, 
-                    repeat: Infinity, 
-                    ease: "easeInOut",
-                    repeatDelay: 1
-                  }}
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 opacity-0 group-hover:opacity-100"
+                  initial={{ x: '-100%' }}
+                  whileHover={{ x: '200%' }}
+                  transition={{ duration: 0.6, ease: "easeInOut" }}
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12"
                 />
-                
-                {/* Plus Icon with Rotation Animation */}
-                <motion.div
-                  whileHover={{ rotate: 90 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className="relative z-10"
-                >
-                  <Plus className="w-7 h-7 text-cyan-400 group-hover:text-cyan-300 drop-shadow-lg transition-colors duration-300" strokeWidth={2.5} />
-                </motion.div>
-                
-                {/* Corner Sparkles */}
-                <motion.div
-                  animate={{ 
-                    scale: [0, 1, 0],
-                    rotate: [0, 180, 360]
-                  }}
-                  transition={{ 
-                    duration: 2, 
-                    repeat: Infinity,
-                    repeatDelay: 1
-                  }}
-                  className="absolute top-1 right-1 w-2 h-2"
-                >
-                  <Sparkles className="w-2 h-2 text-yellow-400 opacity-0 group-hover:opacity-100" />
-                </motion.div>
-                
-                <motion.div
-                  animate={{ 
-                    scale: [0, 1, 0],
-                    rotate: [0, -180, -360]
-                  }}
-                  transition={{ 
-                    duration: 2, 
-                    repeat: Infinity,
-                    repeatDelay: 1,
-                    delay: 0.5
-                  }}
-                  className="absolute bottom-1 left-1 w-2 h-2"
-                >
-                  <Sparkles className="w-2 h-2 text-pink-400 opacity-0 group-hover:opacity-100" />
-                </motion.div>
               </div>
             </div>
-            
-            {/* Text Labels with Smooth Transitions */}
-            <motion.span
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className={`mt-2.5 text-xs font-bold ${themeClasses.text} text-center max-w-[80px] truncate group-hover:text-cyan-400 transition-colors duration-300`}
-            >
-              {t("content.addStory", "Add Story")}
-            </motion.span>
-            
-            <motion.span 
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className={`text-[10px] font-medium ${themeClasses.textSecondary} group-hover:text-purple-400 transition-colors duration-300`}
-            >
-              Create New
-            </motion.span>
-            
-            {/* Hover Tooltip */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: -10 }}
-              whileHover={{ opacity: 1, scale: 1, y: -5 }}
-              className="absolute -top-12 left-1/2 transform -translate-x-1/2 px-3 py-1.5 bg-black/90 backdrop-blur-md text-white text-xs font-medium rounded-lg shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap z-50"
-            >
-              Share your moment
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-black/90" />
-            </motion.div>
           </motion.div>
 
-          {/* Story Cards - Enhanced */}
+          {/* Story Cards - Enhanced & Responsive */}
           {stories.map((story, index) => (
             <motion.div
               key={story.id}
-              initial={{ opacity: 0, scale: 0.9, x: 20 }}
+              initial={{ opacity: 0, scale: 0.8, x: 20 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
+              transition={{ delay: index * 0.05, type: "spring", stiffness: 200, damping: 20 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex-shrink-0 w-[100px] sm:w-[110px] cursor-pointer group"
+              onClick={() => handleStoryClick(story, index)}
+            >
+              <div className="relative">
+                {/* Gradient Ring - Animated */}
+                <motion.div 
+                  animate={{ 
+                    rotate: 360
+                  }}
+                  transition={{ 
+                    duration: 6, 
+                    repeat: Infinity, 
+                    ease: "linear"
+                  }}
+                  className="absolute -inset-0.5 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 rounded-xl opacity-75 group-hover:opacity-100 blur-sm transition-opacity duration-300"
+                />
+                
+                {/* Story Card */}
+                <div
+                  className={`relative h-[140px] sm:h-[150px] rounded-xl ${themeClasses.card} overflow-hidden shadow-xl border border-white/10 group-hover:border-white/20 transition-all duration-300`}
+                >
               transition={{ delay: index * 0.05, type: "spring", stiffness: 100 }}
               whileHover={{ scale: 1.05, y: -4 }}
               whileTap={{ scale: 0.95 }}
