@@ -28,6 +28,8 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]): Promise<R
   // ✅ تأكد من دمج المسار صح
   const targetUrl = `${BACKEND_BASE}/api/${pathSegments.join("/")}`.replace(/\/+$/, "");
   console.log("🔗 Proxy →", targetUrl);
+  console.log("📋 Method:", req.method);
+  console.log("📋 Headers:", Object.fromEntries(req.headers.entries()));
 
   const headers = new Headers(req.headers);
   if (headers.has("host")) headers.delete("host");
@@ -36,12 +38,14 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]): Promise<R
   const cookieHeader = req.headers.get('cookie');
   if (cookieHeader) {
     headers.set('Cookie', cookieHeader);
+    console.log("🍪 Forwarding cookies:", cookieHeader);
   }
 
   // Also forward Authorization header if present (for token fallback)
   const authHeader = req.headers.get('authorization');
   if (authHeader) {
     headers.set('Authorization', authHeader);
+    console.log("🔑 Forwarding auth header");
   }
 
   const init: RequestInit = {
@@ -53,6 +57,7 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]): Promise<R
   if (req.method !== "GET" && req.method !== "HEAD") {
     const body = await req.arrayBuffer();
     init.body = body;
+    console.log("📦 Body size:", body.byteLength, "bytes");
   }
 
   try {
@@ -60,6 +65,7 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]): Promise<R
     const timeout = setTimeout(() => controller.abort(), 30000);
     init.signal = controller.signal;
 
+    console.log("⏳ Sending request to backend...");
     const res = await fetch(targetUrl, init);
     clearTimeout(timeout);
 
@@ -70,6 +76,14 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]): Promise<R
       try {
         const errorBody = await res.clone().text();
         console.error(`❌ Backend error response (${res.status}):`, errorBody);
+        
+        // Return more detailed error to frontend
+        return NextResponse.json({ 
+          error: "Backend error", 
+          status: res.status,
+          details: errorBody,
+          message: `Backend returned ${res.status}. Check backend logs for details.`
+        }, { status: res.status });
       } catch (e) {
         console.error(`❌ Failed to read error response body:`, e);
       }
@@ -85,12 +99,25 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]): Promise<R
     });
   } catch (err: any) {
     console.error("❌ Proxy error:", err);
+    console.error("❌ Error details:", {
+      name: err?.name,
+      message: err?.message,
+      stack: err?.stack
+    });
 
     if (err?.name === "AbortError") {
-      return NextResponse.json({ error: "Timeout", details: "Backend took too long" }, { status: 504 });
+      return NextResponse.json({ 
+        error: "Timeout", 
+        details: "Backend took too long to respond (>30s)",
+        message: "The backend server is not responding. Please try again later."
+      }, { status: 504 });
     }
 
-    return NextResponse.json({ error: "Proxy failed", details: err?.message || String(err) }, { status: 502 });
+    return NextResponse.json({ 
+      error: "Proxy failed", 
+      details: err?.message || String(err),
+      message: "Failed to connect to backend server. Please check if backend is running."
+    }, { status: 502 });
   }
 }
 
