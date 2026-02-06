@@ -93,9 +93,10 @@ export default function RootLayout({
                 <NotificationProvider>
                   <AuthGuard>
                     <WebGLErrorHandler />
+                    {/* Reduced WebGL effects to prevent context loss */}
                     <AnimatedStars />
-                    <GlowingPlanets />
-                    <GoldParticles />
+                    {/* <GlowingPlanets /> */}
+                    {/* <GoldParticles /> */}
                     <NavbarClient />
                     {children}
                   </AuthGuard>
