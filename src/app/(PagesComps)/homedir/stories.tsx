@@ -326,118 +326,281 @@ export default function Stories() {
       {/* Stories Scroll Container */}
       <div className="relative px-4 py-4">
         <div className="flex overflow-x-auto gap-4 scrollbar-hide pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          {/* Add Story Card - Redesigned for Better Responsiveness */}
+          {/* Add Story Card - Ultra Enhanced Premium Design */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            whileHover={{ scale: 1.08, y: -8 }}
+            whileTap={{ scale: 0.92 }}
             transition={{ 
               type: "spring", 
-              stiffness: 300, 
-              damping: 20
+              stiffness: 400, 
+              damping: 25
             }}
-            className="flex-shrink-0 w-[100px] sm:w-[110px] cursor-pointer group"
+            className="flex-shrink-0 w-[110px] sm:w-[120px] cursor-pointer group"
             onClick={handleAddStory}
           >
             <div className="relative">
-              {/* Animated Gradient Border */}
+              {/* Triple Layer Animated Gradient Border */}
               <motion.div 
                 animate={{ 
-                  rotate: 360
+                  rotate: 360,
+                  scale: [1, 1.1, 1]
                 }}
                 transition={{ 
-                  duration: 8, 
-                  repeat: Infinity, 
-                  ease: "linear" 
+                  rotate: { duration: 6, repeat: Infinity, ease: "linear" },
+                  scale: { duration: 3, repeat: Infinity, ease: "easeInOut" }
                 }}
-                className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-xl opacity-75 group-hover:opacity-100 blur-sm transition-opacity duration-300"
+                className="absolute -inset-1 bg-gradient-to-r from-cyan-400 via-blue-500 via-purple-500 via-pink-500 to-cyan-400 rounded-2xl opacity-80 group-hover:opacity-100 blur-md transition-all duration-500"
               />
               
-              {/* Main Card */}
-              <div className={`relative h-[140px] sm:h-[150px] rounded-xl ${themeClasses.card} overflow-hidden shadow-xl border border-white/10 group-hover:border-white/20 transition-all duration-300`}>
-                {/* Background Gradient */}
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-purple-500/20 to-pink-500/20 opacity-50 group-hover:opacity-70 transition-opacity duration-300" />
-                
-                {/* Animated Mesh Background */}
-                <motion.div
+              <motion.div 
+                animate={{ 
+                  rotate: -360,
+                  scale: [1.05, 1, 1.05]
+                }}
+                transition={{ 
+                  rotate: { duration: 8, repeat: Infinity, ease: "linear" },
+                  scale: { duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }
+                }}
+                className="absolute -inset-0.5 bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 rounded-2xl opacity-60 group-hover:opacity-90 blur-sm transition-all duration-500"
+              />
+              
+              {/* Main Card with Glass Morphism */}
+              <div className={`relative h-[160px] sm:h-[170px] rounded-2xl ${themeClasses.card} overflow-hidden shadow-2xl border-2 border-white/20 group-hover:border-white/40 transition-all duration-500 backdrop-blur-xl`}>
+                {/* Dynamic Background Gradient */}
+                <motion.div 
                   animate={{ 
-                    backgroundPosition: ['0% 0%', '100% 100%']
+                    background: [
+                      'linear-gradient(135deg, rgba(6, 182, 212, 0.25) 0%, rgba(168, 85, 247, 0.25) 50%, rgba(236, 72, 153, 0.25) 100%)',
+                      'linear-gradient(135deg, rgba(236, 72, 153, 0.25) 0%, rgba(6, 182, 212, 0.25) 50%, rgba(168, 85, 247, 0.25) 100%)',
+                      'linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(236, 72, 153, 0.25) 50%, rgba(6, 182, 212, 0.25) 100%)',
+                      'linear-gradient(135deg, rgba(6, 182, 212, 0.25) 0%, rgba(168, 85, 247, 0.25) 50%, rgba(236, 72, 153, 0.25) 100%)'
+                    ]
                   }}
                   transition={{ 
-                    duration: 10, 
+                    duration: 8, 
                     repeat: Infinity, 
-                    ease: "linear",
-                    repeatType: "reverse"
+                    ease: "linear"
                   }}
-                  className="absolute inset-0 opacity-30"
+                  className="absolute inset-0 opacity-60 group-hover:opacity-80 transition-opacity duration-500"
+                />
+                
+                {/* Animated Mesh Pattern */}
+                <motion.div
+                  animate={{ 
+                    backgroundPosition: ['0% 0%', '100% 100%', '0% 0%']
+                  }}
+                  transition={{ 
+                    duration: 15, 
+                    repeat: Infinity, 
+                    ease: "linear"
+                  }}
+                  className="absolute inset-0 opacity-40 group-hover:opacity-60 transition-opacity duration-500"
                   style={{
-                    backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(6, 182, 212, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.3) 0%, transparent 50%)',
+                    backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(6, 182, 212, 0.4) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.4) 0%, transparent 50%), radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.3) 0%, transparent 50%)',
                     backgroundSize: '200% 200%'
                   }}
                 />
                 
+                {/* Floating Orbs */}
+                <motion.div
+                  animate={{ 
+                    y: [-10, 10, -10],
+                    x: [-5, 5, -5],
+                    scale: [1, 1.1, 1]
+                  }}
+                  transition={{ 
+                    duration: 4, 
+                    repeat: Infinity, 
+                    ease: "easeInOut"
+                  }}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400/40 to-blue-500/40 blur-xl"
+                />
+                <motion.div
+                  animate={{ 
+                    y: [10, -10, 10],
+                    x: [5, -5, 5],
+                    scale: [1.1, 1, 1.1]
+                  }}
+                  transition={{ 
+                    duration: 5, 
+                    repeat: Infinity, 
+                    ease: "easeInOut",
+                    delay: 1
+                  }}
+                  className="absolute bottom-4 left-4 w-10 h-10 rounded-full bg-gradient-to-br from-purple-400/40 to-pink-500/40 blur-xl"
+                />
+                
                 {/* Content Container */}
-                <div className="relative h-full flex flex-col items-center justify-center p-3">
-                  {/* Plus Icon Circle */}
-                  <motion.div
-                    whileHover={{ rotate: 90, scale: 1.1 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                    className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center shadow-lg mb-3 group-hover:shadow-cyan-500/50 transition-shadow duration-300"
-                  >
-                    <Plus className="w-6 h-6 text-white" strokeWidth={3} />
-                  </motion.div>
-                  
-                  {/* Text */}
-                  <div className="text-center">
-                    <p className={`text-xs font-bold ${themeClasses.text} mb-0.5 group-hover:text-cyan-400 transition-colors duration-300`}>
-                      {t("content.addStory", "Add Story")}
-                    </p>
-                    <p className={`text-[10px] ${themeClasses.textSecondary} group-hover:text-purple-400 transition-colors duration-300`}>
-                      Share moment
-                    </p>
-                  </div>
-                  
-                  {/* Sparkle Effects */}
+                <div className="relative h-full flex flex-col items-center justify-center p-4 z-10">
+                  {/* Enhanced Plus Icon with Pulse Effect */}
                   <motion.div
                     animate={{ 
-                      scale: [1, 1.2, 1],
-                      opacity: [0.5, 1, 0.5]
+                      boxShadow: [
+                        '0 0 20px rgba(6, 182, 212, 0.5)',
+                        '0 0 40px rgba(168, 85, 247, 0.7)',
+                        '0 0 20px rgba(236, 72, 153, 0.5)',
+                        '0 0 20px rgba(6, 182, 212, 0.5)'
+                      ]
                     }}
                     transition={{ 
-                      duration: 2, 
+                      duration: 3, 
+                      repeat: Infinity, 
+                      ease: "easeInOut"
+                    }}
+                    className="relative mb-4"
+                  >
+                    <motion.div
+                      whileHover={{ rotate: 180, scale: 1.15 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                      className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-2xl relative overflow-hidden"
+                    >
+                      {/* Inner glow */}
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.5, 1],
+                          opacity: [0.5, 0.8, 0.5]
+                        }}
+                        transition={{ 
+                          duration: 2, 
+                          repeat: Infinity, 
+                          ease: "easeInOut"
+                        }}
+                        className="absolute inset-0 bg-white/30 rounded-2xl blur-md"
+                      />
+                      <Plus className="w-7 h-7 text-white relative z-10" strokeWidth={3.5} />
+                      
+                      {/* Rotating ring */}
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                        className="absolute inset-0 border-2 border-white/40 border-dashed rounded-2xl"
+                      />
+                    </motion.div>
+                    
+                    {/* Pulse rings */}
+                    <motion.div
+                      animate={{ 
+                        scale: [1, 1.8, 1],
+                        opacity: [0.6, 0, 0.6]
+                      }}
+                      transition={{ 
+                        duration: 2, 
+                        repeat: Infinity, 
+                        ease: "easeOut"
+                      }}
+                      className="absolute inset-0 border-2 border-cyan-400 rounded-2xl"
+                    />
+                    <motion.div
+                      animate={{ 
+                        scale: [1, 2, 1],
+                        opacity: [0.4, 0, 0.4]
+                      }}
+                      transition={{ 
+                        duration: 2, 
+                        repeat: Infinity, 
+                        ease: "easeOut",
+                        delay: 0.5
+                      }}
+                      className="absolute inset-0 border-2 border-purple-400 rounded-2xl"
+                    />
+                  </motion.div>
+                  
+                  {/* Enhanced Text with Gradient */}
+                  <div className="text-center space-y-1">
+                    <motion.p 
+                      className={`text-sm font-black ${themeClasses.text} mb-1 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300`}
+                      animate={{ 
+                        backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
+                      }}
+                      transition={{ 
+                        duration: 5, 
+                        repeat: Infinity, 
+                        ease: "linear"
+                      }}
+                      style={{ backgroundSize: '200% auto' }}
+                    >
+                      {t("content.addStory", "Add Story")}
+                    </motion.p>
+                    <motion.p 
+                      className={`text-xs font-semibold ${themeClasses.textSecondary} group-hover:text-purple-400 transition-colors duration-300`}
+                      animate={{ opacity: [0.7, 1, 0.7] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      ✨ Share your moment
+                    </motion.p>
+                  </div>
+                  
+                  {/* Enhanced Sparkle Effects */}
+                  <motion.div
+                    animate={{ 
+                      scale: [1, 1.3, 1],
+                      opacity: [0.6, 1, 0.6],
+                      rotate: [0, 180, 360]
+                    }}
+                    transition={{ 
+                      duration: 3, 
                       repeat: Infinity,
                       ease: "easeInOut"
                     }}
-                    className="absolute top-2 right-2"
+                    className="absolute top-3 right-3"
                   >
-                    <Sparkles className="w-3 h-3 text-yellow-400" />
+                    <Sparkles className="w-4 h-4 text-yellow-300 drop-shadow-lg" />
                   </motion.div>
                   
                   <motion.div
                     animate={{ 
-                      scale: [1, 1.2, 1],
-                      opacity: [0.5, 1, 0.5]
+                      scale: [1, 1.3, 1],
+                      opacity: [0.6, 1, 0.6],
+                      rotate: [360, 180, 0]
                     }}
                     transition={{ 
-                      duration: 2, 
+                      duration: 3, 
                       repeat: Infinity,
                       ease: "easeInOut",
-                      delay: 1
+                      delay: 1.5
                     }}
-                    className="absolute bottom-2 left-2"
+                    className="absolute bottom-3 left-3"
                   >
-                    <Sparkles className="w-3 h-3 text-pink-400" />
+                    <Sparkles className="w-4 h-4 text-pink-300 drop-shadow-lg" />
+                  </motion.div>
+                  
+                  <motion.div
+                    animate={{ 
+                      scale: [1, 1.3, 1],
+                      opacity: [0.6, 1, 0.6],
+                      rotate: [0, -180, -360]
+                    }}
+                    transition={{ 
+                      duration: 3, 
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: 0.75
+                    }}
+                    className="absolute top-3 left-3"
+                  >
+                    <Sparkles className="w-3 h-3 text-cyan-300 drop-shadow-lg" />
                   </motion.div>
                 </div>
                 
-                {/* Shimmer Effect on Hover */}
+                {/* Enhanced Shimmer Effect */}
                 <motion.div
-                  initial={{ x: '-100%' }}
-                  whileHover={{ x: '200%' }}
-                  transition={{ duration: 0.6, ease: "easeInOut" }}
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12"
+                  animate={{ 
+                    x: ['-100%', '200%']
+                  }}
+                  transition={{ 
+                    duration: 2, 
+                    repeat: Infinity,
+                    repeatDelay: 1,
+                    ease: "easeInOut"
+                  }}
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12 group-hover:via-white/60"
                 />
+                
+                {/* Corner Accents */}
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-cyan-400/50 rounded-tl-2xl" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-pink-400/50 rounded-br-2xl" />
               </div>
             </div>
           </motion.div>
