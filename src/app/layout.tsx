@@ -33,23 +33,23 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://example.com"),
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   icons: {
-    icon: "/logo1.png",
-    shortcut: "/logo1.png",
-    apple: "/logo1.png",
+    icon: "/assets/images/head.png",
+    shortcut: "/assets/images/head.png",
+    apple: "/assets/images/head.png",
   },
   openGraph: {
     title: "DeMEDIA",
     description: "Join DeMEDIA – a fast, modern social platform.",
     url: "/",
     siteName: "DeMEDIA",
-    images: [{ url: "/logo1.png", width: 1200, height: 630, alt: "DeMEDIA" }],
+    images: [{ url: "/assets/images/head.png", width: 1200, height: 630, alt: "DeMEDIA" }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "DeMEDIA",
     description: "Join DeMEDIA – a fast, modern social platform.",
-    images: ["/logo1.png"],
+    images: ["/assets/images/head.png"],
   },
   alternates: {
     canonical: "/",
