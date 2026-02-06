@@ -483,115 +483,174 @@ export default function DeSnapsPage() {
                             </div>
                         </div>
 
-                        {/* DeSnaps Grid */}
-                        <div className={`grid gap-3 sm:gap-4 ${
+                        {/* DeSnaps Grid - Enhanced Comfortable View */}
+                        <div className={`grid gap-4 ${
                             viewMode === 'grid' 
-                                ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' 
-                                : 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8'
+                                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+                                : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
                         }`}>
                             <AnimatePresence mode="popLayout">
                                 {filteredDeSnaps.map((deSnap, index) => (
                                     <motion.div
                                         key={deSnap.id}
                                         layout
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.9 }}
-                                        transition={{ delay: index * 0.03, duration: 0.3 }}
-                                        whileHover={{ scale: 1.03, y: -4 }}
+                                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                                        transition={{ 
+                                            delay: index * 0.05, 
+                                            duration: 0.4,
+                                            type: "spring",
+                                            stiffness: 100
+                                        }}
+                                        whileHover={{ scale: 1.02, y: -8 }}
                                         whileTap={{ scale: 0.98 }}
                                         onClick={() => setSelectedDeSnap(deSnap)}
                                         onMouseEnter={() => setHoveredId(deSnap.id)}
                                         onMouseLeave={() => setHoveredId(null)}
-                                        className={`${themeClasses.card} ${themeClasses.cardHover} rounded-2xl overflow-hidden cursor-pointer group relative transition-all duration-300`}
+                                        className={`${themeClasses.card} rounded-3xl overflow-hidden cursor-pointer group relative transition-all duration-500 ${themeClasses.cardHover}`}
+                                        style={{
+                                            boxShadow: hoveredId === deSnap.id 
+                                                ? '0 20px 60px -15px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05)' 
+                                                : '0 4px 20px -5px rgba(0, 0, 0, 0.1)'
+                                        }}
                                     >
-                                        {/* Video Thumbnail */}
-                                        <div className={`relative ${viewMode === 'grid' ? 'aspect-[9/16]' : 'aspect-[9/14]'}`}>
+                                        {/* Video Thumbnail with Enhanced Aspect Ratio */}
+                                        <div className={`relative ${viewMode === 'grid' ? 'aspect-[9/16]' : 'aspect-[9/14]'} overflow-hidden`}>
                                             {deSnap.thumbnail ? (
                                                 <img
                                                     src={deSnap.thumbnail}
                                                     alt=""
-                                                    className="w-full h-full object-cover"
+                                                    className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
                                                     loading="lazy"
                                                 />
                                             ) : (
-                                                <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900`}>
-                                                    <Video className="w-8 h-8 text-gray-600" />
+                                                <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 via-gray-900 to-black`}>
+                                                    <Video className="w-12 h-12 text-gray-600 opacity-50" />
                                                 </div>
                                             )}
 
-                                            {/* Gradient Overlays */}
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
-                                            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            {/* Enhanced Gradient Overlays */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-500" />
+                                            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                                            {/* Play Button - Center */}
+                                            {/* Animated Play Button - Center */}
                                             <div className="absolute inset-0 flex items-center justify-center">
                                                 <motion.div 
-                                                    initial={{ scale: 0.8, opacity: 0 }}
+                                                    initial={{ scale: 0.7, opacity: 0 }}
                                                     animate={{ 
-                                                        scale: hoveredId === deSnap.id ? 1 : 0.8, 
+                                                        scale: hoveredId === deSnap.id ? 1.1 : 0.7, 
                                                         opacity: hoveredId === deSnap.id ? 1 : 0 
                                                     }}
-                                                    className={`w-14 h-14 rounded-full bg-white/95 backdrop-blur-sm flex items-center justify-center shadow-2xl`}
+                                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                                    className={`relative w-16 h-16 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-2xl`}
                                                 >
-                                                    <Play className="w-6 h-6 text-gray-900 ml-1" fill="currentColor" />
+                                                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 opacity-20 animate-pulse" />
+                                                    <Play className="w-7 h-7 text-gray-900 ml-1" fill="currentColor" />
                                                 </motion.div>
                                             </div>
 
-                                            {/* Author Info - Top */}
-                                            <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
+                                            {/* Enhanced Author Info - Top */}
+                                            <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+                                                <motion.div 
+                                                    initial={{ x: -20, opacity: 0 }}
+                                                    animate={{ x: 0, opacity: 1 }}
+                                                    transition={{ delay: index * 0.05 + 0.2 }}
+                                                    className="flex items-center gap-2.5 bg-black/40 backdrop-blur-md rounded-full px-3 py-2 pr-4"
+                                                >
                                                     {deSnap.author?.profilePicture ? (
                                                         <img
                                                             src={ensureAbsoluteMediaUrl(deSnap.author.profilePicture) || deSnap.author.profilePicture}
                                                             alt=""
-                                                            className="w-8 h-8 rounded-full object-cover ring-2 ring-white/30 shadow-lg"
+                                                            className="w-9 h-9 rounded-full object-cover ring-2 ring-white/40 shadow-lg"
                                                         />
                                                     ) : (
-                                                        <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${themeClasses.accent} flex items-center justify-center ring-2 ring-white/30 shadow-lg`}>
-                                                            <span className="text-white text-xs font-bold">
+                                                        <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${themeClasses.accent} flex items-center justify-center ring-2 ring-white/40 shadow-lg`}>
+                                                            <span className="text-white text-sm font-bold">
                                                                 {deSnap.author?.name?.charAt(0)?.toUpperCase() || 'U'}
                                                             </span>
                                                         </div>
                                                     )}
-                                                    <span className="text-white text-xs font-medium truncate max-w-[80px] drop-shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        @{deSnap.author?.username || 'user'}
-                                                    </span>
-                                                </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-white text-sm font-semibold truncate max-w-[120px] drop-shadow-lg">
+                                                            {deSnap.author?.name || 'User'}
+                                                        </span>
+                                                        <span className="text-white/80 text-xs truncate max-w-[120px] drop-shadow-lg">
+                                                            @{deSnap.author?.username || 'user'}
+                                                        </span>
+                                                    </div>
+                                                </motion.div>
                                             </div>
 
-                                            {/* Stats - Bottom */}
-                                            <div className="absolute bottom-3 left-3 right-3">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <button
-                                                            onClick={(e) => handleLike(deSnap.id, e)}
-                                                            className="flex items-center gap-1 text-white group/like"
-                                                        >
-                                                            <Heart 
-                                                                className={`w-4 h-4 transition-all ${deSnap.isLiked ? 'fill-red-500 text-red-500' : 'group-hover/like:scale-110'}`} 
-                                                            />
-                                                            <span className="text-xs font-medium drop-shadow-lg">{formatNumber(deSnap.likes)}</span>
-                                                        </button>
-                                                        <div className="flex items-center gap-1 text-white">
-                                                            <MessageCircle className="w-4 h-4" />
-                                                            <span className="text-xs font-medium drop-shadow-lg">{formatNumber(deSnap.comments)}</span>
+                                            {/* Enhanced Stats - Bottom */}
+                                            <div className="absolute bottom-4 left-4 right-4 z-10">
+                                                <motion.div 
+                                                    initial={{ y: 20, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
+                                                    transition={{ delay: index * 0.05 + 0.3 }}
+                                                    className="bg-black/40 backdrop-blur-md rounded-2xl px-4 py-3"
+                                                >
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="flex items-center gap-4">
+                                                            <motion.button
+                                                                whileHover={{ scale: 1.1 }}
+                                                                whileTap={{ scale: 0.9 }}
+                                                                onClick={(e) => handleLike(deSnap.id, e)}
+                                                                className="flex items-center gap-1.5 text-white group/like"
+                                                            >
+                                                                <Heart 
+                                                                    className={`w-5 h-5 transition-all ${deSnap.isLiked ? 'fill-red-500 text-red-500 animate-pulse' : 'group-hover/like:scale-125 group-hover/like:text-red-400'}`} 
+                                                                />
+                                                                <span className="text-sm font-semibold drop-shadow-lg">{formatNumber(deSnap.likes)}</span>
+                                                            </motion.button>
+                                                            <div className="flex items-center gap-1.5 text-white">
+                                                                <MessageCircle className="w-5 h-5" />
+                                                                <span className="text-sm font-semibold drop-shadow-lg">{formatNumber(deSnap.comments)}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 text-white/90">
+                                                            <Eye className="w-4 h-4" />
+                                                            <span className="text-sm font-medium drop-shadow-lg">{formatNumber(deSnap.views)}</span>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-1 text-white/80">
-                                                        <Eye className="w-3.5 h-3.5" />
-                                                        <span className="text-xs drop-shadow-lg">{formatNumber(deSnap.views)}</span>
-                                                    </div>
-                                                </div>
+                                                    
+                                                    {/* Caption Preview */}
+                                                    {(deSnap as any).caption && (
+                                                        <p className="text-white/90 text-xs line-clamp-2 drop-shadow-lg">
+                                                            {(deSnap as any).caption}
+                                                        </p>
+                                                    )}
+                                                </motion.div>
                                             </div>
 
-                                            {/* Duration Badge */}
+                                            {/* Enhanced Duration Badge */}
                                             {deSnap.duration > 0 && (
-                                                <div className="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur-sm rounded-md">
-                                                    <span className="text-white text-xs font-medium">
+                                                <motion.div 
+                                                    initial={{ scale: 0, opacity: 0 }}
+                                                    animate={{ scale: 1, opacity: 1 }}
+                                                    transition={{ delay: index * 0.05 + 0.4 }}
+                                                    className="absolute top-4 right-4 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full border border-white/20"
+                                                >
+                                                    <span className="text-white text-xs font-semibold flex items-center gap-1">
+                                                        <Clock className="w-3 h-3" />
                                                         {Math.floor(deSnap.duration / 60)}:{(deSnap.duration % 60).toString().padStart(2, '0')}
                                                     </span>
-                                                </div>
+                                                </motion.div>
+                                            )}
+
+                                            {/* Trending Badge */}
+                                            {deSnap.views > 1000 && (
+                                                <motion.div 
+                                                    initial={{ scale: 0, rotate: -45 }}
+                                                    animate={{ scale: 1, rotate: 0 }}
+                                                    transition={{ delay: index * 0.05 + 0.5, type: "spring" }}
+                                                    className="absolute top-16 right-4 px-2 py-1 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full"
+                                                >
+                                                    <span className="text-white text-xs font-bold flex items-center gap-1">
+                                                        <Flame className="w-3 h-3" />
+                                                        Trending
+                                                    </span>
+                                                </motion.div>
                                             )}
                                         </div>
                                     </motion.div>

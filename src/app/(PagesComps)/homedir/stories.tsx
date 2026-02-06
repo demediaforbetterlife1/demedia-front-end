@@ -1,10 +1,8 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { IoAdd } from "react-icons/io5";
-import { Plus, Sparkles, Eye, Clock } from "lucide-react";
+import { Plus, Sparkles, Eye, Clock, Users } from "lucide-react";
 import { dataService } from "@/services/dataService";
-import { contentService } from "@/services/contentService";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
@@ -143,14 +141,12 @@ export default function Stories() {
       }
 
       // Fetch stories from the API
-      // Cookies (httpOnly) are sent automatically via credentials: 'include'
-      // The API route will extract the token from cookies
       const response = await fetch(`/api/stories`, {
         headers: {
           "user-id": user.id.toString(),
           "Content-Type": "application/json",
         },
-        credentials: "include", // This automatically sends httpOnly cookies
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -160,8 +156,36 @@ export default function Stories() {
 
       const data = await response.json();
 
-      // Filter out invalid stories (backend already filters for followed users only)
-      const validStories = data.filter(
+      // Filter stories based on Facebook-style logic:
+      // 1. Show stories from people you follow (regardless of if they follow you back)
+      // 2. Show stories from mutual followers
+      // 3. Hide public stories from people you don't follow (they should appear around profile pic instead)
+      
+      const filteredStories = data.filter((story: any) => {
+        if (!story || !story.id || !story.author) return false;
+        
+        // Always show your own stories
+        if (story.author.id === user.id) return true;
+        
+        // Check if story is from someone you follow
+        const isFollowing = story.author.isFollowing || false;
+        
+        // Check if it's a mutual follow
+        const isMutual = story.author.isFollower && story.author.isFollowing;
+        
+        // Show story if:
+        // - You follow them (regardless of if they follow you back)
+        // - It's a mutual follow
+        // Hide public stories from people you don't follow
+        if (story.visibility === 'public' && !isFollowing) {
+          return false; // Public stories from non-followed users don't appear in story bar
+        }
+        
+        return isFollowing || isMutual;
+      });
+
+      // Filter out invalid stories
+      const validStories = filteredStories.filter(
         (story: any) =>
           story &&
           story.id &&
@@ -255,24 +279,36 @@ export default function Stories() {
 
   return (
     <div
-      className={`relative ${themeClasses.bg} backdrop-blur-xl rounded-xl border ${themeClasses.border} shadow-md`}
+      className={`relative ${themeClasses.bg} backdrop-blur-xl rounded-2xl border ${themeClasses.border} shadow-xl overflow-hidden`}
     >
-      <div className="flex items-center justify-between px-3 py-2">
-        <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full flex items-center justify-center">
-            <Sparkles className="w-3 h-3 text-white" />
+      {/* Premium Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+        <div className="flex items-center space-x-3">
+          <motion.div 
+            animate={{ rotate: [0, 360] }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="w-8 h-8 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg"
+          >
+            <Sparkles className="w-4 h-4 text-white" />
+          </motion.div>
+          <div>
+            <h3 className={`text-base font-bold ${themeClasses.text}`}>
+              {t("stories.title", "Stories")}
+            </h3>
+            <p className={`text-xs ${themeClasses.textSecondary}`}>
+              Share your moments
+            </p>
           </div>
-          <h3 className={`text-sm font-semibold ${themeClasses.text}`}>
-            {t("stories.title", "Stories")}
-          </h3>
         </div>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05, rotate: 90 }}
+          whileTap={{ scale: 0.95 }}
           onClick={fetchStories}
-          className={`p-1.5 rounded-full ${themeClasses.hover} transition-all duration-200 hover:scale-105`}
+          className={`p-2 rounded-xl ${themeClasses.hover} transition-all duration-200 hover:shadow-lg`}
           title={t("action.refresh")}
         >
           <svg
-            className={`w-3 h-3 ${themeClasses.textSecondary}`}
+            className={`w-4 h-4 ${themeClasses.textSecondary}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -284,141 +320,250 @@ export default function Stories() {
               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
             />
           </svg>
-        </button>
+        </motion.button>
       </div>
-      <div className="flex overflow-x-auto gap-3 px-3 pb-3 scrollbar-hide">
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex flex-col items-center min-w-[60px] cursor-pointer"
-          onClick={handleAddStory}
-        >
-          <div
-            className={`w-12 h-12 rounded-full ${themeClasses.card} flex items-center justify-center border-2 border-dashed border-cyan-400 relative group shadow-md`}
-          >
-            <Plus className="w-4 h-4 text-cyan-400" />
-            <div
-              className={`absolute inset-0 rounded-full bg-gradient-to-tr ${themeClasses.gradient} opacity-0 group-hover:opacity-100 transition-opacity`}
-            />
-          </div>
-          <span
-            className={`mt-1 text-xs font-medium ${themeClasses.textSecondary} text-center`}
-          >
-            {t("content.addStory")}
-          </span>
-        </motion.div>
 
-        {stories.map((story, index) => (
+      {/* Stories Scroll Container */}
+      <div className="relative px-4 py-4">
+        <div className="flex overflow-x-auto gap-4 scrollbar-hide pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          {/* Add Story Card - Enhanced */}
           <motion.div
-            key={story.id}
-            whileHover={{ scale: 1.05 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ scale: 1.05, y: -4 }}
             whileTap={{ scale: 0.95 }}
-            className="flex flex-col items-center min-w-[60px] cursor-pointer"
-            onClick={() => handleStoryClick(story, index)}
+            className="flex flex-col items-center min-w-[80px] cursor-pointer group"
+            onClick={handleAddStory}
           >
-            <div
-              className={`w-12 h-12 rounded-full ${themeClasses.card} flex items-center justify-center border-2 border-cyan-400 relative overflow-hidden shadow-md`}
-            >
-              {story.content?.startsWith("http") ? (
-                <img
-                  src={story.content}
-                  alt="Story"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    if (story.author?.profilePicture) {
-                      target.src = story.author.profilePicture;
-                    } else {
-                      target.style.display = "none";
-                      target.parentElement!.innerHTML =
-                        story.author?.name?.charAt(0)?.toUpperCase() || "U";
-                    }
-                  }}
-                />
-              ) : story.author?.profilePicture ? (
-                <img
-                  src={story.author.profilePicture}
-                  alt={story.author?.name || "User"}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className={`text-lg font-bold ${themeClasses.text}`}>
-                  {story.author?.name?.charAt(0)?.toUpperCase() || "U"}
-                </span>
-              )}
+            <div className="relative">
+              {/* Gradient Ring */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 rounded-2xl opacity-75 group-hover:opacity-100 blur-sm transition-all duration-300" />
+              
+              {/* Story Circle */}
               <div
-                className={`absolute inset-0 rounded-full bg-gradient-to-tr ${themeClasses.gradient}`}
-              />
-
-              {/* View indicator */}
-              {story.views > 0 && (
-                <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center shadow-md">
-                  <Eye className="w-2 h-2 text-white" />
-                </div>
-              )}
-
-              {/* Time indicator */}
-              <div className="absolute -bottom-0.5 -left-0.5 w-3 h-3 bg-gray-800 rounded-full flex items-center justify-center shadow-md">
-                <Clock className="w-2 h-2 text-white" />
-              </div>
-
-              {/* Visibility indicator */}
-              <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border border-white shadow-md">
-                {story.visibility === "public" && (
-                  <div className="w-full h-full bg-green-500 rounded-full" />
-                )}
-                {story.visibility === "followers" && (
-                  <div className="w-full h-full bg-blue-500 rounded-full" />
-                )}
-                {story.visibility === "close_friends" && (
-                  <div className="w-full h-full bg-purple-500 rounded-full" />
-                )}
+                className={`relative w-16 h-16 rounded-2xl ${themeClasses.card} flex items-center justify-center border-2 border-dashed border-cyan-400/50 group-hover:border-cyan-400 shadow-xl transition-all duration-300`}
+              >
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-400/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Plus className="relative w-6 h-6 text-cyan-400 group-hover:scale-110 transition-transform" />
               </div>
             </div>
             <span
-              className={`mt-1 text-xs font-medium ${themeClasses.textSecondary} text-center truncate max-w-[50px]`}
+              className={`mt-2 text-xs font-semibold ${themeClasses.text} text-center max-w-[80px] truncate`}
             >
-              {story.author?.name || "Unknown"}
+              {t("content.addStory")}
+            </span>
+            <span className={`text-[10px] ${themeClasses.textSecondary}`}>
+              Create
             </span>
           </motion.div>
-        ))}
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,video/*"
-          className="hidden"
-          onChange={handleFileChange}
-        />
+          {/* Story Cards - Enhanced */}
+          {stories.map((story, index) => (
+            <motion.div
+              key={story.id}
+              initial={{ opacity: 0, scale: 0.9, x: 20 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              transition={{ delay: index * 0.05, type: "spring", stiffness: 100 }}
+              whileHover={{ scale: 1.05, y: -4 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex flex-col items-center min-w-[80px] cursor-pointer group"
+              onClick={() => handleStoryClick(story, index)}
+            >
+              <div className="relative">
+                {/* Gradient Ring - Animated */}
+                <motion.div 
+                  animate={{ 
+                    rotate: [0, 360],
+                    scale: [1, 1.05, 1]
+                  }}
+                  transition={{ 
+                    rotate: { duration: 3, repeat: Infinity, ease: "linear" },
+                    scale: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                  }}
+                  className="absolute -inset-1 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 rounded-2xl opacity-75 group-hover:opacity-100 blur-sm"
+                />
+                
+                {/* Story Circle */}
+                <div
+                  className={`relative w-16 h-16 rounded-2xl ${themeClasses.card} overflow-hidden shadow-xl border-2 border-white/10 group-hover:border-white/20 transition-all duration-300`}
+                >
+                  {story.content?.startsWith("http") ? (
+                    <img
+                      src={story.content}
+                      alt="Story"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (story.author?.profilePicture) {
+                          target.src = story.author.profilePicture;
+                        } else {
+                          target.style.display = "none";
+                          target.parentElement!.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-cyan-500 to-purple-600"><span class="text-xl font-bold text-white">${story.author?.name?.charAt(0)?.toUpperCase() || "U"}</span></div>`;
+                        }
+                      }}
+                    />
+                  ) : story.author?.profilePicture ? (
+                    <img
+                      src={story.author.profilePicture}
+                      alt={story.author?.name || "User"}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cyan-500 to-purple-600">
+                      <span className={`text-xl font-bold text-white`}>
+                        {story.author?.name?.charAt(0)?.toUpperCase() || "U"}
+                      </span>
+                    </div>
+                  )}
 
-        <CreateStoryModal
-          isOpen={showCreateStoryModal}
-          onClose={() => setShowCreateStoryModal(false)}
-          onStoryCreated={(newStory) => {
-            setStories((prev) => [
-              {
-                ...newStory,
-                id: parseInt(newStory.id),
-                author: {
-                  ...newStory.author,
-                  id: parseInt(newStory.author.id),
-                },
-                visibility: "followers",
-              } as Story,
-              ...prev,
-            ]);
-            setShowCreateStoryModal(false);
-          }}
-        />
+                  {/* Overlay Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-        <StoryViewerModal
-          isOpen={showStoryViewer}
-          onClose={() => setShowStoryViewer(false)}
-          stories={stories}
-          currentStoryIndex={currentStoryIndex}
-          onStoryChange={(index) => setCurrentStoryIndex(index)}
-        />
+                  {/* View Count Badge */}
+                  {story.views > 0 && (
+                    <motion.div 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute top-1 right-1 flex items-center gap-1 bg-black/70 backdrop-blur-sm rounded-full px-1.5 py-0.5"
+                    >
+                      <Eye className="w-2.5 h-2.5 text-cyan-400" />
+                      <span className="text-[9px] font-semibold text-white">{story.views}</span>
+                    </motion.div>
+                  )}
+
+                  {/* Time Badge */}
+                  <motion.div 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="absolute bottom-1 left-1 flex items-center gap-1 bg-black/70 backdrop-blur-sm rounded-full px-1.5 py-0.5"
+                  >
+                    <Clock className="w-2.5 h-2.5 text-purple-400" />
+                    <span className="text-[9px] font-semibold text-white">
+                      {(() => {
+                        const now = new Date();
+                        const created = new Date(story.createdAt);
+                        const diffMs = now.getTime() - created.getTime();
+                        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                        const diffMins = Math.floor(diffMs / (1000 * 60));
+                        
+                        if (diffHours >= 24) return `${Math.floor(diffHours / 24)}d`;
+                        if (diffHours > 0) return `${diffHours}h`;
+                        if (diffMins > 0) return `${diffMins}m`;
+                        return 'now';
+                      })()}
+                    </span>
+                  </motion.div>
+
+                  {/* Visibility Badge */}
+                  <motion.div 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-white shadow-lg flex items-center justify-center"
+                  >
+                    {story.visibility === "public" && (
+                      <div className="w-full h-full bg-green-500 rounded-full flex items-center justify-center">
+                        <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                          <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
+                        </svg>
+                      </div>
+                    )}
+                    {story.visibility === "followers" && (
+                      <div className="w-full h-full bg-blue-500 rounded-full flex items-center justify-center">
+                        <Users className="w-2 h-2 text-white" />
+                      </div>
+                    )}
+                    {story.visibility === "close_friends" && (
+                      <div className="w-full h-full bg-purple-500 rounded-full flex items-center justify-center">
+                        <Sparkles className="w-2 h-2 text-white" />
+                      </div>
+                    )}
+                  </motion.div>
+                </div>
+              </div>
+
+              {/* Author Name */}
+              <span
+                className={`mt-2 text-xs font-semibold ${themeClasses.text} text-center max-w-[80px] truncate`}
+              >
+                {story.author?.name || "Unknown"}
+              </span>
+              
+              {/* Username */}
+              <span className={`text-[10px] ${themeClasses.textSecondary} truncate max-w-[80px]`}>
+                @{story.author?.username || 'user'}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Scroll Indicators */}
+        {stories.length > 4 && (
+          <>
+            <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-black/20 to-transparent pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-black/20 to-transparent pointer-events-none" />
+          </>
+        )}
       </div>
+
+      {/* Story Count Badge */}
+      {stories.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="px-4 pb-3"
+        >
+          <div className={`flex items-center justify-between px-3 py-2 rounded-xl ${themeClasses.card} border ${themeClasses.border}`}>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className={`text-xs font-medium ${themeClasses.textSecondary}`}>
+                {stories.length} active {stories.length === 1 ? 'story' : 'stories'}
+              </span>
+            </div>
+            <span className={`text-xs ${themeClasses.textSecondary}`}>
+              Tap to view
+            </span>
+          </div>
+        </motion.div>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,video/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      <CreateStoryModal
+        isOpen={showCreateStoryModal}
+        onClose={() => setShowCreateStoryModal(false)}
+        onStoryCreated={(newStory) => {
+          setStories((prev) => [
+            {
+              ...newStory,
+              id: parseInt(newStory.id),
+              author: {
+                ...newStory.author,
+                id: parseInt(newStory.author.id),
+              },
+              visibility: "followers",
+            } as Story,
+            ...prev,
+          ]);
+          setShowCreateStoryModal(false);
+        }}
+      />
+
+      <StoryViewerModal
+        isOpen={showStoryViewer}
+        onClose={() => setShowStoryViewer(false)}
+        stories={stories}
+        currentStoryIndex={currentStoryIndex}
+        onStoryChange={(index) => setCurrentStoryIndex(index)}
+      />
     </div>
   );
 }
