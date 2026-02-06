@@ -33,6 +33,12 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]): Promise<R
 
   const headers = new Headers(req.headers);
   if (headers.has("host")) headers.delete("host");
+  
+  // Ensure Content-Type is set for JSON requests
+  if (!headers.has("content-type") && req.method !== "GET" && req.method !== "HEAD") {
+    headers.set("Content-Type", "application/json");
+    console.log("📝 Added Content-Type: application/json");
+  }
 
   // Forward cookies explicitly - FIXED: Remove duplicate cookie declarations
   const cookieHeader = req.headers.get('cookie');
@@ -55,9 +61,20 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]): Promise<R
   };
 
   if (req.method !== "GET" && req.method !== "HEAD") {
-    const body = await req.arrayBuffer();
-    init.body = body;
-    console.log("📦 Body size:", body.byteLength, "bytes");
+    try {
+      // Read body as text first to preserve JSON structure
+      const bodyText = await req.text();
+      
+      if (bodyText) {
+        init.body = bodyText;
+        console.log("📦 Body size:", bodyText.length, "bytes");
+        console.log("📦 Body content:", bodyText.substring(0, 500)); // Log first 500 chars
+      } else {
+        console.log("📦 Empty body");
+      }
+    } catch (e) {
+      console.error("📦 Failed to read body:", e);
+    }
   }
 
   try {
