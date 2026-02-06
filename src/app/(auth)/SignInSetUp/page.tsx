@@ -153,7 +153,7 @@ export default function SignInSetUp() {
     const [error, setError] = useState("");
     const cardWrapRef = useRef<HTMLDivElement | null>(null);
     
-    const { user, updateUser, isLoading: authLoading, isAuthenticated } = useAuth();
+    const { user, updateUser, updateUserProfile, isLoading: authLoading, isAuthenticated } = useAuth();
     const { setLanguage: setAppLanguage, supportedLocales } = useI18n();
     const { t } = useI18n();
 
@@ -288,62 +288,21 @@ export default function SignInSetUp() {
             
             console.log("Token found, sending request to backend...");
             
-            // Send request with explicit Authorization header - MUST succeed
-            const res = await fetch("/api/auth/complete-setup", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                credentials: 'include',
-                body: JSON.stringify({ 
-                    dob: dobIso 
-                }),
-            });
-    
-            console.log("Complete-setup response status:", res.status);
+            // Use updateUserProfile from AuthContext which handles auth properly
+            const result = await updateUserProfile({ dob: dobIso });
             
-            let data;
-            try {
-                data = await res.json();
-                console.log("Complete-setup response data:", data);
-            } catch (jsonError) {
-                console.error("Failed to parse response:", jsonError);
-                setError("Server error. Please try again.");
-                setIsLoading(false);
-                return;
-            }
-    
-            if (!res.ok) {
-                const errorMsg = data.error || data.details || "Failed to save to database";
-                console.error("Complete-setup failed:", errorMsg);
-                
-                // If it's an auth error, redirect to sign-in
-                if (res.status === 401) {
-                    setError("Session expired. Please sign in again.");
-                    setTimeout(() => router.push("/sign-in"), 2000);
-                    setIsLoading(false);
-                    return;
-                }
-                
-                // For other errors, show error and DO NOT proceed
-                setError(`Failed to save to database: ${errorMsg}. Please try again.`);
-                setIsLoading(false);
-                return;
-            }
-    
-            // Success - ONLY update user with backend data
-            if (data.user) {
-                console.log("✅ Date of birth saved to database successfully");
-                console.log("Updating user with backend data:", data.user);
-                updateUser(data.user);
-            } else {
-                console.error("Backend did not return user data");
-                setError("Server error. Please try again.");
+            console.log("Update profile result:", result);
+            
+            if (!result.success) {
+                const errorMsg = result.message || "Failed to save to database";
+                console.error("Update profile failed:", errorMsg);
+                setError(`${errorMsg}. Please try again.`);
                 setIsLoading(false);
                 return;
             }
             
+            // Success - user data already updated by updateUserProfile
+            console.log("✅ Date of birth saved to database successfully");
             console.log("Redirecting to interests page");
             router.push("/interests");
     
