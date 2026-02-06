@@ -148,48 +148,61 @@ export default function InterestsPage() {
             // Get userId from AuthContext
             const userId = user?.id;
             if (!userId) {
-                console.warn("No userId found, updating locally and continuing");
-                updateUser({ interests: selected });
-                router.push("/FinishSetup");
+                console.error("No userId found - user not authenticated");
+                setError("Session expired. Please sign in again.");
+                setIsLoading(false);
                 return;
             }
 
-            console.log("Saving interests for user:", userId, "interests:", selected);
+            console.log("Saving interests to database for user:", userId, "interests:", selected);
 
-            // Try to save to backend
-            try {
-                const res = await apiFetch(`/api/users/${userId}/interests`, {
-                    method: "POST",
-                    body: JSON.stringify({ interests: selected }),
-                });
+            // Save to backend - MUST succeed
+            const res = await apiFetch(`/api/users/${userId}/interests`, {
+                method: "POST",
+                body: JSON.stringify({ interests: selected }),
+            });
 
-                console.log("Interests API response status:", res.status);
+            console.log("Interests API response status:", res.status);
 
-                if (res.ok) {
-                    const respData = await res.json();
-                    console.log("Saved Interests:", respData);
-                    updateUser({ interests: selected });
-                } else {
-                    console.warn("Backend save failed, updating locally and continuing");
-                    updateUser({ interests: selected });
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error("Interests API error:", errorText);
+                
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch {
+                    errorData = { error: errorText };
                 }
-            } catch (backendError) {
-                console.warn("Backend connection failed, updating locally and continuing:", backendError);
-                updateUser({ interests: selected });
+                
+                const errorMsg = errorData.error || "Failed to save interests to database";
+                setError(`${errorMsg}. Please try again.`);
+                setIsLoading(false);
+                return;
             }
 
-            // Always proceed to next step
-            console.log("Interests saved, redirecting to FinishSetup");
+            const respData = await res.json();
+            console.log("✅ Interests saved to database successfully:", respData);
+            
+            // Update user context with saved data
+            updateUser({ interests: selected });
+
+            console.log("Redirecting to FinishSetup");
             router.push("/FinishSetup");
             
         } catch (err: any) {
             console.error("Error saving interests:", err);
             
-            // Even on error, update locally and allow user to continue
-            console.log("Error occurred, updating locally and allowing user to continue");
-            updateUser({ interests: selected });
-            router.push("/FinishSetup");
-        } finally {
+            // On ANY error, show message and DO NOT proceed
+            let errorMessage = "Failed to save interests to database. Please check your connection and try again.";
+            
+            if (err.message && err.message.includes('Failed to fetch')) {
+                errorMessage = "Network error. Please check your internet connection and try again.";
+            } else if (err.message && err.message.includes('timeout')) {
+                errorMessage = "Request timeout. Please try again.";
+            }
+            
+            setError(errorMessage);
             setIsLoading(false);
         }
     };

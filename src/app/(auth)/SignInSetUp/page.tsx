@@ -274,7 +274,7 @@ export default function SignInSetUp() {
         setError("");
     
         try {
-            console.log("Saving date of birth:", dobIso);
+            console.log("Saving date of birth to database:", dobIso);
             
             // Get token from storage
             const token = getCookie("token") || (typeof window !== 'undefined' ? localStorage.getItem("token") : null);
@@ -282,13 +282,13 @@ export default function SignInSetUp() {
             if (!token) {
                 console.error("No authentication token found");
                 setError("Session expired. Please sign in again.");
-                setTimeout(() => router.push("/sign-in"), 2000);
+                setIsLoading(false);
                 return;
             }
             
-            console.log("Token found, sending request...");
+            console.log("Token found, sending request to backend...");
             
-            // Send request with explicit Authorization header
+            // Send request with explicit Authorization header - MUST succeed
             const res = await fetch("/api/auth/complete-setup", {
                 method: "POST",
                 headers: {
@@ -309,41 +309,42 @@ export default function SignInSetUp() {
                 console.log("Complete-setup response data:", data);
             } catch (jsonError) {
                 console.error("Failed to parse response:", jsonError);
-                // If we can't parse the response, update locally and continue
-                updateUser({ dob: dobIso, dateOfBirth: dobIso });
-                console.log("Updated user locally, continuing to interests");
-                router.push("/interests");
+                setError("Server error. Please try again.");
+                setIsLoading(false);
                 return;
             }
     
             if (!res.ok) {
-                const errorMsg = data.error || data.details || "Failed to save profile information";
+                const errorMsg = data.error || data.details || "Failed to save to database";
                 console.error("Complete-setup failed:", errorMsg);
                 
                 // If it's an auth error, redirect to sign-in
                 if (res.status === 401) {
                     setError("Session expired. Please sign in again.");
                     setTimeout(() => router.push("/sign-in"), 2000);
+                    setIsLoading(false);
                     return;
                 }
                 
-                // For other errors, update locally and continue
-                console.warn("Backend save failed, updating locally and continuing");
-                updateUser({ dob: dobIso, dateOfBirth: dobIso });
-                router.push("/interests");
+                // For other errors, show error and DO NOT proceed
+                setError(`Failed to save to database: ${errorMsg}. Please try again.`);
+                setIsLoading(false);
                 return;
             }
     
-            // Success - update user with backend data
+            // Success - ONLY update user with backend data
             if (data.user) {
+                console.log("✅ Date of birth saved to database successfully");
                 console.log("Updating user with backend data:", data.user);
                 updateUser(data.user);
             } else {
-                // If no user data returned, update locally
-                updateUser({ dob: dobIso, dateOfBirth: dobIso });
+                console.error("Backend did not return user data");
+                setError("Server error. Please try again.");
+                setIsLoading(false);
+                return;
             }
             
-            console.log("Date of birth saved successfully, redirecting to interests");
+            console.log("Redirecting to interests page");
             router.push("/interests");
     
         } catch (err: any) {
@@ -353,11 +354,16 @@ export default function SignInSetUp() {
                 stack: err.stack
             });
             
-            // On network error, update locally and continue
-            console.warn("Network error, updating locally and continuing");
-            updateUser({ dob: dobIso, dateOfBirth: dobIso });
-            router.push("/interests");
-        } finally {
+            // On ANY error, show message and DO NOT proceed
+            let errorMessage = "Failed to save to database. Please check your connection and try again.";
+            
+            if (err.message && err.message.includes("Failed to fetch")) {
+                errorMessage = "Network error. Please check your internet connection and try again.";
+            } else if (err.message && err.message.includes("timeout")) {
+                errorMessage = "Request timeout. Please try again.";
+            }
+            
+            setError(errorMessage);
             setIsLoading(false);
         }
     };

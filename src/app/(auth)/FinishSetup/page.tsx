@@ -80,32 +80,37 @@ export default function FinishSetUp() {
         
         setIsCompleting(true);
         try {
-            console.log('[FinishSetup] Starting setup completion...');
+            console.log('[FinishSetup] Marking setup as complete in database...');
             
-            // Update user locally first
-            updateUser({ isSetupComplete: true });
+            // Call backend to mark setup as complete - MUST succeed
+            const result = await completeSetup();
+            console.log('[FinishSetup] Setup completion result:', result);
             
-            // Try to complete setup on backend, but don't block the user
-            try {
-                const result = await completeSetup();
-                console.log('[FinishSetup] Setup completion result:', result);
-            } catch (error) {
-                console.log('[FinishSetup] Setup completion threw error, but continuing:', error);
+            if (!result.success) {
+                console.error('[FinishSetup] Failed to complete setup:', result.message);
+                // Don't redirect on failure - let user try again
+                setIsCompleting(false);
+                return;
             }
             
-            // Always redirect to home - never block the user
+            // Update user state with completion
+            if (result.user) {
+                updateUser(result.user);
+            } else {
+                updateUser({ isSetupComplete: true });
+            }
+            
+            console.log('[FinishSetup] ✅ Setup completed successfully in database');
             console.log('[FinishSetup] Redirecting to home...');
+            
+            // Redirect to home
             setTimeout(() => {
                 router.replace("/home");
             }, 500);
             
         } catch (error) {
-            console.error("[FinishSetup] Unexpected error, but continuing anyway:", error);
-            // Still redirect - never block the user
-            setTimeout(() => {
-                router.replace("/home");
-            }, 500);
-        } finally {
+            console.error("[FinishSetup] Error completing setup:", error);
+            // Don't redirect on error - let user try again
             setIsCompleting(false);
         }
     };
