@@ -135,7 +135,7 @@ export default function InterestsPage() {
         );
     };
 
-    const handleContinue = async (retryCount = 3) => {
+    const handleContinue = async () => {
         if (selected.length === 0) {
             setError("Please select at least one interest!");
             return;
@@ -145,20 +145,18 @@ export default function InterestsPage() {
         setError("");
 
         try {
-            // Update user locally first
-            updateUser({ interests: selected });
-            
             // Get userId from AuthContext
             const userId = user?.id;
             if (!userId) {
-                console.warn("No userId found, but continuing with local data");
+                console.warn("No userId found, updating locally and continuing");
+                updateUser({ interests: selected });
                 router.push("/FinishSetup");
                 return;
             }
 
             console.log("Saving interests for user:", userId, "interests:", selected);
 
-            // Try to save to backend, but don't block the user if it fails
+            // Try to save to backend
             try {
                 const res = await apiFetch(`/api/users/${userId}/interests`, {
                     method: "POST",
@@ -170,11 +168,14 @@ export default function InterestsPage() {
                 if (res.ok) {
                     const respData = await res.json();
                     console.log("Saved Interests:", respData);
+                    updateUser({ interests: selected });
                 } else {
-                    console.warn("Backend save failed, but continuing with local data");
+                    console.warn("Backend save failed, updating locally and continuing");
+                    updateUser({ interests: selected });
                 }
             } catch (backendError) {
-                console.warn("Backend connection failed, but continuing with local data:", backendError);
+                console.warn("Backend connection failed, updating locally and continuing:", backendError);
+                updateUser({ interests: selected });
             }
 
             // Always proceed to next step
@@ -184,8 +185,9 @@ export default function InterestsPage() {
         } catch (err: any) {
             console.error("Error saving interests:", err);
             
-            // Even on error, allow user to continue
-            console.log("Error occurred but allowing user to continue");
+            // Even on error, update locally and allow user to continue
+            console.log("Error occurred, updating locally and allowing user to continue");
+            updateUser({ interests: selected });
             router.push("/FinishSetup");
         } finally {
             setIsLoading(false);

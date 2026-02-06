@@ -276,53 +276,86 @@ export default function SignInSetUp() {
         try {
             console.log("Saving date of birth:", dobIso);
             
-            // Update user locally first
-            updateUser({ 
-                dob: dobIso, 
-                dateOfBirth: dobIso 
-            });
+            // Get token from storage
+            const token = getCookie("token") || (typeof window !== 'undefined' ? localStorage.getItem("token") : null);
             
-            // Try to save to backend, but don't block the user if it fails
-            try {
-                const res = await fetch("/api/auth/complete-setup", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ 
-                        dob: dobIso 
-                    }),
-                });
-    
-                console.log("Complete-setup response status:", res.status);
-                
-                if (res.ok) {
-                    const data = await res.json();
-                    console.log("Complete-setup response data:", data);
-                    
-                    if (data.user) {
-                        console.log("Updating user with backend data:", data.user);
-                        updateUser(data.user);
-                    }
-                } else {
-                    // Log the error but don't block the user
-                    console.warn("Backend save failed, but continuing with local data");
-                }
-            } catch (backendError) {
-                // Log the error but don't block the user
-                console.warn("Backend connection failed, but continuing with local data:", backendError);
+            if (!token) {
+                console.error("No authentication token found");
+                setError("Session expired. Please sign in again.");
+                setTimeout(() => router.push("/sign-in"), 2000);
+                return;
             }
             
-            // Always proceed to next step
-            console.log("Date of birth saved, redirecting to interests");
+            console.log("Token found, sending request...");
+            
+            // Send request with explicit Authorization header
+            const res = await fetch("/api/auth/complete-setup", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                credentials: 'include',
+                body: JSON.stringify({ 
+                    dob: dobIso 
+                }),
+            });
+    
+            console.log("Complete-setup response status:", res.status);
+            
+            let data;
+            try {
+                data = await res.json();
+                console.log("Complete-setup response data:", data);
+            } catch (jsonError) {
+                console.error("Failed to parse response:", jsonError);
+                // If we can't parse the response, update locally and continue
+                updateUser({ dob: dobIso, dateOfBirth: dobIso });
+                console.log("Updated user locally, continuing to interests");
+                router.push("/interests");
+                return;
+            }
+    
+            if (!res.ok) {
+                const errorMsg = data.error || data.details || "Failed to save profile information";
+                console.error("Complete-setup failed:", errorMsg);
+                
+                // If it's an auth error, redirect to sign-in
+                if (res.status === 401) {
+                    setError("Session expired. Please sign in again.");
+                    setTimeout(() => router.push("/sign-in"), 2000);
+                    return;
+                }
+                
+                // For other errors, update locally and continue
+                console.warn("Backend save failed, updating locally and continuing");
+                updateUser({ dob: dobIso, dateOfBirth: dobIso });
+                router.push("/interests");
+                return;
+            }
+    
+            // Success - update user with backend data
+            if (data.user) {
+                console.log("Updating user with backend data:", data.user);
+                updateUser(data.user);
+            } else {
+                // If no user data returned, update locally
+                updateUser({ dob: dobIso, dateOfBirth: dobIso });
+            }
+            
+            console.log("Date of birth saved successfully, redirecting to interests");
             router.push("/interests");
     
         } catch (err: any) {
             console.error("Setup error:", err);
+            console.error("Setup error details:", {
+                message: err.message,
+                stack: err.stack
+            });
             
-            // Even on error, allow user to continue
-            console.log("Error occurred but allowing user to continue");
+            // On network error, update locally and continue
+            console.warn("Network error, updating locally and continuing");
+            updateUser({ dob: dobIso, dateOfBirth: dobIso });
             router.push("/interests");
         } finally {
             setIsLoading(false);
