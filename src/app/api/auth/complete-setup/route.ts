@@ -1,50 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const BACKEND_URL = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
+
 export async function POST(request: NextRequest) {
   console.log('[complete-setup] API called');
   
-  // Get request body
-  let body: any = {};
   try {
-    body = await request.json();
+    // Get request body
+    const body = await request.json();
     console.log('[complete-setup] Request body:', body);
-  } catch (err) {
-    console.log('[complete-setup] No request body or invalid JSON');
-    body = {};
-  }
 
-  // Check if this is the final setup completion (from FinishSetup page)
-  const isFinalSetup = body.finalSetup === true;
-  
-  console.log('[complete-setup] Is final setup:', isFinalSetup);
+    // Forward cookies and auth headers
+    const headers = new Headers();
+    headers.set("Content-Type", "application/json");
+    
+    const cookieHeader = request.headers.get('cookie');
+    if (cookieHeader) {
+      headers.set('Cookie', cookieHeader);
+    }
+    
+    const authHeader = request.headers.get('authorization');
+    if (authHeader) {
+      headers.set('Authorization', authHeader);
+    }
 
-  if (isFinalSetup) {
-    // This is the final step - mark setup as complete
-    console.log('[complete-setup] Final setup - marking as complete');
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Setup completed successfully',
-      user: { 
-        isSetupComplete: true,
-        ...(body.dob && { 
-          dob: body.dob, 
-          dateOfBirth: body.dob 
-        })
-      }
+    // Forward request to backend
+    console.log('[complete-setup] Forwarding to backend:', `${BACKEND_URL}/api/auth/complete-setup`);
+    
+    const backendResponse = await fetch(`${BACKEND_URL}/api/auth/complete-setup`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      credentials: 'include',
     });
-  } else {
-    // This is an intermediate step (like saving DOB) - don't mark as complete yet
-    console.log('[complete-setup] Intermediate setup step - not marking as complete');
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Profile information saved successfully',
-      user: { 
-        isSetupComplete: false, // Keep false until final step
-        ...(body.dob && { 
-          dob: body.dob, 
-          dateOfBirth: body.dob 
-        })
-      }
+
+    console.log('[complete-setup] Backend response status:', backendResponse.status);
+
+    // Get response data
+    const responseData = await backendResponse.json();
+    console.log('[complete-setup] Backend response data:', responseData);
+
+    // Forward the response
+    return NextResponse.json(responseData, { 
+      status: backendResponse.status 
     });
+
+  } catch (error: any) {
+    console.error('[complete-setup] Error:', error);
+    return NextResponse.json(
+      { 
+        error: 'Failed to complete setup', 
+        details: error.message 
+      },
+      { status: 500 }
+    );
   }
 }
