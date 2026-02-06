@@ -65,8 +65,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body || 'You have a new notification',
-    icon: data.icon || '/assets/images/head.png',
-    badge: data.badge || '/assets/images/head.png',
+    icon: data.icon || `/assets/images/head.png?v=${Date.now()}`,
+    badge: data.badge || `/assets/images/head.png?v=${Date.now()}`,
     tag: data.tag || 'default',
     data: data.data || {},
     actions: data.actions || [],

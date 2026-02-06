@@ -14,6 +14,7 @@ import GlowingPlanets from "@/components/GlowingPlanets";
 import GoldParticles from "@/components/GoldParticles";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import WebGLErrorHandler from "@/components/WebGLErrorHandler";
+import { VersionUpdateNotification } from "@/components/VersionUpdateNotification";
 import "@/utils/errorHandler";
 
 
@@ -27,29 +28,32 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Generate cache-busting version for icons
+const iconVersion = Date.now();
+
 export const metadata: Metadata = {
   title: "DeMEDIA",
   description: "Powerful social media platform with high-quality UI for better experience, try DeMedia today!",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://example.com"),
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   icons: {
-    icon: "/assets/images/head.png",
-    shortcut: "/assets/images/head.png",
-    apple: "/assets/images/head.png",
+    icon: `/assets/images/head.png?v=${iconVersion}`,
+    shortcut: `/assets/images/head.png?v=${iconVersion}`,
+    apple: `/assets/images/head.png?v=${iconVersion}`,
   },
   openGraph: {
     title: "DeMEDIA",
     description: "Join DeMEDIA – a fast, modern social platform.",
     url: "/",
     siteName: "DeMEDIA",
-    images: [{ url: "/assets/images/head.png", width: 1200, height: 630, alt: "DeMEDIA" }],
+    images: [{ url: `/assets/images/head.png?v=${iconVersion}`, width: 1200, height: 630, alt: "DeMEDIA" }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "DeMEDIA",
     description: "Join DeMEDIA – a fast, modern social platform.",
-    images: ["/assets/images/head.png"],
+    images: [`/assets/images/head.png?v=${iconVersion}`],
   },
   alternates: {
     canonical: "/",
@@ -74,8 +78,11 @@ export default function RootLayout({
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
         <meta name="cache-control" content="no-cache, no-store, must-revalidate" />
+        <link rel="icon" type="image/png" href={`/assets/images/head.png?v=${Date.now()}`} />
+        <link rel="apple-touch-icon" href={`/assets/images/head.png?v=${Date.now()}`} />
+        <link rel="manifest" href={`/manifest.json?v=${Date.now()}`} />
         {/* Aggressive Cache Buster Script - Loads First */}
-        <script src="/cache-buster.js" defer></script>
+        <script src={`/cache-buster.js?v=${Date.now()}`} defer></script>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen min-w-screen antialiased`}
@@ -91,6 +98,7 @@ export default function RootLayout({
                     <GlowingPlanets />
                     <GoldParticles />
                     <NavbarClient />
+                    <VersionUpdateNotification />
                     {children}
                   </AuthGuard>
                 </NotificationProvider>

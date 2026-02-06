@@ -1,7 +1,10 @@
 {
-  "version": "1.0.0",
-  "buildTime": "2026-02-06T09:53:39.223Z",
-  "buildId": "build-1770371619231-bilf3k",
+  "version": "1.0.1",
+  "buildTime": "2026-02-06T11:34:02.410Z",
+  "buildId": "build-1770377642411-aorcs9",
   "cachePolicy": "no-store",
-  "environment": "development"
+  "environment": "production",
+  "logo": "/assets/images/head.png",
+  "cacheBuster": true,
+  "timestamp": 1770377642411
 }
