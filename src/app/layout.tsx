@@ -14,7 +14,6 @@ import GlowingPlanets from "@/components/GlowingPlanets";
 import GoldParticles from "@/components/GoldParticles";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import WebGLErrorHandler from "@/components/WebGLErrorHandler";
-import { VersionUpdateNotification } from "@/components/VersionUpdateNotification";
 import "@/utils/errorHandler";
 
 
@@ -28,8 +27,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Generate cache-busting version for icons
-const iconVersion = Date.now();
+// Generate cache-busting version for icons (static per build)
+const iconVersion = process.env.NEXT_PUBLIC_BUILD_ID || '1.0.1';
 
 export const metadata: Metadata = {
   title: "DeMEDIA",
@@ -78,11 +77,11 @@ export default function RootLayout({
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
         <meta name="cache-control" content="no-cache, no-store, must-revalidate" />
-        <link rel="icon" type="image/png" href={`/assets/images/head.png?v=${Date.now()}`} />
-        <link rel="apple-touch-icon" href={`/assets/images/head.png?v=${Date.now()}`} />
-        <link rel="manifest" href={`/manifest.json?v=${Date.now()}`} />
-        {/* Aggressive Cache Buster Script - Loads First */}
-        <script src={`/cache-buster.js?v=${Date.now()}`} defer></script>
+        <link rel="icon" type="image/png" href="/assets/images/head.png" />
+        <link rel="apple-touch-icon" href="/assets/images/head.png" />
+        <link rel="manifest" href="/manifest.json" />
+        {/* Smart Cache Management - Facebook-style */}
+        <script src="/smart-cache.js" defer></script>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen min-w-screen antialiased`}
@@ -98,7 +97,6 @@ export default function RootLayout({
                     <GlowingPlanets />
                     <GoldParticles />
                     <NavbarClient />
-                    <VersionUpdateNotification />
                     {children}
                   </AuthGuard>
                 </NotificationProvider>

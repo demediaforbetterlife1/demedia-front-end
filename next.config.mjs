@@ -26,16 +26,17 @@ const nextConfig = {
     unoptimized: false,
   },
 
-  // EXTREME cache prevention - NEVER cache anything, EVER
+  // Smart caching strategy - Facebook-style
+  // Cache static assets, but always fetch fresh data
   async headers() {
     return [
       {
-        // Disable ALL caching for all pages and routes
+        // HTML pages - no cache (always fresh)
         source: '/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0, stale-while-revalidate=0, stale-if-error=0',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
           },
           {
             key: 'Pragma',
@@ -44,10 +45,6 @@ const nextConfig = {
           {
             key: 'Expires',
             value: '0',
-          },
-          {
-            key: 'Surrogate-Control',
-            value: 'no-store',
           },
           {
             key: 'X-Content-Type-Options',
@@ -64,12 +61,12 @@ const nextConfig = {
         ],
       },
       {
-        // API routes - absolutely no caching
+        // API routes - absolutely no caching (always fresh data)
         source: '/api/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0',
+            value: 'no-store, no-cache, must-revalidate, max-age=0',
           },
           {
             key: 'Pragma',
@@ -82,21 +79,18 @@ const nextConfig = {
         ],
       },
       {
-        // Next.js static files - no caching
+        // Next.js static files - cache with revalidation
+        // These change with each build, so we can cache them
         source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, max-age=0',
-          },
-          {
-            key: 'Pragma',
-            value: 'no-cache',
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },
       {
-        // Next.js data files - no caching
+        // Next.js data files - no cache (dynamic data)
         source: '/_next/data/:path*',
         headers: [
           {
@@ -106,27 +100,27 @@ const nextConfig = {
         ],
       },
       {
-        // Images - no caching
+        // Static images - cache for 1 hour with revalidation
         source: '/images/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, max-age=0',
+            value: 'public, max-age=3600, must-revalidate',
           },
         ],
       },
       {
-        // Assets - no caching
+        // Static assets - cache for 1 hour with revalidation
         source: '/assets/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, max-age=0',
+            value: 'public, max-age=3600, must-revalidate',
           },
         ],
       },
       {
-        // Uploads - no caching
+        // User uploads - no cache (dynamic content)
         source: '/uploads/:path*',
         headers: [
           {
@@ -150,8 +144,18 @@ const nextConfig = {
         ],
       },
       {
-        // Manifest - no caching
+        // Manifest - cache for 1 day
         source: '/manifest.json',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, must-revalidate',
+          },
+        ],
+      },
+      {
+        // Version file - no cache (used for update detection)
+        source: '/version.json',
         headers: [
           {
             key: 'Cache-Control',
