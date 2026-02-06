@@ -5,6 +5,14 @@
   
   console.log('🎯 Smart Cache: Initializing...');
   
+  // Check version from server (only once per session)
+  const sessionChecked = sessionStorage.getItem('version_checked');
+  
+  if (sessionChecked) {
+    console.log('✅ Version already checked this session');
+    return;
+  }
+  
   // Check version from server
   fetch('/version.json?v=' + Date.now(), {
     cache: 'no-store'
@@ -15,6 +23,9 @@
   .then(function(versionData) {
     const SERVER_VERSION = versionData.buildId || '1.0.1';
     const STORED_VERSION = localStorage.getItem('app_version');
+    
+    // Mark as checked for this session
+    sessionStorage.setItem('version_checked', 'true');
     
     if (!STORED_VERSION) {
       // First time - just set version
@@ -28,36 +39,7 @@
       console.log('Old:', STORED_VERSION);
       console.log('New:', SERVER_VERSION);
       
-      // Clear only non-essential data
-      const essentialKeys = [
-        'token',
-        'userId', 
-        'user',
-        'theme',
-        'language',
-        'preferences'
-      ];
-      
-      // Save essential data
-      const savedData = {};
-      essentialKeys.forEach(function(key) {
-        const value = localStorage.getItem(key);
-        if (value) {
-          savedData[key] = value;
-        }
-      });
-      
-      // Clear all localStorage
-      localStorage.clear();
-      
-      // Restore essential data
-      Object.keys(savedData).forEach(function(key) {
-        localStorage.setItem(key, savedData[key]);
-      });
-      
-      // Update version
-      localStorage.setItem('app_version', SERVER_VERSION);
-      
+      // IMPORTANT: Only clear cache, NOT user data
       // Clear service worker caches
       if ('caches' in window) {
         caches.keys().then(function(names) {
@@ -66,6 +48,9 @@
           });
         });
       }
+      
+      // Update version WITHOUT clearing localStorage
+      localStorage.setItem('app_version', SERVER_VERSION);
       
       console.log('✅ Updated to new version, user data preserved');
       console.log('📦 Reloading to apply updates...');
@@ -90,10 +75,10 @@
     }).then(function(registration) {
       console.log('✅ Service worker registered');
       
-      // Check for updates periodically
+      // Check for updates less frequently (every 5 minutes)
       setInterval(function() {
         registration.update();
-      }, 60000); // Check every minute
+      }, 300000); // Check every 5 minutes instead of 1 minute
       
     }).catch(function(error) {
       console.log('⚠️ Service worker registration failed:', error);
