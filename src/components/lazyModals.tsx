@@ -1,12 +1,3 @@
-/**
- * Lazy-loaded Modal Components
- * 
- * This file exports lazy-loaded versions of all modal components
- * to improve initial page load performance.
- * 
- * Validates: Requirements 2.1, 2.2, 3.1-3.6
- */
-
 import dynamic from 'next/dynamic';
 import { LoadingSkeleton } from './LoadingSkeleton';
 

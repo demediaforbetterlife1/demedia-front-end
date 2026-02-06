@@ -72,7 +72,7 @@ function CameraController() {
 /* -------- Main Component -------- */
 export default function FinishSetUp() {
     const router = useRouter();
-    const { completeSetup, user } = useAuth();
+    const { completeSetup, user, updateUser } = useAuth();
     const [isCompleting, setIsCompleting] = useState(false);
 
     const handleComplete = async () => {
@@ -82,17 +82,18 @@ export default function FinishSetUp() {
         try {
             console.log('[FinishSetup] Starting setup completion...');
             
-            // Always try to complete setup, but don't let it block the user
-            let result;
+            // Update user locally first
+            updateUser({ isSetupComplete: true });
+            
+            // Try to complete setup on backend, but don't block the user
             try {
-                result = await completeSetup();
+                const result = await completeSetup();
                 console.log('[FinishSetup] Setup completion result:', result);
             } catch (error) {
                 console.log('[FinishSetup] Setup completion threw error, but continuing:', error);
-                result = { success: true, message: 'Completed locally' };
             }
             
-            // Always redirect to home - don't block the user
+            // Always redirect to home - never block the user
             console.log('[FinishSetup] Redirecting to home...');
             setTimeout(() => {
                 router.replace("/home");
