@@ -274,6 +274,9 @@ export default function SignInSetUp() {
         setError("");
     
         try {
+            console.log("Saving date of birth:", dobIso);
+            
+            // Use the general proxy route which handles auth properly
             const res = await fetch("/api/auth/complete-setup", {
                 method: "POST",
                 headers: {
@@ -285,26 +288,62 @@ export default function SignInSetUp() {
                 }),
             });
     
-            const data = await res.json();
+            console.log("Complete-setup response status:", res.status);
+            
+            let data;
+            try {
+                data = await res.json();
+                console.log("Complete-setup response data:", data);
+            } catch (jsonError) {
+                console.error("Failed to parse response:", jsonError);
+                throw new Error("Server returned invalid response");
+            }
     
             if (!res.ok) {
-                throw new Error(data.error || "Failed to save profile information");
+                const errorMsg = data.error || data.details || "Failed to save profile information";
+                console.error("Complete-setup failed:", errorMsg);
+                
+                // If it's an auth error, provide specific guidance
+                if (res.status === 401) {
+                    throw new Error("Authentication expired. Please sign in again.");
+                }
+                
+                throw new Error(errorMsg);
             }
     
             if (data.user) {
+                console.log("Updating user with:", data.user);
                 updateUser(data.user);
             }
             
-            console.log("Date of birth saved successfully:", data);
+            console.log("Date of birth saved successfully, redirecting to interests");
             router.push("/interests");
     
         } catch (err: any) {
             console.error("Setup error:", err);
-            setError(err.message || "Error saving profile information");
+            console.error("Setup error details:", {
+                message: err.message,
+                stack: err.stack
+            });
             
-            if (err.message.includes("token") || err.message.includes("authentication")) {
-                setError(`${err.message} Please try signing in again.`);
+            let errorMessage = err.message || "Error saving profile information";
+            
+            // Provide more helpful error messages
+            if (errorMessage.includes("Failed to fetch") || errorMessage.includes("NetworkError")) {
+                errorMessage = "Network error. Please check your internet connection and try again.";
+            } else if (errorMessage.includes("Authentication expired")) {
+                errorMessage = "Your session has expired. Please sign in again.";
+                // Redirect to sign-in after a delay
+                setTimeout(() => {
+                    router.push("/sign-in");
+                }, 2000);
+            } else if (errorMessage.includes("token") || errorMessage.includes("authentication")) {
+                errorMessage = `${errorMessage} Please try signing in again.`;
+            } else if (errorMessage.includes("Backend")) {
+                errorMessage = "Server is temporarily unavailable. Please try again in a moment.";
             }
+            
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }

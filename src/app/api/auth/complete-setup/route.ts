@@ -17,11 +17,13 @@ export async function POST(request: NextRequest) {
     const cookieHeader = request.headers.get('cookie');
     if (cookieHeader) {
       headers.set('Cookie', cookieHeader);
+      console.log('[complete-setup] Forwarding cookies');
     }
     
     const authHeader = request.headers.get('authorization');
     if (authHeader) {
       headers.set('Authorization', authHeader);
+      console.log('[complete-setup] Forwarding Authorization header');
     }
 
     // Forward request to backend
@@ -37,8 +39,23 @@ export async function POST(request: NextRequest) {
     console.log('[complete-setup] Backend response status:', backendResponse.status);
 
     // Get response data
-    const responseData = await backendResponse.json();
-    console.log('[complete-setup] Backend response data:', responseData);
+    let responseData;
+    const responseText = await backendResponse.text();
+    console.log('[complete-setup] Backend raw response:', responseText);
+    
+    try {
+      responseData = JSON.parse(responseText);
+      console.log('[complete-setup] Backend parsed response:', responseData);
+    } catch (parseError) {
+      console.error('[complete-setup] Failed to parse backend response:', parseError);
+      return NextResponse.json(
+        { 
+          error: 'Backend returned invalid response', 
+          details: responseText 
+        },
+        { status: 500 }
+      );
+    }
 
     // Forward the response
     return NextResponse.json(responseData, { 
@@ -47,10 +64,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('[complete-setup] Error:', error);
+    console.error('[complete-setup] Error stack:', error.stack);
     return NextResponse.json(
       { 
         error: 'Failed to complete setup', 
-        details: error.message 
+        details: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       },
       { status: 500 }
     );
