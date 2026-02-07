@@ -1,7 +1,8 @@
 ﻿"use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Plus, Sparkles, Eye, Clock, Users } from "lucide-react";
+import Image from "next/image";
 import { dataService } from "@/services/dataService";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,7 +40,7 @@ export default function Stories() {
   const { t } = useI18n();
   const { theme } = useTheme();
 
-  const getThemeClasses = () => {
+  const themeClasses = useMemo(() => {
     switch (theme) {
       case "light":
         return {
@@ -63,20 +64,6 @@ export default function Stories() {
           ring: "ring-blue-500/50",
           accent: "text-blue-600",
           gradient: "bg-gradient-to-br from-blue-500 to-purple-600",
-        };
-      case "super-light":
-        return {
-          bg: "bg-gradient-to-r from-white/95 via-sky-50/20 to-blue-50/40 backdrop-blur-xl",
-          card: "bg-white/90 backdrop-blur-2xl border border-slate-200/40 shadow-xl shadow-blue-100/20",
-          text: "text-slate-800",
-          textSecondary: "text-slate-600",
-          border: "border-slate-200/30",
-          hover:
-            "hover:bg-white/80 hover:shadow-2xl hover:shadow-blue-200/30 hover:-translate-y-2 hover:scale-105 transition-all duration-500",
-          ring: "ring-blue-400/50",
-          accent: "text-blue-700",
-          gradient:
-            "bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600",
         };
       case "dark":
         return {
@@ -122,15 +109,9 @@ export default function Stories() {
           gradient: "from-cyan-500/20 to-purple-500/20",
         };
     }
-  };
+  }, [theme]);
 
-  const themeClasses = getThemeClasses();
-
-  useEffect(() => {
-    fetchStories();
-  }, [user?.interests]);
-
-  const fetchStories = async () => {
+  const fetchStories = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -202,7 +183,11 @@ export default function Stories() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchStories();
+  }, [fetchStories]);
 
   const handleAddStory = () => {
     setShowCreateStoryModal(true);
@@ -324,8 +309,8 @@ export default function Stories() {
       </div>
 
       {/* Stories Scroll Container */}
-      <div className="relative px-4 py-4">
-        <div className="flex overflow-x-auto gap-4 scrollbar-hide pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div className="relative px-2 sm:px-4 py-3 sm:py-4">
+        <div className="flex overflow-x-auto gap-2 sm:gap-3 lg:gap-4 scrollbar-hide pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {/* Professional Add Story Button */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
@@ -333,7 +318,7 @@ export default function Stories() {
             whileHover={{ scale: 1.05, y: -3 }}
             whileTap={{ scale: 0.95 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="flex flex-col items-center min-w-[80px] cursor-pointer group"
+            className="flex flex-col items-center min-w-[60px] sm:min-w-[80px] cursor-pointer group touch-manipulation"
             onClick={handleAddStory}
           >
             <div className="relative">
@@ -352,7 +337,7 @@ export default function Stories() {
               
               {/* Main Button Container */}
               <div
-                className={`relative w-16 h-16 rounded-2xl ${themeClasses.card} flex items-center justify-center shadow-xl border border-gray-200/20 dark:border-gray-700/30 group-hover:shadow-2xl transition-all duration-300 overflow-hidden backdrop-blur-sm`}
+                className={`relative w-12 h-12 sm:w-16 sm:h-16 min-w-[44px] min-h-[44px] rounded-2xl ${themeClasses.card} flex items-center justify-center shadow-xl border border-gray-200/20 dark:border-gray-700/30 group-hover:shadow-2xl transition-all duration-300 overflow-hidden backdrop-blur-sm`}
               >
                 {/* Subtle Background Pattern */}
                 <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -382,7 +367,7 @@ export default function Stories() {
                     
                     {/* Plus Icon */}
                     <Plus 
-                      className="relative w-6 h-6 text-blue-500 group-hover:text-blue-400 transition-colors duration-200 drop-shadow-sm" 
+                      className="relative w-4 h-4 sm:w-6 sm:h-6 text-blue-500 group-hover:text-blue-400 transition-colors duration-200 drop-shadow-sm" 
                       strokeWidth={2.5} 
                     />
                   </div>
@@ -411,14 +396,14 @@ export default function Stories() {
             </div>
             
             {/* Professional Text Labels */}
-            <div className="mt-2 text-center">
+            <div className="mt-1 sm:mt-2 text-center">
               <motion.span
-                className={`block text-xs font-semibold ${themeClasses.text} group-hover:text-blue-400 transition-colors duration-200`}
+                className={`block text-[10px] sm:text-xs font-semibold ${themeClasses.text} group-hover:text-blue-400 transition-colors duration-200`}
                 whileHover={{ scale: 1.05 }}
               >
                 {t("content.addStory", "Add Story")}
               </motion.span>
-              <span className={`text-[10px] ${themeClasses.textSecondary} font-medium opacity-70 group-hover:opacity-100 transition-opacity`}>
+              <span className={`text-[8px] sm:text-[10px] ${themeClasses.textSecondary} font-medium opacity-70 group-hover:opacity-100 transition-opacity hidden sm:block`}>
                 Share moment
               </span>
             </div>
@@ -441,7 +426,7 @@ export default function Stories() {
               transition={{ delay: index * 0.05, type: "spring", stiffness: 100 }}
               whileHover={{ scale: 1.05, y: -4 }}
               whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center min-w-[80px] cursor-pointer group"
+              className="flex flex-col items-center min-w-[60px] sm:min-w-[80px] cursor-pointer group touch-manipulation"
               onClick={() => handleStoryClick(story, index)}
             >
               <div className="relative">
@@ -460,12 +445,14 @@ export default function Stories() {
                 
                 {/* Story Circle */}
                 <div
-                  className={`relative w-16 h-16 rounded-2xl ${themeClasses.card} overflow-hidden shadow-xl border-2 border-white/10 group-hover:border-white/20 transition-all duration-300`}
+                  className={`relative w-12 h-12 sm:w-16 sm:h-16 min-w-[44px] min-h-[44px] rounded-2xl ${themeClasses.card} overflow-hidden shadow-xl border-2 border-white/10 group-hover:border-white/20 transition-all duration-300`}
                 >
                   {story.content?.startsWith("http") ? (
-                    <img
+                    <Image
                       src={story.content}
                       alt="Story"
+                      width={64}
+                      height={64}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
@@ -478,9 +465,11 @@ export default function Stories() {
                       }}
                     />
                   ) : story.author?.profilePicture ? (
-                    <img
+                    <Image
                       src={story.author.profilePicture}
                       alt={story.author?.name || "User"}
+                      width={64}
+                      height={64}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                   ) : (

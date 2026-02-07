@@ -216,7 +216,7 @@ export default function Navbar() {
                                     animate="visible"
                                     exit="exit"
                                     transition={{ duration: 0.2 }}
-                                    className="absolute top-full left-0 right-0 mt-2 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-3 max-h-72 overflow-y-auto z-50"
+                                    className="absolute top-full left-0 right-0 mt-2 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-3 max-h-72 overflow-y-auto z-50 max-w-[calc(100vw-2rem)] mx-auto"
                                 >
                                     <h4 className="font-bold text-cyan-400 mb-2 text-xs">{t('content.searchResults')}</h4>
                                     {searchError ? (
@@ -300,7 +300,7 @@ export default function Navbar() {
                                     animate="visible"
                                     exit="exit"
                                     transition={{ duration: 0.2 }}
-                                    className="absolute top-full left-0 mt-2 w-56 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-3 z-50"
+                                    className="absolute top-full left-0 mt-2 w-56 max-w-[calc(100vw-2rem)] theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-3 z-50"
                                 >
                                     <h4 className="font-bold text-cyan-400 mb-3 text-sm flex items-center gap-2">
                                         <IoGridOutline size={16} />
@@ -356,8 +356,8 @@ export default function Navbar() {
                                 setShowProfileMenu(false);
                                 setShowPagesModal(false);
                             }}
-                            className="w-9 h-9 rounded-full theme-bg-tertiary/60 flex items-center justify-center
-                                theme-text-muted hover:text-cyan-400 hover:shadow-[0_0_12px_rgba(34,211,238,0.5)] transition"
+                            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full theme-bg-tertiary/60 flex items-center justify-center
+                                theme-text-muted hover:text-cyan-400 hover:shadow-[0_0_12px_rgba(34,211,238,0.5)] transition touch-manipulation"
                             title={t('nav.notifications')}
                         >
                             <IoNotificationsOutline size={20} />
@@ -371,7 +371,7 @@ export default function Navbar() {
                                     animate="visible"
                                     exit="exit"
                                     transition={{ duration: 0.2 }}
-                                    className="absolute right-0 mt-2 w-72 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-4 z-50"
+                                    className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-4 z-50"
                                 >
                                     <h4 className="font-bold text-cyan-400 mb-3 text-sm">{t('nav.notifications')}</h4>
                                     <ul className="space-y-2 max-h-60 overflow-y-auto">
@@ -389,8 +389,8 @@ export default function Navbar() {
                     {/* Settings */}
                     <button
                         onClick={() => setShowSettings(true)}
-                        className="w-9 h-9 rounded-full theme-bg-tertiary/60 flex items-center justify-center
-                            theme-text-muted hover:text-purple-400 hover:shadow-[0_0_12px_rgba(168,85,247,0.5)] transition"
+                        className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full theme-bg-tertiary/60 flex items-center justify-center
+                            theme-text-muted hover:text-purple-400 hover:shadow-[0_0_12px_rgba(168,85,247,0.5)] transition touch-manipulation"
                         title={t('nav.settings')}
                     >
                         <IoSettingsOutline size={20} />
@@ -405,8 +405,8 @@ export default function Navbar() {
                                 setShowMessages(false);
                                 setShowPagesModal(false);
                             }}
-                            className="flex items-center gap-2 p-1 pr-2 rounded-full theme-bg-tertiary/40 hover:theme-bg-tertiary/60 
-                                hover:shadow-[0_0_12px_rgba(139,92,246,0.4)] transition-all duration-200"
+                            className="flex items-center gap-2 p-1 pr-2 min-w-[44px] min-h-[44px] rounded-full theme-bg-tertiary/40 hover:theme-bg-tertiary/60 
+                                hover:shadow-[0_0_12px_rgba(139,92,246,0.4)] transition-all duration-200 touch-manipulation"
                         >
                             <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-cyan-500/30">
                                 {user?.profilePicture ? (
@@ -442,7 +442,7 @@ export default function Navbar() {
                                     animate="visible"
                                     exit="exit"
                                     transition={{ duration: 0.2 }}
-                                    className="absolute right-0 mt-2 w-56 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-3 z-50"
+                                    className="absolute right-0 mt-2 w-56 max-w-[calc(100vw-2rem)] theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-3 z-50"
                                 >
                                     {/* User Info */}
                                     <div className="flex items-center gap-3 p-2 mb-2 border-b theme-border pb-3">
@@ -518,8 +518,8 @@ export default function Navbar() {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setShowEnhancedSearch(true)}
-                        className="w-9 h-9 rounded-full theme-bg-tertiary/60 flex items-center justify-center
-                            theme-text-muted hover:text-cyan-400 transition"
+                        className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full theme-bg-tertiary/60 flex items-center justify-center
+                            theme-text-muted hover:text-cyan-400 transition touch-manipulation"
                     >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <circle cx="11" cy="11" r="8"/>
@@ -528,8 +528,8 @@ export default function Navbar() {
                     </button>
                     <button
                         onClick={() => setMobileOpen(!mobileOpen)}
-                        className="w-9 h-9 rounded-full theme-bg-tertiary/60 flex items-center justify-center
-                            theme-text-muted hover:text-cyan-400 transition"
+                        className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full theme-bg-tertiary/60 flex items-center justify-center
+                            theme-text-muted hover:text-cyan-400 transition touch-manipulation"
                     >
                         {mobileOpen ? <IoClose size={20} /> : <IoMenu size={20} />}
                     </button>
@@ -544,7 +544,7 @@ export default function Navbar() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -20, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
-                        className="fixed top-16 left-2 right-2 bg-gray-900/98 border border-cyan-500/30 rounded-xl shadow-2xl p-4 z-40 backdrop-blur-md md:hidden"
+                        className="fixed top-16 left-2 right-2 bg-gray-900/98 border border-cyan-500/30 rounded-xl shadow-2xl p-4 z-40 backdrop-blur-md md:hidden max-h-[calc(100vh-5rem)] overflow-y-auto"
                     >
                         <div className="flex flex-col space-y-3 theme-text-secondary">
                             {/* Search */}

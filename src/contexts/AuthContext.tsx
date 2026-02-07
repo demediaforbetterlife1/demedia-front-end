@@ -208,10 +208,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Fetch current user from backend (/api/auth/me)
-  const fetchUser = useCallback(async (): Promise<boolean> => {
+  // Fetch current user from backend (/api/auth/me) with retry logic
+  const fetchUser = useCallback(async (retryCount: number = 0): Promise<boolean> => {
     try {
-      console.log("[Auth] Fetching user...");
+      console.log("[Auth] Fetching user... (attempt", retryCount + 1, ")");
       
       // Check token using authFix utilities
       const token = getBestToken();
@@ -224,14 +224,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log("[Auth] User fetch status:", res.status);  
 
       if (res.status === 401) {
-        console.warn("[Auth] Token invalid, clearing all storage");
+        console.warn("[Auth] Token invalid (401), clearing all storage");
         clearAllTokens();
         setUser(null);
         return false;
       }
 
       if (!res.ok) {
-        console.error("[Auth] fetchUser failed:", res.status);
+        console.error("[Auth] fetchUser failed with status:", res.status);
+        
+        // Retry on network errors (but not on 401)
+        if (retryCount < 2 && (res.status >= 500 || res.status === 0)) {
+          console.log("[Auth] Retrying user fetch due to network error...");
+          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+          return fetchUser(retryCount + 1);
+        }
+        
+        // Don't clear tokens for non-401 errors (could be network/server issues)
+        setUser(null);
         return false;
       }
 
@@ -249,6 +259,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (err) {
       console.error("[Auth] fetchUser error:", err);
+      
+      // Retry on network errors
+      if (retryCount < 2) {
+        console.log("[Auth] Retrying user fetch due to network error...");
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+        return fetchUser(retryCount + 1);
+      }
+      
       setUser(null);
       return false;
     }
@@ -283,9 +301,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (userFetched) {
             console.log("[Auth] User data fetched successfully");
           } else {
-            console.log("[Auth] Failed to fetch user data - token may be invalid");
-            // Clear invalid tokens
-            clearAllTokens();
+            console.log("[Auth] Failed to fetch user data - keeping token for retry");
+            // Don't clear tokens immediately - could be network issue
+            // Only clear if we get a definitive 401 response
             setUser(null);
           }
         } else {
@@ -294,9 +312,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch (err) {
         console.error("[Auth] Authentication initialization error:", err);
-        // Clear potentially corrupted auth state
-        deleteCookie("token");
-        removeLocalStorageToken();
+        // Don't clear tokens on initialization errors - could be network issues
+        // Only set user to null, keep tokens for retry
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -307,6 +324,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     initializeAuth();
   }, [fetchUser]);
+
+  // Periodic user refresh to keep session alive (only when tab is visible)
+  useEffect(() => {
+    if (!user || !initComplete) return;
+
+    let refreshInterval: NodeJS.Timeout;
+    
+    const startRefreshInterval = () => {
+      refreshInterval = setInterval(async () => {
+        // Only refresh if tab is visible and user has valid auth
+        if (!document.hidden && hasValidAuth()) {
+          console.log("[Auth] Periodic user refresh...");
+          await fetchUser();
+        }
+      }, 5 * 60 * 1000); // Refresh every 5 minutes
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab is hidden, clear interval to save resources
+        if (refreshInterval) {
+          clearInterval(refreshInterval);
+        }
+      } else {
+        // Tab is visible, restart interval
+        startRefreshInterval();
+      }
+    };
+
+    // Start initial interval
+    startRefreshInterval();
+    
+    // Listen for visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, initComplete, fetchUser]);
 
   const refreshUser = async () => {
     await fetchUser();

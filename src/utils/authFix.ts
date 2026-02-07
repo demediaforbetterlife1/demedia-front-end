@@ -88,7 +88,7 @@ export function setAuthToken(token: string): void {
 }
 
 /**
- * Set token in cookie
+ * Set token in cookie with long expiration and secure settings
  */
 export function setCookieToken(token: string): void {
   if (typeof document === "undefined") return;
@@ -97,7 +97,11 @@ export function setCookieToken(token: string): void {
   date.setTime(date.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 year
   const expires = `expires=${date.toUTCString()}`;
   
-  document.cookie = `token=${encodeURIComponent(token)}; ${expires}; path=/; SameSite=Lax; Secure`;
+  // More permissive cookie settings for better persistence
+  const isSecure = window.location.protocol === 'https:';
+  const secureFlag = isSecure ? '; Secure' : '';
+  
+  document.cookie = `token=${encodeURIComponent(token)}; ${expires}; path=/; SameSite=Lax${secureFlag}`;
 }
 
 /**
@@ -125,10 +129,11 @@ export function clearAllTokens(): void {
 
 /**
  * Validate if we have any authentication token
+ * More lenient validation - just checks if token exists and has reasonable length
  */
 export function hasValidAuth(): boolean {
   const token = getBestToken();
-  return !!token && token.length > 10; // Basic validation
+  return !!token && token.length > 20; // More lenient - just check if it looks like a JWT
 }
 
 /**

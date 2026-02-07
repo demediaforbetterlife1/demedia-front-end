@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useReducer } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import {
     Video,
     Play,
@@ -27,20 +28,86 @@ import { normalizeDeSnap } from '@/utils/desnapUtils';
 import { ensureAbsoluteMediaUrl } from '@/utils/mediaUtils';
 import { DeSnap } from '@/types/desnap';
 
+// State management with useReducer for better performance
+interface DeSnapsState {
+    deSnaps: DeSnap[];
+    loading: boolean;
+    error: string | null;
+    showCreateModal: boolean;
+    selectedDeSnap: DeSnap | null;
+    filter: 'all' | 'following' | 'trending';
+    searchQuery: string;
+    viewMode: 'grid' | 'compact';
+    hoveredId: number | null;
+}
+
+type DeSnapsAction = 
+    | { type: 'SET_DESNAPS'; payload: DeSnap[] }
+    | { type: 'SET_LOADING'; payload: boolean }
+    | { type: 'SET_ERROR'; payload: string | null }
+    | { type: 'SET_SHOW_CREATE_MODAL'; payload: boolean }
+    | { type: 'SET_SELECTED_DESNAP'; payload: DeSnap | null }
+    | { type: 'SET_FILTER'; payload: 'all' | 'following' | 'trending' }
+    | { type: 'SET_SEARCH_QUERY'; payload: string }
+    | { type: 'SET_VIEW_MODE'; payload: 'grid' | 'compact' }
+    | { type: 'SET_HOVERED_ID'; payload: number | null };
+
+const initialState: DeSnapsState = {
+    deSnaps: [],
+    loading: true,
+    error: null,
+    showCreateModal: false,
+    selectedDeSnap: null,
+    filter: 'all',
+    searchQuery: '',
+    viewMode: 'grid',
+    hoveredId: null,
+};
+
+function deSnapsReducer(state: DeSnapsState, action: DeSnapsAction): DeSnapsState {
+    switch (action.type) {
+        case 'SET_DESNAPS':
+            return { ...state, deSnaps: action.payload };
+        case 'SET_LOADING':
+            return { ...state, loading: action.payload };
+        case 'SET_ERROR':
+            return { ...state, error: action.payload };
+        case 'SET_SHOW_CREATE_MODAL':
+            return { ...state, showCreateModal: action.payload };
+        case 'SET_SELECTED_DESNAP':
+            return { ...state, selectedDeSnap: action.payload };
+        case 'SET_FILTER':
+            return { ...state, filter: action.payload };
+        case 'SET_SEARCH_QUERY':
+            return { ...state, searchQuery: action.payload };
+        case 'SET_VIEW_MODE':
+            return { ...state, viewMode: action.payload };
+        case 'SET_HOVERED_ID':
+            return { ...state, hoveredId: action.payload };
+        default:
+            return state;
+    }
+}
+
 export default function DeSnapsPage() {
     const { theme } = useTheme();
     const { user } = useAuth();
-    const [deSnaps, setDeSnaps] = useState<DeSnap[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const [selectedDeSnap, setSelectedDeSnap] = useState<DeSnap | null>(null);
-    const [filter, setFilter] = useState<'all' | 'following' | 'trending'>('all');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [viewMode, setViewMode] = useState<'grid' | 'compact'>('grid');
-    const [hoveredId, setHoveredId] = useState<number | null>(null);
+    const [state, dispatch] = useReducer(deSnapsReducer, initialState);
+    
+    // Destructure state for easier access
+    const { 
+        deSnaps, 
+        loading, 
+        error, 
+        showCreateModal, 
+        selectedDeSnap, 
+        filter, 
+        searchQuery, 
+        viewMode, 
+        hoveredId 
+    } = state;
 
-    const getThemeClasses = () => {
+    const themeClasses = useMemo(() => {
         const baseClasses = {
             light: {
                 bg: 'bg-gradient-to-br from-gray-50 via-white to-gray-100',
@@ -104,9 +171,7 @@ export default function DeSnapsPage() {
             }
         };
         return baseClasses[theme as keyof typeof baseClasses] || baseClasses.dark;
-    };
-
-    const themeClasses = getThemeClasses();
+    }, [theme]);
 
     useEffect(() => {
         fetchDeSnaps();
@@ -119,10 +184,10 @@ export default function DeSnapsPage() {
             if (!raw) return;
             const normalized = normalizeDeSnap(raw);
             if (!normalized) return;
-            setDeSnaps(prev => {
-                const filtered = prev.filter(ds => ds.id !== normalized.id);
+            dispatch({ type: 'SET_DESNAPS', payload: (() => {
+                const filtered = deSnaps.filter(ds => ds.id !== normalized.id);
                 return [normalized, ...filtered];
-            });
+            })() });
         };
 
         const handleUpdated = (event: Event) => {
@@ -131,7 +196,7 @@ export default function DeSnapsPage() {
             if (!raw) return;
             const normalized = normalizeDeSnap(raw);
             if (!normalized) return;
-            setDeSnaps(prev => prev.map(ds => ds.id === normalized.id ? normalized : ds));
+            dispatch({ type: 'SET_DESNAPS', payload: deSnaps.map(ds => ds.id === normalized.id ? normalized : ds) });
         };
 
         // Listen for profile updates to refresh author profile pictures
@@ -149,8 +214,9 @@ export default function DeSnapsPage() {
             console.log("👤 Profile updated, refreshing author data in DeSnaps:", userId);
             
             // Update all DeSnaps by this author with the new profile picture
-            setDeSnaps(prev => 
-                prev.map(deSnap => {
+            dispatch({ 
+                type: 'SET_DESNAPS', 
+                payload: deSnaps.map(deSnap => {
                     if (deSnap.author && String(deSnap.author.id) === String(userId)) {
                         return {
                             ...deSnap,
@@ -164,7 +230,7 @@ export default function DeSnapsPage() {
                     }
                     return deSnap;
                 })
-            );
+            });
         };
 
         window.addEventListener('desnap:created', handleCreated as EventListener);
@@ -180,8 +246,8 @@ export default function DeSnapsPage() {
 
     const fetchDeSnaps = async () => {
         try {
-            setLoading(true);
-            setError(null);
+            dispatch({ type: 'SET_LOADING', payload: true });
+            dispatch({ type: 'SET_ERROR', payload: null });
 
             let response;
             let data;
@@ -191,7 +257,7 @@ export default function DeSnapsPage() {
                 if (response.ok) {
                     data = await response.json();
                     const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap).filter(Boolean) as DeSnap[];
-                    setDeSnaps(normalized);
+                    dispatch({ type: 'SET_DESNAPS', payload: normalized });
                     return;
                 }
             } catch (apiError) {
@@ -204,7 +270,7 @@ export default function DeSnapsPage() {
                     if (response.ok) {
                         data = await response.json();
                         const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap).filter(Boolean) as DeSnap[];
-                        setDeSnaps(normalized);
+                        dispatch({ type: 'SET_DESNAPS', payload: normalized });
                         return;
                     }
                 }
@@ -217,21 +283,21 @@ export default function DeSnapsPage() {
                 if (directResponse.ok) {
                     data = await directResponse.json();
                     const normalized = (Array.isArray(data) ? data : []).map(normalizeDeSnap).filter(Boolean) as DeSnap[];
-                    setDeSnaps(normalized);
+                    dispatch({ type: 'SET_DESNAPS', payload: normalized });
                     return;
                 }
             } catch (directError) {
                 console.warn('Direct fetch failed:', directError);
             }
 
-            setError('Unable to fetch DeSnaps. Please check your connection.');
-            setDeSnaps([]);
+            dispatch({ type: 'SET_ERROR', payload: 'Unable to fetch DeSnaps. Please check your connection.' });
+            dispatch({ type: 'SET_DESNAPS', payload: [] });
         } catch (err) {
             console.error('Error fetching DeSnaps:', err);
-            setError(`Network error: ${err instanceof Error ? err.message : 'Unable to fetch DeSnaps'}`);
-            setDeSnaps([]);
+            dispatch({ type: 'SET_ERROR', payload: `Network error: ${err instanceof Error ? err.message : 'Unable to fetch DeSnaps'}` });
+            dispatch({ type: 'SET_DESNAPS', payload: [] });
         } finally {
-            setLoading(false);
+            dispatch({ type: 'SET_LOADING', payload: false });
         }
     };
 
@@ -240,11 +306,11 @@ export default function DeSnapsPage() {
         try {
             const response = await apiFetch(`/api/desnaps/${deSnapId}/like`, { method: 'POST' });
             if (response.ok) {
-                setDeSnaps(prev => prev.map(ds =>
+                dispatch({ type: 'SET_DESNAPS', payload: deSnaps.map(ds =>
                     ds.id === deSnapId
                         ? { ...ds, isLiked: !ds.isLiked, likes: ds.isLiked ? ds.likes - 1 : ds.likes + 1 }
                         : ds
-                ));
+                ) });
             }
         } catch (err) {
             console.error('Failed to like DeSnap:', err);
@@ -321,8 +387,8 @@ export default function DeSnapsPage() {
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => setShowCreateModal(true)}
-                            className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-gradient-to-r ${themeClasses.accent} text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300`}
+                            onClick={() => dispatch({ type: 'SET_SHOW_CREATE_MODAL', payload: true })}
+                            className={`flex items-center gap-2 px-3 sm:px-4 lg:px-5 py-2.5 min-h-[44px] bg-gradient-to-r ${themeClasses.accent} text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 touch-manipulation`}
                         >
                             <Plus className="w-5 h-5" />
                             <span className="hidden sm:inline">Create</span>
@@ -336,8 +402,8 @@ export default function DeSnapsPage() {
                             type="text"
                             placeholder="Search creators, tags, or content..."
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className={`w-full pl-12 pr-4 py-3 ${themeClasses.input} border rounded-xl ${themeClasses.text} placeholder:${themeClasses.textSecondary} focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all text-sm`}
+                            onChange={(e) => dispatch({ type: 'SET_SEARCH_QUERY', payload: e.target.value })}
+                            className={`w-full pl-12 pr-4 py-3 min-h-[44px] ${themeClasses.input} border rounded-xl ${themeClasses.text} placeholder:${themeClasses.textSecondary} focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all text-sm touch-manipulation`}
                             style={{ fontSize: '16px' }}
                         />
                     </div>
@@ -348,8 +414,8 @@ export default function DeSnapsPage() {
                             {filterOptions.map(({ key, label, icon: Icon }) => (
                                 <button
                                     key={key}
-                                    onClick={() => setFilter(key as any)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                    onClick={() => dispatch({ type: 'SET_FILTER', payload: key as any })}
+                                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-all duration-200 touch-manipulation ${
                                         filter === key
                                             ? `bg-gradient-to-r ${themeClasses.accent} text-white shadow-md`
                                             : `${themeClasses.textSecondary} hover:bg-black/5 dark:hover:bg-white/5`
@@ -364,14 +430,14 @@ export default function DeSnapsPage() {
                         {/* View Toggle */}
                         <div className="flex gap-1 p-1 rounded-lg bg-black/5 dark:bg-white/5">
                             <button
-                                onClick={() => setViewMode('grid')}
-                                className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? themeClasses.accentSolid + ' text-white' : themeClasses.textSecondary}`}
+                                onClick={() => dispatch({ type: 'SET_VIEW_MODE', payload: 'grid' })}
+                                className={`p-2 min-w-[44px] min-h-[44px] rounded-md transition-all touch-manipulation ${viewMode === 'grid' ? themeClasses.accentSolid + ' text-white' : themeClasses.textSecondary}`}
                             >
                                 <Grid3X3 className="w-4 h-4" />
                             </button>
                             <button
-                                onClick={() => setViewMode('compact')}
-                                className={`p-2 rounded-md transition-all ${viewMode === 'compact' ? themeClasses.accentSolid + ' text-white' : themeClasses.textSecondary}`}
+                                onClick={() => dispatch({ type: 'SET_VIEW_MODE', payload: 'compact' })}
+                                className={`p-2 min-w-[44px] min-h-[44px] rounded-md transition-all touch-manipulation ${viewMode === 'compact' ? themeClasses.accentSolid + ' text-white' : themeClasses.textSecondary}`}
                             >
                                 <LayoutGrid className="w-4 h-4" />
                             </button>
@@ -443,7 +509,7 @@ export default function DeSnapsPage() {
                                 <motion.button
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
-                                    onClick={() => setFilter('all')}
+                                    onClick={() => dispatch({ type: 'SET_FILTER', payload: 'all' })}
                                     className={`inline-flex items-center gap-2 px-6 py-3 ${themeClasses.card} border ${themeClasses.border} ${themeClasses.text} rounded-xl font-semibold transition-all duration-300`}
                                 >
                                     <Sparkles className="w-5 h-5" />
@@ -454,7 +520,7 @@ export default function DeSnapsPage() {
                                 <motion.button
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
-                                    onClick={() => setShowCreateModal(true)}
+                                    onClick={() => dispatch({ type: 'SET_SHOW_CREATE_MODAL', payload: true })}
                                     className={`inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r ${themeClasses.accent} text-white rounded-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300`}
                                 >
                                     <Plus className="w-5 h-5" />
@@ -484,10 +550,10 @@ export default function DeSnapsPage() {
                         </div>
 
                         {/* DeSnaps Grid - Enhanced Comfortable View */}
-                        <div className={`grid gap-4 ${
+                        <div className={`grid gap-3 sm:gap-4 ${
                             viewMode === 'grid' 
-                                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-                                : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                                ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
+                                : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7'
                         }`}>
                             <AnimatePresence mode="popLayout">
                                 {filteredDeSnaps.map((deSnap, index) => (
@@ -505,9 +571,9 @@ export default function DeSnapsPage() {
                                         }}
                                         whileHover={{ scale: 1.02, y: -8 }}
                                         whileTap={{ scale: 0.98 }}
-                                        onClick={() => setSelectedDeSnap(deSnap)}
-                                        onMouseEnter={() => setHoveredId(deSnap.id)}
-                                        onMouseLeave={() => setHoveredId(null)}
+                                        onClick={() => dispatch({ type: 'SET_SELECTED_DESNAP', payload: deSnap })}
+                                        onMouseEnter={() => dispatch({ type: 'SET_HOVERED_ID', payload: deSnap.id })}
+                                        onMouseLeave={() => dispatch({ type: 'SET_HOVERED_ID', payload: null })}
                                         className={`${themeClasses.card} rounded-3xl overflow-hidden cursor-pointer group relative transition-all duration-500 ${themeClasses.cardHover}`}
                                         style={{
                                             boxShadow: hoveredId === deSnap.id 
@@ -518,11 +584,12 @@ export default function DeSnapsPage() {
                                         {/* Video Thumbnail with Enhanced Aspect Ratio */}
                                         <div className={`relative ${viewMode === 'grid' ? 'aspect-[9/16]' : 'aspect-[9/14]'} overflow-hidden`}>
                                             {deSnap.thumbnail ? (
-                                                <img
+                                                <Image
                                                     src={deSnap.thumbnail}
                                                     alt=""
+                                                    width={300}
+                                                    height={400}
                                                     className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-                                                    loading="lazy"
                                                 />
                                             ) : (
                                                 <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 via-gray-900 to-black`}>
@@ -559,9 +626,11 @@ export default function DeSnapsPage() {
                                                     className="flex items-center gap-2.5 bg-black/40 backdrop-blur-md rounded-full px-3 py-2 pr-4"
                                                 >
                                                     {deSnap.author?.profilePicture ? (
-                                                        <img
+                                                        <Image
                                                             src={ensureAbsoluteMediaUrl(deSnap.author.profilePicture) || deSnap.author.profilePicture}
                                                             alt=""
+                                                            width={36}
+                                                            height={36}
                                                             className="w-9 h-9 rounded-full object-cover ring-2 ring-white/40 shadow-lg"
                                                         />
                                                     ) : (
@@ -667,7 +736,7 @@ export default function DeSnapsPage() {
                 animate={{ scale: 1 }}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => setShowCreateModal(true)}
+                onClick={() => dispatch({ type: 'SET_SHOW_CREATE_MODAL', payload: true })}
                 className={`fixed bottom-24 right-4 md:hidden w-14 h-14 rounded-full bg-gradient-to-r ${themeClasses.accent} text-white shadow-2xl flex items-center justify-center z-30`}
             >
                 <Plus className="w-6 h-6" />
@@ -676,9 +745,9 @@ export default function DeSnapsPage() {
             {/* Create DeSnap Modal */}
             <CreateDeSnapModal
                 isOpen={showCreateModal}
-                onClose={() => setShowCreateModal(false)}
+                onClose={() => dispatch({ type: 'SET_SHOW_CREATE_MODAL', payload: false })}
                 onDeSnapCreated={() => {
-                    setShowCreateModal(false);
+                    dispatch({ type: 'SET_SHOW_CREATE_MODAL', payload: false });
                     fetchDeSnaps();
                 }}
             />
@@ -687,17 +756,17 @@ export default function DeSnapsPage() {
             {selectedDeSnap && (
                 <DeSnapsViewer
                     isOpen={!!selectedDeSnap}
-                    onClose={() => setSelectedDeSnap(null)}
+                    onClose={() => dispatch({ type: 'SET_SELECTED_DESNAP', payload: null })}
                     deSnap={selectedDeSnap}
                     onDeSnapUpdated={(updated) => {
-                        setDeSnaps(prev => prev.map(ds => ds.id === updated.id ? updated : ds));
+                        dispatch({ type: 'SET_DESNAPS', payload: deSnaps.map(ds => ds.id === updated.id ? updated : ds) });
                     }}
                     allDeSnaps={filteredDeSnaps}
                     currentIndex={filteredDeSnaps.findIndex(ds => ds.id === selectedDeSnap.id)}
                     onNavigate={(index) => {
                         const nextDeSnap = filteredDeSnaps[index];
                         if (nextDeSnap) {
-                            setSelectedDeSnap(nextDeSnap);
+                            dispatch({ type: 'SET_SELECTED_DESNAP', payload: nextDeSnap });
                         }
                     }}
                 />

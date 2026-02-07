@@ -345,41 +345,41 @@ export default function SignInSetUp() {
                 ref={cardWrapRef} 
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
-                className="relative z-10 w-full max-w-xl px-6"
+                className="relative z-10 w-full max-w-xl px-4 sm:px-6"
             >
                 <div className="relative rounded-3xl p-[3px] overflow-hidden">
                     <div className="absolute inset-0 rounded-3xl bg-[conic-gradient(at_top_left,_#ec4899,_#8b5cf6,_#06b6d4,_#3b82f6,_#ec4899)] animate-spin-slow blur-md opacity-80" />
 
                     <Card className="relative rounded-3xl bg-transparent backdrop-blur-xl border border-white/20 text-white">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-center text-4xl font-extrabold bg-gradient-to-r from-pink-300 via-purple-300 to-cyan-300 bg-clip-text text-transparent">
+                        <CardHeader className="pb-2 px-4 sm:px-6">
+                            <CardTitle className="text-center text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-pink-300 via-purple-300 to-cyan-300 bg-clip-text text-transparent">
                                 {t('setup.completeProfile','Complete Your Profile')}
                             </CardTitle>
-                            <p className="text-center text-sm text-white/70 mt-2">
+                            <p className="text-center text-xs sm:text-sm text-white/70 mt-2">
                                 Just two quick steps to personalize your experience 🚀
                             </p>
                         </CardHeader>
 
-                        <CardContent className="pt-4">
-                            <div className="grid grid-cols-1 gap-6">
+                        <CardContent className="pt-4 px-4 sm:px-6">
+                            <div className="grid grid-cols-1 gap-4 sm:gap-6">
                                 {/* DOB Section - Fixed with portal and proper z-index */}
                                 <div>
                                     <label className="mb-2 block text-sm font-medium text-white/90">
                                         Date of Birth
                                     </label>
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
                                         {/* Day Select */}
                                         <Select onValueChange={setDay} value={day}>
-                                            <SelectTrigger className="bg-white/10 border-white/20 text-white z-30 relative">
+                                            <SelectTrigger className="bg-white/10 border-white/20 text-white z-30 relative min-h-[44px] touch-manipulation">
                                                 <SelectValue placeholder="Day" />
                                             </SelectTrigger>
                                             <SelectContent 
                                                 position="popper"
-                                                className="bg-slate-900 text-white border border-white/20 z-50"
+                                                className="bg-slate-900 text-white border border-white/20 z-50 max-w-[calc(100vw-2rem)]"
                                                 sideOffset={5}
                                             >
                                                 {days.map((d) => (
-                                                    <SelectItem key={d} value={d} className="focus:bg-white/10">
+                                                    <SelectItem key={d} value={d} className="focus:bg-white/10 min-h-[44px] touch-manipulation">
                                                         {d}
                                                     </SelectItem>
                                                 ))}
@@ -388,16 +388,16 @@ export default function SignInSetUp() {
 
                                         {/* Month Select */}
                                         <Select onValueChange={setMonth} value={month}>
-                                            <SelectTrigger className="bg-white/10 border-white/20 text-white z-30 relative">
+                                            <SelectTrigger className="bg-white/10 border-white/20 text-white z-30 relative min-h-[44px] touch-manipulation">
                                                 <SelectValue placeholder="Month" />
                                             </SelectTrigger>
                                             <SelectContent 
                                                 position="popper"
-                                                className="bg-slate-900 text-white border border-white/20 z-50"
+                                                className="bg-slate-900 text-white border border-white/20 z-50 max-w-[calc(100vw-2rem)]"
                                                 sideOffset={5}
                                             >
                                                 {months.map((m) => (
-                                                    <SelectItem key={m.val} value={m.val} className="focus:bg-white/10">
+                                                    <SelectItem key={m.val} value={m.val} className="focus:bg-white/10 min-h-[44px] touch-manipulation">
                                                         {m.label}
                                                     </SelectItem>
                                                 ))}
@@ -406,16 +406,16 @@ export default function SignInSetUp() {
 
                                         {/* Year Select */}
                                         <Select onValueChange={setYear} value={year}>
-                                            <SelectTrigger className="bg-white/10 border-white/20 text-white z-30 relative">
+                                            <SelectTrigger className="bg-white/10 border-white/20 text-white z-30 relative min-h-[44px] touch-manipulation">
                                                 <SelectValue placeholder="Year" />
                                             </SelectTrigger>
                                             <SelectContent 
                                                 position="popper"
-                                                className="max-h-72 overflow-auto bg-slate-900 text-white border border-white/20 z-50"
+                                                className="max-h-72 overflow-auto bg-slate-900 text-white border border-white/20 z-50 max-w-[calc(100vw-2rem)]"
                                                 sideOffset={5}
                                             >
                                                 {years.map((y) => (
-                                                    <SelectItem key={y} value={y} className="focus:bg-white/10">
+                                                    <SelectItem key={y} value={y} className="focus:bg-white/10 min-h-[44px] touch-manipulation">
                                                         {y}
                                                     </SelectItem>
                                                 ))}
@@ -435,7 +435,7 @@ export default function SignInSetUp() {
                                     <Button 
                                         onClick={handleSave} 
                                         disabled={isLoading}
-                                        className="w-full py-3 text-lg rounded-2xl bg-gradient-to-r from-purple-500 via-cyan-400 to-blue-600 text-white font-semibold shadow-lg hover:brightness-110 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full py-3 text-base sm:text-lg min-h-[44px] rounded-2xl bg-gradient-to-r from-purple-500 via-cyan-400 to-blue-600 text-white font-semibold shadow-lg hover:brightness-110 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                                     >
                                         {isLoading ? t('setup.saving','Saving...') : t('setup.saveContinue','Save & Continue')}
                                     </Button>

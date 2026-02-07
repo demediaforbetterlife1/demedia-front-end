@@ -368,7 +368,8 @@ export default function AddPostModal({
         switch (res.status) {
           case 401:
             errorMessage = "❌ Authentication failed. Please log in again.";
-            // Clear potentially invalid tokens and redirect to login
+            // Only clear tokens if we get a definitive 401 from the backend
+            console.warn("[Auth] 401 error during post creation - clearing tokens");
             clearAllTokens();
             setTimeout(() => {
               window.location.href = '/sign-in';

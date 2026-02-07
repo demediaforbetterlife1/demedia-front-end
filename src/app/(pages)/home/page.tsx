@@ -5,8 +5,6 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { getEnhancedThemeClasses } from "@/utils/enhancedThemeUtils";
 import Stories from "@/app/(PagesComps)/homedir/stories";
 import Posts from "@/app/(PagesComps)/homedir/posts";
-import FloatingAddStoryButton from "@/components/FloatingAddStoryButton";
-
 import { useState, useEffect } from "react";
 
 const FloatingParticle = ({ delay }: { delay: number }) => (
@@ -29,12 +27,30 @@ const FloatingParticle = ({ delay }: { delay: number }) => (
 
 const BackgroundEffects = ({ theme }: { theme: string }) => {
   const [mounted, setMounted] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    
+    // Check for reduced motion preference
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mediaQuery.matches);
+    
+    // Listen for visibility changes to pause animations when tab is hidden
+    const handleVisibilityChange = () => {
+      setIsVisible(!document.hidden);
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
-  if (!mounted) return null;
+  // Don't render animations if user prefers reduced motion or tab is hidden
+  if (!mounted || reducedMotion || !isVisible) return null;
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -66,8 +82,8 @@ const BackgroundEffects = ({ theme }: { theme: string }) => {
             className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] rounded-full bg-gradient-radial from-orange-400/25 via-yellow-500/15 to-transparent blur-[120px]"
           />
           <div className="absolute inset-0 text-yellow-400/30">
-            {Array.from({ length: 15 }).map((_, i) => (
-              <FloatingParticle key={i} delay={i * 0.5} />
+            {Array.from({ length: 8 }).map((_, i) => (
+              <FloatingParticle key={i} delay={i * 1.2} />
             ))}
           </div>
           <motion.div
@@ -136,8 +152,8 @@ const BackgroundEffects = ({ theme }: { theme: string }) => {
             ))}
           </svg>
           <div className="absolute inset-0 text-purple-400/20">
-            {Array.from({ length: 20 }).map((_, i) => (
-              <FloatingParticle key={i} delay={i * 0.3} />
+            {Array.from({ length: 10 }).map((_, i) => (
+              <FloatingParticle key={i} delay={i * 0.8} />
             ))}
           </div>
         </>
@@ -193,8 +209,8 @@ const BackgroundEffects = ({ theme }: { theme: string }) => {
             ))}
           </div>
           <div className="absolute inset-0 text-blue-300/30">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <FloatingParticle key={i} delay={i * 0.4} />
+            {Array.from({ length: 6 }).map((_, i) => (
+              <FloatingParticle key={i} delay={i * 1.0} />
             ))}
           </div>
         </>
@@ -288,11 +304,6 @@ export default function HomePage() {
         <div className="h-20" />
       </motion.div>
 
-      <FloatingAddStoryButton
-        onAddStory={handleAddStory}
-        onAddPhoto={handleAddStory}
-        onAddVideo={handleAddStory}
-      />
 
       <motion.div
         className="fixed top-0 left-0 right-0 h-1 z-50 origin-left"

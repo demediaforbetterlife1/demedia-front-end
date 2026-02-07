@@ -132,11 +132,12 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
   // build URL (API_BASE may be empty => same-origin)
   let url = `${API_BASE}${path}`;
 
-  // AGGRESSIVE cache-busting for ALL requests (not just GET)
+  // Only add cache-busting for GET requests to prevent caching issues
   const method = ((options.method || "GET") as string).toUpperCase();
-  const cb = Date.now();
-  const random = Math.random().toString(36).substring(7);
-  url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}cb=${cb}&r=${random}&v=no-cache-${Date.now()}`;
+  if (method === "GET") {
+    const cb = Date.now();
+    url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}cb=${cb}&v=no-cache`;
+  }
 
   const isPostsEndpoint = path.includes("/posts");
   const isAuthEndpoint = path.includes("/auth");

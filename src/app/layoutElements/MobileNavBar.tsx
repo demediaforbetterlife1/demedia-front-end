@@ -105,7 +105,7 @@ export default function MobileNavBar({
                                 animate="visible"
                                 exit="exit"
                                 transition={{ duration: 0.2 }}
-                                className="absolute top-full left-0 right-0 mt-2 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-3 max-h-60 overflow-y-auto z-50"
+                                className="absolute top-full left-0 right-0 mt-2 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-3 max-h-60 overflow-y-auto z-50 max-w-[calc(100vw-2rem)] mx-auto"
                             >
                                 <h4 className="font-bold text-cyan-400 mb-2 text-xs">{t("content.searchResults")}</h4>
                                 {searchError ? (
@@ -162,9 +162,9 @@ export default function MobileNavBar({
                                 const nextIndex = (currentIndex + 1) % supportedLocales.length;
                                 setLanguage(supportedLocales[nextIndex].code);
                             }}
-                            className="w-7 h-7 rounded-full theme-bg-tertiary/60 flex items-center justify-center
+                            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full theme-bg-tertiary/60 flex items-center justify-center
                            theme-text-muted hover:text-cyan-400 hover:shadow-[0_0_8px_rgba(6,182,212,0.5)]
-                           transition text-xs font-bold"
+                           transition text-xs font-bold touch-manipulation"
                             title="Language"
                         >
                             {language.toUpperCase()}
@@ -173,22 +173,22 @@ export default function MobileNavBar({
                     
                     <button
                         onClick={() => router.push('/messeging')}
-                        className="w-7 h-7 rounded-full theme-bg-tertiary/60 flex items-center justify-center
+                        className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full theme-bg-tertiary/60 flex items-center justify-center
                        theme-text-muted hover:text-purple-400 hover:shadow-[0_0_8px_rgba(168,85,247,0.5)]
-                       transition"
+                       transition touch-manipulation"
                         title={t("nav.messages")}
                     >
-                        <IoChatbubbleEllipsesOutline size={16} />
+                        <IoChatbubbleEllipsesOutline size={18} />
                     </button>
 
                     <button
                         onClick={() => setShowAddPost(true)}
-                        className="w-7 h-7 rounded-full theme-bg-tertiary/60 flex items-center justify-center
+                        className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full theme-bg-tertiary/60 flex items-center justify-center
                        theme-text-muted hover:text-green-400 hover:shadow-[0_0_8px_rgba(34,197,94,0.5)]
-                       transition"
+                       transition touch-manipulation"
                         title={t("posts.createPost")}
                     >
-                        <span className="text-xs font-bold">+</span>
+                        <span className="text-sm font-bold">+</span>
                     </button>
 
                     <div className="relative">
@@ -197,14 +197,14 @@ export default function MobileNavBar({
                                 setShowNotifications(!showNotifications);
                                 setShowProfileMenu(false);
                             }}
-                            className="w-7 h-7 rounded-full theme-bg-tertiary/60 flex items-center justify-center
+                            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full theme-bg-tertiary/60 flex items-center justify-center
                            theme-text-muted hover:text-cyan-400 hover:shadow-[0_0_8px_rgba(6,182,212,0.5)]
-                           transition relative"
+                           transition relative touch-manipulation"
                             title={t("nav.notifications")}
                         >
-                            <IoNotificationsOutline size={16} />
+                            <IoNotificationsOutline size={18} />
                             {notifications.length > 0 && (
-                                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                                     <span className="text-xs text-white font-bold">{notifications.length}</span>
                                 </span>
                             )}
@@ -219,7 +219,7 @@ export default function MobileNavBar({
                                     animate="visible"
                                     exit="exit"
                                     transition={{ duration: 0.2 }}
-                                    className="absolute right-0 top-full mt-2 w-80 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-4 z-50"
+                                    className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-4 z-50"
                                 >
                                     <h4 className="font-bold text-cyan-400 mb-3 text-sm">{t("nav.notifications")}</h4>
                                     <ul className="space-y-2">
@@ -243,14 +243,14 @@ export default function MobileNavBar({
                                 setShowProfileMenu(!showProfileMenu);
                                 setShowNotifications(false);
                             }}
-                            className="w-7 h-7 rounded-full overflow-hidden border-2 border-cyan-400/50 hover:border-cyan-400 transition"
+                            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full overflow-hidden border-2 border-cyan-400/50 hover:border-cyan-400 transition touch-manipulation"
                         >
                             {user?.profilePicture ? (
                                 <img
                                     src={user.profilePicture}
                                     alt={user.name || 'Profile'}
-                                    width={28}
-                                    height={28}
+                                    width={44}
+                                    height={44}
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).src = "/assets/images/default-avatar.svg";
@@ -260,8 +260,8 @@ export default function MobileNavBar({
                                 <Image
                                     src="/assets/images/default-avatar.svg"
                                     alt="Default avatar"
-                                    width={28}
-                                    height={28}
+                                    width={44}
+                                    height={44}
                                     className="w-full h-full object-cover"
                                 />
                             )}
@@ -276,7 +276,7 @@ export default function MobileNavBar({
                                     animate="visible"
                                     exit="exit"
                                     transition={{ duration: 0.2 }}
-                                    className="absolute right-0 top-full mt-2 w-48 theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-2 z-50"
+                                    className="absolute right-0 top-full mt-2 w-48 max-w-[calc(100vw-2rem)] theme-bg-secondary/95 border border-cyan-500/30 rounded-xl theme-shadow p-2 z-50"
                                 >
                                     <div className="px-3 py-2 border-b theme-border">
                                         <p className="text-sm font-medium theme-text-primary">{user?.name || 'User'}</p>
