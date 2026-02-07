@@ -35,7 +35,7 @@
       console.log('Old version:', STORED_VERSION);
       console.log('New version:', APP_VERSION);
       
-      // Store new version but DON'T reload
+      // Store new version and set update flag
       localStorage.setItem('app_version', APP_VERSION);
       localStorage.setItem('update_available', 'true');
       localStorage.setItem('new_version', APP_VERSION);
@@ -51,10 +51,13 @@
       
       console.log('✅ Update notification dispatched - user can reload when ready');
     } else if (!STORED_VERSION) {
-      // First visit - just store version
+      // First visit - just store version, no notification
       localStorage.setItem('app_version', APP_VERSION);
       console.log('✅ Version stored:', APP_VERSION);
     } else {
+      // Versions match - clear any stale update flags
+      localStorage.removeItem('update_available');
+      localStorage.removeItem('new_version');
       console.log('✅ Version current:', APP_VERSION);
     }
   })

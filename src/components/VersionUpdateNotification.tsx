@@ -8,6 +8,7 @@ import { RefreshCw, X } from 'lucide-react';
  * Component that monitors for version updates and notifies users
  * Shows a button to reload when a new version is available
  * NO AUTO-RELOAD - user must click to update
+ * ONLY shows when there's actually a new version
  */
 export function VersionUpdateNotification() {
   const [showNotification, setShowNotification] = useState(false);
@@ -17,32 +18,68 @@ export function VersionUpdateNotification() {
   } | null>(null);
 
   useEffect(() => {
+    // Clear any stale update flags on mount
+    const checkIfUpdateIsStillValid = async () => {
+      try {
+        const updateAvailable = localStorage.getItem('update_available');
+        if (updateAvailable === 'true') {
+          // Verify the update is still valid
+          const response = await fetch(`/version.json?v=${Date.now()}`, {
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache',
+            },
+          });
+
+          const versionData = await response.json();
+          const serverVersion = versionData.buildId;
+          const storedVersion = localStorage.getItem('app_version');
+
+          // If versions match, clear the update flag
+          if (serverVersion === storedVersion) {
+            console.log('✅ Versions match - clearing stale update flag');
+            localStorage.removeItem('update_available');
+            localStorage.removeItem('new_version');
+            return;
+          }
+
+          // If they don't match, show the notification
+          console.log('🔄 Update still valid - showing notification');
+          setUpdateInfo({
+            oldVersion: storedVersion || 'unknown',
+            newVersion: serverVersion
+          });
+          setShowNotification(true);
+        }
+      } catch (error) {
+        console.error('Error checking update validity:', error);
+        // Clear flags on error
+        localStorage.removeItem('update_available');
+        localStorage.removeItem('new_version');
+      }
+    };
+
+    checkIfUpdateIsStillValid();
+
     // Listen for update available events
     const handleUpdateAvailable = (event: CustomEvent) => {
       console.log('🔔 Update notification received:', event.detail);
-      setUpdateInfo({
-        oldVersion: event.detail.oldVersion,
-        newVersion: event.detail.newVersion
-      });
-      setShowNotification(true);
+      
+      // Verify this is a real update
+      const { oldVersion, newVersion } = event.detail;
+      if (oldVersion && newVersion && oldVersion !== newVersion) {
+        setUpdateInfo({
+          oldVersion: oldVersion,
+          newVersion: newVersion
+        });
+        setShowNotification(true);
+      } else {
+        console.log('⚠️ Invalid update event - versions are the same');
+      }
     };
 
     window.addEventListener('app:update-available', handleUpdateAvailable as EventListener);
     window.addEventListener('sw:update-available', handleUpdateAvailable as EventListener);
-
-    // Check if update is already available (from localStorage)
-    const updateAvailable = localStorage.getItem('update_available');
-    if (updateAvailable === 'true') {
-      const newVersion = localStorage.getItem('new_version');
-      const currentVersion = localStorage.getItem('app_version');
-      if (newVersion && currentVersion) {
-        setUpdateInfo({
-          oldVersion: currentVersion,
-          newVersion: newVersion
-        });
-        setShowNotification(true);
-      }
-    }
 
     return () => {
       window.removeEventListener('app:update-available', handleUpdateAvailable as EventListener);
@@ -70,10 +107,12 @@ export function VersionUpdateNotification() {
     console.log('❌ User dismissed update notification');
     setShowNotification(false);
     
-    // Don't clear the flags - show again on next page load
+    // Clear the update flags so it doesn't show again
+    localStorage.removeItem('update_available');
+    localStorage.removeItem('new_version');
   };
 
-  if (!showNotification) {
+  if (!showNotification || !updateInfo) {
     return null;
   }
 
@@ -116,18 +155,16 @@ export function VersionUpdateNotification() {
                 <button
                   onClick={handleDismiss}
                   className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-all duration-200"
-                  title="Dismiss (will show again on next page load)"
+                  title="Dismiss"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Version info */}
-              {updateInfo && (
-                <p className="text-xs opacity-70 mt-2">
-                  Version: {updateInfo.oldVersion.substring(0, 12)}... → {updateInfo.newVersion.substring(0, 12)}...
-                </p>
-              )}
+              <p className="text-xs opacity-70 mt-2">
+                Version: {updateInfo.oldVersion.substring(0, 12)}... → {updateInfo.newVersion.substring(0, 12)}...
+              </p>
             </div>
           </div>
         </div>

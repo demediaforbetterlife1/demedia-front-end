@@ -182,8 +182,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // If profile picture is being updated, dispatch event for real-time updates
       if (newData.profilePicture && newData.profilePicture !== prev.profilePicture) {
         console.log('[Auth] Profile picture updated, dispatching event');
+        console.log('[Auth] User ID:', prev.id, 'New picture:', newData.profilePicture);
+        
         // Dispatch custom event for real-time profile photo updates
         if (typeof window !== "undefined") {
+          // Dispatch immediately
           window.dispatchEvent(new CustomEvent('profile:updated', {
             detail: {
               userId: prev.id,
@@ -192,6 +195,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               username: updatedUser.username
             }
           }));
+          
+          // Also dispatch after a short delay to catch any late listeners
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('profile:updated', {
+              detail: {
+                userId: prev.id,
+                profilePicture: newData.profilePicture,
+                name: updatedUser.name,
+                username: updatedUser.username
+              }
+            }));
+          }, 100);
         }
       }
       
@@ -621,14 +636,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = (force: boolean = false): void => {
+  const logout = (): void => {
     try {
-      // Only logout if explicitly forced or if user manually logs out
-      if (!force) {
-        console.log("[Auth] Logout prevented - not forced");
-        return;
-      }
-
       console.log("[Auth] Performing logout...");
       
       // Clear all storage methods using robust utility
@@ -649,10 +658,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         window.dispatchEvent(new CustomEvent("auth:logout"));
       }
 
-      console.log("[Auth] Logout successful");
-      router.replace("/sign-up");
+      console.log("[Auth] Logout successful, redirecting to sign-in...");
+      
+      // Force redirect to sign-in page
+      router.push("/sign-in");
+      
+      // Also force a page reload after a short delay to ensure clean state
+      setTimeout(() => {
+        window.location.href = "/sign-in";
+      }, 100);
     } catch (err) {
       console.error("[Auth] logout error:", err);
+      // Even if there's an error, try to redirect
+      window.location.href = "/sign-in";
     }
   };
 

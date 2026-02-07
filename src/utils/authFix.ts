@@ -116,15 +116,47 @@ export function setLocalStorageToken(token: string): void {
  * Clear all authentication tokens
  */
 export function clearAllTokens(): void {
-  // Clear cookie
+  console.log("[AuthFix] Clearing all authentication tokens...");
+  
+  // Clear cookie with multiple variations to ensure complete removal
   if (typeof document !== "undefined") {
-    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    // Clear with different path and domain combinations
+    const cookieVariations = [
+      "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;",
+      "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname + ";",
+      "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax;",
+      "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict;",
+      "token=; max-age=0; path=/;",
+    ];
+    
+    cookieVariations.forEach(cookieStr => {
+      document.cookie = cookieStr;
+    });
+    
+    console.log("[AuthFix] Cookies cleared");
   }
   
-  // Clear localStorage
+  // Clear localStorage with all possible token keys
   if (typeof window !== "undefined") {
-    localStorage.removeItem("token");
+    const tokenKeys = ["token", "auth_token", "authToken", "jwt", "access_token"];
+    tokenKeys.forEach(key => {
+      localStorage.removeItem(key);
+    });
+    
+    // Also clear any user data
+    localStorage.removeItem("user");
+    localStorage.removeItem("userData");
+    
+    console.log("[AuthFix] LocalStorage cleared");
   }
+  
+  // Clear sessionStorage as well
+  if (typeof window !== "undefined") {
+    sessionStorage.clear();
+    console.log("[AuthFix] SessionStorage cleared");
+  }
+  
+  console.log("[AuthFix] All tokens cleared successfully");
 }
 
 /**

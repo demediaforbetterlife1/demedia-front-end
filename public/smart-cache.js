@@ -63,6 +63,9 @@
       
       console.log('✅ Update notification dispatched - NO AUTO-RELOAD');
     } else {
+      // Versions match - clear any stale update flags
+      localStorage.removeItem('update_available');
+      localStorage.removeItem('new_version');
       console.log('✅ Version up to date:', SERVER_VERSION);
     }
   })

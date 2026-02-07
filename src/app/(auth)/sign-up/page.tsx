@@ -576,10 +576,9 @@ return (
                                         placeholder={t('auth.phone', 'Phone Number')}  
                                         value={form.phoneNumber}   
                                         onChange={(e) => {
-                                            // Remove leading zeros and non-numeric characters except spaces and dashes for formatting
+                                            // Allow user to enter any digits including leading zeros
+                                            // They will be stripped when saving to database
                                             let value = e.target.value.replace(/[^\d\s-]/g, '');
-                                            // Remove leading zeros
-                                            value = value.replace(/^0+/, '');
                                             setForm({ ...form, phoneNumber: value });
                                         }}   
                                         className={`w-full pl-12 pr-4 py-3 bg-transparent text-white placeholder-white/60 border-none focus:outline-none ${errors.phoneNumber ? 'text-red-400' : ''}`}   
@@ -588,46 +587,6 @@ return (
                                 </div>  
                             </div>  
                             {errors.phoneNumber && <p className="text-red-400 text-sm mt-1">{errors.phoneNumber}</p>}  
-                            {/* Professional Phone Number Guidance */}
-                            <div className="mt-2 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
-                                <div className="flex items-start gap-2">
-                                    <div className="text-cyan-400 mt-0.5">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <circle cx="12" cy="12" r="10"/>
-                                            <path d="m9,12 2,2 4,-4"/>
-                                        </svg>
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-cyan-200 text-sm font-medium mb-1">
-                                            {t('auth.phoneInstructions', 'Phone Number Instructions')}
-                                        </p>
-                                        <p className="text-cyan-300/80 text-xs leading-relaxed mb-2">
-                                            {t('auth.phoneHelp', 'Select your country code and enter your number without the leading zero.')}
-                                        </p>
-                                        
-                                        {/* Phone Number Preview */}
-                                        {form.phoneNumber && (
-                                            <div className="mb-2 p-2 bg-cyan-500/20 rounded border border-cyan-400/30">
-                                                <p className="text-xs text-cyan-200 mb-1">Your number will be registered as:</p>
-                                                <p className="text-sm font-mono text-white">
-                                                    {selectedCountryCode}{form.phoneNumber.replace(/[^\d]/g, '').replace(/^0+/, '') || form.phoneNumber.replace(/[^\d]/g, '')}
-                                                </p>
-                                            </div>
-                                        )}
-                                        
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2 text-xs">
-                                                <span className="text-green-400">✓</span>
-                                                <span className="text-white/90">Egypt: Select +20, then enter 10 1234 5678</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-xs">
-                                                <span className="text-red-400">✗</span>
-                                                <span className="text-white/70">Don't enter: 010 1234 5678</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>  
                         </div>  
                           
                         {/* Password Input */}  
