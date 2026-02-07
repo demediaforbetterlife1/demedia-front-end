@@ -174,47 +174,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [user, isLoading, initComplete, isAuthenticated]);
 
   const updateUser = useCallback((newData: Partial<User>) => {
-    console.log('[Auth] updateUser called with:', newData);
+    console.log('[Auth] 🔄 updateUser called with:', newData);
     
     setUser((prev) => {
       if (!prev) {
-        console.log('[Auth] No previous user, cannot update');
+        console.log('[Auth] ❌ No previous user');
         return null;
       }
       
       const updatedUser = { ...prev, ...newData };
-      console.log('[Auth] User state updated');
-      
-      // If profile picture is being updated, force a re-render everywhere
-      if (newData.profilePicture) {
-        console.log('[Auth] Profile picture changed from', prev.profilePicture, 'to', newData.profilePicture);
-        
-        // Dispatch event immediately and multiple times
-        if (typeof window !== "undefined") {
-          const eventDetail = {
-            userId: prev.id,
-            profilePicture: newData.profilePicture,
-            name: updatedUser.name,
-            username: updatedUser.username,
-            timestamp: Date.now()
-          };
-          
-          // Dispatch immediately
-          window.dispatchEvent(new CustomEvent('profile:updated', { detail: eventDetail }));
-          
-          // Dispatch again after delays
-          [50, 100, 200, 500, 1000].forEach(delay => {
-            setTimeout(() => {
-              window.dispatchEvent(new CustomEvent('profile:updated', { detail: eventDetail }));
-            }, delay);
-          });
-          
-          console.log('[Auth] Profile update events dispatched');
-        }
-      }
+      console.log('[Auth] ✅ User updated:', {
+        oldPhoto: prev.profilePicture?.substring(0, 50),
+        newPhoto: updatedUser.profilePicture?.substring(0, 50)
+      });
       
       return updatedUser;
     });
+    
+    // Force immediate re-render by dispatching events
+    if (newData.profilePicture && typeof window !== "undefined") {
+      // Get current user to ensure we have the latest data
+      setUser((prev) => {
+        if (!prev) return null;
+        
+        const eventDetail = {
+          userId: prev.id,
+          profilePicture: newData.profilePicture,
+          name: prev.name,
+          username: prev.username,
+          timestamp: Date.now()
+        };
+        
+        console.log('[Auth] 📡 Dispatching profile:updated event:', eventDetail);
+        
+        // Dispatch immediately and repeatedly
+        for (let i = 0; i < 10; i++) {
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('profile:updated', { detail: eventDetail }));
+          }, i * 100);
+        }
+        
+        return prev;
+      });
+    }
   }, []);
 
   // Enhanced fetch with dual token support

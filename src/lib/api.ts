@@ -121,113 +121,47 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
   const headers = getAuthHeaders(userId);
 
   // For FormData, completely omit Content-Type to let browser set multipart boundary
-  // For other body types, set Content-Type to application/json
   if (options.body && options.body instanceof FormData) {
-    // Remove Content-Type header for FormData - browser will set it automatically
     delete headers["Content-Type"];
   } else if (!headers["Content-Type"] && options.body) {
     headers["Content-Type"] = "application/json";
   }
 
-  // Simplified cache busting - only for GET requests
+  // Simple cache busting - only for GET requests
   const method = ((options.method || "GET") as string).toUpperCase();
   let url = `${API_BASE}${path}`;
   
-  // Only add cache buster for GET requests
   if (method === "GET") {
     const separator = path.includes("?") ? "&" : "?";
     url = `${url}${separator}t=${Date.now()}`;
   }
 
-  const isPostsEndpoint = path.includes("/posts");
-  const isAuthEndpoint = path.includes("/auth");
-  const timeouts = isPostsEndpoint ? [8000] : isAuthEndpoint ? [20000] : [15000];
-  const maxRetries = 0; // Disable retries to improve performance
+  // NO TIMEOUTS for POST/PUT/DELETE - they can take time
+  const isWriteOperation = ["POST", "PUT", "DELETE", "PATCH"].includes(method);
+  
+  try {
+    const fetchHeaders = {
+      ...headers,
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+    };
 
-  let lastError: any = null;
+    const fetchOptions: RequestInit = {
+      ...options,
+      headers: fetchHeaders,
+      cache: "no-store",
+      credentials: "include",
+    };
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const timeout = timeouts[attempt];
-    try {
-      // Simplified headers - remove excessive cache prevention
-      const fetchHeaders = {
-        ...headers,
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-      };
+    console.log(`🔄 API Request: ${method} ${url}`);
+    const res = await fetch(url, fetchOptions);
+    console.log(`📡 API Response: ${res.status}`);
 
-      // choose fetch options
-      let fetchOptions: RequestInit;
-      if (isPostsEndpoint || isAuthEndpoint) {
-        // don't abort posts/auth requests
-        fetchOptions = {
-          ...options,
-          headers: fetchHeaders,
-          cache: "no-store",
-          credentials: "include",
-        };
-      } else {
-        // use AbortController for non-auth/post endpoints
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), timeout);
-
-        fetchOptions = {
-          ...options,
-          headers: fetchHeaders,
-          signal: controller.signal,
-          cache: "no-store",
-          credentials: "include",
-        };
-      }
-
-      // For auth endpoints: soft timeout
-      const res: Response = isAuthEndpoint
-        ? await Promise.race<Promise<Response>>([
-          fetch(url, fetchOptions),
-          new Promise<Response>((resolve) =>
-            setTimeout(() => {
-              const body = JSON.stringify({ error: "Auth request timed out" });
-              resolve(new Response(body, { status: 504, headers: { "Content-Type": "application/json" } }));
-            }, timeout || 20000)
-          ),
-        ])
-        : await fetch(url, fetchOptions);
-
-      // Handle 401 - don't logout immediately
-      if (res.status === 401) {
-        console.warn("[api] 401 Unauthorized for:", path);
-        return res;
-      }
-
-      // if auth synthetic timeout (504), try direct backend
-      if (isAuthEndpoint && res.status === 504) {
-        try {
-          const directRes = await tryDirectConnection(path, { ...options, headers: fetchHeaders });
-          return directRes;
-        } catch (e) {
-          throw new Error("Auth request timed out");
-        }
-      }
-
-      return res;
-    } catch (err: any) {
-      lastError = err;
-      const errName = err?.name || "";
-      const msg = (err?.message || "").toString();
-      const isNetworkError = msg.includes("Failed to fetch") || msg.includes("NetworkError") || msg.includes("timeout");
-
-      // Simplified retry - only for critical errors
-      if (errName === "AbortError" && isAuthEndpoint) {
-        try {
-          return await tryDirectConnection(path, options);
-        } catch { }
-      }
-
-      throw err;
-    }
+    return res;
+  } catch (err: any) {
+    console.error(`❌ API Error: ${method} ${url}`, err);
+    throw err;
   }
-
-  throw lastError;
 }
 
 /* ----------------------------- API wrappers ------------------------------ */
