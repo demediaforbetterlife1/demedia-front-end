@@ -309,7 +309,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 console.log('✅ Video uploaded successfully:', videoUrl);
                 
             } catch (uploadError: any) {
-                clearTimeout(timeoutId);
+                console.error('❌ Upload error:', uploadError);
                 if (uploadError.name === 'AbortError') {
                     throw new Error("Upload timed out. Your video might be too large or your connection is slow. Try a smaller video or check your internet connection.");
                 }
