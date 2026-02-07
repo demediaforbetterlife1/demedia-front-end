@@ -213,15 +213,22 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 body: formData
             }, user?.id);
 
+            // Read response text ONCE to avoid "body stream already read" error
+            const uploadResponseText = await uploadResponse.text();
+            console.log('Upload response text:', uploadResponseText);
+
             if (!uploadResponse.ok) {
                 let errorMessage = "Failed to upload video";
                 try {
-                    const errorData = await uploadResponse.json();
-                    errorMessage = errorData.error || errorData.message || errorMessage;
+                    if (uploadResponseText.trim() && uploadResponseText.trim().startsWith('{')) {
+                        const errorData = JSON.parse(uploadResponseText);
+                        errorMessage = errorData.error || errorData.message || errorMessage;
+                    } else {
+                        errorMessage = `Upload error: ${uploadResponse.status} - ${uploadResponseText}`;
+                    }
                 } catch (e) {
-                    const responseText = await uploadResponse.text();
-                    console.error('Upload error response:', responseText);
-                    errorMessage = `Upload error: ${uploadResponse.status} - ${responseText}`;
+                    console.error('Upload error response:', uploadResponseText);
+                    errorMessage = `Upload error: ${uploadResponse.status}`;
                 }
                 throw new Error(errorMessage);
             }
@@ -229,23 +236,19 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             // Use safe JSON parsing for upload response
             let uploadData;
             try {
-                const responseText = await uploadResponse.text();
-                console.log('Upload response text:', responseText);
-                
-                if (!responseText.trim()) {
+                if (!uploadResponseText.trim()) {
                     throw new Error('Empty response from server');
                 }
                 
                 // Check if response is HTML (error page)
-                if (responseText.trim().startsWith('<')) {
+                if (uploadResponseText.trim().startsWith('<')) {
                     throw new Error('Server returned HTML error page. Please check your connection.');
                 }
                 
-                uploadData = JSON.parse(responseText);
+                uploadData = JSON.parse(uploadResponseText);
             } catch (jsonError) {
                 console.error('Upload JSON parsing error:', jsonError);
-                const responseText = await uploadResponse.text();
-                console.error('Upload response text:', responseText);
+                console.error('Upload response text:', uploadResponseText);
                 throw new Error('Invalid upload response from server. Please try again.');
             }
             
@@ -295,9 +298,12 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
             console.log('DeSnap creation response status:', response.status);
 
+            // Read response text ONCE to avoid "body stream already read" error
+            const responseText = await response.text();
+            console.log('DeSnap creation response text:', responseText);
+
             if (!response.ok) {
                 let errorMessage = "Failed to create DeSnap";
-                const responseText = await response.text(); // Read once
                 console.error('DeSnap creation error response:', responseText);
                 
                 try {
@@ -316,8 +322,6 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
             // Use safe JSON parsing to avoid "unexpected token" errors
             let newDeSnap;
-            const responseText = await response.text(); // Read once
-            console.log('DeSnap creation response text:', responseText);
             
             if (!responseText.trim()) {
                 throw new Error('Empty response from server');
