@@ -44,11 +44,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    const userId = request.headers.get('user-id') || body.userId;
+    
     console.log('📝 Creating DeSnap:', {
       hasContent: !!body.content,
       hasThumbnail: !!body.thumbnail,
       visibility: body.visibility,
-      userId: body.userId
+      userId: userId
     });
 
     // Forward request to backend
@@ -62,6 +64,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'Cookie': `token=${token}`,
+          'user-id': userId?.toString() || '',
         },
         body: JSON.stringify(body),
       });

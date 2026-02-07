@@ -333,14 +333,10 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 userId: deSnapData.userId
             });
             
-            // Use apiFetch which includes proper authentication headers
+            // Use apiFetch which automatically includes proper authentication headers
+            // Don't manually add headers - apiFetch handles them
             const response = await apiFetch("/api/desnaps", {
                 method: "POST",
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                    'user-id': user?.id?.toString() || '',
-                },
                 body: JSON.stringify(deSnapData)
             }, user?.id);
 
