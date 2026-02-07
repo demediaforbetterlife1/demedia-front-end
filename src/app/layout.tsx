@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "../styles/themes.css";
 import "../styles/pwa.css";
+import "../styles/stories-enhanced.css";
 import NavbarClient from "@/app/layoutElements/NavBarClient";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";

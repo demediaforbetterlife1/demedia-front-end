@@ -5,6 +5,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { getEnhancedThemeClasses } from "@/utils/enhancedThemeUtils";
 import Stories from "@/app/(PagesComps)/homedir/stories";
 import Posts from "@/app/(PagesComps)/homedir/posts";
+import FloatingAddStoryButton from "@/components/FloatingAddStoryButton";
 
 import { Sparkles, TrendingUp, Users, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -248,10 +249,15 @@ export default function HomePage() {
   const { theme } = useTheme();
   const themeClasses = getEnhancedThemeClasses(theme);
   const [mounted, setMounted] = useState(false);
+  const [showCreateStoryModal, setShowCreateStoryModal] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleAddStory = () => {
+    setShowCreateStoryModal(true);
+  };
 
   if (!mounted) {
     return (
@@ -298,6 +304,13 @@ export default function HomePage() {
         {/* Footer Spacer */}
         <div className="h-20" />
       </motion.div>
+
+      {/* Floating Add Story Button */}
+      <FloatingAddStoryButton
+        onAddStory={handleAddStory}
+        onAddPhoto={handleAddStory}
+        onAddVideo={handleAddStory}
+      />
 
       {/* Scroll Progress Indicator */}
       <motion.div

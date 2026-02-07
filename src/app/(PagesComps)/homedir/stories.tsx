@@ -326,96 +326,110 @@ export default function Stories() {
       {/* Stories Scroll Container */}
       <div className="relative px-4 py-4">
         <div className="flex overflow-x-auto gap-4 scrollbar-hide pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          {/* Add Story Card - Ultra Enhanced */}
+          {/* Professional Add Story Button */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            whileHover={{ scale: 1.08, y: -6 }}
-            whileTap={{ scale: 0.92 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            whileHover={{ scale: 1.05, y: -3 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className="flex flex-col items-center min-w-[80px] cursor-pointer group"
             onClick={handleAddStory}
           >
             <div className="relative">
-              {/* Animated Gradient Ring - Double Layer */}
+              {/* Professional Gradient Border */}
               <motion.div 
-                animate={{ rotate: 360 }}
-                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                className="absolute -inset-1.5 bg-gradient-to-r from-cyan-400 via-blue-500 via-purple-500 via-pink-500 to-cyan-400 rounded-2xl opacity-75 group-hover:opacity-100 blur-md transition-all duration-300"
-              />
-              <motion.div 
-                animate={{ rotate: -360 }}
-                transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-                className="absolute -inset-0.5 bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 rounded-2xl opacity-60 group-hover:opacity-90 blur-sm transition-all duration-300"
+                animate={{ 
+                  background: [
+                    'linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6)',
+                    'linear-gradient(45deg, #8b5cf6, #ec4899, #3b82f6, #8b5cf6)',
+                    'linear-gradient(45deg, #ec4899, #3b82f6, #8b5cf6, #ec4899)'
+                  ]
+                }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-0.5 rounded-2xl opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300"
               />
               
-              {/* Story Circle with Enhanced Effects */}
+              {/* Main Button Container */}
               <div
-                className={`relative w-16 h-16 rounded-2xl ${themeClasses.card} flex items-center justify-center border-2 border-dashed border-cyan-400/50 group-hover:border-cyan-400 shadow-2xl transition-all duration-300 overflow-hidden`}
+                className={`relative w-16 h-16 rounded-2xl ${themeClasses.card} flex items-center justify-center shadow-xl border border-gray-200/20 dark:border-gray-700/30 group-hover:shadow-2xl transition-all duration-300 overflow-hidden backdrop-blur-sm`}
               >
-                {/* Animated Background Gradient */}
-                <motion.div 
+                {/* Subtle Background Pattern */}
+                <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20" />
+                  <div className="absolute inset-0" style={{
+                    backgroundImage: `radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), 
+                                     radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)`
+                  }} />
+                </div>
+                
+                {/* Professional Plus Icon */}
+                <motion.div
+                  whileHover={{ rotate: 90, scale: 1.1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                  className="relative z-10 flex items-center justify-center"
+                >
+                  <div className="relative">
+                    {/* Icon Background Glow */}
+                    <motion.div
+                      animate={{ 
+                        scale: [1, 1.2, 1],
+                        opacity: [0.3, 0.6, 0.3]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-md"
+                    />
+                    
+                    {/* Plus Icon */}
+                    <Plus 
+                      className="relative w-6 h-6 text-blue-500 group-hover:text-blue-400 transition-colors duration-200 drop-shadow-sm" 
+                      strokeWidth={2.5} 
+                    />
+                  </div>
+                </motion.div>
+                
+                {/* Professional Corner Accent */}
+                <motion.div
                   animate={{ 
-                    background: [
-                      'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%)',
-                      'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%)',
-                      'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%)'
-                    ]
+                    rotate: [0, 360],
+                    scale: [0.8, 1, 0.8]
                   }}
                   transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-1 right-1 w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"
                 />
                 
-                {/* Plus Icon with Rotation */}
-                <motion.div
-                  whileHover={{ rotate: 90 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                  className="relative z-10"
-                >
-                  <Plus className="w-7 h-7 text-cyan-400 group-hover:text-cyan-300 transition-colors drop-shadow-lg" strokeWidth={2.5} />
-                </motion.div>
-                
-                {/* Sparkle Effects */}
-                <motion.div
-                  animate={{ 
-                    scale: [1, 1.2, 1],
-                    opacity: [0.5, 1, 0.5]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute top-1 right-1"
-                >
-                  <Sparkles className="w-2.5 h-2.5 text-yellow-400" />
-                </motion.div>
-                <motion.div
-                  animate={{ 
-                    scale: [1, 1.2, 1],
-                    opacity: [0.5, 1, 0.5]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                  className="absolute bottom-1 left-1"
-                >
-                  <Sparkles className="w-2.5 h-2.5 text-pink-400" />
-                </motion.div>
-                
-                {/* Shimmer Effect */}
+                {/* Subtle Shimmer Effect */}
                 <motion.div
                   animate={{ x: ['-100%', '200%'] }}
-                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, ease: "easeInOut" }}
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12"
+                  transition={{ duration: 3, repeat: Infinity, repeatDelay: 2, ease: "easeInOut" }}
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 opacity-0 group-hover:opacity-100"
                 />
+                
+                {/* Professional Border Highlight */}
+                <div className="absolute inset-0 rounded-2xl border border-white/10 group-hover:border-white/20 transition-colors" />
               </div>
             </div>
-            <motion.span
-              className={`mt-2 text-xs font-bold ${themeClasses.text} text-center max-w-[80px] truncate bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent`}
-              animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              style={{ backgroundSize: '200% auto' }}
-            >
-              {t("content.addStory", "Add Story")}
-            </motion.span>
-            <span className={`text-[10px] ${themeClasses.textSecondary} font-medium`}>
-              ✨ Create
-            </span>
+            
+            {/* Professional Text Labels */}
+            <div className="mt-2 text-center">
+              <motion.span
+                className={`block text-xs font-semibold ${themeClasses.text} group-hover:text-blue-400 transition-colors duration-200`}
+                whileHover={{ scale: 1.05 }}
+              >
+                {t("content.addStory", "Add Story")}
+              </motion.span>
+              <span className={`text-[10px] ${themeClasses.textSecondary} font-medium opacity-70 group-hover:opacity-100 transition-opacity`}>
+                Share moment
+              </span>
+            </div>
+            
+            {/* Professional Hover Indicator */}
+            <motion.div
+              initial={{ width: 0 }}
+              whileHover={{ width: "60%" }}
+              transition={{ duration: 0.2 }}
+              className="mt-1 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
+            />
           </motion.div>
 
           {/* Story Cards - Enhanced */}
