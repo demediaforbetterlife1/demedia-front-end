@@ -17,6 +17,8 @@ export const maxDuration = 300; // 5 minutes
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('📥 Video upload request received');
+    
     const formData = await request.formData();
 
     // Extract token from cookies or Authorization header
@@ -24,17 +26,32 @@ export async function POST(request: NextRequest) {
       request.headers.get('authorization')?.replace('Bearer ', '');
 
     if (!token) {
+      console.error('❌ No authentication token');
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const authHeader = `Bearer ${token}`;
     const userId = request.headers.get('user-id');
+    
+    console.log('🔑 Auth info:', {
+      hasToken: !!token,
+      tokenLength: token.length,
+      userId: userId
+    });
 
     // Check video file size before processing
     const videoFile = formData.get('video') as File;
     if (!videoFile) {
+      console.error('❌ No video file in request');
       return NextResponse.json({ error: 'No video file uploaded' }, { status: 400 });
     }
+
+    console.log('📹 Video file:', {
+      name: videoFile.name,
+      size: videoFile.size,
+      type: videoFile.type,
+      sizeMB: (videoFile.size / (1024 * 1024)).toFixed(2)
+    });
 
     // Check file size (100MB limit)
     const maxSize = 100 * 1024 * 1024; // 100MB
