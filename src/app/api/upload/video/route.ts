@@ -12,8 +12,8 @@ export const config = {
   },
 };
 
-// Increase max duration for video processing
-export const maxDuration = 60; // 60 seconds
+// Increase max duration for video processing - Vercel allows up to 300s on Pro
+export const maxDuration = 300; // 5 minutes
 
 export async function POST(request: NextRequest) {
   try {

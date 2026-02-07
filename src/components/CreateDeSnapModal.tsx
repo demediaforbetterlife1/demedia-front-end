@@ -229,20 +229,15 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 throw new Error("You must be logged in to create a DeSnap. Please log in and try again.");
             }
 
-            console.log('📤 Uploading video directly to backend...');
+            console.log('📤 Uploading video via Next.js API route...');
             console.log('🔑 Authentication:', { hasToken: !!token, userId: user?.id });
 
-            // Upload directly to backend with longer timeout (5 minutes for large videos)
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://demedia-backend.fly.dev';
-            
-            // Create abort controller with 5 minute timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000); // 5 minutes
-            
+            // Upload via Next.js API route (which handles backend connection and fallback)
+            // NO TIMEOUT - let the server handle it
             let videoUrl, thumbnailUrl;
             
             try {
-                const uploadResponse = await fetch(`${backendUrl}/api/upload/video`, {
+                const uploadResponse = await fetch('/api/upload/video', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -250,11 +245,9 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                     },
                     body: formData, // Don't set Content-Type - let browser handle it
                     credentials: 'include',
-                    signal: controller.signal,
+                    // NO signal/timeout - let it take as long as needed
                 });
                 
-                clearTimeout(timeoutId);
-
                 // Read response text ONCE
                 const uploadResponseText = await uploadResponse.text();
                 console.log('Upload response:', uploadResponseText.substring(0, 200));
