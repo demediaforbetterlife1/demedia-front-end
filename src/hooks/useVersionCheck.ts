@@ -15,28 +15,74 @@ interface VersionInfo {
 
 /**
  * Hook to check for application version updates
- * NEVER auto-reloads - only notifies user
- * DISABLED - Causing false positives and performance issues
+ * Checks version.json to detect new deployments
+ * Shows notification but NEVER auto-reloads
  */
-export function useVersionCheck(checkInterval: number = 60000) {
+export function useVersionCheck(checkInterval: number = 120000) { // Check every 2 minutes
   const [currentVersion, setCurrentVersion] = useState<VersionInfo | null>(null);
   const [hasUpdate, setHasUpdate] = useState(false);
 
   useEffect(() => {
-    // DISABLED: Version checking is causing false positives
-    // Clear any stale flags
-    localStorage.removeItem('update_available');
-    localStorage.removeItem('new_version');
-    localStorage.removeItem('sw_update_available');
-    
-    console.log('📦 Version checking disabled to prevent false positives');
-    
-    // Don't set up any intervals or checks
-    return () => {};
-  }, []);
+    let intervalId: NodeJS.Timeout;
+    let initialVersion: string | null = null;
+
+    const fetchVersion = async () => {
+      try {
+        // Add cache-busting parameter to ensure fresh data
+        const response = await fetch(`/version.json?t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          },
+        });
+
+        if (response.ok) {
+          const versionData: VersionInfo = await response.json();
+          
+          // Store initial version on first load
+          if (!initialVersion) {
+            initialVersion = versionData.buildId;
+            setCurrentVersion(versionData);
+            console.log('📦 Current build:', versionData.buildId);
+            return;
+          }
+
+          // Check if version has changed
+          if (versionData.buildId !== initialVersion) {
+            console.log('🆕 New version detected:', {
+              old: initialVersion,
+              new: versionData.buildId,
+            });
+            setHasUpdate(true);
+            setCurrentVersion(versionData);
+            
+            // Store update flag for notification
+            localStorage.setItem('update_available', 'true');
+            localStorage.setItem('new_version', versionData.buildId);
+          }
+        }
+      } catch (error) {
+        console.error('Version check failed:', error);
+        // Silently fail - don't disrupt user experience
+      }
+    };
+
+    // Initial check
+    fetchVersion();
+
+    // Set up periodic checks
+    intervalId = setInterval(fetchVersion, checkInterval);
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [checkInterval]);
 
   return {
     currentVersion,
-    hasUpdate: false, // Always return false
+    hasUpdate,
   };
 }

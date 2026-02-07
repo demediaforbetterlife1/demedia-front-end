@@ -129,9 +129,18 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             return;
         }
 
-        if (file.size > 100 * 1024 * 1024) { // 100MB limit
-            setError("Video file too large. Maximum size is 100MB");
+        // Check file size (100MB limit)
+        const maxSize = 100 * 1024 * 1024; // 100MB
+        if (file.size > maxSize) {
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            setError(`Video file too large (${fileSizeMB}MB). Maximum size is 100MB. Please compress your video or choose a shorter clip.`);
             return;
+        }
+
+        // Warn if file is large (over 50MB)
+        if (file.size > 50 * 1024 * 1024) {
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            console.warn(`Large video file detected: ${fileSizeMB}MB. Upload may take longer.`);
         }
 
         // Content moderation check
@@ -222,13 +231,27 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 try {
                     if (uploadResponseText.trim() && uploadResponseText.trim().startsWith('{')) {
                         const errorData = JSON.parse(uploadResponseText);
-                        errorMessage = errorData.error || errorData.message || errorMessage;
+                        errorMessage = errorData.details || errorData.error || errorData.message || errorMessage;
+                        
+                        // Special handling for 413 errors
+                        if (uploadResponse.status === 413) {
+                            errorMessage = errorData.details || "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
+                        }
                     } else {
-                        errorMessage = `Upload error: ${uploadResponse.status} - ${uploadResponseText}`;
+                        // Special handling for 413 status
+                        if (uploadResponse.status === 413) {
+                            errorMessage = "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
+                        } else {
+                            errorMessage = `Upload error: ${uploadResponse.status} - ${uploadResponseText}`;
+                        }
                     }
                 } catch (e) {
                     console.error('Upload error response:', uploadResponseText);
-                    errorMessage = `Upload error: ${uploadResponse.status}`;
+                    if (uploadResponse.status === 413) {
+                        errorMessage = "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
+                    } else {
+                        errorMessage = `Upload error: ${uploadResponse.status}`;
+                    }
                 }
                 throw new Error(errorMessage);
             }
@@ -464,7 +487,8 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                                 <div>
                                                     <h3 className="text-lg font-semibold text-white mb-2">Upload Video</h3>
                                                     <p className="text-gray-400">Click to select a video file or drag and drop</p>
-                                                    <p className="text-sm text-gray-500 mt-2">Max size: 100MB</p>
+                                                    <p className="text-sm text-gray-500 mt-2">Max size: 100MB • Recommended: Under 50MB for faster upload</p>
+                                                    <p className="text-xs text-gray-600 mt-1">Tip: Compress large videos before uploading</p>
                                                 </div>
                                             </button>
                                         </div>

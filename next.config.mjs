@@ -6,6 +6,13 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  // Increase body size limit for video uploads
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '200mb',
+    },
+  },
+
   // output: "standalone",
   compress: true,
   poweredByHeader: false,

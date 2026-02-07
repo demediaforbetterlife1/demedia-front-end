@@ -2,6 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
+// Configure route to accept large files
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '200mb',
+    },
+    responseLimit: '200mb',
+  },
+};
+
+// Increase max duration for video processing
+export const maxDuration = 60; // 60 seconds
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -17,8 +30,31 @@ export async function POST(request: NextRequest) {
     const authHeader = `Bearer ${token}`;
     const userId = request.headers.get('user-id');
 
+    // Check video file size before processing
+    const videoFile = formData.get('video') as File;
+    if (!videoFile) {
+      return NextResponse.json({ error: 'No video file uploaded' }, { status: 400 });
+    }
+
+    // Check file size (100MB limit)
+    const maxSize = 100 * 1024 * 1024; // 100MB
+    if (videoFile.size > maxSize) {
+      return NextResponse.json({ 
+        error: 'Video file too large',
+        details: `Maximum file size is 100MB. Your file is ${(videoFile.size / (1024 * 1024)).toFixed(2)}MB. Please compress your video or choose a shorter clip.`,
+        maxSize: maxSize,
+        actualSize: videoFile.size
+      }, { status: 413 });
+    }
+
     // Try to connect to the actual backend first
     try {
+      console.log('Uploading video to backend:', {
+        size: videoFile.size,
+        type: videoFile.type,
+        name: videoFile.name
+      });
+
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/upload/video`, {
         method: 'POST',
         headers: {
@@ -26,23 +62,39 @@ export async function POST(request: NextRequest) {
           'user-id': userId || '',
         },
         body: formData,
+        // Add timeout for large uploads
+        signal: AbortSignal.timeout(120000), // 2 minutes
       });
 
       if (backendResponse.ok) {
         const data = await backendResponse.json();
+        console.log('✅ Video uploaded to backend successfully');
         return NextResponse.json(data);
+      } else if (backendResponse.status === 413) {
+        // Backend also says file is too large
+        return NextResponse.json({ 
+          error: 'Video file too large for server',
+          details: 'The video file exceeds the server upload limit. Please compress your video or choose a shorter clip.',
+        }, { status: 413 });
       } else {
-        console.log('Backend video upload failed, using fallback');
+        console.log('Backend video upload failed with status:', backendResponse.status);
+        const errorText = await backendResponse.text();
+        console.log('Backend error:', errorText);
+        console.log('Falling back to local storage');
       }
-    } catch (backendError) {
-      console.log('Backend not available for video upload, using fallback');
+    } catch (backendError: any) {
+      if (backendError.name === 'AbortError') {
+        return NextResponse.json({ 
+          error: 'Upload timeout',
+          details: 'The video upload took too long. Please try a smaller file or check your internet connection.',
+        }, { status: 408 });
+      }
+      console.log('Backend not available for video upload:', backendError.message);
+      console.log('Using fallback local storage');
     }
 
     // Fallback: Save video locally for development
-    const videoFile = formData.get('video') as File;
-    if (!videoFile) {
-      return NextResponse.json({ error: 'No video file uploaded' }, { status: 400 });
-    }
+    console.log('Saving video locally...');
 
     // Create uploads directory if it doesn't exist
     const uploadsDir = path.join(process.cwd(), 'public', 'local-uploads', 'videos');
@@ -70,7 +122,7 @@ export async function POST(request: NextRequest) {
     // The frontend generates a thumbnail for preview anyway
     const thumbnailUrl = '/assets/images/default-post.svg';
 
-    console.log('Video saved locally:', {
+    console.log('✅ Video saved locally:', {
       fileName: filename,
       size: videoFile.size,
       videoUrl
@@ -85,8 +137,11 @@ export async function POST(request: NextRequest) {
       duration: 0,
       message: 'Video uploaded successfully (local storage)'
     });
-  } catch (error) {
-    console.error('Error uploading video:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (error: any) {
+    console.error('❌ Error uploading video:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message || 'An unexpected error occurred while uploading the video.'
+    }, { status: 500 });
   }
 }
