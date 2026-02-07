@@ -9,13 +9,11 @@ export default function PWAUpdateNotification() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
-    // Listen for service worker updates
+    // Listen for service worker updates - NO AUTO-RELOAD
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        // New service worker has taken control
-        window.location.reload();
-      });
-
+      // DON'T auto-reload on controllerchange
+      // Let user decide when to reload
+      
       // Check for updates
       navigator.serviceWorker.ready.then((registration) => {
         registration.addEventListener('updatefound', () => {
@@ -24,7 +22,8 @@ export default function PWAUpdateNotification() {
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New service worker is available
+                // New service worker is available - show notification
+                console.log('🔄 New service worker available - showing notification');
                 setShowUpdate(true);
               }
             });

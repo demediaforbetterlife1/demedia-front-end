@@ -1,9 +1,9 @@
-// Smart Cache Management - Facebook-style
-// Preserves user data while ensuring fresh content
+// Smart Cache Management - NO AUTO-RELOAD
+// Preserves user data and NEVER auto-reloads
 (function() {
   'use strict';
   
-  console.log('🎯 Smart Cache: Initializing...');
+  console.log('🎯 Smart Cache: Initializing (NO AUTO-RELOAD)...');
   
   // Check version from server (only once per session)
   const sessionChecked = sessionStorage.getItem('version_checked');
@@ -39,8 +39,7 @@
       console.log('Old:', STORED_VERSION);
       console.log('New:', SERVER_VERSION);
       
-      // IMPORTANT: Only clear cache, NOT user data
-      // Clear service worker caches
+      // Clear service worker caches silently
       if ('caches' in window) {
         caches.keys().then(function(names) {
           names.forEach(function(name) {
@@ -49,16 +48,20 @@
         });
       }
       
-      // Update version WITHOUT clearing localStorage
-      localStorage.setItem('app_version', SERVER_VERSION);
+      // Store update info but DON'T reload
+      localStorage.setItem('update_available', 'true');
+      localStorage.setItem('new_version', SERVER_VERSION);
       
-      console.log('✅ Updated to new version, user data preserved');
-      console.log('📦 Reloading to apply updates...');
+      // Dispatch event for notification component
+      window.dispatchEvent(new CustomEvent('app:update-available', {
+        detail: {
+          oldVersion: STORED_VERSION,
+          newVersion: SERVER_VERSION,
+          timestamp: Date.now()
+        }
+      }));
       
-      // Reload once to get new version
-      setTimeout(function() {
-        window.location.reload();
-      }, 500);
+      console.log('✅ Update notification dispatched - NO AUTO-RELOAD');
     } else {
       console.log('✅ Version up to date:', SERVER_VERSION);
     }
@@ -78,12 +81,12 @@
       // Check for updates less frequently (every 5 minutes)
       setInterval(function() {
         registration.update();
-      }, 300000); // Check every 5 minutes instead of 1 minute
+      }, 300000); // Check every 5 minutes
       
     }).catch(function(error) {
       console.log('⚠️ Service worker registration failed:', error);
     });
   }
   
-  console.log('✅ Smart Cache: Ready!');
+  console.log('✅ Smart Cache: Ready (NO AUTO-RELOAD)!');
 })();

@@ -15,7 +15,7 @@ interface VersionInfo {
 
 /**
  * Hook to check for application version updates
- * Automatically detects when a new version is deployed
+ * NEVER auto-reloads - only notifies user
  */
 export function useVersionCheck(checkInterval: number = 60000) {
   const [currentVersion, setCurrentVersion] = useState<VersionInfo | null>(null);
@@ -55,11 +55,20 @@ export function useVersionCheck(checkInterval: number = 60000) {
           console.log('New:', versionInfo.buildId);
           setHasUpdate(true);
           
-          // Auto-reload after 2 seconds to get new version
-          setTimeout(() => {
-            console.log('🔄 Reloading to apply updates...');
-            window.location.reload();
-          }, 2000);
+          // Store update info but DON'T auto-reload
+          localStorage.setItem('update_available', 'true');
+          localStorage.setItem('new_version', versionInfo.buildId);
+          
+          // Dispatch event for notification component
+          window.dispatchEvent(new CustomEvent('app:update-available', {
+            detail: {
+              oldVersion: currentVersion.buildId,
+              newVersion: versionInfo.buildId,
+              timestamp: Date.now()
+            }
+          }));
+          
+          console.log('✅ Update notification dispatched - NO AUTO-RELOAD');
         }
       } catch (error) {
         console.error('Error checking version:', error);
