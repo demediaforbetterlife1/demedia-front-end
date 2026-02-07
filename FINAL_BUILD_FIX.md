@@ -1,3 +1,57 @@
+# Final Build Fix - Corrupted Home Page Issue
+
+## 🚨 Critical Issue Identified
+
+**Problem**: Build fails with syntax error in `src/app/(pages)/home/page.tsx`
+**Error**: `Expected ';', '}' or <eof>` at line 1 with content `t add .` and `git pus`
+
+## 🔍 Root Cause Analysis
+
+The issue is caused by **git command fragments** that were accidentally inserted at the beginning of the home page file:
+
+```
+Line 1: t add .
+Line 2:  git pus"use client";
+```
+
+This corruption exists in the **git repository** and persists even after local fixes because the build system pulls from the remote repository.
+
+## 🛠️ Immediate Solutions
+
+### Solution 1: Direct File Replacement (Recommended)
+
+Replace the entire corrupted file with a clean version:
+
+```bash
+# Navigate to the file
+cd src/app/(pages)/home/
+
+# Create backup
+cp page.tsx page.tsx.backup
+
+# Replace with clean content (see clean version below)
+```
+
+### Solution 2: Manual Git Fix
+
+```bash
+# Check git status
+git status
+
+# Reset the specific file
+git checkout HEAD -- src/app/(pages)/home/page.tsx
+
+# Or force overwrite
+git add src/app/(pages)/home/page.tsx
+git commit -m "Fix corrupted home page file"
+git push origin main
+```
+
+## 📄 Clean File Content
+
+Here's the complete clean version of `src/app/(pages)/home/page.tsx`:
+
+```typescript
 "use client";
 
 import { motion } from "framer-motion";
@@ -243,7 +297,6 @@ export default function HomePage() {
   }, []);
 
   const handleAddStory = () => {
-    // Handle add story functionality
     console.log("Add story clicked");
   };
 
@@ -313,3 +366,127 @@ export default function HomePage() {
     </div>
   );
 }
+```
+
+## 🔧 Step-by-Step Fix Instructions
+
+### For Local Development:
+1. **Delete the corrupted file**:
+   ```bash
+   rm src/app/(pages)/home/page.tsx
+   ```
+
+2. **Create new clean file**:
+   ```bash
+   touch src/app/(pages)/home/page.tsx
+   ```
+
+3. **Copy the clean content** from above into the new file
+
+4. **Verify syntax**:
+   ```bash
+   npm run build
+   ```
+
+### For Git Repository:
+1. **Stage the clean file**:
+   ```bash
+   git add src/app/(pages)/home/page.tsx
+   ```
+
+2. **Commit the fix**:
+   ```bash
+   git commit -m "Fix: Remove corrupted git commands from home page file"
+   ```
+
+3. **Push to repository**:
+   ```bash
+   git push origin main
+   ```
+
+## 🚨 Prevention Measures
+
+### 1. Git Hooks
+Add a pre-commit hook to check for corrupted files:
+
+```bash
+#!/bin/sh
+# Check for git command fragments in source files
+if grep -r "git add\|git commit\|git push" src/ --include="*.tsx" --include="*.ts"; then
+    echo "Error: Git commands found in source files"
+    exit 1
+fi
+```
+
+### 2. Editor Configuration
+Configure your editor to:
+- Show invisible characters
+- Highlight syntax errors
+- Auto-format on save
+
+### 3. Build Verification
+Always run local build before pushing:
+```bash
+npm run build
+```
+
+## 📊 Verification Steps
+
+After applying the fix:
+
+1. **Local Build Test**:
+   ```bash
+   npm run build
+   # Should complete without errors
+   ```
+
+2. **TypeScript Check**:
+   ```bash
+   npx tsc --noEmit
+   # Should show no errors
+   ```
+
+3. **Syntax Validation**:
+   ```bash
+   npx eslint src/app/(pages)/home/page.tsx
+   # Should pass linting
+   ```
+
+4. **Git Status Check**:
+   ```bash
+   git status
+   # Should show clean working directory
+   ```
+
+## 🎯 Expected Results
+
+After applying this fix:
+- ✅ Build completes successfully
+- ✅ No syntax errors in home page
+- ✅ Clean git repository
+- ✅ Proper TypeScript compilation
+- ✅ All features work correctly
+
+## 🔄 Alternative Temporary Fix
+
+If the issue persists, create a temporary redirect:
+
+1. **Rename current file**:
+   ```bash
+   mv src/app/(pages)/home/page.tsx src/app/(pages)/home/page.tsx.broken
+   ```
+
+2. **Create simple redirect**:
+   ```typescript
+   // Temporary page.tsx
+   "use client";
+   import { redirect } from 'next/navigation';
+   
+   export default function HomePage() {
+     redirect('/');
+   }
+   ```
+
+3. **Fix the main issue** and restore the full page later
+
+This critical fix should resolve the build failure and allow successful deployment.
