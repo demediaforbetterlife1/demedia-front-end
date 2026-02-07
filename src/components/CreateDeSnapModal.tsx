@@ -208,7 +208,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
         setError("");
 
         try {
-            // Upload video file first
+            // Create FormData for direct backend upload
             const formData = new FormData();
             formData.append('video', videoFile);
             formData.append('thumbnail', thumbnail);
@@ -216,15 +216,29 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             formData.append('visibility', settings.visibility);
             formData.append('userId', user?.id || '');
 
-            // Upload the video file
-            const uploadResponse = await apiFetch("/api/upload/video", {
-                method: "POST",
-                body: formData
-            }, user?.id);
+            // Get token for authentication
+            const token = getToken();
+            if (!token) {
+                throw new Error("You must be logged in to create a DeSnap. Please log in and try again.");
+            }
 
-            // Read response text ONCE to avoid "body stream already read" error
+            console.log('📤 Uploading video directly to backend...');
+
+            // Upload directly to backend (bypass Next.js API route to avoid Content-Type issues)
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://demedia-backend.fly.dev';
+            const uploadResponse = await fetch(`${backendUrl}/api/upload/video`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'user-id': user?.id?.toString() || '',
+                },
+                body: formData, // Don't set Content-Type - let browser handle it
+                credentials: 'include',
+            });
+
+            // Read response text ONCE
             const uploadResponseText = await uploadResponse.text();
-            console.log('Upload response text:', uploadResponseText);
+            console.log('Upload response:', uploadResponseText.substring(0, 200));
 
             if (!uploadResponse.ok) {
                 let errorMessage = "Failed to upload video";
@@ -233,16 +247,14 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                         const errorData = JSON.parse(uploadResponseText);
                         errorMessage = errorData.details || errorData.error || errorData.message || errorMessage;
                         
-                        // Special handling for 413 errors
                         if (uploadResponse.status === 413) {
                             errorMessage = errorData.details || "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
                         }
                     } else {
-                        // Special handling for 413 status
                         if (uploadResponse.status === 413) {
                             errorMessage = "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
                         } else {
-                            errorMessage = `Upload error: ${uploadResponse.status} - ${uploadResponseText}`;
+                            errorMessage = `Upload error: ${uploadResponse.status}`;
                         }
                     }
                 } catch (e) {
@@ -256,14 +268,13 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 throw new Error(errorMessage);
             }
 
-            // Use safe JSON parsing for upload response
+            // Parse upload response
             let uploadData;
             try {
                 if (!uploadResponseText.trim()) {
                     throw new Error('Empty response from server');
                 }
                 
-                // Check if response is HTML (error page)
                 if (uploadResponseText.trim().startsWith('<')) {
                     throw new Error('Server returned HTML error page. Please check your connection.');
                 }
@@ -271,7 +282,6 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 uploadData = JSON.parse(uploadResponseText);
             } catch (jsonError) {
                 console.error('Upload JSON parsing error:', jsonError);
-                console.error('Upload response text:', uploadResponseText);
                 throw new Error('Invalid upload response from server. Please try again.');
             }
             
@@ -284,6 +294,8 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             let thumbnailUrl = uploadData.thumbnailUrl || uploadData.thumbnail || uploadData.previewUrl;
             thumbnailUrl = ensureAbsoluteMediaUrl(thumbnailUrl) || thumbnailUrl || videoUrl;
             
+            console.log('✅ Video uploaded successfully:', videoUrl);
+
             // Now create the DeSnap with the uploaded video URL
             const deSnapData = {
                 content: videoUrl,
@@ -293,26 +305,13 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 userId: user?.id
             };
 
-            console.log('Creating DeSnap with data:', {
+            console.log('📝 Creating DeSnap with data:', {
                 hasContent: !!deSnapData.content,
                 hasThumbnail: !!deSnapData.thumbnail,
                 duration: deSnapData.duration,
                 visibility: deSnapData.visibility,
                 userId: deSnapData.userId
             });
-
-            // Use apiFetch which automatically handles token from cookies
-            // Ensure we have a valid token before making the request
-            const token = getToken();
-            console.log('Token check:', {
-                hasToken: !!token,
-                tokenLength: token?.length,
-                userId: user?.id
-            });
-            
-            if (!token) {
-                throw new Error("You must be logged in to create a DeSnap. Please log in and try again.");
-            }
             
             const response = await apiFetch("/api/desnaps", {
                 method: "POST",
@@ -321,16 +320,15 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
             console.log('DeSnap creation response status:', response.status);
 
-            // Read response text ONCE to avoid "body stream already read" error
+            // Read response text ONCE
             const responseText = await response.text();
-            console.log('DeSnap creation response text:', responseText);
+            console.log('DeSnap creation response text:', responseText.substring(0, 200));
 
             if (!response.ok) {
                 let errorMessage = "Failed to create DeSnap";
                 console.error('DeSnap creation error response:', responseText);
                 
                 try {
-                    // Try to parse as JSON
                     if (responseText.trim().startsWith('{')) {
                         const errorData = JSON.parse(responseText);
                         errorMessage = errorData.error || errorData.message || errorData.details || errorMessage;
@@ -343,19 +341,17 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 throw new Error(errorMessage);
             }
 
-            // Use safe JSON parsing to avoid "unexpected token" errors
+            // Parse DeSnap response
             let newDeSnap;
             
             if (!responseText.trim()) {
                 throw new Error('Empty response from server');
             }
             
-            // Check if response is HTML (error page)
             if (responseText.trim().startsWith('<')) {
                 throw new Error('Server returned HTML error page. Please check your connection.');
             }
             
-            // Check if response starts with valid JSON
             if (!responseText.trim().startsWith('{') && !responseText.trim().startsWith('[')) {
                 throw new Error('Server returned non-JSON response. Please try again.');
             }
@@ -377,6 +373,8 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 thumbnail: thumbnailUrl || videoUrl,
             };
 
+            console.log('✅ DeSnap created successfully!');
+
             if (onDeSnapCreated) {
                 onDeSnapCreated(normalizedDeSnap);
             }
@@ -386,6 +384,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
             onClose();
         } catch (err: unknown) {
+            console.error('❌ DeSnap creation error:', err);
             setError(err instanceof Error ? err.message : "Failed to create DeSnap");
         } finally {
             setIsSubmitting(false);
