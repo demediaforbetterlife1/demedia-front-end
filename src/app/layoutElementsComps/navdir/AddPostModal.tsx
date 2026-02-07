@@ -215,6 +215,16 @@ export default function AddPostModal({
     try {
       // Get userId from AuthContext - it comes from database, not localStorage
       const userId = user?.id;
+      
+      // Enhanced authentication debugging
+      console.log("🔐 Post creation authentication check:", {
+        userId: userId,
+        userType: typeof userId,
+        hasUser: !!user,
+        userSetupComplete: user?.isSetupComplete,
+        cookieToken: document.cookie.includes('token'),
+        localStorageToken: !!localStorage.getItem('token')
+      });
       if (!userId) {
         setError("⚠️ Please log in to create a post");
         return;
@@ -312,28 +322,70 @@ export default function AddPostModal({
         videoUrl: videoUrls[0] || null,
       };
 
-      // Verify user authentication
+      // Verify user authentication before making the request
       if (!userId) {
         setError("❌ User not authenticated. Please log in again.");
         setLoading(false);
         return;
       }
 
+      // Check if we have a valid token
+      const token = document.cookie.includes('token') || localStorage.getItem('token');
+      if (!token) {
+        setError("❌ Authentication token missing. Please log in again.");
+        setLoading(false);
+        return;
+      }
+
+      console.log("🔐 Authentication check passed:", {
+        userId: userId,
+        hasToken: !!token,
+        userType: typeof userId
+      });
+
       // Use apiFetch which handles cookies automatically via credentials: 'include'
       const res = await apiFetch(
         `/api/posts`,
         {
           method: "POST",
-          headers: { "user-id": String(userId) },
           body: JSON.stringify(postData),
         },
-        userId,
+        userId, // Pass userId to apiFetch for proper authentication
       );
 
       const responseText = await res.text();
+      console.log("📡 Post creation response:", {
+        status: res.status,
+        statusText: res.statusText,
+        responseLength: responseText.length
+      });
 
       if (!res.ok) {
-        setError(`❌ Post creation failed (${res.status}): ${responseText}`);
+        let errorMessage = `❌ Post creation failed (${res.status})`;
+        
+        // Provide specific error messages based on status code
+        switch (res.status) {
+          case 401:
+            errorMessage = "❌ Authentication failed. Please log in again.";
+            // Optionally trigger logout or token refresh
+            break;
+          case 403:
+            errorMessage = "❌ You don't have permission to create posts.";
+            break;
+          case 413:
+            errorMessage = "❌ Post content is too large. Please reduce image sizes.";
+            break;
+          case 429:
+            errorMessage = "❌ Too many posts. Please wait before posting again.";
+            break;
+          case 500:
+            errorMessage = "❌ Server error. Please try again later.";
+            break;
+          default:
+            errorMessage = `❌ Post creation failed: ${responseText.substring(0, 100)}`;
+        }
+        
+        setError(errorMessage);
         setLoading(false);
         return;
       }

@@ -1,4 +1,5 @@
-"use client";
+t add .
+ git pus"use client";
 
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -6,6 +7,7 @@ import { getEnhancedThemeClasses } from "@/utils/enhancedThemeUtils";
 import Stories from "@/app/(PagesComps)/homedir/stories";
 import Posts from "@/app/(PagesComps)/homedir/posts";
 import FloatingAddStoryButton from "@/components/FloatingAddStoryButton";
+import AuthDebugger from "@/components/AuthDebugger";
 
 import { Sparkles, TrendingUp, Users, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -311,6 +313,9 @@ export default function HomePage() {
         onAddPhoto={handleAddStory}
         onAddVideo={handleAddStory}
       />
+
+      {/* Auth Debugger - Remove in production */}
+      {process.env.NODE_ENV === 'development' && <AuthDebugger />}
 
       {/* Scroll Progress Indicator */}
       <motion.div
