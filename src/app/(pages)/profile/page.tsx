@@ -141,7 +141,7 @@ interface Profile {
     subscriptionTier?: 'monthly' | 'quarterly' | 'semiannual' | null;
 }
 export default function ProfilePage() {
-    const { user, isLoading: authLoading, updateUser } = useAuth();
+    const { user, isLoading: authLoading, updateUser, refreshUser } = useAuth();
     const { theme } = useTheme();
     const { t } = useI18n();
     const router = useRouter();
@@ -619,18 +619,42 @@ export default function ProfilePage() {
 
                 // IMMEDIATELY update everywhere for real-time display
                 if (type === 'profile') {
+                    console.log('🔄 Starting profile photo update process');
+                    
                     const immediateUrl = updateProfilePhotoEverywhere(
                         user?.id || userId,
                         photoUrlWithCache,
                         { name: user?.name, username: user?.username }
                     );
                     
-                    // Also update AuthContext immediately
+                    console.log('📸 Immediate URL created:', immediateUrl);
+                    
+                    // Update AuthContext immediately
                     if (isOwnProfile && user && updateUser) {
-                        console.log('Immediately updating AuthContext with new profile photo');
+                        console.log('✅ Updating AuthContext with new profile photo');
                         updateUser({
                             profilePicture: immediateUrl
                         });
+                        
+                        // Force a second update after a delay to ensure it sticks
+                        setTimeout(() => {
+                            console.log('🔄 Second update to ensure photo sticks');
+                            updateUser({
+                                profilePicture: immediateUrl
+                            });
+                        }, 100);
+                    } else {
+                        console.warn('⚠️ Cannot update AuthContext:', {
+                            isOwnProfile,
+                            hasUser: !!user,
+                            hasUpdateUser: !!updateUser
+                        });
+                    }
+                    
+                    // Also force a page refresh of the user data
+                    if (refreshUser) {
+                        console.log('🔄 Refreshing user data from server');
+                        setTimeout(() => refreshUser(), 500);
                     }
                 }
 

@@ -11,13 +11,24 @@ export async function GET(
 ) {
   try {
     const { id: postId } = await params;
+    
+    // Get token from multiple sources
+    let token = null;
     const authHeader = request.headers.get('authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.replace('Bearer ', '');
+    }
+    if (!token) {
+      token = request.cookies.get('token')?.value || null;
+    }
+    
     const userId = request.headers.get('user-id');
     
-    console.log('Fetching comments for post:', postId);
+    console.log('💬 Fetching comments for post:', postId, 'hasToken:', !!token);
 
-    if (!authHeader) {
-      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+    if (!token) {
+      console.warn('⚠️ No token found, returning empty comments');
+      return NextResponse.json([]);
     }
 
     // Forward request to backend
@@ -28,33 +39,32 @@ export async function GET(
       const response = await fetch(`${backendUrl}/api/posts/${postId}/comments`, {
         method: 'GET',
         headers: {
-          'Authorization': authHeader,
+          'Authorization': `Bearer ${token}`,
           'user-id': userId || '',
           'Content-Type': 'application/json',
+          'Cookie': `token=${token}`,
         },
       });
 
-      console.log('🔄 Backend response status:', response.status);
+      console.log('📡 Backend response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Backend error:', response.status, errorText);
-        throw new Error(`Backend responded with ${response.status}: ${errorText}`);
+        // Return empty array instead of throwing
+        return NextResponse.json([]);
       }
 
       const data = await response.json();
-      console.log('✅ Fetched comments via backend:', data.length, 'comments');
-      return NextResponse.json(data);
+      console.log('✅ Fetched', data.length || 0, 'comments');
+      return NextResponse.json(Array.isArray(data) ? data : []);
     } catch (backendError) {
       console.error('❌ Backend connection failed for comments:', backendError);
-      
-      // Fallback: Return empty array if backend is unavailable
-      console.log('🔄 Using fallback: returning empty comments array');
       return NextResponse.json([]);
     }
   } catch (error) {
     console.error('❌ Error fetching comments:', error);
-    return NextResponse.json({ error: 'Failed to fetch comments' }, { status: 500 });
+    return NextResponse.json([]);
   }
 }
 

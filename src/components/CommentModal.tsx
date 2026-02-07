@@ -129,20 +129,31 @@ export default function CommentModal({ isOpen, onClose, postId, postContent, pos
     const fetchComments = async () => {
         try {
             setLoading(true);
+            setError("");
+            
             const endpoint = isDeSnap 
                 ? `/api/desnaps/${postId}/comments`
                 : `/api/posts/${postId}/comments`;
+            
+            console.log('💬 Fetching comments from:', endpoint);
+            
             const response = await apiFetch(endpoint, {}, user?.id);
+
+            console.log('💬 Comments response status:', response.status);
 
             if (response.ok) {
                 const data = await response.json();
-                setComments(data);
+                console.log('💬 Comments fetched:', data.length || 0, 'comments');
+                setComments(Array.isArray(data) ? data : []);
             } else {
-                console.error('Failed to fetch comments:', response.status);
+                const errorText = await response.text();
+                console.error('❌ Failed to fetch comments:', response.status, errorText);
+                setError(`Failed to load comments: ${response.status}`);
                 setComments([]);
             }
         } catch (err) {
-            console.error('Error fetching comments:', err);
+            console.error('❌ Error fetching comments:', err);
+            setError('Failed to load comments. Please try again.');
             setComments([]);
         } finally {
             setLoading(false);

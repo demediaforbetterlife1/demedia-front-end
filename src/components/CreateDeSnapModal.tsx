@@ -297,16 +297,16 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
             if (!response.ok) {
                 let errorMessage = "Failed to create DeSnap";
+                const responseText = await response.text(); // Read once
+                console.error('DeSnap creation error response:', responseText);
+                
                 try {
-                    const errorText = await response.text();
-                    console.error('DeSnap creation error response:', errorText);
-                    
                     // Try to parse as JSON
-                    if (errorText.trim().startsWith('{')) {
-                        const errorData = JSON.parse(errorText);
+                    if (responseText.trim().startsWith('{')) {
+                        const errorData = JSON.parse(responseText);
                         errorMessage = errorData.error || errorData.message || errorData.details || errorMessage;
                     } else {
-                        errorMessage = `Server error: ${response.status} - ${errorText}`;
+                        errorMessage = `Server error: ${response.status} - ${responseText}`;
                     }
                 } catch (e) {
                     errorMessage = `Server error: ${response.status}`;
@@ -316,31 +316,28 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
             // Use safe JSON parsing to avoid "unexpected token" errors
             let newDeSnap;
+            const responseText = await response.text(); // Read once
+            console.log('DeSnap creation response text:', responseText);
+            
+            if (!responseText.trim()) {
+                throw new Error('Empty response from server');
+            }
+            
+            // Check if response is HTML (error page)
+            if (responseText.trim().startsWith('<')) {
+                throw new Error('Server returned HTML error page. Please check your connection.');
+            }
+            
+            // Check if response starts with valid JSON
+            if (!responseText.trim().startsWith('{') && !responseText.trim().startsWith('[')) {
+                throw new Error('Server returned non-JSON response. Please try again.');
+            }
+            
             try {
-                const responseText = await response.text();
-                console.log('DeSnap creation response text:', responseText);
-                
-                if (!responseText.trim()) {
-                    throw new Error('Empty response from server');
-                }
-                
-                // Check if response is HTML (error page)
-                if (responseText.trim().startsWith('<')) {
-                    throw new Error('Server returned HTML error page. Please check your connection.');
-                }
-                
-                // Check if response starts with valid JSON
-                if (!responseText.trim().startsWith('{') && !responseText.trim().startsWith('[')) {
-                    throw new Error('Server returned non-JSON response. Please try again.');
-                }
-                
                 newDeSnap = JSON.parse(responseText);
             } catch (jsonError) {
                 console.error('JSON parsing error:', jsonError);
-                if (jsonError instanceof SyntaxError) {
-                    throw new Error('Server returned invalid JSON. Please try again.');
-                }
-                throw new Error('Invalid response from server. Please try again.');
+                throw new Error('Server returned invalid JSON. Please try again.');
             }
             
             const normalizedDeSnap = normalizeDeSnap({
