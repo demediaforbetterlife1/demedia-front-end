@@ -15,10 +15,6 @@ interface ProfilePhotoProps {
   priority?: boolean;
 }
 
-/**
- * ProfilePhoto component that automatically updates when profile photos change
- * Listens for real-time profile update events and refreshes the image immediately
- */
 export default function ProfilePhoto({
   src,
   alt = 'Profile photo',
@@ -31,77 +27,49 @@ export default function ProfilePhoto({
   priority = false
 }: ProfilePhotoProps) {
   const [currentSrc, setCurrentSrc] = useState<string>(src || fallbackSrc);
-  const [hasError, setHasError] = useState(false);
-  const [updateKey, setUpdateKey] = useState(0);
+  const [key, setKey] = useState(0);
 
-  // Update local src when prop changes
+  // Update when prop changes
   useEffect(() => {
-    console.log('[ProfilePhoto] Prop src changed:', { userId, newSrc: src });
     if (src) {
+      console.log('[ProfilePhoto] Src prop changed:', src);
       setCurrentSrc(src);
-      setHasError(false);
-      setUpdateKey(prev => prev + 1);
+      setKey(prev => prev + 1);
     }
-  }, [src, userId]);
+  }, [src]);
 
-  // Listen for real-time profile photo updates
+  // Listen for profile updates
   useEffect(() => {
-    if (!userId) {
-      console.log('[ProfilePhoto] No userId provided, skipping event listener');
-      return;
-    }
+    if (!userId) return;
 
-    const handleProfileUpdate = (event: CustomEvent) => {
-      const { userId: updatedUserId, profilePicture, timestamp } = event.detail;
-      
-      console.log('[ProfilePhoto] Event received:', {
-        myUserId: userId,
-        eventUserId: updatedUserId,
-        matches: String(updatedUserId) === String(userId),
-        newPicture: profilePicture,
-        timestamp
-      });
-      
-      if (String(updatedUserId) === String(userId) && profilePicture) {
-        console.log('[ProfilePhoto] Updating photo for user:', userId);
-        setCurrentSrc(profilePicture);
-        setHasError(false);
-        setUpdateKey(prev => prev + 1);
+    const handleUpdate = (event: any) => {
+      const detail = event.detail;
+      if (String(detail.userId) === String(userId) && detail.profilePicture) {
+        console.log('[ProfilePhoto] Update event received for user', userId);
+        setCurrentSrc(detail.profilePicture);
+        setKey(prev => prev + 1);
       }
     };
 
-    console.log('[ProfilePhoto] Setting up event listener for user:', userId);
-    window.addEventListener('profile:updated', handleProfileUpdate as EventListener);
-    
-    return () => {
-      console.log('[ProfilePhoto] Cleaning up event listener for user:', userId);
-      window.removeEventListener('profile:updated', handleProfileUpdate as EventListener);
-    };
+    window.addEventListener('profile:updated', handleUpdate);
+    return () => window.removeEventListener('profile:updated', handleUpdate);
   }, [userId]);
-
-  const handleError = () => {
-    if (!hasError) {
-      console.log('[ProfilePhoto] Image failed to load, using fallback:', { userId, src: currentSrc });
-      setHasError(true);
-      setCurrentSrc(fallbackSrc);
-      onError?.();
-    }
-  };
-
-  const imageSrc = currentSrc || fallbackSrc;
 
   return (
     <Image
-      src={imageSrc}
+      key={`profile-${userId}-${key}`}
+      src={currentSrc}
       alt={alt}
       width={width}
       height={height}
       className={className}
-      onError={handleError}
+      onError={() => {
+        console.log('[ProfilePhoto] Error loading image, using fallback');
+        setCurrentSrc(fallbackSrc);
+        onError?.();
+      }}
       priority={priority}
-      // Add key to force re-render when src changes
-      key={`${userId}-${updateKey}-${imageSrc}`}
-      unoptimized={imageSrc.startsWith('data:') || imageSrc.startsWith('blob:')}
+      unoptimized={currentSrc.startsWith('data:') || currentSrc.startsWith('blob:')}
     />
   );
 }

@@ -17,33 +17,43 @@ export const config = {
 
 export async function POST(request: NextRequest) {
   try {
-    // Try to get token from Authorization header first, then fall back to cookie
+    // Get token from multiple sources
     let token = null;
-    let authHeader = request.headers.get('authorization');
     
+    // Try Authorization header first
+    const authHeader = request.headers.get('authorization');
     if (authHeader?.startsWith('Bearer ')) {
       token = authHeader.replace('Bearer ', '');
+      console.log('✅ Token from Authorization header');
     }
     
-    // If no token in header, try cookie
+    // Fallback to cookie
     if (!token) {
       token = request.cookies.get('token')?.value || null;
+      if (token) {
+        console.log('✅ Token from cookie');
+      }
     }
     
     if (!token) {
-      console.error('❌ No authorization token found in header or cookie');
+      console.error('❌ No authorization token found');
       return NextResponse.json({ 
-        error: 'Authorization header is required. Please include a valid Bearer token in the Authorization header.' 
+        error: 'Authorization required. Please log in again.',
+        details: 'No token found in Authorization header or cookie'
       }, { status: 401 });
     }
-    
-    const body = await request.json();
 
-    console.log('Creating new DeSnap via backend:', body);
+    const body = await request.json();
+    console.log('📝 Creating DeSnap:', {
+      hasContent: !!body.content,
+      hasThumbnail: !!body.thumbnail,
+      visibility: body.visibility,
+      userId: body.userId
+    });
 
     // Forward request to backend
     const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
-    console.log('🔄 Connecting to backend for DeSnap creation:', backendUrl);
+    console.log('🔄 Forwarding to backend:', backendUrl);
     
     try {
       const response = await fetch(`${backendUrl}/api/desnaps`, {
@@ -51,34 +61,47 @@ export async function POST(request: NextRequest) {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-          'Cookie': `token=${token}`, // Forward cookie for backend auth
+          'Cookie': `token=${token}`,
         },
         body: JSON.stringify(body),
       });
 
-      console.log('🔄 Backend response status:', response.status);
+      console.log('📡 Backend response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Backend error:', response.status, errorText);
+        
+        let errorMessage = 'Failed to create DeSnap';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorData.message || errorData.details || errorMessage;
+        } catch (e) {
+          errorMessage = errorText || `Backend error: ${response.status}`;
+        }
+        
         return NextResponse.json({ 
-          error: errorText || `Backend responded with ${response.status}` 
+          error: errorMessage,
+          details: errorText
         }, { status: response.status });
       }
 
       const data = await response.json();
-      console.log('✅ DeSnap created via backend:', data.id);
+      console.log('✅ DeSnap created successfully:', data.id);
       return NextResponse.json(data);
+      
     } catch (backendError) {
-      console.error('❌ Backend connection failed for DeSnap creation:', backendError);
+      console.error('❌ Backend connection failed:', backendError);
       return NextResponse.json({ 
-        error: `Backend connection failed: ${backendError instanceof Error ? backendError.message : 'Unknown error'}` 
+        error: 'Backend connection failed. Please try again.',
+        details: backendError instanceof Error ? backendError.message : 'Unknown error'
       }, { status: 500 });
     }
   } catch (error) {
-    console.error('❌ Error creating DeSnap:', error);
+    console.error('❌ Error in DeSnap API route:', error);
     return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Failed to create DeSnap' 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
