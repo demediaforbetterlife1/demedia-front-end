@@ -162,11 +162,23 @@ export async function authenticatedFetch(
   const token = getBestToken();
   
   if (!token) {
-    throw new Error("No authentication token available");
+    throw new Error("Authentication required - please log in again");
   }
 
+  // Build headers with authentication
+  const authHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`,
+  };
+
+  // Add user-id header if provided (for backend fallback)
+  if (userId) {
+    authHeaders["user-id"] = String(userId);
+  }
+
+  // Merge with existing headers
   const headers = {
-    ...getAuthHeaders(userId),
+    ...authHeaders,
     ...(options.headers || {})
   };
 
@@ -175,6 +187,14 @@ export async function authenticatedFetch(
     headers,
     credentials: 'include' // Always include cookies
   };
+
+  console.log("🔐 Making authenticated request:", {
+    url,
+    method: options.method || 'GET',
+    hasToken: !!token,
+    hasUserId: !!userId,
+    tokenPreview: token.substring(0, 20) + '...'
+  });
 
   return fetch(url, enhancedOptions);
 }

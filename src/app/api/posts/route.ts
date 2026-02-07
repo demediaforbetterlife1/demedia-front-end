@@ -190,12 +190,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!token || !userId) {
+    if (!token) {
       return NextResponse.json(
-        { error: true, message: "Authentication required" },
+        { error: true, message: "Authentication required - no token found" },
         { status: 401 },
       );
     }
+
+    // Log authentication details for debugging
+    console.log("🔐 Frontend API - Authentication check:", {
+      hasToken: !!token,
+      hasUserId: !!userId,
+      tokenLength: token ? token.length : 0,
+      tokenPreview: token ? token.substring(0, 20) + '...' : 'none',
+      userIdValue: userId,
+      cookieToken: !!request.cookies.get("token")?.value,
+      authHeader: !!request.headers.get("authorization")
+    });
 
     // Log image info for debugging
     const imageUrls = body.imageUrls || [];
@@ -211,10 +222,23 @@ export async function POST(request: NextRequest) {
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",
-      "user-id": userId,
       Authorization: `Bearer ${token}`,
-      Cookie: `token=${token}`, // Forward cookie for backend auth
     };
+
+    // Add user-id header if available (fallback for backend)
+    if (userId) {
+      headers["user-id"] = userId;
+    }
+
+    // Also forward the cookie for backend compatibility
+    headers["Cookie"] = `token=${token}`;
+
+    console.log("📤 Making request to backend:", {
+      url: backendUrl,
+      hasAuthHeader: !!headers["Authorization"],
+      hasUserIdHeader: !!headers["user-id"],
+      hasCookieHeader: !!headers["Cookie"]
+    });
 
     const res = await fetch(backendUrl, {
       method: "POST",

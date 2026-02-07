@@ -180,22 +180,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Enhanced fetch with dual token support
   const apiFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
     try {
-      // Get token from either storage method
-      const token = getCookie("token") || getLocalStorageToken();
+      // Get token using the best available method
+      const token = getBestToken();
       
       const headers: Record<string, string> = {
-  "Content-Type": "application/json",
-};
+        "Content-Type": "application/json",
+      };
 
-      // Add token to headers for backup (in case cookies don't work
+      // Add token to headers if available
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
       const response = await fetch(url, {
         ...options,
-        headers,
-        credentials: 'include', // Still try cookies first
+        headers: {
+          ...headers,
+          ...(options.headers || {})
+        },
+        credentials: 'include', // Always include cookies
       });
 
       return response;
@@ -210,10 +213,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log("[Auth] Fetching user...");
       
-      // Check both storage methods
-      const cookieToken = getCookie("token");
-      const storageToken = getLocalStorageToken();
-      console.log("[Auth] Token - Cookie:", !!cookieToken, "LocalStorage:", !!storageToken);
+      // Check token using authFix utilities
+      const token = getBestToken();
+      console.log("[Auth] Token available:", !!token);
 
       const res = await apiFetch("/api/auth/me", {
         method: "GET",
@@ -223,8 +225,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (res.status === 401) {
         console.warn("[Auth] Token invalid, clearing all storage");
-        deleteCookie("token");
-        removeLocalStorageToken();
+        clearAllTokens();
         setUser(null);
         return false;
       }
@@ -270,36 +271,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Migrate old token storage if needed
         migrateTokenStorage();
         
-        // Check if we have any token stored
-        const hasCookieToken = !!getCookie("token");
-        const hasStorageToken = !!getLocalStorageToken();
+        // Check if we have any token stored using authFix utilities
+        const hasValidToken = hasValidAuth();
         
-        console.log("[Auth] Token check - Cookie:", hasCookieToken, "LocalStorage:", hasStorageToken);
+        console.log("[Auth] Token check - hasValidAuth:", hasValidToken);
 
-        // If we have localStorage token but no cookie, restore the cookie
-        if (hasStorageToken && !hasCookieToken) {
-          const token = getLocalStorageToken();
-          if (token) {
-            console.log("[Auth] Restoring token from localStorage to cookie");
-            setCookie("token", token);
-          }
-        }
-
-        // If we have any token, try to fetch user
-        if (hasCookieToken || hasStorageToken) {
-          console.log("[Auth] Token found, attempting to fetch user data...");
+        // If we have a valid token, try to fetch user
+        if (hasValidToken) {
+          console.log("[Auth] Valid token found, attempting to fetch user data...");
           const userFetched = await fetchUser();
           if (userFetched) {
             console.log("[Auth] User data fetched successfully");
           } else {
             console.log("[Auth] Failed to fetch user data - token may be invalid");
             // Clear invalid tokens
-            deleteCookie("token");
-            removeLocalStorageToken();
+            clearAllTokens();
             setUser(null);
           }
         } else {
-          console.log("[Auth] No authentication token found - user is not logged in");
+          console.log("[Auth] No valid token found - user is not logged in");
           setUser(null);
         }
       } catch (err) {
@@ -374,11 +364,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, message: msg };
       }
 
-      // Store token in both cookie and localStorage
+      // Store token in both cookie and localStorage using authFix utilities
       if (data.token) {
         console.log("[Auth] Storing token in both cookie and localStorage");
-        setCookie("token", data.token);
-        setLocalStorageToken(data.token);
+        setAuthToken(data.token); // This sets both cookie and localStorage
       }
 
       // Use user data from response
@@ -434,11 +423,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, message: msg };
       }
 
-      // Store token in both cookie and localStorage
+      // Store token in both cookie and localStorage using authFix utilities
       if (data.token) {
         console.log("[Auth] Storing token in both cookie and localStorage");
-        setCookie("token", data.token);
-        setLocalStorageToken(data.token);
+        setAuthToken(data.token); // This sets both cookie and localStorage
       }
 
       // Use user data from response

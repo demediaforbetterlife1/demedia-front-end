@@ -13,7 +13,8 @@ import {
   hasValidAuth, 
   getAuthHeaders, 
   debugAuth,
-  authenticatedFetch 
+  authenticatedFetch,
+  clearAllTokens
 } from "@/utils/authFix";
 import {
   X,
@@ -222,7 +223,13 @@ export default function AddPostModal({
       // Get userId from AuthContext
       const userId = user?.id;
       
-      // Debug authentication state
+      // Debug authentication state with enhanced logging
+      console.log("🔐 Pre-authentication check:", {
+        userId: userId,
+        userType: typeof userId,
+        userObject: user ? { id: user.id, username: user.username } : null
+      });
+      
       debugAuth();
       
       // Enhanced authentication validation
@@ -241,7 +248,8 @@ export default function AddPostModal({
       console.log("🔐 Authentication validated successfully:", {
         userId: userId,
         userType: typeof userId,
-        hasValidAuth: hasValidAuth()
+        hasValidAuth: hasValidAuth(),
+        tokenPreview: getBestToken()?.substring(0, 20) + '...'
       });
 
       if (content.trim()) {
@@ -360,7 +368,11 @@ export default function AddPostModal({
         switch (res.status) {
           case 401:
             errorMessage = "❌ Authentication failed. Please log in again.";
-            // Optionally trigger logout or token refresh
+            // Clear potentially invalid tokens and redirect to login
+            clearAllTokens();
+            setTimeout(() => {
+              window.location.href = '/sign-in';
+            }, 2000);
             break;
           case 403:
             errorMessage = "❌ You don't have permission to create posts.";
@@ -377,6 +389,12 @@ export default function AddPostModal({
           default:
             errorMessage = `❌ Post creation failed: ${responseText.substring(0, 100)}`;
         }
+        
+        console.error("❌ Post creation failed:", {
+          status: res.status,
+          statusText: res.statusText,
+          response: responseText.substring(0, 200)
+        });
         
         setError(errorMessage);
         setLoading(false);
