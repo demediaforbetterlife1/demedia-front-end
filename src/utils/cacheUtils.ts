@@ -84,7 +84,7 @@ export const clearAllCaches = async (): Promise<void> => {
     }
 
     // Force refresh all images
-    const images = document.querySelectorAll('img');
+    const images = document.querySelectorAll('img') as NodeListOf<HTMLImageElement>;
     images.forEach(img => {
       if (img.src && !img.src.startsWith('data:')) {
         img.src = bustCache(img.src);
@@ -103,7 +103,7 @@ export const clearAllCaches = async (): Promise<void> => {
 export const refreshAllCachedElements = (): void => {
   try {
     // Refresh all images
-    const images = document.querySelectorAll('img');
+    const images = document.querySelectorAll('img') as NodeListOf<HTMLImageElement>;
     images.forEach(img => {
       if (img.src && !img.src.startsWith('data:')) {
         const originalSrc = img.src.split('?')[0]; // Remove existing cache busters
@@ -112,7 +112,7 @@ export const refreshAllCachedElements = (): void => {
     });
 
     // Refresh all stylesheets
-    const links = document.querySelectorAll('link[rel="stylesheet"]');
+    const links = document.querySelectorAll('link[rel="stylesheet"]') as NodeListOf<HTMLLinkElement>;
     links.forEach(link => {
       if (link.href) {
         const originalHref = link.href.split('?')[0]; // Remove existing cache busters
@@ -121,7 +121,7 @@ export const refreshAllCachedElements = (): void => {
     });
 
     // Refresh all scripts
-    const scripts = document.querySelectorAll('script[src]');
+    const scripts = document.querySelectorAll('script[src]') as NodeListOf<HTMLScriptElement>;
     scripts.forEach(script => {
       if (script.src && !script.src.includes('_next/static')) {
         const originalSrc = script.src.split('?')[0]; // Remove existing cache busters
