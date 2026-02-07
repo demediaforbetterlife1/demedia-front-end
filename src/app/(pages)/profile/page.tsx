@@ -846,12 +846,11 @@ export default function ProfilePage() {
     // Destructure profile data
     const { coverPicture, name, username, bio, followersCount, followingCount, likesCount, stories } = profile;
     
-    // Use local state for profile picture with real-time updates
-    const [currentProfilePicture, setCurrentProfilePicture] = useState<string | null>(profile.profilePicture);
-    
-    // Update when profile changes
+    // Update currentProfilePicture when profile changes
     useEffect(() => {
-        setCurrentProfilePicture(profile.profilePicture);
+        if (profile.profilePicture) {
+            setCurrentProfilePicture(profile.profilePicture);
+        }
     }, [profile.profilePicture]);
     
     // Listen for real-time profile photo updates
