@@ -129,50 +129,42 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
     headers["Content-Type"] = "application/json";
   }
 
-  // AGGRESSIVE cache busting for ALL requests
+  // Simplified cache busting - only for GET requests
   const method = ((options.method || "GET") as string).toUpperCase();
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(7);
+  let url = `${API_BASE}${path}`;
   
-  // Add multiple cache-busting parameters
-  const separator = path.includes("?") ? "&" : "?";
-  let url = `${API_BASE}${path}${separator}cb=${timestamp}&v=${random}&nocache=true&t=${Date.now()}`;
+  // Only add cache buster for GET requests
+  if (method === "GET") {
+    const separator = path.includes("?") ? "&" : "?";
+    url = `${url}${separator}t=${Date.now()}`;
+  }
 
   const isPostsEndpoint = path.includes("/posts");
   const isAuthEndpoint = path.includes("/auth");
-  const timeouts = isPostsEndpoint ? [5000, 8000, 10000] : isAuthEndpoint ? [20000] : [15000, 25000, 35000];
-  const maxRetries = timeouts.length - 1;
+  const timeouts = isPostsEndpoint ? [8000] : isAuthEndpoint ? [20000] : [15000];
+  const maxRetries = 0; // Disable retries to improve performance
 
   let lastError: any = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const timeout = timeouts[attempt];
     try {
-      // ULTRA-AGGRESSIVE cache prevention headers
-      const aggressiveHeaders = {
+      // Simplified headers - remove excessive cache prevention
+      const fetchHeaders = {
         ...headers,
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0, stale-while-revalidate=0, stale-if-error=0',
+        'Cache-Control': 'no-cache',
         'Pragma': 'no-cache',
-        'Expires': '0',
-        'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT',
-        'If-None-Match': '*',
-        'Surrogate-Control': 'no-store',
-        'CDN-Cache-Control': 'no-store',
-        'Vercel-CDN-Cache-Control': 'no-store',
-        'X-Timestamp': timestamp.toString(),
-        'X-Cache-Buster': random,
       };
 
-      // choose fetch options with ULTRA-AGGRESSIVE cache prevention
+      // choose fetch options
       let fetchOptions: RequestInit;
       if (isPostsEndpoint || isAuthEndpoint) {
-        // don't abort posts/auth requests (to avoid mid-flight aborts)
+        // don't abort posts/auth requests
         fetchOptions = {
           ...options,
-          headers: aggressiveHeaders,
-          cache: "no-store", // Most aggressive cache setting
-          mode: "cors",
-          credentials: "include", // Always include cookies
+          headers: fetchHeaders,
+          cache: "no-store",
+          credentials: "include",
         };
       } else {
         // use AbortController for non-auth/post endpoints
@@ -181,17 +173,14 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
 
         fetchOptions = {
           ...options,
-          headers: aggressiveHeaders,
+          headers: fetchHeaders,
           signal: controller.signal,
-          cache: "no-store", // Most aggressive cache setting
-          mode: "cors",
-          credentials: "include", // Always include cookies
+          cache: "no-store",
+          credentials: "include",
         };
-
-        // Note: timer will be cleared implicitly when request finishes or caught below
       }
 
-      // For auth endpoints: soft timeout using Promise.race to return 504 synthetic response
+      // For auth endpoints: soft timeout
       const res: Response = isAuthEndpoint
         ? await Promise.race<Promise<Response>>([
           fetch(url, fetchOptions),
@@ -207,13 +196,13 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
       // Handle 401 - don't logout immediately
       if (res.status === 401) {
         console.warn("[api] 401 Unauthorized for:", path);
-        return res; // Let caller handle 401
+        return res;
       }
 
       // if auth synthetic timeout (504), try direct backend
       if (isAuthEndpoint && res.status === 504) {
         try {
-          const directRes = await tryDirectConnection(path, { ...options, headers: aggressiveHeaders });
+          const directRes = await tryDirectConnection(path, { ...options, headers: fetchHeaders });
           return directRes;
         } catch (e) {
           throw new Error("Auth request timed out");
@@ -227,30 +216,11 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
       const msg = (err?.message || "").toString();
       const isNetworkError = msg.includes("Failed to fetch") || msg.includes("NetworkError") || msg.includes("timeout");
 
-      // Retry policy
-      if (errName === "AbortError") {
-        if (attempt < maxRetries) {
-          await new Promise((r) => setTimeout(r, (attempt + 1) * 1000));
-          continue;
-        } else if (isAuthEndpoint) {
-          try {
-            return await tryDirectConnection(path, options);
-          } catch { }
-        }
-      }
-
-      if (attempt < maxRetries && isNetworkError) {
-        await new Promise((r) => setTimeout(r, (attempt + 1) * 1000));
-        continue;
-      }
-
-      // final fallback: try direct backend
-      if (attempt === maxRetries && (isNetworkError || errName === "AbortError")) {
+      // Simplified retry - only for critical errors
+      if (errName === "AbortError" && isAuthEndpoint) {
         try {
           return await tryDirectConnection(path, options);
-        } catch (directErr) {
-          throw err;
-        }
+        } catch { }
       }
 
       throw err;

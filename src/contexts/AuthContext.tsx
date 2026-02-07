@@ -180,34 +180,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const updatedUser = { ...prev, ...newData };
       
       // If profile picture is being updated, dispatch event for real-time updates
-      if (newData.profilePicture && newData.profilePicture !== prev.profilePicture) {
-        console.log('[Auth] Profile picture updated, dispatching event');
-        console.log('[Auth] User ID:', prev.id, 'New picture:', newData.profilePicture);
+      if (newData.profilePicture) {
+        console.log('[Auth] Profile picture updated');
+        console.log('[Auth] User ID:', prev.id);
+        console.log('[Auth] New picture URL:', newData.profilePicture);
         
-        // Dispatch custom event for real-time profile photo updates
-        if (typeof window !== "undefined") {
-          // Dispatch immediately
-          window.dispatchEvent(new CustomEvent('profile:updated', {
-            detail: {
-              userId: prev.id,
-              profilePicture: newData.profilePicture,
-              name: updatedUser.name,
-              username: updatedUser.username
-            }
-          }));
-          
-          // Also dispatch after a short delay to catch any late listeners
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('profile:updated', {
+        // Force immediate re-render by updating state
+        setTimeout(() => {
+          // Dispatch custom event for real-time profile photo updates
+          if (typeof window !== "undefined") {
+            const event = new CustomEvent('profile:updated', {
               detail: {
                 userId: prev.id,
                 profilePicture: newData.profilePicture,
                 name: updatedUser.name,
-                username: updatedUser.username
+                username: updatedUser.username,
+                timestamp: Date.now()
               }
-            }));
-          }, 100);
-        }
+            });
+            
+            console.log('[Auth] Dispatching profile:updated event', event.detail);
+            window.dispatchEvent(event);
+            
+            // Dispatch multiple times to ensure all listeners catch it
+            setTimeout(() => window.dispatchEvent(event), 50);
+            setTimeout(() => window.dispatchEvent(event), 150);
+            setTimeout(() => window.dispatchEvent(event), 300);
+          }
+        }, 0);
       }
       
       return updatedUser;
