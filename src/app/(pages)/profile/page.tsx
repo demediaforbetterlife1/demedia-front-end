@@ -264,6 +264,9 @@ export default function ProfilePage() {
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
     const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false);
     const [photoUploadType, setPhotoUploadType] = useState<'profile' | 'cover'>('profile');
+    
+    // Profile photo real-time update state
+    const [currentProfilePicture, setCurrentProfilePicture] = useState<string | null>(null);
     useEffect(() => {
         let mounted = true;
         async function loadProfile() {
@@ -839,8 +842,9 @@ export default function ProfilePage() {
                 </div>
             </div>
         );
-    const { coverPicture, name, username, bio, followersCount, followingCount, likesCount, stories } =
-        profile;
+    
+    // Destructure profile data
+    const { coverPicture, name, username, bio, followersCount, followingCount, likesCount, stories } = profile;
     
     // Use local state for profile picture with real-time updates
     const [currentProfilePicture, setCurrentProfilePicture] = useState<string | null>(profile.profilePicture);
