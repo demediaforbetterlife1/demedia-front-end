@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 // src/components/ProfilePage.tsx
 import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -629,6 +629,9 @@ export default function ProfilePage() {
                     
                     console.log('📸 Immediate URL created:', immediateUrl);
                     
+                    // Update local state IMMEDIATELY
+                    setCurrentProfilePicture(immediateUrl);
+                    
                     // Update AuthContext immediately
                     if (isOwnProfile && user && updateUser) {
                         console.log('✅ Updating AuthContext with new profile photo');
@@ -636,13 +639,15 @@ export default function ProfilePage() {
                             profilePicture: immediateUrl
                         });
                         
-                        // Force a second update after a delay to ensure it sticks
-                        setTimeout(() => {
-                            console.log('🔄 Second update to ensure photo sticks');
-                            updateUser({
-                                profilePicture: immediateUrl
-                            });
-                        }, 100);
+                        // Force multiple updates to ensure it sticks
+                        for (let i = 1; i <= 5; i++) {
+                            setTimeout(() => {
+                                console.log(`🔄 Update ${i} to ensure photo sticks`);
+                                updateUser({
+                                    profilePicture: immediateUrl
+                                });
+                            }, i * 100);
+                        }
                     } else {
                         console.warn('⚠️ Cannot update AuthContext:', {
                             isOwnProfile,
@@ -834,8 +839,32 @@ export default function ProfilePage() {
                 </div>
             </div>
         );
-    const { coverPicture, profilePicture, name, username, bio, followersCount, followingCount, likesCount, stories } =
+    const { coverPicture, name, username, bio, followersCount, followingCount, likesCount, stories } =
         profile;
+    
+    // Use local state for profile picture with real-time updates
+    const [currentProfilePicture, setCurrentProfilePicture] = useState<string | null>(profile.profilePicture);
+    
+    // Update when profile changes
+    useEffect(() => {
+        setCurrentProfilePicture(profile.profilePicture);
+    }, [profile.profilePicture]);
+    
+    // Listen for real-time profile photo updates
+    useEffect(() => {
+        const handleProfileUpdate = (event: CustomEvent) => {
+            const { userId: updatedUserId, profilePicture: newPhoto } = event.detail;
+            if (String(updatedUserId) === String(profile.id) && newPhoto) {
+                console.log('[ProfilePage] Profile photo updated via event:', newPhoto.substring(0, 100));
+                setCurrentProfilePicture(newPhoto);
+                // Also update the profile state
+                setProfile(prev => prev ? { ...prev, profilePicture: newPhoto } : null);
+            }
+        };
+        
+        window.addEventListener('profile:updated', handleProfileUpdate as EventListener);
+        return () => window.removeEventListener('profile:updated', handleProfileUpdate as EventListener);
+    }, [profile.id]);
 
     // Debug logging for profile picture
     console.log('Profile picture value:', profilePicture);
@@ -922,23 +951,23 @@ export default function ProfilePage() {
 
                                     {/* Main Profile Circle */}
                                     <div className={`relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl ring-4 ring-white/20 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300`}>
-                                        {profilePicture ? (
+                                        {currentProfilePicture ? (
                                             <motion.img
-                                                key={profilePicture}
+                                                key={`profile-${currentProfilePicture}-${Date.now()}`}
                                                 initial={{ scale: 0.8, opacity: 0 }}
                                                 animate={{ scale: 1, opacity: 1 }}
                                                 transition={{ type: "spring", stiffness: 120 }}
-                                                src={profilePicture}
+                                                src={currentProfilePicture}
                                                 alt={name}
                                                 className="w-full h-full object-cover"
                                                 loading="lazy"
                                                 onError={(e) => {
-                                                    console.log("Profile picture failed to load:", profilePicture);
+                                                    console.log("Profile picture failed to load:", currentProfilePicture);
                                                     console.log("Error details:", e);
                                                     e.currentTarget.src = "/assets/images/default-avatar.svg";
                                                 }}
                                                 onLoad={() => {
-                                                    console.log("Profile picture loaded successfully:", profilePicture);
+                                                    console.log("Profile picture loaded successfully:", currentProfilePicture);
                                                 }}
                                             />
                                         ) : (
