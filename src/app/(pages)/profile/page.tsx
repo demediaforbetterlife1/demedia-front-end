@@ -867,7 +867,7 @@ export default function ProfilePage() {
     }, [profile.id]);
 
     // Debug logging for profile picture
-    console.log('Profile picture value:', profilePicture);
+    console.log('Profile picture value:', currentProfilePicture);
     console.log('Cover picture value:', coverPicture);
     const handleGoToAuthorProfile = (userId?: number | string) => {
         if (!userId) return;
