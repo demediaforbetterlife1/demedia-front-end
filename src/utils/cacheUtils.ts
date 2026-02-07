@@ -220,43 +220,70 @@ export const isContentFresh = async (url: string): Promise<boolean> => {
 };
 
 /**
- * Initialize ultra-aggressive cache prevention
+ * Initialize smart cache prevention (NO AUTO-RELOAD)
  */
 export const initUltraCachePrevention = (): void => {
-  console.log('🚀 Initializing ULTRA cache prevention...');
+  console.log('🚀 Initializing smart cache prevention...');
 
-  // Enable global cache busting
+  // Enable global cache busting for API requests only
   enableGlobalCacheBusting();
 
-  // Clear all caches on initialization
+  // Clear caches silently on initialization
   clearAllCaches();
 
-  // Refresh all cached elements
-  setTimeout(() => {
-    refreshAllCachedElements();
-  }, 100);
-
-  // Set up periodic cache clearing (every 5 minutes)
-  setInterval(() => {
-    console.log('🔄 Periodic cache clearing...');
-    clearAllCaches();
-  }, 5 * 60 * 1000);
-
-  // Listen for visibility changes to refresh content
+  // DON'T set up periodic cache clearing - only clear on user action
+  
+  // Listen for visibility changes to check for updates (but don't auto-reload)
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
-      console.log('👁️ Page visible - refreshing content');
-      refreshAllCachedElements();
+      console.log('👁️ Page visible - checking for updates');
+      checkForUpdates();
     }
   });
 
-  // Listen for focus events to refresh content
+  // Listen for focus events to check for updates (but don't auto-reload)
   window.addEventListener('focus', () => {
-    console.log('🎯 Window focused - refreshing content');
-    refreshAllCachedElements();
+    console.log('🎯 Window focused - checking for updates');
+    checkForUpdates();
   });
 
-  console.log('✅ ULTRA cache prevention initialized');
+  console.log('✅ Smart cache prevention initialized (NO AUTO-RELOAD)');
+};
+
+/**
+ * Check for updates without auto-reloading
+ */
+const checkForUpdates = async (): Promise<void> => {
+  try {
+    const response = await fetch(`/version.json?v=${Date.now()}&cb=${Math.random()}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma': 'no-cache'
+      }
+    });
+
+    const versionData = await response.json();
+    const newVersion = versionData.buildId || Date.now().toString();
+    const currentVersion = localStorage.getItem('app_version');
+
+    if (currentVersion && currentVersion !== newVersion) {
+      console.log('🔄 New version available:', newVersion);
+      localStorage.setItem('update_available', 'true');
+      localStorage.setItem('new_version', newVersion);
+
+      // Dispatch event for update notification component
+      window.dispatchEvent(new CustomEvent('app:update-available', {
+        detail: {
+          oldVersion: currentVersion,
+          newVersion: newVersion,
+          timestamp: Date.now()
+        }
+      }));
+    }
+  } catch (error) {
+    console.warn('⚠️ Update check failed:', error);
+  }
 };
 
 /**

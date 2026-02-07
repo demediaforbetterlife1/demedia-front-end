@@ -112,52 +112,65 @@ export default function RootLayout({
         {/* Apple Splash Screens */}
         <link rel="apple-touch-startup-image" href="/assets/images/head.png" />
         
-        {/* Smart Cache Management - Facebook-style */}
+        {/* Smart Cache Management - NO AUTO-RELOAD */}
         <script src="/smart-cache.js" defer></script>
         
-        {/* ULTRA-AGGRESSIVE Cache Buster - Ensures 100% fresh content */}
+        {/* Smart Cache Buster - Shows update notification only */}
         <script src="/cache-buster.js" defer></script>
         
         {/* PWA Registration */}
         <script src="/pwa-register.js" defer></script>
         
-        {/* Ultra Cache Prevention Initialization */}
+        {/* Smart Cache Prevention - NO AUTO-RELOAD */}
         <script dangerouslySetInnerHTML={{
           __html: `
-            // Initialize ultra cache prevention as soon as possible
+            // Smart cache prevention - only for API requests
             (function() {
-              console.log('🚀 Initializing ULTRA cache prevention...');
+              console.log('🚀 Initializing smart cache prevention (NO AUTO-RELOAD)...');
               
-              // Override fetch immediately
+              // Override fetch for API requests only
               const originalFetch = window.fetch;
               window.fetch = function(input, init) {
                 let url = typeof input === 'string' ? input : input.url;
                 
-                // Don't cache-bust Next.js static assets
+                // Don't cache-bust Next.js static assets (they have unique hashes)
                 if (url.includes('/_next/static/')) {
                   return originalFetch.call(this, input, init);
                 }
                 
-                // Add ultra cache busting
-                const timestamp = Date.now();
-                const random = Math.random().toString(36).substring(7);
-                const separator = url.includes('?') ? '&' : '?';
-                const cacheBustedUrl = url + separator + 't=' + timestamp + '&cb=' + random + '&nocache=true';
+                // Only add cache busting to API and data requests
+                if (url.includes('/api/') || url.includes('/_next/data/') || url.includes('/uploads/')) {
+                  const timestamp = Date.now();
+                  const random = Math.random().toString(36).substring(7);
+                  const separator = url.includes('?') ? '&' : '?';
+                  const cacheBustedUrl = url + separator + 't=' + timestamp + '&cb=' + random;
+                  
+                  const smartInit = {
+                    ...init,
+                    cache: 'no-store',
+                    headers: {
+                      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+                      'Pragma': 'no-cache',
+                      ...(init?.headers || {})
+                    }
+                  };
+                  
+                  return originalFetch.call(this, cacheBustedUrl, smartInit);
+                }
                 
-                const ultraInit = {
+                // For other requests, just add no-cache headers
+                const smartInit = {
                   ...init,
-                  cache: 'no-store',
                   headers: {
-                    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-                    'Pragma': 'no-cache',
+                    'Cache-Control': 'no-cache',
                     ...(init?.headers || {})
                   }
                 };
                 
-                return originalFetch.call(this, cacheBustedUrl, ultraInit);
+                return originalFetch.call(this, input, smartInit);
               };
               
-              console.log('✅ Ultra cache prevention active');
+              console.log('✅ Smart cache prevention active (NO AUTO-RELOAD)');
             })();
           `
         }} />
