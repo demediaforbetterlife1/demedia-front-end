@@ -16,6 +16,7 @@ interface VersionInfo {
 /**
  * Hook to check for application version updates
  * NEVER auto-reloads - only notifies user
+ * ONLY shows notification when there's a REAL version change
  */
 export function useVersionCheck(checkInterval: number = 60000) {
   const [currentVersion, setCurrentVersion] = useState<VersionInfo | null>(null);
@@ -23,6 +24,7 @@ export function useVersionCheck(checkInterval: number = 60000) {
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
+    let isInitialLoad = true;
 
     const checkVersion = async () => {
       try {
@@ -41,15 +43,31 @@ export function useVersionCheck(checkInterval: number = 60000) {
 
         const versionInfo: VersionInfo = await response.json();
 
-        // First load - set current version
-        if (!currentVersion) {
+        // First load - set current version and store it
+        if (!currentVersion || isInitialLoad) {
           setCurrentVersion(versionInfo);
+          localStorage.setItem('app_version', versionInfo.buildId);
           console.log('📦 Current version:', versionInfo.buildId);
+          isInitialLoad = false;
+          
+          // Clear any stale update flags on initial load
+          localStorage.removeItem('update_available');
+          localStorage.removeItem('new_version');
           return;
         }
 
-        // Check if version has changed
+        // Check if version has ACTUALLY changed
         if (versionInfo.buildId !== currentVersion.buildId) {
+          // Double-check this is a real change, not a false positive
+          const storedVersion = localStorage.getItem('app_version');
+          
+          if (storedVersion === versionInfo.buildId) {
+            // This is a false positive - versions are actually the same
+            console.log('⚠️ False positive update detected - ignoring');
+            setCurrentVersion(versionInfo);
+            return;
+          }
+          
           console.log('🔄 New version detected!');
           console.log('Current:', currentVersion.buildId);
           console.log('New:', versionInfo.buildId);
