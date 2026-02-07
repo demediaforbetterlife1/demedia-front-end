@@ -174,7 +174,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [user, isLoading, initComplete, isAuthenticated]);
 
   const updateUser = (newData: Partial<User>) => {
-    setUser((prev) => (prev ? { ...prev, ...newData } : null));
+    console.log('[Auth] Updating user data:', newData);
+    setUser((prev) => {
+      if (!prev) return null;
+      const updatedUser = { ...prev, ...newData };
+      
+      // If profile picture is being updated, dispatch event for real-time updates
+      if (newData.profilePicture && newData.profilePicture !== prev.profilePicture) {
+        console.log('[Auth] Profile picture updated, dispatching event');
+        // Dispatch custom event for real-time profile photo updates
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent('profile:updated', {
+            detail: {
+              userId: prev.id,
+              profilePicture: newData.profilePicture,
+              name: updatedUser.name,
+              username: updatedUser.username
+            }
+          }));
+        }
+      }
+      
+      return updatedUser;
+    });
   };
 
   // Enhanced fetch with dual token support

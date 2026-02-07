@@ -284,6 +284,39 @@ export default function SignIn() {
                                 required
                             />
                             </div>
+                            {/* Professional Country Code Guidance */}
+                            <div className="mt-2 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
+                                <div className="flex items-start gap-2">
+                                    <div className="text-cyan-400 mt-0.5">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <path d="m9,12 2,2 4,-4"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p className="text-cyan-200 text-sm font-medium mb-1">
+                                            {t('auth.phoneFormat', 'Phone Number Format')}
+                                        </p>
+                                        <p className="text-cyan-300/80 text-xs leading-relaxed">
+                                            {t('auth.phoneGuidance', 'Include your country code for easy login. Examples:')}
+                                        </p>
+                                        <div className="mt-2 space-y-1">
+                                            <div className="flex items-center gap-2 text-xs">
+                                                <span className="text-cyan-400">🇪🇬</span>
+                                                <span className="text-white/90">Egypt: +20 10 1234 5678</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs">
+                                                <span className="text-cyan-400">🇺🇸</span>
+                                                <span className="text-white/90">USA: +1 555 123 4567</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs">
+                                                <span className="text-cyan-400">🇬🇧</span>
+                                                <span className="text-white/90">UK: +44 7700 900123</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                             <input

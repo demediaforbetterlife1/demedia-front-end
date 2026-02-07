@@ -1,10 +1,13 @@
 {
   "version": "0.1.0",
-  "buildTime": "2026-02-06T13:01:44.682Z",
-  "buildId": "build-1770382904684-xfvpi4",
-  "cachePolicy": "no-store",
+  "buildTime": "2026-02-07T00:00:00.000Z",
+  "buildId": "build-1770400000000-nocache",
+  "cachePolicy": "ultra-no-store",
   "environment": "production",
   "logo": "/assets/images/head.png",
   "cacheBuster": true,
-  "timestamp": 1770382904684
+  "aggressiveCachePrevention": true,
+  "timestamp": 1770400000000,
+  "noCacheMode": "ULTRA_AGGRESSIVE",
+  "description": "100% cache-free platform - all updates appear immediately"
 }

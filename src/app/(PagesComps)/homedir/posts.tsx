@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import CommentModal from "@/components/CommentModal";
 import MediaImage from "@/components/MediaImage";
 import PostImage from "@/components/PostImage";
+import ProfilePhoto from "@/components/ProfilePhoto";
 
 type AuthorType = {
   id: number;
@@ -675,12 +676,13 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                     } as React.CSSProperties
                   }
                 >
-                  <MediaImage
-                    src={profilePic}
-                    alt="User avatar"
-                    className="object-cover"
-                    fill
-                    sizes="(max-width: 768px) 48px, 56px"
+                  <ProfilePhoto
+                    src={author?.profilePicture}
+                    alt={`${author?.name || 'User'} avatar`}
+                    width={56}
+                    height={56}
+                    userId={author?.id}
+                    className="w-full h-full object-cover"
                     fallbackSrc={defaultAvatar}
                     priority
                   />

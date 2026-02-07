@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Eye, Clock, Users, Globe, Lock } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
+import ProfilePhoto from "@/components/ProfilePhoto";
 
 interface Story {
     id: number;
@@ -155,17 +156,14 @@ export default function StoryViewerModal({
                     <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-600">
-                                {currentStory.author.profilePicture ? (
-                                    <img 
-                                        src={currentStory.author.profilePicture} 
-                                        alt={currentStory.author.name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-white font-bold">
-                                        {currentStory.author.name.charAt(0).toUpperCase()}
-                                    </div>
-                                )}
+                                <ProfilePhoto
+                                    src={currentStory.author.profilePicture}
+                                    alt={currentStory.author.name}
+                                    width={32}
+                                    height={32}
+                                    userId={currentStory.author.id}
+                                    className="w-full h-full object-cover"
+                                />
                             </div>
                             <div>
                                 <p className="text-white font-semibold text-sm">

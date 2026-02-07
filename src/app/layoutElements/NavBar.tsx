@@ -27,6 +27,7 @@ import { useSearch } from "@/hooks/useSearch";
 import ImprovedSearchModal from "@/components/ImprovedSearchModal";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import EnhancedSearchModal from "@/components/EnhancedSearchModal";
+import ProfilePhoto from "@/components/ProfilePhoto";
 
 
 export default function Navbar() {
@@ -44,6 +45,30 @@ export default function Navbar() {
     const [showEnhancedSearch, setShowEnhancedSearch] = useState(false);
     const [showPagesModal, setShowPagesModal] = useState(false);
     const { showWelcomeNotification } = useNotifications();
+
+    // Local state for real-time profile photo updates
+    const [currentProfilePicture, setCurrentProfilePicture] = useState<string | null>(null);
+
+    // Update local profile picture when user changes
+    useEffect(() => {
+        setCurrentProfilePicture(user?.profilePicture || null);
+    }, [user?.profilePicture]);
+
+    // Listen for real-time profile photo updates
+    useEffect(() => {
+        const handleProfileUpdate = (event: CustomEvent) => {
+            const { userId, profilePicture } = event.detail;
+            if (userId === user?.id) {
+                console.log('[NavBar] Profile photo updated, refreshing display');
+                setCurrentProfilePicture(profilePicture);
+            }
+        };
+
+        window.addEventListener('profile:updated', handleProfileUpdate as EventListener);
+        return () => {
+            window.removeEventListener('profile:updated', handleProfileUpdate as EventListener);
+        };
+    }, [user?.id]);
 
 
     const [notifications, setNotifications] = useState<string[]>([]);
@@ -409,26 +434,14 @@ export default function Navbar() {
                                 hover:shadow-[0_0_12px_rgba(139,92,246,0.4)] transition-all duration-200 touch-manipulation"
                         >
                             <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-cyan-500/30">
-                                {user?.profilePicture ? (
-                                    <img
-                                        src={user.profilePicture}
-                                        alt={user.name || 'Profile'}
-                                        width={32}
-                                        height={32}
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).src = "/assets/images/default-avatar.svg";
-                                        }}
-                                    />
-                                ) : (
-                                    <Image
-                                        src="/assets/images/default-avatar.svg"
-                                        alt="Default avatar"
-                                        width={32}
-                                        height={32}
-                                        className="w-full h-full object-cover"
-                                    />
-                                )}
+                                <ProfilePhoto
+                                    src={currentProfilePicture}
+                                    alt={user?.name || 'Profile'}
+                                    width={32}
+                                    height={32}
+                                    userId={user?.id}
+                                    className="w-full h-full object-cover"
+                                />
                             </div>
                             <span className="hidden xl:block text-sm font-medium theme-text-primary max-w-20 truncate">
                                 {user?.name || 'User'}
@@ -447,11 +460,14 @@ export default function Navbar() {
                                     {/* User Info */}
                                     <div className="flex items-center gap-3 p-2 mb-2 border-b theme-border pb-3">
                                         <div className="w-10 h-10 rounded-full overflow-hidden">
-                                            {user?.profilePicture ? (
-                                                <img src={user.profilePicture} alt={user.name || 'Profile'} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <Image src="/assets/images/default-avatar.svg" alt="Default avatar" width={40} height={40} className="w-full h-full object-cover" />
-                                            )}
+                                            <ProfilePhoto
+                                                src={currentProfilePicture}
+                                                alt={user?.name || 'Profile'}
+                                                width={40}
+                                                height={40}
+                                                userId={user?.id}
+                                                className="w-full h-full object-cover"
+                                            />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium theme-text-primary truncate">{user?.name || 'User'}</p>
@@ -680,24 +696,14 @@ export default function Navbar() {
                             <div className="border-t theme-border pt-3">
                                 <div className="flex items-center space-x-3 p-2">
                                     <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-cyan-500/30">
-                                        {user?.profilePicture ? (
-                                            <img
-                                                src={user.profilePicture}
-                                                alt={user.name || 'Profile'}
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = "/assets/images/default-avatar.svg";
-                                                }}
-                                            />
-                                        ) : (
-                                            <Image
-                                                src="/assets/images/default-avatar.svg"
-                                                alt="Default avatar"
-                                                width={40}
-                                                height={40}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        )}
+                                        <ProfilePhoto
+                                            src={currentProfilePicture}
+                                            alt={user?.name || 'Profile'}
+                                            width={40}
+                                            height={40}
+                                            userId={user?.id}
+                                            className="w-full h-full object-cover"
+                                        />
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium theme-text-primary">{user?.name || 'User'}</p>

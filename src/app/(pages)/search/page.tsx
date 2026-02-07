@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Search, User, FileText, Image, Video, Users, Hash, Calendar, Eye, Heart, MessageCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
+import ProfilePhoto from "@/components/ProfilePhoto";
 
 interface SearchResult {
     id: string;
@@ -304,17 +305,16 @@ export default function SearchResultsPage() {
                                             
                                             {result.author && (
                                                 <div className="flex items-center gap-2 mb-3">
-                                                    {result.author.profilePicture ? (
-                                                        <img
+                                                    <div className="w-6 h-6 rounded-full overflow-hidden">
+                                                        <ProfilePhoto
                                                             src={result.author.profilePicture}
                                                             alt={result.author.name}
-                                                            className="w-6 h-6 rounded-full object-cover"
+                                                            width={24}
+                                                            height={24}
+                                                            userId={result.author.id}
+                                                            className="w-full h-full object-cover"
                                                         />
-                                                    ) : (
-                                                        <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs font-bold">
-                                                            {result.author.name.charAt(0).toUpperCase()}
-                                                        </div>
-                                                    )}
+                                                    </div>
                                                     <span className="text-sm text-gray-400">
                                                         {result.author.name} (@{result.author.username})
                                                     </span>

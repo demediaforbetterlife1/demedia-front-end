@@ -115,8 +115,52 @@ export default function RootLayout({
         {/* Smart Cache Management - Facebook-style */}
         <script src="/smart-cache.js" defer></script>
         
+        {/* ULTRA-AGGRESSIVE Cache Buster - Ensures 100% fresh content */}
+        <script src="/cache-buster.js" defer></script>
+        
         {/* PWA Registration */}
         <script src="/pwa-register.js" defer></script>
+        
+        {/* Ultra Cache Prevention Initialization */}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            // Initialize ultra cache prevention as soon as possible
+            (function() {
+              console.log('🚀 Initializing ULTRA cache prevention...');
+              
+              // Override fetch immediately
+              const originalFetch = window.fetch;
+              window.fetch = function(input, init) {
+                let url = typeof input === 'string' ? input : input.url;
+                
+                // Don't cache-bust Next.js static assets
+                if (url.includes('/_next/static/')) {
+                  return originalFetch.call(this, input, init);
+                }
+                
+                // Add ultra cache busting
+                const timestamp = Date.now();
+                const random = Math.random().toString(36).substring(7);
+                const separator = url.includes('?') ? '&' : '?';
+                const cacheBustedUrl = url + separator + 't=' + timestamp + '&cb=' + random + '&nocache=true';
+                
+                const ultraInit = {
+                  ...init,
+                  cache: 'no-store',
+                  headers: {
+                    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+                    'Pragma': 'no-cache',
+                    ...(init?.headers || {})
+                  }
+                };
+                
+                return originalFetch.call(this, cacheBustedUrl, ultraInit);
+              };
+              
+              console.log('✅ Ultra cache prevention active');
+            })();
+          `
+        }} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen min-w-screen antialiased`}

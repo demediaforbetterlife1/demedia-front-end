@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ import {
 } from "react-icons/io5";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
+import ProfilePhoto from "@/components/ProfilePhoto";
 
 interface MobileNavBarProps {
     searchQuery: string;
@@ -56,6 +57,30 @@ export default function MobileNavBar({
     const { user } = useAuth();
     const { language, setLanguage, supportedLocales, t } = useI18n();
     const router = useRouter();
+
+    // Local state for real-time profile photo updates
+    const [currentProfilePicture, setCurrentProfilePicture] = useState<string | null>(null);
+
+    // Update local profile picture when user changes
+    useEffect(() => {
+        setCurrentProfilePicture(user?.profilePicture || null);
+    }, [user?.profilePicture]);
+
+    // Listen for real-time profile photo updates
+    useEffect(() => {
+        const handleProfileUpdate = (event: CustomEvent) => {
+            const { userId, profilePicture } = event.detail;
+            if (userId === user?.id) {
+                console.log('[MobileNavBar] Profile photo updated, refreshing display');
+                setCurrentProfilePicture(profilePicture);
+            }
+        };
+
+        window.addEventListener('profile:updated', handleProfileUpdate as EventListener);
+        return () => {
+            window.removeEventListener('profile:updated', handleProfileUpdate as EventListener);
+        };
+    }, [user?.id]);
 
     const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value);
@@ -245,26 +270,14 @@ export default function MobileNavBar({
                             }}
                             className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full overflow-hidden border-2 border-cyan-400/50 hover:border-cyan-400 transition touch-manipulation"
                         >
-                            {user?.profilePicture ? (
-                                <img
-                                    src={user.profilePicture}
-                                    alt={user.name || 'Profile'}
-                                    width={44}
-                                    height={44}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = "/assets/images/default-avatar.svg";
-                                    }}
-                                />
-                            ) : (
-                                <Image
-                                    src="/assets/images/default-avatar.svg"
-                                    alt="Default avatar"
-                                    width={44}
-                                    height={44}
-                                    className="w-full h-full object-cover"
-                                />
-                            )}
+                            <ProfilePhoto
+                                src={currentProfilePicture}
+                                alt={user?.name || 'Profile'}
+                                width={44}
+                                height={44}
+                                userId={user?.id}
+                                className="w-full h-full object-cover"
+                            />
                         </button>
 
                         {/* Profile Menu Dropdown */}

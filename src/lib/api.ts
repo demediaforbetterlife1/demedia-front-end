@@ -129,15 +129,14 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
     headers["Content-Type"] = "application/json";
   }
 
-  // build URL (API_BASE may be empty => same-origin)
-  let url = `${API_BASE}${path}`;
-
-  // Only add cache-busting for GET requests to prevent caching issues
+  // AGGRESSIVE cache busting for ALL requests
   const method = ((options.method || "GET") as string).toUpperCase();
-  if (method === "GET") {
-    const cb = Date.now();
-    url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}cb=${cb}&v=no-cache`;
-  }
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(7);
+  
+  // Add multiple cache-busting parameters
+  const separator = path.includes("?") ? "&" : "?";
+  let url = `${API_BASE}${path}${separator}cb=${timestamp}&v=${random}&nocache=true&t=${Date.now()}`;
 
   const isPostsEndpoint = path.includes("/posts");
   const isAuthEndpoint = path.includes("/auth");
@@ -149,18 +148,29 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const timeout = timeouts[attempt];
     try {
-      // choose fetch options with AGGRESSIVE cache prevention
+      // ULTRA-AGGRESSIVE cache prevention headers
+      const aggressiveHeaders = {
+        ...headers,
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0, stale-while-revalidate=0, stale-if-error=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT',
+        'If-None-Match': '*',
+        'Surrogate-Control': 'no-store',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store',
+        'X-Timestamp': timestamp.toString(),
+        'X-Cache-Buster': random,
+      };
+
+      // choose fetch options with ULTRA-AGGRESSIVE cache prevention
       let fetchOptions: RequestInit;
       if (isPostsEndpoint || isAuthEndpoint) {
         // don't abort posts/auth requests (to avoid mid-flight aborts)
         fetchOptions = {
           ...options,
-          headers: {
-            ...headers,
-            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-            'Pragma': 'no-cache',
-          },
-          cache: "no-store", // Changed from no-cache to no-store (more aggressive)
+          headers: aggressiveHeaders,
+          cache: "no-store", // Most aggressive cache setting
           mode: "cors",
           credentials: "include", // Always include cookies
         };
@@ -171,13 +181,9 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
 
         fetchOptions = {
           ...options,
-          headers: {
-            ...headers,
-            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-            'Pragma': 'no-cache',
-          },
+          headers: aggressiveHeaders,
           signal: controller.signal,
-          cache: "no-store", // Changed from no-cache to no-store (more aggressive)
+          cache: "no-store", // Most aggressive cache setting
           mode: "cors",
           credentials: "include", // Always include cookies
         };
@@ -207,7 +213,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
       // if auth synthetic timeout (504), try direct backend
       if (isAuthEndpoint && res.status === 504) {
         try {
-          const directRes = await tryDirectConnection(path, { ...options, headers });
+          const directRes = await tryDirectConnection(path, { ...options, headers: aggressiveHeaders });
           return directRes;
         } catch (e) {
           throw new Error("Auth request timed out");

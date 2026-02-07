@@ -27,6 +27,7 @@ import { apiFetch } from '@/lib/api';
 import { normalizeDeSnap } from '@/utils/desnapUtils';
 import { ensureAbsoluteMediaUrl } from '@/utils/mediaUtils';
 import { DeSnap } from '@/types/desnap';
+import ProfilePhoto from '@/components/ProfilePhoto';
 
 // State management with useReducer for better performance
 interface DeSnapsState {
@@ -625,21 +626,16 @@ export default function DeSnapsPage() {
                                                     transition={{ delay: index * 0.05 + 0.2 }}
                                                     className="flex items-center gap-2.5 bg-black/40 backdrop-blur-md rounded-full px-3 py-2 pr-4"
                                                 >
-                                                    {deSnap.author?.profilePicture ? (
-                                                        <Image
-                                                            src={ensureAbsoluteMediaUrl(deSnap.author.profilePicture) || deSnap.author.profilePicture}
-                                                            alt=""
+                                                    <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-white/40 shadow-lg">
+                                                        <ProfilePhoto
+                                                            src={deSnap.author?.profilePicture}
+                                                            alt={deSnap.author?.name || 'User'}
                                                             width={36}
                                                             height={36}
-                                                            className="w-9 h-9 rounded-full object-cover ring-2 ring-white/40 shadow-lg"
+                                                            userId={deSnap.author?.id}
+                                                            className="w-full h-full object-cover"
                                                         />
-                                                    ) : (
-                                                        <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${themeClasses.accent} flex items-center justify-center ring-2 ring-white/40 shadow-lg`}>
-                                                            <span className="text-white text-sm font-bold">
-                                                                {deSnap.author?.name?.charAt(0)?.toUpperCase() || 'U'}
-                                                            </span>
-                                                        </div>
-                                                    )}
+                                                    </div>
                                                     <div className="flex flex-col">
                                                         <span className="text-white text-sm font-semibold truncate max-w-[120px] drop-shadow-lg">
                                                             {deSnap.author?.name || 'User'}

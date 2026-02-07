@@ -34,6 +34,21 @@ export async function POST(request: NextRequest) {
       if (backendResponse.ok) {
         const data = await backendResponse.json();
         console.log('✅ Profile photo uploaded via backend:', data);
+        
+        // Return the response with cache-busting URL
+        const photoUrl = data.url || data.profilePicture || data.photoUrl;
+        if (photoUrl) {
+          // Add cache buster to ensure immediate display
+          const cacheBustedUrl = `${photoUrl}?t=${Date.now()}`;
+          return NextResponse.json({
+            ...data,
+            url: cacheBustedUrl,
+            profilePicture: cacheBustedUrl,
+            success: true,
+            message: 'Profile photo uploaded successfully'
+          });
+        }
+        
         return NextResponse.json(data);
       } else {
         const errorText = await backendResponse.text();
@@ -74,6 +89,9 @@ export async function POST(request: NextRequest) {
     const base64 = Buffer.from(arrayBuffer).toString('base64');
     const dataUrl = `data:${file.type};base64,${base64}`;
     
+    // Add cache buster for immediate display
+    const cacheBustedUrl = `${dataUrl}#t=${Date.now()}`;
+    
     console.log('Profile photo upload fallback (development):', { 
       fileName: file.name, 
       fileSize: file.size,
@@ -82,7 +100,8 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      url: dataUrl,
+      url: cacheBustedUrl,
+      profilePicture: cacheBustedUrl,
       message: 'Profile photo uploaded successfully (development mode)'
     });
   } catch (error) {

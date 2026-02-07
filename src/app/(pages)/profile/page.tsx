@@ -1,5 +1,5 @@
-﻿// src/components/ProfilePage.tsx
-"use client";
+﻿"use client";
+// src/components/ProfilePage.tsx
 import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -108,6 +108,7 @@ import { ensureAbsoluteMediaUrl, appendCacheBuster } from "@/utils/mediaUtils";
 import { normalizePost } from "@/utils/postUtils";
 import { normalizeDeSnap } from "@/utils/desnapUtils";
 import { resolveChatId } from "@/utils/chatUtils";
+import { updateProfilePhotoEverywhere } from "@/utils/profilePhotoUtils";
 import { DeSnap } from '@/types/desnap';
 const formatMediaUrl = (url?: string | null) => ensureAbsoluteMediaUrl(url) ?? null;
 interface Story {
@@ -616,20 +617,29 @@ export default function ProfilePage() {
                 const photoUrlWithCache = appendCacheBuster(formattedUrl);
                 console.log('Formatted photo URL:', photoUrlWithCache);
 
+                // IMMEDIATELY update everywhere for real-time display
+                if (type === 'profile') {
+                    const immediateUrl = updateProfilePhotoEverywhere(
+                        user?.id || userId,
+                        photoUrlWithCache,
+                        { name: user?.name, username: user?.username }
+                    );
+                    
+                    // Also update AuthContext immediately
+                    if (isOwnProfile && user && updateUser) {
+                        console.log('Immediately updating AuthContext with new profile photo');
+                        updateUser({
+                            profilePicture: immediateUrl
+                        });
+                    }
+                }
+
                 // Update profile state with new photo URL (with cache busting)
                 setProfile(prev => prev ? {
                     ...prev,
                     [type === 'profile' ? 'profilePicture' : 'coverPicture']: photoUrlWithCache,
                     [type === 'profile' ? 'profilePicture' : 'coverPhoto']: photoUrlWithCache
                 } : null);
-
-                // Also update the user context if it's the current user's profile
-                if (isOwnProfile && user && updateUser) {
-                    // Update user context with new photo URL
-                    updateUser({
-                        [type === 'profile' ? 'profilePicture' : 'coverPhoto']: photoUrlWithCache
-                    });
-                }
 
                 // Show success notification
                 try {
@@ -643,28 +653,30 @@ export default function ProfilePage() {
                     console.log('Notification service not available');
                 }
 
-                // Reload the profile data to ensure everything is in sync
-                try {
-                    const profileData = await getUserProfile(userId);
-                    if (profileData) {
-                        // Update profile with fresh data from server
-                        setProfile(prev => prev ? {
-                            ...prev,
-                            id: profileData.id,
-                            name: profileData.name,
-                            username: profileData.username,
-                            bio: profileData.bio ?? "",
-                            profilePicture: profileData.profilePicture ? appendCacheBuster(formatMediaUrl(profileData.profilePicture) || profileData.profilePicture) : prev?.profilePicture ?? null,
-                            coverPicture: profileData.coverPhoto ? appendCacheBuster(formatMediaUrl(profileData.coverPhoto) || profileData.coverPhoto) : prev?.coverPicture ?? null,
-                            coverPhoto: profileData.coverPhoto ? appendCacheBuster(formatMediaUrl(profileData.coverPhoto) || profileData.coverPhoto) : prev?.coverPhoto ?? null,
-                            followersCount: profileData.followersCount ?? prev?.followersCount ?? 0,
-                            followingCount: profileData.followingCount ?? prev?.followingCount ?? 0,
-                            likesCount: profileData.likesCount ?? prev?.likesCount ?? 0,
-                        } : null);
+                // Reload the profile data to ensure everything is in sync (but don't wait for it)
+                setTimeout(async () => {
+                    try {
+                        const profileData = await getUserProfile(userId);
+                        if (profileData) {
+                            // Update profile with fresh data from server
+                            setProfile(prev => prev ? {
+                                ...prev,
+                                id: profileData.id,
+                                name: profileData.name,
+                                username: profileData.username,
+                                bio: profileData.bio ?? "",
+                                profilePicture: profileData.profilePicture ? appendCacheBuster(formatMediaUrl(profileData.profilePicture) || profileData.profilePicture) : prev?.profilePicture ?? null,
+                                coverPicture: profileData.coverPhoto ? appendCacheBuster(formatMediaUrl(profileData.coverPhoto) || profileData.coverPhoto) : prev?.coverPicture ?? null,
+                                coverPhoto: profileData.coverPhoto ? appendCacheBuster(formatMediaUrl(profileData.coverPhoto) || profileData.coverPhoto) : prev?.coverPhoto ?? null,
+                                followersCount: profileData.followersCount ?? prev?.followersCount ?? 0,
+                                followingCount: profileData.followingCount ?? prev?.followingCount ?? 0,
+                                likesCount: profileData.likesCount ?? prev?.likesCount ?? 0,
+                            } : null);
+                        }
+                    } catch (err) {
+                        console.error('Error refreshing profile after photo upload:', err);
                     }
-                } catch (err) {
-                    console.error('Error refreshing profile after photo upload:', err);
-                }
+                }, 1000); // Delay to allow immediate display first
             } else {
                 console.error(`Failed to upload ${type} photo`);
                 const errorText = await response.text();

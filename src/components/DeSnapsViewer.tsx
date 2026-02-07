@@ -26,6 +26,7 @@ import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
 import { normalizeDeSnap } from "@/utils/desnapUtils";
 import { DeSnap } from "@/types/desnap";
 import { videoDebugger } from "@/utils/videoDebugger";
+import ProfilePhoto from "@/components/ProfilePhoto";
 
 interface DeSnapsViewerProps {
   isOpen: boolean;
@@ -670,19 +671,16 @@ export default function DeSnapsViewer({
           {/* User Header */}
           <div className="absolute top-4 left-4 z-10 flex items-center gap-3 bg-black/50 backdrop-blur-md rounded-full px-4 py-2 border border-white/10">
             {/* User Avatar */}
-            {deSnap.author?.profilePicture ? (
-              <img
-                src={ensureAbsoluteMediaUrl(deSnap.author.profilePicture) || deSnap.author.profilePicture}
-                alt={deSnap.author.name}
-                className="w-10 h-10 rounded-full object-cover ring-2 ring-cyan-400/50"
+            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-cyan-400/50">
+              <ProfilePhoto
+                src={deSnap.author?.profilePicture}
+                alt={deSnap.author?.name || 'User'}
+                width={40}
+                height={40}
+                userId={deSnap.author?.id}
+                className="w-full h-full object-cover"
               />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center ring-2 ring-cyan-400/50">
-                <span className="text-white font-bold text-sm">
-                  {deSnap.author?.name?.charAt(0)?.toUpperCase() || 'U'}
-                </span>
-              </div>
-            )}
+            </div>
             
             {/* User Info */}
             <div className="flex flex-col">
