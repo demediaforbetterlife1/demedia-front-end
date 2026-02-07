@@ -267,9 +267,23 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 userId: user?.id
             };
 
+            console.log('Creating DeSnap with data:', {
+                hasContent: !!deSnapData.content,
+                hasThumbnail: !!deSnapData.thumbnail,
+                duration: deSnapData.duration,
+                visibility: deSnapData.visibility,
+                userId: deSnapData.userId
+            });
+
             // Use apiFetch which automatically handles token from cookies
             // Ensure we have a valid token before making the request
             const token = getToken();
+            console.log('Token check:', {
+                hasToken: !!token,
+                tokenLength: token?.length,
+                userId: user?.id
+            });
+            
             if (!token) {
                 throw new Error("You must be logged in to create a DeSnap. Please log in and try again.");
             }
@@ -279,11 +293,21 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 body: JSON.stringify(deSnapData)
             }, user?.id);
 
+            console.log('DeSnap creation response status:', response.status);
+
             if (!response.ok) {
                 let errorMessage = "Failed to create DeSnap";
                 try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.error || errorData.message || errorMessage;
+                    const errorText = await response.text();
+                    console.error('DeSnap creation error response:', errorText);
+                    
+                    // Try to parse as JSON
+                    if (errorText.trim().startsWith('{')) {
+                        const errorData = JSON.parse(errorText);
+                        errorMessage = errorData.error || errorData.message || errorData.details || errorMessage;
+                    } else {
+                        errorMessage = `Server error: ${response.status} - ${errorText}`;
+                    }
                 } catch (e) {
                     errorMessage = `Server error: ${response.status}`;
                 }

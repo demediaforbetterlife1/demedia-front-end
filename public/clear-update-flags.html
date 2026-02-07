@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Update Flags - DeMedia</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .success {
+            background: #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            margin: 20px 0;
+            display: none;
+        }
+        .info {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        code {
+            background: #e5e7eb;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear Update Flags</h1>
+        
+        <div class="info">
+            <p><strong>This tool will clear all update notification flags from your browser.</strong></p>
+            <p>Use this if you're seeing update notifications even when there's no update available.</p>
+        </div>
+
+        <button onclick="clearFlags()">Clear All Update Flags</button>
+        <button onclick="clearEverything()">Clear Everything (Nuclear Option)</button>
+        <button onclick="goHome()">Go to DeMedia</button>
+
+        <div id="success" class="success">
+            ✅ Successfully cleared all update flags!
+        </div>
+
+        <div class="info" style="margin-top: 30px;">
+            <h3>What gets cleared:</h3>
+            <ul>
+                <li><code>update_available</code></li>
+                <li><code>new_version</code></li>
+                <li><code>sw_update_available</code></li>
+                <li><code>app_version</code></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function clearFlags() {
+            // Clear all update-related flags
+            localStorage.removeItem('update_available');
+            localStorage.removeItem('new_version');
+            localStorage.removeItem('sw_update_available');
+            
+            // Show success message
+            document.getElementById('success').style.display = 'block';
+            
+            console.log('✅ Cleared all update flags');
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                document.getElementById('success').style.display = 'none';
+            }, 3000);
+        }
+
+        function clearEverything() {
+            if (confirm('This will clear ALL localStorage data including your login session. Are you sure?')) {
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Clear service worker caches
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => caches.delete(name));
+                    });
+                }
+                
+                document.getElementById('success').textContent = '✅ Cleared everything! Please refresh the page.';
+                document.getElementById('success').style.display = 'block';
+                
+                console.log('✅ Cleared everything');
+            }
+        }
+
+        function goHome() {
+            window.location.href = '/';
+        }
+
+        // Auto-clear on page load
+        window.addEventListener('load', () => {
+            clearFlags();
+        });
+    </script>
+</body>
+</html>

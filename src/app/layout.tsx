@@ -115,8 +115,8 @@ export default function RootLayout({
         {/* Smart Cache Management - NO AUTO-RELOAD */}
         <script src="/smart-cache.js" defer></script>
         
-        {/* Smart Cache Buster - Shows update notification only */}
-        <script src="/cache-buster.js" defer></script>
+        {/* Cache buster DISABLED - causing false positives */}
+        {/* <script src="/cache-buster.js" defer></script> */}
         
         {/* PWA Registration */}
         <script src="/pwa-register.js" defer></script>
