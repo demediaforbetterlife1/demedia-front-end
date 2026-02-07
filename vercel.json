@@ -45,13 +45,5 @@
       "source": "/uploads/:path*",
       "destination": "https://demedia-backend.fly.dev/uploads/:path*"
     }
-  ],
-  "functions": {
-    "api/**/*.ts": {
-      "maxDuration": 60
-    },
-    "api/upload/**/*.ts": {
-      "maxDuration": 120
-    }
-  }
+  ]
 }
