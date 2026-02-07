@@ -224,77 +224,94 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
             console.log('📤 Uploading video directly to backend...');
 
-            // Upload directly to backend (bypass Next.js API route to avoid Content-Type issues)
+            // Upload directly to backend with longer timeout (5 minutes for large videos)
             const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://demedia-backend.fly.dev';
-            const uploadResponse = await fetch(`${backendUrl}/api/upload/video`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'user-id': user?.id?.toString() || '',
-                },
-                body: formData, // Don't set Content-Type - let browser handle it
-                credentials: 'include',
-            });
+            
+            // Create abort controller with 5 minute timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000); // 5 minutes
+            
+            try {
+                const uploadResponse = await fetch(`${backendUrl}/api/upload/video`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'user-id': user?.id?.toString() || '',
+                    },
+                    body: formData, // Don't set Content-Type - let browser handle it
+                    credentials: 'include',
+                    signal: controller.signal,
+                });
+                
+                clearTimeout(timeoutId);
 
-            // Read response text ONCE
-            const uploadResponseText = await uploadResponse.text();
-            console.log('Upload response:', uploadResponseText.substring(0, 200));
+                // Read response text ONCE
+                const uploadResponseText = await uploadResponse.text();
+                console.log('Upload response:', uploadResponseText.substring(0, 200));
 
-            if (!uploadResponse.ok) {
-                let errorMessage = "Failed to upload video";
-                try {
-                    if (uploadResponseText.trim() && uploadResponseText.trim().startsWith('{')) {
-                        const errorData = JSON.parse(uploadResponseText);
-                        errorMessage = errorData.details || errorData.error || errorData.message || errorMessage;
-                        
-                        if (uploadResponse.status === 413) {
-                            errorMessage = errorData.details || "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
+                if (!uploadResponse.ok) {
+                    let errorMessage = "Failed to upload video";
+                    try {
+                        if (uploadResponseText.trim() && uploadResponseText.trim().startsWith('{')) {
+                            const errorData = JSON.parse(uploadResponseText);
+                            errorMessage = errorData.details || errorData.error || errorData.message || errorMessage;
+                            
+                            if (uploadResponse.status === 413) {
+                                errorMessage = errorData.details || "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
+                            }
+                        } else {
+                            if (uploadResponse.status === 413) {
+                                errorMessage = "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
+                            } else {
+                                errorMessage = `Upload error: ${uploadResponse.status}`;
+                            }
                         }
-                    } else {
+                    } catch (e) {
+                        console.error('Upload error response:', uploadResponseText);
                         if (uploadResponse.status === 413) {
                             errorMessage = "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
                         } else {
                             errorMessage = `Upload error: ${uploadResponse.status}`;
                         }
                     }
-                } catch (e) {
-                    console.error('Upload error response:', uploadResponseText);
-                    if (uploadResponse.status === 413) {
-                        errorMessage = "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
-                    } else {
-                        errorMessage = `Upload error: ${uploadResponse.status}`;
-                    }
+                    throw new Error(errorMessage);
                 }
-                throw new Error(errorMessage);
-            }
 
-            // Parse upload response
-            let uploadData;
-            try {
-                if (!uploadResponseText.trim()) {
-                    throw new Error('Empty response from server');
+                // Parse upload response
+                let uploadData;
+                try {
+                    if (!uploadResponseText.trim()) {
+                        throw new Error('Empty response from server');
+                    }
+                    
+                    if (uploadResponseText.trim().startsWith('<')) {
+                        throw new Error('Server returned HTML error page. Please check your connection.');
+                    }
+                    
+                    uploadData = JSON.parse(uploadResponseText);
+                } catch (jsonError) {
+                    console.error('Upload JSON parsing error:', jsonError);
+                    throw new Error('Invalid upload response from server. Please try again.');
                 }
                 
-                if (uploadResponseText.trim().startsWith('<')) {
-                    throw new Error('Server returned HTML error page. Please check your connection.');
+                let videoUrl = uploadData.videoUrl || uploadData.url || uploadData.fileUrl;
+                if (!videoUrl) {
+                    throw new Error('Video upload succeeded but no URL was returned by the server.');
                 }
+                videoUrl = ensureAbsoluteMediaUrl(videoUrl) || videoUrl;
                 
-                uploadData = JSON.parse(uploadResponseText);
-            } catch (jsonError) {
-                console.error('Upload JSON parsing error:', jsonError);
-                throw new Error('Invalid upload response from server. Please try again.');
+                let thumbnailUrl = uploadData.thumbnailUrl || uploadData.thumbnail || uploadData.previewUrl;
+                thumbnailUrl = ensureAbsoluteMediaUrl(thumbnailUrl) || thumbnailUrl || videoUrl;
+                
+                console.log('✅ Video uploaded successfully:', videoUrl);
+                
+            } catch (uploadError: any) {
+                clearTimeout(timeoutId);
+                if (uploadError.name === 'AbortError') {
+                    throw new Error("Upload timed out. Your video might be too large or your connection is slow. Try a smaller video or check your internet connection.");
+                }
+                throw uploadError;
             }
-            
-            let videoUrl = uploadData.videoUrl || uploadData.url || uploadData.fileUrl;
-            if (!videoUrl) {
-                throw new Error('Video upload succeeded but no URL was returned by the server.');
-            }
-            videoUrl = ensureAbsoluteMediaUrl(videoUrl) || videoUrl;
-            
-            let thumbnailUrl = uploadData.thumbnailUrl || uploadData.thumbnail || uploadData.previewUrl;
-            thumbnailUrl = ensureAbsoluteMediaUrl(thumbnailUrl) || thumbnailUrl || videoUrl;
-            
-            console.log('✅ Video uploaded successfully:', videoUrl);
 
             // Now create the DeSnap with the uploaded video URL
             const deSnapData = {
@@ -385,7 +402,18 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             onClose();
         } catch (err: unknown) {
             console.error('❌ DeSnap creation error:', err);
-            setError(err instanceof Error ? err.message : "Failed to create DeSnap");
+            
+            // Handle specific error types
+            let errorMessage = "Failed to create DeSnap";
+            if (err instanceof Error) {
+                if (err.name === 'AbortError') {
+                    errorMessage = "Upload timed out. Your video might be too large or your connection is slow. Try a smaller video or check your internet connection.";
+                } else {
+                    errorMessage = err.message;
+                }
+            }
+            
+            setError(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
