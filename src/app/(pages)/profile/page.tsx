@@ -264,9 +264,6 @@ export default function ProfilePage() {
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
     const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false);
     const [photoUploadType, setPhotoUploadType] = useState<'profile' | 'cover'>('profile');
-    
-    // Profile photo real-time update state
-    const [currentProfilePicture, setCurrentProfilePicture] = useState<string | null>(null);
     useEffect(() => {
         let mounted = true;
         async function loadProfile() {
@@ -632,30 +629,11 @@ export default function ProfilePage() {
                     
                     console.log('📸 Immediate URL created:', immediateUrl);
                     
-                    // Update local state IMMEDIATELY
-                    setCurrentProfilePicture(immediateUrl);
-                    
                     // Update AuthContext immediately
                     if (isOwnProfile && user && updateUser) {
                         console.log('✅ Updating AuthContext with new profile photo');
                         updateUser({
                             profilePicture: immediateUrl
-                        });
-                        
-                        // Force multiple updates to ensure it sticks
-                        for (let i = 1; i <= 5; i++) {
-                            setTimeout(() => {
-                                console.log(`🔄 Update ${i} to ensure photo sticks`);
-                                updateUser({
-                                    profilePicture: immediateUrl
-                                });
-                            }, i * 100);
-                        }
-                    } else {
-                        console.warn('⚠️ Cannot update AuthContext:', {
-                            isOwnProfile,
-                            hasUser: !!user,
-                            hasUpdateUser: !!updateUser
                         });
                     }
                     
@@ -844,33 +822,10 @@ export default function ProfilePage() {
         );
     
     // Destructure profile data
-    const { coverPicture, name, username, bio, followersCount, followingCount, likesCount, stories } = profile;
-    
-    // Update currentProfilePicture when profile changes
-    useEffect(() => {
-        if (profile.profilePicture) {
-            setCurrentProfilePicture(profile.profilePicture);
-        }
-    }, [profile.profilePicture]);
-    
-    // Listen for real-time profile photo updates
-    useEffect(() => {
-        const handleProfileUpdate = (event: CustomEvent) => {
-            const { userId: updatedUserId, profilePicture: newPhoto } = event.detail;
-            if (String(updatedUserId) === String(profile.id) && newPhoto) {
-                console.log('[ProfilePage] Profile photo updated via event:', newPhoto.substring(0, 100));
-                setCurrentProfilePicture(newPhoto);
-                // Also update the profile state
-                setProfile(prev => prev ? { ...prev, profilePicture: newPhoto } : null);
-            }
-        };
-        
-        window.addEventListener('profile:updated', handleProfileUpdate as EventListener);
-        return () => window.removeEventListener('profile:updated', handleProfileUpdate as EventListener);
-    }, [profile.id]);
+    const { coverPicture, profilePicture, name, username, bio, followersCount, followingCount, likesCount, stories } = profile;
 
     // Debug logging for profile picture
-    console.log('Profile picture value:', currentProfilePicture);
+    console.log('Profile picture value:', profilePicture);
     console.log('Cover picture value:', coverPicture);
     const handleGoToAuthorProfile = (userId?: number | string) => {
         if (!userId) return;
@@ -954,23 +909,23 @@ export default function ProfilePage() {
 
                                     {/* Main Profile Circle */}
                                     <div className={`relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl ring-4 ring-white/20 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300`}>
-                                        {currentProfilePicture ? (
+                                        {profilePicture ? (
                                             <motion.img
-                                                key={`profile-${currentProfilePicture}-${Date.now()}`}
+                                                key={profilePicture}
                                                 initial={{ scale: 0.8, opacity: 0 }}
                                                 animate={{ scale: 1, opacity: 1 }}
                                                 transition={{ type: "spring", stiffness: 120 }}
-                                                src={currentProfilePicture}
+                                                src={profilePicture}
                                                 alt={name}
                                                 className="w-full h-full object-cover"
                                                 loading="lazy"
                                                 onError={(e) => {
-                                                    console.log("Profile picture failed to load:", currentProfilePicture);
+                                                    console.log("Profile picture failed to load:", profilePicture);
                                                     console.log("Error details:", e);
                                                     e.currentTarget.src = "/assets/images/default-avatar.svg";
                                                 }}
                                                 onLoad={() => {
-                                                    console.log("Profile picture loaded successfully:", currentProfilePicture);
+                                                    console.log("Profile picture loaded successfully:", profilePicture);
                                                 }}
                                             />
                                         ) : (
