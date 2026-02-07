@@ -19,6 +19,7 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  Download,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -562,6 +563,70 @@ export default function DeSnapsViewer({
     }
   };
 
+  // Download DeSnap
+  const handleDownload = async () => {
+    try {
+      console.log('📥 Starting DeSnap download...');
+      
+      // Get the video URL
+      const videoUrl = ensureAbsoluteMediaUrl(deSnap.content) || deSnap.content;
+      console.log('📹 Video URL:', videoUrl);
+      
+      // Get token for authentication
+      const token = localStorage.getItem('token') || 
+                    document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+      
+      if (!token) {
+        alert('Please log in to download DeSnaps');
+        return;
+      }
+
+      // Fetch the video with authentication headers
+      const response = await fetch(videoUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'user-id': user?.id?.toString() || '',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+      }
+
+      // Get the blob
+      const blob = await response.blob();
+      console.log('✅ Video blob received:', blob.size, 'bytes');
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      
+      // Generate filename
+      const filename = `desnap-${deSnap.id}-${Date.now()}.mp4`;
+      a.download = filename;
+      
+      // Trigger download
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      console.log('✅ Download started:', filename);
+      
+      // Show success message
+      alert('Download started! Check your downloads folder.');
+    } catch (error) {
+      console.error('❌ Error downloading DeSnap:', error);
+      alert('Failed to download DeSnap. Please try again.');
+    }
+  };
+
   // Load comments when comments section is opened
   useEffect(() => {
     if (showComments && comments.length === 0) {
@@ -936,6 +1001,14 @@ export default function DeSnapsViewer({
                   className="flex flex-col items-center gap-1 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
                 >
                   <Share size={24} className="text-white" />
+                </button>
+
+                <button
+                  onClick={handleDownload}
+                  className="flex flex-col items-center gap-1 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                  title="Download DeSnap"
+                >
+                  <Download size={24} className="text-white" />
                 </button>
               </div>
             </div>

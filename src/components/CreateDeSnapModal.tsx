@@ -216,13 +216,21 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             formData.append('visibility', settings.visibility);
             formData.append('userId', user?.id || '');
 
-            // Get token for authentication
-            const token = getToken();
+            // Get token for authentication - check multiple sources
+            let token = getToken();
+            
+            // If no token from getToken(), try direct access
+            if (!token) {
+                token = localStorage.getItem('token') || 
+                        document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || null;
+            }
+            
             if (!token) {
                 throw new Error("You must be logged in to create a DeSnap. Please log in and try again.");
             }
 
             console.log('📤 Uploading video directly to backend...');
+            console.log('🔑 Authentication:', { hasToken: !!token, userId: user?.id });
 
             // Upload directly to backend with longer timeout (5 minutes for large videos)
             const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://demedia-backend.fly.dev';
@@ -230,6 +238,8 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             // Create abort controller with 5 minute timeout
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000); // 5 minutes
+            
+            let videoUrl, thumbnailUrl;
             
             try {
                 const uploadResponse = await fetch(`${backendUrl}/api/upload/video`, {
@@ -294,13 +304,13 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                     throw new Error('Invalid upload response from server. Please try again.');
                 }
                 
-                let videoUrl = uploadData.videoUrl || uploadData.url || uploadData.fileUrl;
+                videoUrl = uploadData.videoUrl || uploadData.url || uploadData.fileUrl;
                 if (!videoUrl) {
                     throw new Error('Video upload succeeded but no URL was returned by the server.');
                 }
                 videoUrl = ensureAbsoluteMediaUrl(videoUrl) || videoUrl;
                 
-                let thumbnailUrl = uploadData.thumbnailUrl || uploadData.thumbnail || uploadData.previewUrl;
+                thumbnailUrl = uploadData.thumbnailUrl || uploadData.thumbnail || uploadData.previewUrl;
                 thumbnailUrl = ensureAbsoluteMediaUrl(thumbnailUrl) || thumbnailUrl || videoUrl;
                 
                 console.log('✅ Video uploaded successfully:', videoUrl);
@@ -330,8 +340,14 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 userId: deSnapData.userId
             });
             
+            // Use apiFetch which includes proper authentication headers
             const response = await apiFetch("/api/desnaps", {
                 method: "POST",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'user-id': user?.id?.toString() || '',
+                },
                 body: JSON.stringify(deSnapData)
             }, user?.id);
 

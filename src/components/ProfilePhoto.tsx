@@ -34,7 +34,9 @@ export default function ProfilePhoto({
   useEffect(() => {
     if (src) {
       console.log('[ProfilePhoto] Src prop changed:', src.substring(0, 100));
-      setCurrentSrc(src);
+      // Add cache buster to force reload
+      const cacheBustedSrc = src.includes('?') ? `${src}&t=${Date.now()}` : `${src}?t=${Date.now()}`;
+      setCurrentSrc(cacheBustedSrc);
       setKey(prev => prev + 1);
       setForceUpdate(prev => prev + 1);
     }
@@ -48,7 +50,11 @@ export default function ProfilePhoto({
       const detail = event.detail;
       if (String(detail.userId) === String(userId) && detail.profilePicture) {
         console.log('[ProfilePhoto] Update event received for user', userId, 'new photo:', detail.profilePicture.substring(0, 100));
-        setCurrentSrc(detail.profilePicture);
+        // Add cache buster to force reload
+        const cacheBustedSrc = detail.profilePicture.includes('?') 
+          ? `${detail.profilePicture}&t=${Date.now()}` 
+          : `${detail.profilePicture}?t=${Date.now()}`;
+        setCurrentSrc(cacheBustedSrc);
         setKey(prev => prev + 1);
         setForceUpdate(prev => prev + 1);
         
@@ -59,10 +65,15 @@ export default function ProfilePhoto({
         setTimeout(() => {
           setForceUpdate(prev => prev + 1);
         }, 150);
+        setTimeout(() => {
+          setForceUpdate(prev => prev + 1);
+        }, 300);
       }
     };
 
+    // Listen for both profile:updated and user:updated events
     window.addEventListener('profile:updated', handleUpdate);
+    window.addEventListener('user:updated', handleUpdate);
     
     // Also listen for storage events (in case of cross-tab updates)
     const handleStorage = (e: StorageEvent) => {
@@ -71,7 +82,10 @@ export default function ProfilePhoto({
           const userData = JSON.parse(e.newValue);
           if (String(userData.id) === String(userId) && userData.profilePicture) {
             console.log('[ProfilePhoto] Storage update detected');
-            setCurrentSrc(userData.profilePicture);
+            const cacheBustedSrc = userData.profilePicture.includes('?') 
+              ? `${userData.profilePicture}&t=${Date.now()}` 
+              : `${userData.profilePicture}?t=${Date.now()}`;
+            setCurrentSrc(cacheBustedSrc);
             setKey(prev => prev + 1);
             setForceUpdate(prev => prev + 1);
           }
@@ -85,6 +99,7 @@ export default function ProfilePhoto({
     
     return () => {
       window.removeEventListener('profile:updated', handleUpdate);
+      window.removeEventListener('user:updated', handleUpdate);
       window.removeEventListener('storage', handleStorage);
     };
   }, [userId]);

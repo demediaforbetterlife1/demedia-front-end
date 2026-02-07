@@ -215,12 +215,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           timestamp: Date.now()
         };
         
-        console.log('[Auth] 📡 Dispatching profile:updated event:', eventDetail);
+        console.log('[Auth] 📡 Dispatching profile:updated and user:updated events:', eventDetail);
         
         // Dispatch immediately and repeatedly to ensure all components receive it
         for (let i = 0; i < 10; i++) {
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('profile:updated', { detail: eventDetail }));
+            window.dispatchEvent(new CustomEvent('user:updated', { detail: eventDetail }));
           }, i * 100);
         }
         
