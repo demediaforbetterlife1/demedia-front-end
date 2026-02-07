@@ -9,6 +9,13 @@ import React, {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import { 
+  setAuthToken, 
+  clearAllTokens, 
+  getBestToken, 
+  hasValidAuth,
+  debugAuth 
+} from "@/utils/authFix";
 
 /* =======================
 Types
@@ -545,19 +552,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = (): void => {
+  const logout = (force: boolean = false): void => {
     try {
-      // Clear all storage methods
-      deleteCookie("token");
-      removeLocalStorageToken();
+      // Only logout if explicitly forced or if user manually logs out
+      if (!force) {
+        console.log("[Auth] Logout prevented - not forced");
+        return;
+      }
+
+      console.log("[Auth] Performing logout...");
+      
+      // Clear all storage methods using robust utility
+      clearAllTokens();
       
       // Clear client-side state
       setUser(null);
       setInitComplete(true);
 
-      // Call backend logout endpoint
-      apiFetch("/api/auth/logout", {
+      // Call backend logout endpoint (don't wait for it)
+      fetch("/api/auth/logout", {
         method: "POST",
+        credentials: "include"
       }).catch(err => console.error("[Auth] Backend logout error:", err));
 
       // Dispatch logout event

@@ -6,9 +6,15 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { getModalThemeClasses } from "@/utils/enhancedThemeUtils";
 import { contentModerationService } from "@/services/contentModeration";
-import { apiFetch } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
 import { filesToBase64 } from "@/utils/imageToBase64";
+import { 
+  getBestToken, 
+  hasValidAuth, 
+  getAuthHeaders, 
+  debugAuth,
+  authenticatedFetch 
+} from "@/utils/authFix";
 import {
   X,
   Image as ImageIcon,
@@ -213,22 +219,30 @@ export default function AddPostModal({
     setError(null);
 
     try {
-      // Get userId from AuthContext - it comes from database, not localStorage
+      // Get userId from AuthContext
       const userId = user?.id;
       
-      // Enhanced authentication debugging
-      console.log("🔐 Post creation authentication check:", {
-        userId: userId,
-        userType: typeof userId,
-        hasUser: !!user,
-        userSetupComplete: user?.isSetupComplete,
-        cookieToken: document.cookie.includes('token'),
-        localStorageToken: !!localStorage.getItem('token')
-      });
+      // Debug authentication state
+      debugAuth();
+      
+      // Enhanced authentication validation
       if (!userId) {
         setError("⚠️ Please log in to create a post");
+        setLoading(false);
         return;
       }
+
+      if (!hasValidAuth()) {
+        setError("❌ Authentication token missing or invalid. Please log in again.");
+        setLoading(false);
+        return;
+      }
+
+      console.log("🔐 Authentication validated successfully:", {
+        userId: userId,
+        userType: typeof userId,
+        hasValidAuth: hasValidAuth()
+      });
 
       if (content.trim()) {
         const moderationResult =
@@ -322,35 +336,14 @@ export default function AddPostModal({
         videoUrl: videoUrls[0] || null,
       };
 
-      // Verify user authentication before making the request
-      if (!userId) {
-        setError("❌ User not authenticated. Please log in again.");
-        setLoading(false);
-        return;
-      }
-
-      // Check if we have a valid token
-      const token = document.cookie.includes('token') || localStorage.getItem('token');
-      if (!token) {
-        setError("❌ Authentication token missing. Please log in again.");
-        setLoading(false);
-        return;
-      }
-
-      console.log("🔐 Authentication check passed:", {
-        userId: userId,
-        hasToken: !!token,
-        userType: typeof userId
-      });
-
-      // Use apiFetch which handles cookies automatically via credentials: 'include'
-      const res = await apiFetch(
+      // Use robust authenticated fetch
+      const res = await authenticatedFetch(
         `/api/posts`,
         {
           method: "POST",
           body: JSON.stringify(postData),
         },
-        userId, // Pass userId to apiFetch for proper authentication
+        userId
       );
 
       const responseText = await res.text();
