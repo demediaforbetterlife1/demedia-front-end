@@ -12,11 +12,7 @@ export const config = {
 // Increase max duration for video processing - Vercel allows up to 300s on Pro
 export const maxDuration = 300; // 5 minutes
 
-export const runtime = "nodejs";
-
-export async function POST(req: Request) {
-  const auth = req.headers.get("authorization") || "";
-  const userId = req.headers.get("user-id") || "";
+export async function POST(request: NextRequest) {
 
   const backendRes = await fetch(
     `https://demedia-backend.fly.dev/api/upload/video`,
