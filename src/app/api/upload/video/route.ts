@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       },
       body: req.body, // 🔥 أهم سطر
       duplex: "half", // مطلوب في Node 18+
-    }
+    } as any
   );
 
   return new Response(backendRes.body, {
