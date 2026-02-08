@@ -232,7 +232,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             console.log('📤 Uploading video via Next.js API route...');
             console.log('🔑 Authentication:', { hasToken: !!token, userId: user?.id });
 
-            // Upload via Next.js API route (which handles backend connection and fallback)
+            // Uplad via Next.js API route (which handles backend connection and fallback)
             // NO TIMEOUT - let the server handle it
             let videoUrl, thumbnailUrl;
             
