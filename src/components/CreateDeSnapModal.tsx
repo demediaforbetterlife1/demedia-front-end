@@ -232,7 +232,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             console.log('📤 Uploading video via Next.js API route...');
             console.log('🔑 Authentication:', { hasToken: !!token, userId: user?.id });
 
-            // Uplad via Next.s API route (which handles backend connection and fallback)
+            // Upload via Next.js API route (which handles backend connection and fallback)
             // NO TIMEOUT - let the server handle it
             let videoUrl, thumbnailUrl;
             
@@ -310,19 +310,9 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 
             } catch (uploadError: any) {
                 console.error('❌ Upload error:', uploadError);
-                
-                // Handle specific error types
                 if (uploadError.name === 'AbortError') {
                     throw new Error("Upload timed out. Your video might be too large or your connection is slow. Try a smaller video or check your internet connection.");
                 }
-                
-                // Handle network errors (Failed to fetch)
-                if (uploadError.message === 'Failed to fetch' || uploadError.name === 'TypeError') {
-                    console.error('❌ Network error - Failed to fetch');
-                    throw new Error("Network error: Could not connect to server. Please check your internet connection and try again.");
-                }
-                
-                // Re-throw the error with context
                 throw uploadError;
             }
 

@@ -186,7 +186,7 @@ export default function MessagingPage() {
                 console.warn('Main API failed, trying fallback:', apiError);
             }
 
-            // Fallback: Try chat endpoint
+            // Fallback: Try chat endpoin
             try {
                 response = await apiFetch('/api/chat', {}, user?.id);
                 if (response.ok) {
