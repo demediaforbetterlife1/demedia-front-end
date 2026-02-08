@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Disable bodyParser for multipart/form-data uploads
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 export async function POST(request: NextRequest) {
   let authHeader: string | null = null;
   let userId: string | null = null;

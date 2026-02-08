@@ -2,13 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
-// Configure route to accept large files
+// Configure route to accept large files - DISABLE bodyParser for multipart/form-data
 export const config = {
   api: {
-    bodyParser: {
-      sizeLimit: '200mb',
-    },
-    responseLimit: '200mb',
+    bodyParser: false, // CRITICAL: Disable bodyParser for FormData uploads
   },
 };
 
