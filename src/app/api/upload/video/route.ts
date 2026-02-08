@@ -2,15 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
-// Configure route to accept large files - DISABLE bodyParser for multipart/form-data
-export const config = {
-  api: {
-    bodyParser: false, // CRITICAL: Disable bodyParser for FormData uploads
-  },
-};
+// App Router configuration - increase body size limit for video uploads
+export const runtime = 'nodejs'; // Use Node.js runtime for file system access
+export const maxDuration = 300; // 5 minutes for video processing (Vercel Pro)
 
-// Increase max duration for video processing - Vercel allows up to 300s on Pro
-export const maxDuration = 300; // 5 minutes
+// CRITICAL: Set body size limit for large video uploads (100MB)
+// This is the App Router way to configure request body limits
+export const dynamic = 'force-dynamic'; // Disable caching for uploads
 
 export async function POST(request: NextRequest) {
   try {

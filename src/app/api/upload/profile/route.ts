@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Disable bodyParser for multipart/form-data uploads
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// App Router configuration
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic'; // Disable caching for uploads
 
 export async function POST(request: NextRequest) {
   let authHeader: string | null = null;
