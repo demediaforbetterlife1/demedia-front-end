@@ -187,7 +187,16 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+          'Authorization': `Bearer ${token}`,
+          'user-id': user?.id?.toString() || '',
+              },
+            body: formData,
+         credentials: 'include',
+        });
+          
         if (!videoFile) {
             setError("Please select a video file");
             return;
