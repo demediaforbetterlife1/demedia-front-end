@@ -511,9 +511,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log("[Auth] register attempt with:", formData);
 
       const res = await apiFetch("/api/auth/sign-up", {
-        method: "POST",
-        body: JSON.stringify(formData),
-      });
+       method: "POST",
+      headers: {
+     "Content-Type": "application/json",
+    },
+     body: JSON.stringify(formData),
+   });
 
       const data = await res.json();
 
@@ -536,10 +539,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // Store token in both cookie and localStorage using authFix utilities
-      if (data.token) {
-        console.log("[Auth] Storing token in both cookie and localStorage");
-        setAuthToken(data.token); // This sets both cookie and localStorage
-      }
+      if (typeof data?.token === "string" && data.token.split(".").length === 3) {
+        console.log("[Auth] Storing valid JWT token");
+        setAuthToken(data.token);
+      } else {
+     console.warn("[Auth] No valid JWT token returned:", data?.token);
+        }
 
       // Use user data from response
       if (data.user) {
