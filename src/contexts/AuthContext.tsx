@@ -16,6 +16,7 @@ import {
   hasValidAuth,
   debugAuth 
 } from "@/utils/authFix";
+import { jwtDecode } from "jwt-decode";
 
 /* =======================
 Types
