@@ -505,120 +505,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (payload: any): Promise<AuthResult> => {
+    const register = async (formData: FormData): Promise<AuthResult> => {
   setIsLoading(true);
 
   try {
-    console.log("[Auth] register attempt with:", payload);
-
     const res = await apiFetch("/api/auth/sign-up", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Accept": "application/json",
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(formData),
     });
 
-    // ✅ Parse response safely (prevents JSON parse crash)
-    const rawText = await res.text();
-    let data: any = {};
-    try {
-      data = rawText ? JSON.parse(rawText) : {};
-    } catch (e) {
-      console.warn("[Auth] Non-JSON response from backend:", rawText?.slice?.(0, 200));
-      data = { error: "Invalid server response" };
-    }
+    const data = await res.json();
 
-    console.log("[Auth] register response:", res.status, data);
-
-    // ✅ Handle non-OK with best message possible
     if (!res.ok) {
-      let msg =
-        data?.error ||
-        data?.message ||
-        (typeof data === "string" ? data : "") ||
-        `Registration failed (${res.status})`;
-
-      if (res.status === 504) msg = "Backend service is temporarily unavailable. Please try again in a few minutes.";
-      else if (res.status === 502) msg = "Unable to connect to backend service. Please check your internet connection and try again.";
-      else if (res.status === 404) msg = "Registration service is currently unavailable. Please contact support.";
-
-      console.error("[Auth] register failed:", msg);
-      return { success: false, message: msg };
+      return {
+        success: false,
+        message: data?.error || "Registration failed",
+      };
     }
 
-    // ✅ Token handling (NO decoding crash)
-    const token = typeof data?.token === "string" ? data.token : null;
-
-    if (token && token.split(".").length === 3) {
-      console.log("[Auth] Storing valid JWT token");
-      setAuthToken(token);
-    } else {
-      // If backend returns token under a different key, try common paths:
-      const altToken =
-        typeof data?.data?.token === "string" ? data.data.token :
-        typeof data?.accessToken === "string" ? data.accessToken :
-        null;
-
-      if (altToken && altToken.split(".").length === 3) {
-        console.log("[Auth] Storing valid JWT token (alt path)");
-        setAuthToken(altToken);
-      } else {
-        // ✅ No crash; just return a clear error
-        console.warn("[Auth] No valid JWT token returned:", data);
-        return {
-          success: false,
-          message: data?.error || data?.message || "Registration succeeded but no token returned",
-        };
-      }
+    // ✅ احفظ التوكن بس لو صالح
+    if (typeof data?.token === "string" && data.token.split(".").length === 3) {
+      setAuthToken(data.token);
     }
 
-    // ✅ User handling (fallback to decode if user missing)
-    const userFromResponse = data?.user || data?.data?.user || null;
-
-    if (userFromResponse) {
-      console.log("[Auth] Registration successful, setting user from response");
-      setUser(userFromResponse);
-      return { success: true, user: userFromResponse };
-    }
-
-    // Fallback: decode token to get user info (safe)
-    const finalToken =
-      (typeof data?.token === "string" && data.token.split(".").length === 3)
-        ? data.token
-        : (typeof data?.data?.token === "string" && data.data.token.split(".").length === 3)
-          ? data.data.token
-          : null;
-
-    if (finalToken) {
-      try {
-        const decoded: any = jwtDecode(finalToken);
-        const fallbackUser = decoded?.user || decoded || null;
-
-        if (fallbackUser) {
-          console.log("[Auth] User not returned, using decoded token as fallback");
-          setUser(fallbackUser);
-          return { success: true, user: fallbackUser };
-        }
-      } catch (e) {
-        // ✅ still no crash
-        console.warn("[Auth] Token decode failed (fallback):", e);
-      }
+    // ✅ استخدم user من السيرفر مباشرة
+    if (data?.user) {
+      setUser(data.user);
+      return { success: true, user: data.user };
     }
 
     return {
       success: false,
-      message: "Registration succeeded but failed to load user",
+      message: "Invalid server response",
     };
+
   } catch (err: any) {
     console.error("[Auth] register exception:", err);
-    return { success: false, message: err?.message || "Registration failed" };
+    return {
+      success: false,
+      message: err?.message || "Registration failed",
+    };
   } finally {
     setIsLoading(false);
   }
 };
-
   const updateUserProfile = async (userData: { dob?: string; interests?: string[] }): Promise<AuthResult> => {
     setIsLoading(true);
     try {
