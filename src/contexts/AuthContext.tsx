@@ -188,17 +188,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         oldPhoto: prev.profilePicture?.substring(0, 50),
         newPhoto: updatedUser.profilePicture?.substring(0, 50)
       });
-      
-      // Store updated user in localStorage for persistence
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem('user_data', JSON.stringify(updatedUser));
-          console.log('[Auth] 💾 User data saved to localStorage');
-        } catch (e) {
-          console.error('[Auth] Failed to save user data:', e);
-        }
-      }
-      
+
       return updatedUser;
     });
     

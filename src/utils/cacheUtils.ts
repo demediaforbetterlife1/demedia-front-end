@@ -64,17 +64,15 @@ export const clearAllCaches = async (): Promise<void> => {
       console.log('🗑️ All service worker caches cleared');
     }
 
-    // Clear localStorage (preserve auth)
+    // Clear localStorage (preserve ONLY auth token)
     if (typeof window !== 'undefined') {
       const authToken = localStorage.getItem('token');
-      const userId = localStorage.getItem('userId');
       
       localStorage.clear();
       
       if (authToken) localStorage.setItem('token', authToken);
-      if (userId) localStorage.setItem('userId', userId);
       
-      console.log('🧹 LocalStorage cleared (auth preserved)');
+      console.log('🧹 LocalStorage cleared (auth token preserved)');
     }
 
     // Clear sessionStorage

@@ -153,7 +153,6 @@ export default function SignIn() {
         phoneNumber: "",
         password: "",
     });
-    const [remember, setRemember] = useState<boolean>(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const { t } = useI18n();
@@ -170,15 +169,6 @@ export default function SignIn() {
             setLoginSuccess(false); // Reset flag
         }
     }, [loginSuccess, user, isLoading, isAuthenticated]);
-    useEffect(() => {
-        try {
-            const saved = localStorage.getItem('rememberPhone');
-            if (saved) {
-                setForm((f) => ({ ...f, phoneNumber: saved }));
-                setRemember(true);
-            }
-        } catch {}
-    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -191,12 +181,6 @@ export default function SignIn() {
             console.log('Login result:', result);
             
             if (result.success) {
-                if (remember) {
-                    localStorage.setItem('rememberPhone', form.phoneNumber);
-                } else {
-                    localStorage.removeItem('rememberPhone');
-                }
-                
                 // Set flag to trigger redirect in useEffect
                 // The login function already fetches the user, so it should be available soon
                 setLoginSuccess(true);
@@ -336,14 +320,7 @@ export default function SignIn() {
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
-                            <label className="flex items-center space-x-2 text-cyan-100 text-sm">
-                                <input
-                                    type="checkbox"
-                                    checked={remember}
-                                    onChange={(e) => setRemember(e.target.checked)}
-                                />
-                                <span>{t('auth.rememberMe', 'Remember me')}</span>
-                            </label>
+                            {/* Removed remember-me localStorage usage to keep only token in storage */}
 
                             {error && (
                                 <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
