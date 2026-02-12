@@ -41,19 +41,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ Forward to backend
-    const backendResponse = await fetch(
-      `${BACKEND_URL}/api/users/${userId}/interests`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      }
-    );
+    // const backendResponse = await fetch(
+  `${BACKEND_URL}/${userId}/interests`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  }
+);
 
     // ✅ Read response safely (handles HTML / empty / non-JSON)
     const raw = await backendResponse.text();
