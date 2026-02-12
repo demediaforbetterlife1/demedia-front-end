@@ -228,13 +228,16 @@ export const isContentFresh = async (url: string): Promise<boolean> => {
  * Initialize smart cache prevention (NO AUTO-RELOAD)
  */
 export const initUltraCachePrevention = (): void => {
-  console.log('🚀 Initializing smart cache prevention...');
+  console.log('🚀 Initializing smart cache prevention (auth debug mode)...');
 
-  // Enable global cache busting for API requests only
-  enableGlobalCacheBusting();
-
-  // Clear caches silently on initialization
-  clearAllCaches();
+  // NOTE: While debugging authentication, we disable global cache busting
+  // and aggressive cache clearing to ensure auth requests are sent cleanly
+  // without extra query parameters or headers that could affect the backend.
+  //
+  // If you want to re‑enable the ultra cache prevention later, uncomment:
+  //
+  // enableGlobalCacheBusting();
+  // clearAllCaches();
 
   // DON'T set up periodic cache clearing - only clear on user action
   
