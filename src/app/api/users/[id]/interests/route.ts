@@ -5,16 +5,14 @@ const BACKEND_URL =
 
 export async function POST(request: NextRequest) {
   try {
-    // ✅ Get userId from URL: /api/users/:id/interests
-    const pathname = request.nextUrl.pathname;
-    const parts = pathname.split("/"); // ["", "api", "users", ":id", "interests"]
+    // /api/users/:id/interests
+    const parts = request.nextUrl.pathname.split("/");
     const userId = parts[3];
 
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
-    // ✅ Parse body safely
     let body: any;
     try {
       body = await request.json();
@@ -29,7 +27,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ Extract token
     const token =
       request.cookies.get("token")?.value ||
       request.headers.get("authorization")?.replace("Bearer ", "");
@@ -41,20 +38,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // const backendResponse = await fetch(
-  `${BACKEND_URL}/${userId}/interests`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  }
-);
+    // ✅ THE REAL BACKEND ENDPOINT:
+    const forwardUrl = `${BACKEND_URL}/api/interests/${userId}/interests`;
 
-    // ✅ Read response safely (handles HTML / empty / non-JSON)
+    const backendResponse = await fetch(forwardUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+
     const raw = await backendResponse.text();
 
     let data: any = null;
@@ -66,17 +62,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If backend returned 204 (empty)
-    if (!raw && backendResponse.status === 204) {
-      return NextResponse.json({ success: true }, { status: 200 });
-    }
-
     return NextResponse.json(data, { status: backendResponse.status });
-  } catch (error: any) {
+  } catch (err: any) {
     return NextResponse.json(
       {
         error: "Failed to save interests. Please try again.",
-        details: error?.message || "Unknown error",
+        details: err?.message || "Unknown error",
       },
       { status: 500 }
     );
