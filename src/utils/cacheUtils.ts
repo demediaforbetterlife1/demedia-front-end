@@ -161,6 +161,13 @@ export const enableGlobalCacheBusting = (): void => {
       return originalFetch.call(this, input, init);
     }
 
+    // 🔐 IMPORTANT: Never cache-bust API/auth requests.
+    // These must hit the backend with clean URLs and headers
+    // to avoid interfering with auth, rate limiting, or body parsing.
+    if (url.startsWith('/api/') || url.includes('/api/auth/')) {
+      return originalFetch.call(this, input, init);
+    }
+
     // Add cache busting to all other requests
     const cacheBustedUrl = bustCache(url);
     
