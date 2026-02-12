@@ -160,22 +160,22 @@ export default function InterestsPage() {
             const res = await apiFetch(`/api/users/${userId}/interests`, {
                 method: "POST",
                 body: JSON.stringify({ interests: selected }),
-            });
+            }, userId);
 
             console.log("Interests API response status:", res.status);
 
             if (!res.ok) {
-                const errorText = await res.text();
-                console.error("Interests API error:", errorText);
-                
                 let errorData;
                 try {
-                    errorData = JSON.parse(errorText);
+                    errorData = await res.json();
                 } catch {
-                    errorData = { error: errorText };
+                    const errorText = await res.text();
+                    errorData = { error: errorText || 'Unknown error' };
                 }
                 
-                const errorMsg = errorData.error || "Failed to save interests to database";
+                console.error("Interests API error:", errorData);
+                
+                const errorMsg = errorData.error || errorData.message || "Failed to save interests to database";
                 setError(`${errorMsg}. Please try again.`);
                 setIsLoading(false);
                 return;
@@ -192,14 +192,19 @@ export default function InterestsPage() {
             
         } catch (err: any) {
             console.error("Error saving interests:", err);
+            console.error("Error stack:", err.stack);
             
             // On ANY error, show message and DO NOT proceed
-            let errorMessage = "Failed to save interests to database. Please check your connection and try again.";
+            let errorMessage = "Failed to save interests. Please check your connection and try again.";
             
-            if (err.message && err.message.includes('Failed to fetch')) {
-                errorMessage = "Network error. Please check your internet connection and try again.";
-            } else if (err.message && err.message.includes('timeout')) {
-                errorMessage = "Request timeout. Please try again.";
+            if (err.message) {
+                if (err.message.includes('Failed to fetch')) {
+                    errorMessage = "Network error. Please check your internet connection and try again.";
+                } else if (err.message.includes('timeout')) {
+                    errorMessage = "Request timeout. Please try again.";
+                } else {
+                    errorMessage = err.message;
+                }
             }
             
             setError(errorMessage);
