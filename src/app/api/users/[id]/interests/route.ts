@@ -1,79 +1,64 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL =
-  process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
+  process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
-    const userId = params.id;
+    // ✅ Get userId from URL: /api/users/:id/interests
+    const pathname = request.nextUrl.pathname;
+    const parts = pathname.split("/"); // ["", "api", "users", ":id", "interests"]
+    const userId = parts[3];
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
-    // Parse body safely
+    // ✅ Parse body safely
     let body: any;
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json(
-        { error: 'Invalid JSON body' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
-
-    console.log('[API] Incoming interests:', body);
 
     if (!body?.interests || !Array.isArray(body.interests)) {
       return NextResponse.json(
-        { error: 'Interests array is required' },
+        { error: "Interests array is required" },
         { status: 400 }
       );
     }
 
-    // Extract token
+    // ✅ Extract token
     const token =
-      request.cookies.get('token')?.value ||
-      request.headers.get('authorization')?.replace('Bearer ', '');
-
-    console.log('[API] Token exists?', Boolean(token));
+      request.cookies.get("token")?.value ||
+      request.headers.get("authorization")?.replace("Bearer ", "");
 
     if (!token) {
       return NextResponse.json(
-        { error: 'Unauthorized - No token provided' },
+        { error: "Unauthorized - No token provided" },
         { status: 401 }
       );
     }
 
-    // Forward request to backend
+    // ✅ Forward to backend
     const backendResponse = await fetch(
       `${BACKEND_URL}/api/users/${userId}/interests`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
+          "Content-Type": "application/json",
+          Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(body),
       }
     );
 
-    console.log('[API] Backend status:', backendResponse.status);
-
-    // Read response safely
+    // ✅ Read response safely (handles HTML / empty / non-JSON)
     const raw = await backendResponse.text();
 
-    console.log('[API] Backend raw response:', raw);
-
     let data: any = null;
-
     if (raw) {
       try {
         data = JSON.parse(raw);
@@ -82,24 +67,17 @@ export async function POST(
       }
     }
 
-    // If backend returned empty body (like 204)
+    // If backend returned 204 (empty)
     if (!raw && backendResponse.status === 204) {
-      return NextResponse.json(
-        { success: true },
-        { status: 200 }
-      );
+      return NextResponse.json({ success: true }, { status: 200 });
     }
 
-    return NextResponse.json(data, {
-      status: backendResponse.status,
-    });
+    return NextResponse.json(data, { status: backendResponse.status });
   } catch (error: any) {
-    console.error('[API] Save interests error:', error);
-
     return NextResponse.json(
       {
-        error: 'Failed to save interests. Please try again.',
-        details: error?.message || 'Unknown error',
+        error: "Failed to save interests. Please try again.",
+        details: error?.message || "Unknown error",
       },
       { status: 500 }
     );
