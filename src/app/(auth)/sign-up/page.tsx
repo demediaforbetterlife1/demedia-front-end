@@ -46,25 +46,37 @@ return (
 
 function ShootingStar() {
 const meshRef = useRef<THREE.Mesh | null>(null);
+const animationRef = useRef<gsap.core.Tween | null>(null);
 
 useEffect(() => {  
     if (!meshRef.current) return;  
 
     const loop = () => {  
-        gsap.fromTo(  
-            meshRef.current!.position,  
-            { x: -12, y: 6, z: -10 },  
-            {  
-                x: 10,  
-                y: -4,  
-                z: -6,  
-                duration: 2,  
-                ease: "power2.inOut",  
-                onComplete: loop,  
-            }  
-        );  
+        if (!meshRef.current?.position) return;
+        try {
+          animationRef.current = gsap.fromTo(  
+              meshRef.current.position,  
+              { x: -12, y: 6, z: -10 },  
+              {  
+                  x: 10,  
+                  y: -4,  
+                  z: -6,  
+                  duration: 2,  
+                  ease: "power2.inOut",  
+                  onComplete: loop,  
+              }  
+          );  
+        } catch (error) {
+          console.warn('ShootingStar animation error:', error);
+        }
     };  
     loop();  
+
+    return () => {
+      if (animationRef.current) {
+        animationRef.current.kill();
+      }
+    };
 }, []);  
 return (  
     <mesh ref={meshRef}>  
