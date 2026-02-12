@@ -127,23 +127,21 @@ export async function apiFetch(path: string, options: RequestInit = {}, userId?:
     headers["Content-Type"] = "application/json";
   }
 
-  // Simple cache busting - only for GET requests
+  // Build URL - NO CACHE BUSTING for auth/API requests
   const method = ((options.method || "GET") as string).toUpperCase();
   let url = `${API_BASE}${path}`;
   
-  if (method === "GET") {
-    const separator = path.includes("?") ? "&" : "?";
-    url = `${url}${separator}t=${Date.now()}`;
-  }
-
-  // NO TIMEOUTS for POST/PUT/DELETE - they can take time
-  const isWriteOperation = ["POST", "PUT", "DELETE", "PATCH"].includes(method);
+  // IMPORTANT: Do NOT add cache busting to auth/API requests
+  // This was causing authentication failures by:
+  // 1. Adding query parameters that backend doesn't expect
+  // 2. Interfering with request parsing
+  // 3. Breaking token validation
   
   try {
     const fetchHeaders = {
       ...headers,
+      // Minimal cache control - don't be too aggressive
       'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache',
     };
 
     const fetchOptions: RequestInit = {

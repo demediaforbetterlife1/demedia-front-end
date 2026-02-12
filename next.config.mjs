@@ -33,37 +33,17 @@ const nextConfig = {
     unoptimized: false,
   },
 
-  // ULTRA-AGGRESSIVE no-cache strategy
-  // Ensures 100% fresh content delivery to all users
+  // BALANCED cache strategy - strict for dynamic content, permissive for static
+  // This ensures authentication works while still preventing stale content
   async headers() {
     return [
       {
-        // HTML pages - ULTRA no cache (always fresh)
+        // HTML pages - no cache for dynamic content
         source: '/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0, stale-while-revalidate=0, stale-if-error=0',
-          },
-          {
-            key: 'Pragma',
-            value: 'no-cache',
-          },
-          {
-            key: 'Expires',
-            value: '0',
-          },
-          {
-            key: 'Surrogate-Control',
-            value: 'no-store',
-          },
-          {
-            key: 'CDN-Cache-Control',
-            value: 'no-store',
-          },
-          {
-            key: 'Vercel-CDN-Cache-Control',
-            value: 'no-store',
+            value: 'no-store, must-revalidate',
           },
           {
             key: 'X-Content-Type-Options',
@@ -80,27 +60,11 @@ const nextConfig = {
         ],
       },
       {
-        // API routes - ULTRA no caching (always fresh data)
+        // API routes - CRITICAL: Minimal cache headers for auth stability
         source: '/api/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0, stale-while-revalidate=0, stale-if-error=0',
-          },
-          {
-            key: 'Pragma',
-            value: 'no-cache',
-          },
-          {
-            key: 'Expires',
-            value: '0',
-          },
-          {
-            key: 'Surrogate-Control',
-            value: 'no-store',
-          },
-          {
-            key: 'CDN-Cache-Control',
             value: 'no-store',
           },
         ],
@@ -116,111 +80,75 @@ const nextConfig = {
         ],
       },
       {
-        // Next.js data files - ULTRA no cache (dynamic data)
+        // Next.js data files - no cache (dynamic data)
         source: '/_next/data/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0',
-          },
-          {
-            key: 'Surrogate-Control',
             value: 'no-store',
           },
         ],
       },
       {
-        // Static images - ULTRA no cache (user content changes)
+        // Static images - short cache (user content changes)
         source: '/images/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-          },
-          {
-            key: 'Surrogate-Control',
-            value: 'no-store',
+            value: 'public, max-age=3600, must-revalidate',
           },
         ],
       },
       {
-        // Static assets - ULTRA no cache (content changes)
+        // Static assets - short cache
         source: '/assets/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-          },
-          {
-            key: 'Surrogate-Control',
-            value: 'no-store',
+            value: 'public, max-age=3600, must-revalidate',
           },
         ],
       },
       {
-        // User uploads - ULTRA no cache (dynamic content)
+        // User uploads - no cache (dynamic content)
         source: '/uploads/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0',
-          },
-          {
-            key: 'Surrogate-Control',
-            value: 'no-store',
-          },
-          {
-            key: 'CDN-Cache-Control',
             value: 'no-store',
           },
         ],
       },
       {
-        // Service Worker - ULTRA no caching
+        // Service Worker - no caching
         source: '/sw.js',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+            value: 'no-store',
           },
           {
             key: 'Service-Worker-Allowed',
             value: '/',
           },
-          {
-            key: 'Surrogate-Control',
-            value: 'no-store',
-          },
         ],
       },
       {
-        // Manifest - ULTRA no cache (PWA updates)
+        // Manifest - short cache
         source: '/manifest.json',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-          },
-          {
-            key: 'Surrogate-Control',
-            value: 'no-store',
+            value: 'public, max-age=3600, must-revalidate',
           },
         ],
       },
       {
-        // Version file - ULTRA no cache (update detection)
+        // Version file - no cache (update detection)
         source: '/version.json',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0',
-          },
-          {
-            key: 'Surrogate-Control',
-            value: 'no-store',
-          },
-          {
-            key: 'CDN-Cache-Control',
             value: 'no-store',
           },
         ],

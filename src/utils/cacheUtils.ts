@@ -53,7 +53,7 @@ export const fetchNoCacheUltra = async (url: string, options: RequestInit = {}):
 };
 
 /**
- * Clear all possible browser caches
+ * Clear all possible browser caches (PRESERVES AUTH TOKENS)
  */
 export const clearAllCaches = async (): Promise<void> => {
   try {
@@ -64,32 +64,44 @@ export const clearAllCaches = async (): Promise<void> => {
       console.log('🗑️ All service worker caches cleared');
     }
 
-    // Clear localStorage (preserve ONLY auth token)
+    // Clear localStorage (PRESERVE auth token)
     if (typeof window !== 'undefined') {
       const authToken = localStorage.getItem('token');
+      const authTokenAlt = localStorage.getItem('auth_token');
       
+      // Store auth-related items
+      const preservedItems: Record<string, string> = {};
+      if (authToken) preservedItems['token'] = authToken;
+      if (authTokenAlt) preservedItems['auth_token'] = authTokenAlt;
+      
+      // Clear everything
       localStorage.clear();
       
-      if (authToken) localStorage.setItem('token', authToken);
+      // Restore auth tokens
+      Object.entries(preservedItems).forEach(([key, value]) => {
+        localStorage.setItem(key, value);
+      });
       
-      console.log('🧹 LocalStorage cleared (auth token preserved)');
+      console.log('🧹 LocalStorage cleared (auth tokens preserved)');
     }
 
-    // Clear sessionStorage
+    // Clear sessionStorage (but preserve auth if present)
     if (typeof window !== 'undefined' && window.sessionStorage) {
+      const sessionToken = sessionStorage.getItem('token');
       sessionStorage.clear();
-      console.log('🧹 SessionStorage cleared');
+      if (sessionToken) sessionStorage.setItem('token', sessionToken);
+      console.log('🧹 SessionStorage cleared (auth preserved)');
     }
 
-    // Force refresh all images
+    // Force refresh all images (skip data URLs and auth-related images)
     const images = document.querySelectorAll('img') as NodeListOf<HTMLImageElement>;
     images.forEach(img => {
-      if (img.src && !img.src.startsWith('data:')) {
+      if (img.src && !img.src.startsWith('data:') && !img.src.includes('/api/auth/')) {
         img.src = bustCache(img.src);
       }
     });
 
-    console.log('✅ All caches cleared successfully');
+    console.log('✅ All caches cleared successfully (auth preserved)');
   } catch (error) {
     console.error('❌ Error clearing caches:', error);
   }
@@ -139,52 +151,17 @@ export const refreshAllCachedElements = (): void => {
 
 /**
  * Override global fetch to add cache busting to all requests
+ * DISABLED FOR AUTH DEBUGGING - This was interfering with authentication
  */
 export const enableGlobalCacheBusting = (): void => {
   if (typeof window === 'undefined') return;
 
-  const originalFetch = window.fetch;
+  // DISABLED: Global fetch override was causing auth issues
+  // The cache busting query parameters and headers were interfering with
+  // backend authentication, token validation, and request parsing
   
-  window.fetch = function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-    let url: string;
-    
-    if (typeof input === 'string') {
-      url = input;
-    } else if (input instanceof URL) {
-      url = input.toString();
-    } else {
-      url = input.url;
-    }
-
-    // Don't cache-bust Next.js static assets (they have unique hashes)
-    if (url.includes('/_next/static/')) {
-      return originalFetch.call(this, input, init);
-    }
-
-    // 🔐 IMPORTANT: Never cache-bust API/auth requests.
-    // These must hit the backend with clean URLs and headers
-    // to avoid interfering with auth, rate limiting, or body parsing.
-    if (url.startsWith('/api/') || url.includes('/api/auth/')) {
-      return originalFetch.call(this, input, init);
-    }
-
-    // Add cache busting to all other requests
-    const cacheBustedUrl = bustCache(url);
-    
-    const ultraInit: RequestInit = {
-      ...init,
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-        'Pragma': 'no-cache',
-        ...(init?.headers || {})
-      }
-    };
-
-    return originalFetch.call(this, cacheBustedUrl, ultraInit);
-  };
-
-  console.log('🌐 Global cache busting enabled');
+  console.log('⚠️ Global cache busting DISABLED (auth debug mode)');
+  console.log('💡 Use specific cache busting only where needed, not globally');
 };
 
 /**
@@ -225,21 +202,20 @@ export const isContentFresh = async (url: string): Promise<boolean> => {
 };
 
 /**
- * Initialize smart cache prevention (NO AUTO-RELOAD)
+ * Initialize smart cache prevention (NO AUTO-RELOAD, NO GLOBAL CACHE BUSTING)
+ * This version is optimized for authentication stability
  */
 export const initUltraCachePrevention = (): void => {
-  console.log('🚀 Initializing smart cache prevention (auth debug mode)...');
+  console.log('🚀 Initializing auth-friendly cache prevention...');
 
-  // NOTE: While debugging authentication, we disable global cache busting
-  // and aggressive cache clearing to ensure auth requests are sent cleanly
-  // without extra query parameters or headers that could affect the backend.
-  //
-  // If you want to re‑enable the ultra cache prevention later, uncomment:
-  //
-  // enableGlobalCacheBusting();
-  // clearAllCaches();
-
-  // DON'T set up periodic cache clearing - only clear on user action
+  // DISABLED: Global cache busting and aggressive cache clearing
+  // These were interfering with authentication by:
+  // 1. Adding query parameters to auth requests
+  // 2. Modifying headers that backend expects
+  // 3. Clearing tokens during cache operations
+  
+  console.log('✅ Auth-friendly mode: No global fetch override');
+  console.log('✅ Auth-friendly mode: Tokens preserved in storage');
   
   // Listen for visibility changes to check for updates (but don't auto-reload)
   document.addEventListener('visibilitychange', () => {
@@ -255,7 +231,7 @@ export const initUltraCachePrevention = (): void => {
     checkForUpdates();
   });
 
-  console.log('✅ Smart cache prevention initialized (NO AUTO-RELOAD)');
+  console.log('✅ Auth-friendly cache prevention initialized');
 };
 
 /**

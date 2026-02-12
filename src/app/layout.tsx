@@ -121,56 +121,26 @@ export default function RootLayout({
         {/* PWA Registration */}
         <script src="/pwa-register.js" defer></script>
         
-        {/* Smart Cache Prevention - NO AUTO-RELOAD */}
+        {/* Smart Cache Prevention - AUTH-FRIENDLY MODE */}
         <script dangerouslySetInnerHTML={{
           __html: `
-            // Smart cache prevention - only for API requests
+            // Auth-friendly cache prevention
             (function() {
-              console.log('🚀 Initializing smart cache prevention (NO AUTO-RELOAD)...');
+              console.log('🚀 Initializing auth-friendly cache prevention...');
               
-              // Override fetch for API requests only
-              const originalFetch = window.fetch;
-              window.fetch = function(input, init) {
-                let url = typeof input === 'string' ? input : input.url;
-                
-                // Don't cache-bust Next.js static assets (they have unique hashes)
-                if (url.includes('/_next/static/')) {
-                  return originalFetch.call(this, input, init);
-                }
-                
-                // Only add cache busting to API and data requests
-                if (url.includes('/api/') || url.includes('/_next/data/') || url.includes('/uploads/')) {
-                  const timestamp = Date.now();
-                  const random = Math.random().toString(36).substring(7);
-                  const separator = url.includes('?') ? '&' : '?';
-                  const cacheBustedUrl = url + separator + 't=' + timestamp + '&cb=' + random;
-                  
-                  const smartInit = {
-                    ...init,
-                    cache: 'no-store',
-                    headers: {
-                      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-                      'Pragma': 'no-cache',
-                      ...(init?.headers || {})
-                    }
-                  };
-                  
-                  return originalFetch.call(this, cacheBustedUrl, smartInit);
-                }
-                
-                // For other requests, just add no-cache headers
-                const smartInit = {
-                  ...init,
-                  headers: {
-                    'Cache-Control': 'no-cache',
-                    ...(init?.headers || {})
-                  }
-                };
-                
-                return originalFetch.call(this, input, smartInit);
-              };
+              // DISABLED: Global fetch override was interfering with authentication
+              // The cache busting query parameters and headers were causing:
+              // 1. Backend to reject requests with unexpected parameters
+              // 2. Token validation failures
+              // 3. Request parsing errors
               
-              console.log('✅ Smart cache prevention active (NO AUTO-RELOAD)');
+              console.log('✅ Auth-friendly mode: No global fetch override');
+              console.log('💡 Cache busting disabled for authentication stability');
+              
+              // Only check for updates, don't auto-reload
+              window.addEventListener('focus', function() {
+                console.log('🎯 Window focused - app ready');
+              });
             })();
           `
         }} />
