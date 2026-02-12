@@ -229,18 +229,24 @@ const nextConfig = {
   },
 
   async rewrites() {
-    const target = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
-    return [
-      {
-        source: "/socket.io/:path*",
-        destination: `${target}/socket.io/:path*`,
-      },
-      {
-        source: "/uploads/:path*",
-        destination: `${target}/uploads/:path*`,
-      },
-    ];
-  },
+  const target = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
+  return [
+    // ✅ Proxy ALL API calls to backend (fixes CORS + wrong base URL + 408)
+    {
+      source: "/api/:path*",
+      destination: `${target}/api/:path*`,
+    },
+
+    {
+      source: "/socket.io/:path*",
+      destination: `${target}/socket.io/:path*`,
+    },
+    {
+      source: "/uploads/:path*",
+      destination: `${target}/uploads/:path*`,
+    },
+  ];
+},
 };
 
 export default nextConfig;

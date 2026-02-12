@@ -16,6 +16,7 @@ import {
   hasValidAuth,
   debugAuth 
 } from "@/utils/authFix";
+import { jwtDecode } from "jwt-decode";
 
 /* =======================
 Types
@@ -504,65 +505,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (formData: FormData): Promise<AuthResult> => {
-    setIsLoading(true);
+    const register = async (formData: FormData): Promise<AuthResult> => {
+  setIsLoading(true);
 
-    try {
-      console.log("[Auth] register attempt with:", formData);
+  try {
+    const res = await apiFetch("/api/auth/sign-up", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    });
 
-      const res = await apiFetch("/api/auth/sign-up", {
-        method: "POST",
-        body: JSON.stringify(formData),
-      });
+    const data = await res.json();
 
-      const data = await res.json();
-
-      console.log("[Auth] register response:", res.status, data);
-
-      if (!res.ok) {
-        let msg = data?.error || `Registration failed (${res.status})`;
-        
-        // Provide better error messages for common backend issues
-        if (res.status === 504) {
-          msg = "Backend service is temporarily unavailable. Please try again in a few minutes.";
-        } else if (res.status === 502) {
-          msg = "Unable to connect to backend service. Please check your internet connection and try again.";
-        } else if (res.status === 404) {
-          msg = "Registration service is currently unavailable. Please contact support.";
-        }
-        
-        console.error("[Auth] register failed:", msg);
-        return { success: false, message: msg };
-      }
-
-      // Store token in both cookie and localStorage using authFix utilities
-      if (data.token) {
-        console.log("[Auth] Storing token in both cookie and localStorage");
-        setAuthToken(data.token); // This sets both cookie and localStorage
-      }
-
-      // Use user data from response
-      if (data.user) {
-        console.log("[Auth] Registration successful, setting user from response");
-        setUser(data.user);
-        return {
-          success: true,
-          user: data.user
-        };
-      }
-
+    if (!res.ok) {
       return {
         success: false,
-        message: "Registration succeeded but failed to load user"
+        message: data?.error || "Registration failed",
       };
-    } catch (err: any) {
-      console.error("[Auth] register exception:", err);
-      return { success: false, message: err?.message || "Registration failed" };
-    } finally {
-      setIsLoading(false);
     }
-  };
 
+    // ✅ احفظ التوكن بس لو صالح
+    if (typeof data?.token === "string" && data.token.split(".").length === 3) {
+      setAuthToken(data.token);
+    }
+
+    // ✅ استخدم user من السيرفر مباشرة
+    if (data?.user) {
+      setUser(data.user);
+      return { success: true, user: data.user };
+    }
+
+    return {
+      success: false,
+      message: "Invalid server response",
+    };
+
+  } catch (err: any) {
+    console.error("[Auth] register exception:", err);
+    return {
+      success: false,
+      message: err?.message || "Registration failed",
+    };
+  } finally {
+    setIsLoading(false);
+  }
+};
   const updateUserProfile = async (userData: { dob?: string; interests?: string[] }): Promise<AuthResult> => {
     setIsLoading(true);
     try {
