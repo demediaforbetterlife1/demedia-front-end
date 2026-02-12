@@ -4,9 +4,10 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const userId = params.id;
     
     // Parse the request body
