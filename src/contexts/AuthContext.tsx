@@ -9,14 +9,14 @@ import React, {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  setAuthToken, 
-  clearAllTokens, 
-  getBestToken, 
+import {
+  setAuthToken,
+  clearAllTokens,
+  getBestToken,
   hasValidAuth,
-  debugAuth 
+  debugAuth,
 } from "@/utils/authFix";
-import { jwtDecode } from "jwt-decode";
+import { signIn, signUp } from "@/lib/api";
 
 /* =======================
 Types
@@ -432,70 +432,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       console.log("[Auth] login attempt...");
-      const res = await apiFetch("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ phoneNumber, password }),
-      });
+      const data = await signIn({ phoneNumber, password });
 
-      let data;
-      try {
-        data = await res.json();
-      } catch (jsonError) {
-        // If response is not valid JSON, handle it
-        console.error("[Auth] Failed to parse response as JSON:", jsonError);
-        if (!res.ok) {
-          let msg = "Login failed. Please try again.";
-          if (res.status === 500) {
-            msg = "Server error occurred. Please try again later.";
-          } else if (res.status === 504) {
-            msg = "Backend service is temporarily unavailable. Please try again in a few minutes.";
-          } else if (res.status === 502) {
-            msg = "Unable to connect to backend service. Please check your internet connection and try again.";
-          } else if (res.status === 404) {
-            msg = "Login service is currently unavailable. Please contact support.";
-          }
-          return { success: false, message: msg };
-        }
-        return { success: false, message: "Login failed. Please try again." };
+      // Only persist a token if it looks like a real JWT (3 segments)
+      if (typeof data?.token === "string" && data.token.split(".").length === 3) {
+        console.log("[Auth] Storing JWT token in both cookie and localStorage");
+        setAuthToken(data.token);
+      } else if (data?.token) {
+        console.warn(
+          "[Auth] Received token that does not look like a JWT - skipping storage to avoid decode errors"
+        );
       }
 
-      if (!res.ok) {
-        let msg = data?.error || data?.message || `Login failed (${res.status})`;
-        
-        // Provide better error messages for common backend issues
-        if (res.status === 500) {
-          msg = data?.error || data?.message || "Server error occurred. Please try again later.";
-        } else if (res.status === 504) {
-          msg = "Backend service is temporarily unavailable. Please try again in a few minutes.";
-        } else if (res.status === 502) {
-          msg = "Unable to connect to backend service. Please check your internet connection and try again.";
-        } else if (res.status === 404) {
-          msg = "Login service is currently unavailable. Please contact support.";
-        }
-        
-        console.error("[Auth] login failed:", msg, "Status:", res.status);
-        return { success: false, message: msg };
-      }
-
-      // Store token in both cookie and localStorage using authFix utilities
-      if (data.token) {
-        console.log("[Auth] Storing token in both cookie and localStorage");
-        setAuthToken(data.token); // This sets both cookie and localStorage
-      }
-
-      // Use user data from response
-      if (data.user) {
+      if (data?.user) {
         console.log("[Auth] Login successful, setting user from response");
         setUser(data.user);
         return {
           success: true,
-          user: data.user
+          user: data.user,
+          message: data.message,
         };
       }
 
+      // If backend indicated a problem, surface its message
+      if (data?.error || data?.message) {
+        const msg = (data.error || data.message) as string;
+        console.error("[Auth] login failed:", msg);
+        return { success: false, message: msg };
+      }
+
+      console.error(
+        "[Auth] login: response did not contain user or clear error",
+        data
+      );
       return {
         success: false,
-        message: "Login succeeded but failed to load user"
+        message: "Login failed. Please try again.",
       };
     } catch (err: any) {
       console.error("[Auth] login error:", err);
@@ -505,53 +477,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-    const register = async (formData: FormData): Promise<AuthResult> => {
-  setIsLoading(true);
+  const register = async (formData: FormData): Promise<AuthResult> => {
+    setIsLoading(true);
 
-  try {
-    const res = await apiFetch("/api/auth/sign-up", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    });
+    try {
+      const data = await signUp(formData);
 
-    const data = await res.json();
+      // Only persist a token if it looks like a real JWT (3 segments)
+      if (typeof data?.token === "string" && data.token.split(".").length === 3) {
+        console.log("[Auth] Register: storing JWT token");
+        setAuthToken(data.token);
+      } else if (data?.token) {
+        console.warn(
+          "[Auth] Register: received token that does not look like a JWT - skipping storage"
+        );
+      }
 
-    if (!res.ok) {
+      if (data?.user) {
+        setUser(data.user);
+        return { success: true, user: data.user, message: data.message };
+      }
+
       return {
         success: false,
-        message: data?.error || "Registration failed",
+        message: (data?.error || data?.message || "Registration failed") as string,
       };
+    } catch (err: any) {
+      console.error("[Auth] register exception:", err);
+      return {
+        success: false,
+        message: err?.message || "Registration failed",
+      };
+    } finally {
+      setIsLoading(false);
     }
-
-    // ✅ احفظ التوكن بس لو صالح
-    if (typeof data?.token === "string" && data.token.split(".").length === 3) {
-      setAuthToken(data.token);
-    }
-
-    // ✅ استخدم user من السيرفر مباشرة
-    if (data?.user) {
-      setUser(data.user);
-      return { success: true, user: data.user };
-    }
-
-    return {
-      success: false,
-      message: "Invalid server response",
-    };
-
-  } catch (err: any) {
-    console.error("[Auth] register exception:", err);
-    return {
-      success: false,
-      message: err?.message || "Registration failed",
-    };
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
   const updateUserProfile = async (userData: { dob?: string; interests?: string[] }): Promise<AuthResult> => {
     setIsLoading(true);
     try {
