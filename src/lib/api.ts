@@ -199,12 +199,33 @@ export interface AuthResponse {
 /* ----------------------------- Generic request -------------------------- */
 async function requestJson<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   const res = await apiFetch(path, opts);
-  const parsed = await readJsonSafe<T | { error?: string }>(res);
 
-  // Don't throw for 401 - let the caller handle it
+  // Try to capture raw response text once for logging and error messages
+  let rawText: string | null = null;
+  try {
+    rawText = await res.clone().text();
+  } catch {
+    // ignore clone/text failures
+  }
+
+  const parsed = await readJsonSafe<T | { error?: string; message?: string }>(res);
+
   if (!res.ok && res.status !== 401) {
-    const errMsg = (parsed as any)?.error || (parsed as any)?.message || res.statusText;
-    throw new Error(`Request failed ${res.status} - ${errMsg}`);
+    const backendMsg =
+      (parsed as any)?.error ||
+      (parsed as any)?.message ||
+      rawText ||
+      res.statusText;
+
+    console.error("[api] requestJson error", {
+      path,
+      status: res.status,
+      backendMsg,
+      rawBodyPreview: rawText ? rawText.substring(0, 500) : null,
+    });
+
+    // Throw with the backend's message so callers (AuthContext) can show it directly
+    throw new Error(backendMsg || `Request failed with status ${res.status}`);
   }
 
   return parsed as T;
