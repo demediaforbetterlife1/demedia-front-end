@@ -33,17 +33,27 @@ class ProfilePhotoService {
    * Broadcast profile photo update to all components
    */
   public broadcastProfileUpdate(payload: ProfileUpdatePayload): void {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') {
+      console.warn('[ProfilePhotoService] ⚠️ Cannot broadcast - window is undefined (SSR)');
+      return;
+    }
 
     const eventDetail = {
       ...payload,
       timestamp: payload.timestamp || Date.now(),
     };
 
-    console.log('[ProfilePhotoService] Broadcasting profile update:', eventDetail);
+    console.log('[ProfilePhotoService] 📢 Broadcasting profile update:', {
+      userId: eventDetail.userId,
+      profilePicture: eventDetail.profilePicture?.substring(0, 50),
+      name: eventDetail.name,
+      username: eventDetail.username,
+      timestamp: eventDetail.timestamp
+    });
 
     // Add to queue for batch processing
     this.updateQueue.push(eventDetail);
+    console.log('[ProfilePhotoService] 📋 Queue size:', this.updateQueue.length);
     this.processQueue();
   }
 
@@ -51,8 +61,17 @@ class ProfilePhotoService {
    * Process queued updates with debouncing
    */
   private processQueue(): void {
-    if (this.isProcessing || this.updateQueue.length === 0) return;
+    if (this.isProcessing) {
+      console.log('[ProfilePhotoService] ⏳ Already processing queue, skipping');
+      return;
+    }
+    
+    if (this.updateQueue.length === 0) {
+      console.log('[ProfilePhotoService] ✅ Queue is empty');
+      return;
+    }
 
+    console.log('[ProfilePhotoService] 🔄 Processing queue with', this.updateQueue.length, 'updates');
     this.isProcessing = true;
 
     // Get the latest update for each user
@@ -67,22 +86,29 @@ class ProfilePhotoService {
       }
     });
 
+    console.log('[ProfilePhotoService] 📊 Unique users to update:', latestUpdates.size);
+
     // Clear the queue
     this.updateQueue = [];
 
     // Dispatch events for each unique user update
-    latestUpdates.forEach(update => {
+    latestUpdates.forEach((update, userId) => {
+      console.log(`[ProfilePhotoService] 📤 Dispatching events for user ${userId}`);
       this.dispatchUpdateEvents(update);
     });
 
     this.isProcessing = false;
+    console.log('[ProfilePhotoService] ✅ Queue processing complete');
   }
 
   /**
    * Dispatch multiple events to ensure all components receive the update
    */
   private dispatchUpdateEvents(payload: ProfileUpdatePayload): void {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') {
+      console.warn('[ProfilePhotoService] ⚠️ Cannot dispatch events - window is undefined');
+      return;
+    }
 
     const events = [
       'profile:updated',
@@ -90,6 +116,8 @@ class ProfilePhotoService {
       'avatar:updated',
       'profilePhoto:changed'
     ];
+
+    console.log(`[ProfilePhotoService] 🎯 Dispatching ${events.length} event types for user ${payload.userId}`);
 
     events.forEach(eventName => {
       const event = new CustomEvent(eventName, { 
@@ -99,10 +127,12 @@ class ProfilePhotoService {
       });
       
       window.dispatchEvent(event);
+      console.log(`[ProfilePhotoService] ✅ Dispatched: ${eventName}`);
     });
 
     // Also dispatch with a slight delay to catch any late-mounting components
     setTimeout(() => {
+      console.log(`[ProfilePhotoService] 🔄 Dispatching delayed events for user ${payload.userId}`);
       events.forEach(eventName => {
         const event = new CustomEvent(eventName, { 
           detail: payload,
@@ -111,9 +141,10 @@ class ProfilePhotoService {
         });
         window.dispatchEvent(event);
       });
+      console.log(`[ProfilePhotoService] ✅ Delayed events dispatched`);
     }, 100);
 
-    console.log('[ProfilePhotoService] Events dispatched for user:', payload.userId);
+    console.log('[ProfilePhotoService] ✅ All events dispatched for user:', payload.userId);
   }
 
   /**

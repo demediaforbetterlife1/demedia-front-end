@@ -199,7 +199,17 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
+        console.log('🎬 ========== DESNAP UPLOAD STARTED ==========');
+        console.log('📋 Video file check:', {
+            hasFile: !!videoFile,
+            fileName: videoFile?.name,
+            fileSize: videoFile?.size,
+            fileSizeMB: videoFile ? (videoFile.size / (1024 * 1024)).toFixed(2) : 0,
+            fileType: videoFile?.type
+        });
+        
         if (!videoFile) {
+            console.error('❌ No video file selected');
             setError("Please select a video file");
             return;
         }
@@ -209,34 +219,57 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
         try {
             // Create FormData for direct backend upload
+            console.log('📦 Creating FormData...');
             const formData = new FormData();
             formData.append('video', videoFile);
             formData.append('thumbnail', thumbnail);
             formData.append('duration', duration.toString());
             formData.append('visibility', settings.visibility);
             formData.append('userId', user?.id || '');
+            
+            console.log('📦 FormData created with:', {
+                hasVideo: formData.has('video'),
+                hasThumbnail: formData.has('thumbnail'),
+                duration: duration,
+                visibility: settings.visibility,
+                userId: user?.id
+            });
 
             // Get token for authentication - check multiple sources
+            console.log('🔑 Checking authentication...');
             let token = getToken();
             
             // If no token from getToken(), try direct access
             if (!token) {
+                console.log('⚠️ No token from getToken(), trying localStorage and cookies...');
                 token = localStorage.getItem('token') || 
                         document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || null;
             }
             
+            console.log('🔑 Token status:', {
+                hasToken: !!token,
+                tokenLength: token?.length,
+                tokenPreview: token ? `${token.substring(0, 10)}...` : 'none',
+                userId: user?.id,
+                userName: user?.name
+            });
+            
             if (!token) {
+                console.error('❌ No authentication token found!');
                 throw new Error("You must be logged in to create a DeSnap. Please log in and try again.");
             }
 
             console.log('📤 Uploading video via Next.js API route...');
-            console.log('🔑 Authentication:', { hasToken: !!token, userId: user?.id });
+            console.log('🌐 Target URL: /api/upload/video');
 
             // Upload via Next.js API route (which handles backend connection and fallback)
-            // NO TIMEOUT - le the server handle it
+            // NO TIMEOUT - let the server handle it
             let videoUrl, thumbnailUrl;
             
             try {
+                console.log('🚀 Sending upload request...');
+                const uploadStartTime = Date.now();
+                
                 const uploadResponse = await fetch('/api/upload/video', {
                     method: 'POST',
                     headers: {
@@ -248,56 +281,102 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                     // NO signal/timeout - let it take as long as needed
                 });
                 
+                const uploadEndTime = Date.now();
+                const uploadDuration = ((uploadEndTime - uploadStartTime) / 1000).toFixed(2);
+                
+                console.log('📡 Upload response received:', {
+                    status: uploadResponse.status,
+                    statusText: uploadResponse.statusText,
+                    ok: uploadResponse.ok,
+                    duration: `${uploadDuration}s`,
+                    headers: {
+                        contentType: uploadResponse.headers.get('content-type'),
+                        contentLength: uploadResponse.headers.get('content-length')
+                    }
+                });
+                
                 // Read response text ONCE
                 const uploadResponseText = await uploadResponse.text();
-                console.log('Upload response:', uploadResponseText.substring(0, 200));
+                console.log('📄 Response body preview:', uploadResponseText.substring(0, 300));
+                console.log('📄 Response body length:', uploadResponseText.length);
 
                 if (!uploadResponse.ok) {
+                    console.error('❌ Upload failed with status:', uploadResponse.status);
                     let errorMessage = "Failed to upload video";
+                    let errorDetails = {};
+                    
                     try {
                         if (uploadResponseText.trim() && uploadResponseText.trim().startsWith('{')) {
                             const errorData = JSON.parse(uploadResponseText);
+                            console.error('❌ Error data:', errorData);
+                            errorDetails = errorData;
                             errorMessage = errorData.details || errorData.error || errorData.message || errorMessage;
                             
                             if (uploadResponse.status === 413) {
                                 errorMessage = errorData.details || "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
                             }
                         } else {
+                            console.error('❌ Non-JSON error response:', uploadResponseText);
                             if (uploadResponse.status === 413) {
                                 errorMessage = "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
+                            } else if (uploadResponse.status === 401) {
+                                errorMessage = "Authentication failed. Please log in again.";
+                            } else if (uploadResponse.status === 400) {
+                                errorMessage = "Invalid upload request. Please check your video file.";
                             } else {
-                                errorMessage = `Upload error: ${uploadResponse.status}`;
+                                errorMessage = `Upload error: ${uploadResponse.status} ${uploadResponse.statusText}`;
                             }
                         }
                     } catch (e) {
-                        console.error('Upload error response:', uploadResponseText);
+                        console.error('❌ Error parsing error response:', e);
+                        console.error('❌ Raw response:', uploadResponseText);
                         if (uploadResponse.status === 413) {
                             errorMessage = "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
                         } else {
                             errorMessage = `Upload error: ${uploadResponse.status}`;
                         }
                     }
+                    
+                    console.error('❌ UPLOAD FAILED:', {
+                        status: uploadResponse.status,
+                        statusText: uploadResponse.statusText,
+                        errorMessage,
+                        errorDetails,
+                        responsePreview: uploadResponseText.substring(0, 200)
+                    });
+                    
                     throw new Error(errorMessage);
                 }
 
                 // Parse upload response
+                console.log('✅ Upload successful! Parsing response...');
                 let uploadData;
                 try {
                     if (!uploadResponseText.trim()) {
+                        console.error('❌ Empty response from server');
                         throw new Error('Empty response from server');
                     }
                     
                     if (uploadResponseText.trim().startsWith('<')) {
+                        console.error('❌ Server returned HTML:', uploadResponseText.substring(0, 100));
                         throw new Error('Server returned HTML error page. Please check your connection.');
                     }
                     
                     uploadData = JSON.parse(uploadResponseText);
+                    console.log('✅ Upload data parsed:', {
+                        hasVideoUrl: !!(uploadData.videoUrl || uploadData.url || uploadData.fileUrl),
+                        hasThumbnailUrl: !!uploadData.thumbnailUrl,
+                        success: uploadData.success,
+                        message: uploadData.message
+                    });
                 } catch (jsonError) {
-                    console.error('Upload JSON parsing error:', jsonError);
+                    console.error('❌ JSON parsing error:', jsonError);
+                    console.error('❌ Response text:', uploadResponseText);
                     throw new Error('Invalid upload response from server. Please try again.');
                 }
                 
                 videoUrl = uploadData.videoUrl || uploadData.url || uploadData.fileUrl;
+                console.log('📹 Video URL:', videoUrl);
                 if (!videoUrl) {
                     throw new Error('Video upload succeeded but no URL was returned by the server.');
                 }

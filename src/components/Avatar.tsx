@@ -44,9 +44,25 @@ export default function Avatar({
   const [imageError, setImageError] = useState(false);
   const [cacheKey, setCacheKey] = useState(Date.now());
 
+  // Debug logging
+  useEffect(() => {
+    console.log(`[Avatar] Component mounted/updated:`, {
+      userId,
+      src: src?.substring(0, 50),
+      size,
+      hasSrc: !!src,
+      imageSrc: imageSrc?.substring(0, 50),
+      cacheKey
+    });
+  }, [userId, src, size]);
+
   // Update image when src prop changes
   useEffect(() => {
     if (src && src !== imageSrc) {
+      console.log(`[Avatar] Source changed for user ${userId}:`, {
+        oldSrc: imageSrc?.substring(0, 50),
+        newSrc: src?.substring(0, 50)
+      });
       setImageSrc(src);
       setImageError(false);
       setCacheKey(Date.now());
@@ -55,7 +71,12 @@ export default function Avatar({
 
   // Listen for profile updates
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      console.log('[Avatar] No userId provided, skipping event listeners');
+      return;
+    }
+
+    console.log(`[Avatar] Setting up event listeners for user ${userId}`);
 
     const handleProfileUpdate = (event: Event) => {
       const customEvent = event as CustomEvent<{
@@ -66,12 +87,22 @@ export default function Avatar({
 
       const { userId: updatedUserId, profilePicture, timestamp } = customEvent.detail || {};
 
+      console.log(`[Avatar] Received ${event.type} event:`, {
+        updatedUserId,
+        currentUserId: userId,
+        matches: String(updatedUserId) === String(userId),
+        profilePicture: profilePicture?.substring(0, 50),
+        timestamp
+      });
+
       // Check if this update is for this user
       if (updatedUserId && String(updatedUserId) === String(userId) && profilePicture) {
-        console.log(`[Avatar] Updating avatar for user ${userId}:`, profilePicture.substring(0, 50));
+        console.log(`[Avatar] ✅ Updating avatar for user ${userId}:`, profilePicture.substring(0, 50));
         setImageSrc(profilePicture);
         setImageError(false);
         setCacheKey(timestamp || Date.now());
+      } else {
+        console.log(`[Avatar] ⏭️ Skipping update (not for this user)`);
       }
     };
 
@@ -79,6 +110,7 @@ export default function Avatar({
     window.addEventListener('user:updated', handleProfileUpdate as EventListener);
 
     return () => {
+      console.log(`[Avatar] Cleaning up event listeners for user ${userId}`);
       window.removeEventListener('profile:updated', handleProfileUpdate as EventListener);
       window.removeEventListener('user:updated', handleProfileUpdate as EventListener);
     };
@@ -86,7 +118,10 @@ export default function Avatar({
 
   const handleError = () => {
     if (!imageError) {
-      console.warn(`[Avatar] Failed to load image for user ${userId}, using fallback`);
+      console.error(`[Avatar] ❌ Failed to load image for user ${userId}:`, {
+        attemptedSrc: imageSrc?.substring(0, 100),
+        fallbackSrc
+      });
       setImageError(true);
       setImageSrc(fallbackSrc);
     }
@@ -94,6 +129,12 @@ export default function Avatar({
 
   // Build the final image URL with cache busting
   const finalImageSrc = imageError ? fallbackSrc : `${imageSrc}${imageSrc.includes('?') ? '&' : '?'}t=${cacheKey}`;
+
+  console.log(`[Avatar] Rendering for user ${userId}:`, {
+    finalSrc: finalImageSrc?.substring(0, 50),
+    isError: imageError,
+    cacheKey
+  });
 
   const sizeClass = sizeClasses[size];
 
