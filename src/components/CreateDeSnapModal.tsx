@@ -243,7 +243,8 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             let videoUrl, thumbnailUrl;
             
             try {
-                // POST directly to backend with FormData - let browser/Node auto-set multipart boundary
+                // POST directly to backend with FormData - allow up to 5 minutes for large videos
+                // Use longer timeout for large files (100MB can take 2-3 minutes on slow connections)
                 let uploadResponse = await fetch('https://demedia-backend.fly.dev/api/upload/video', {
                     method: 'POST',
                     headers: {
@@ -253,6 +254,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                     body: formData,
                     mode: 'cors',
                     credentials: 'include',
+                    signal: AbortSignal.timeout(300000), // 5 minutes for large video files
                 });
 
                 let uploadResponseText = await uploadResponse.text();
@@ -269,6 +271,8 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 if (!uploadResponse.ok) {
                     console.error('Backend upload failed, status:', uploadResponse.status, uploadResponseText.substring(0, 200));
                     let errorMessage = 'Failed to upload video to backend';
+                    let shouldRetry = false;
+                    
                     try {
                         if (uploadResponseText.trim() && uploadResponseText.trim().startsWith('{')) {
                             const errorData = JSON.parse(uploadResponseText);
@@ -280,12 +284,46 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                         } else if (uploadResponse.status === 401) {
                             errorMessage = "Authentication failed. Please log in again.";
                         } else if (uploadResponse.status === 408) {
-                            errorMessage = "Upload timed out. The backend is not responding. Please try again or use a smaller video.";
+                            // 408 timeout - backend is slow or not responding
+                            if (videoFile.size < 10 * 1024 * 1024) {
+                                // Small file - retry once
+                                shouldRetry = true;
+                                errorMessage = "Upload timed out. Retrying...";
+                            } else {
+                                // Large file - suggest compression
+                                errorMessage = "Upload timed out due to slow network or backend. Try a smaller video (under 50MB) for faster upload.";
+                            }
                         } else if (uploadResponse.status === 500) {
                             errorMessage = "Backend server error. Please try again in a moment.";
                         }
                     }
-                    throw new Error(errorMessage);
+                    
+                    if (shouldRetry && !debugInfo.retryAttempt) {
+                        console.log('🔄 Retrying upload for small file...');
+                        debugInfo.retryAttempt = true;
+                        // Retry once more for small files with 408
+                        // Reset response and retry
+                        uploadResponse = await fetch('https://demedia-backend.fly.dev/api/upload/video', {
+                            method: 'POST',
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                                'user-id': user?.id?.toString() || '',
+                            },
+                            body: formData,
+                            mode: 'cors',
+                            credentials: 'include',
+                            signal: AbortSignal.timeout(300000),
+                        });
+                        uploadResponseText = await uploadResponse.text();
+                        if (uploadResponse.ok) {
+                            // Retry succeeded
+                            console.log('✅ Retry succeeded');
+                        } else {
+                            throw new Error("Upload retry failed: " + errorMessage);
+                        }
+                    } else {
+                        throw new Error(errorMessage);
+                    }
                 }
 
                 const uploadData = JSON.parse(uploadResponseText);
