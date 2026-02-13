@@ -231,7 +231,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                         resolve({
                             videoUrl: response.secure_url,
                             publicId: response.public_id,
-                            duration: response.duration || file.duration || duration,
+                            duration: response.duration ?? duration,
                             format: response.format || 'mp4'
                         });
                     } catch (e) {
