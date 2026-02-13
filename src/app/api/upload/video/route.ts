@@ -7,15 +7,13 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    
-    const token = request.cookies.get('token')?.value ||
-      request.headers.get('authorization')?.replace('Bearer ', '');
+    const token = formData.get('token') as string || request.cookies.get('token')?.value;
+    const userId = formData.get('userId') as string || request.headers.get('user-id');
 
     if (!token) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const userId = request.headers.get('user-id');
     const videoFile = formData.get('video') as File;
     
     if (!videoFile) {
@@ -30,25 +28,15 @@ export async function POST(request: NextRequest) {
       }, { status: 413 });
     }
 
-    const backendFormData = new FormData();
-    backendFormData.append('video', videoFile);
-    
-    const thumbnail = formData.get('thumbnail');
-    const duration = formData.get('duration');
-    const visibility = formData.get('visibility');
-    
-    if (thumbnail) backendFormData.append('thumbnail', thumbnail as string);
-    if (duration) backendFormData.append('duration', duration as string);
-    if (visibility) backendFormData.append('visibility', visibility as string);
-    if (userId) backendFormData.append('userId', userId);
-
-    const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/upload/video`, {
+    // Forward the entire FormData as-is to backend
+    // Do NOT manually set Content-Type - let Node.js fetch API handle it
+    const backendResponse = await fetch('https://demedia-backend.fly.dev/api/upload/video', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'user-id': userId || '',
       },
-      body: backendFormData,
+      body: formData,
       signal: AbortSignal.timeout(180000),
     });
 
