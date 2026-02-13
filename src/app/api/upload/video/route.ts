@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log('📥 Video upload request received');
     
+    // Get the FormData from the request
     const formData = await request.formData();
 
     // Extract token from cookies or Authorization header
@@ -63,13 +64,32 @@ export async function POST(request: NextRequest) {
     try {
       console.log('🔄 Attempting backend upload');
 
+      // CRITICAL: Create a NEW FormData instance for the backend request
+      // This ensures proper multipart/form-data boundary
+      const backendFormData = new FormData();
+      
+      // Add the video file
+      backendFormData.append('video', videoFile);
+      
+      // Add other form fields
+      const thumbnail = formData.get('thumbnail');
+      const duration = formData.get('duration');
+      const visibility = formData.get('visibility');
+      
+      if (thumbnail) backendFormData.append('thumbnail', thumbnail as string);
+      if (duration) backendFormData.append('duration', duration as string);
+      if (visibility) backendFormData.append('visibility', visibility as string);
+      if (userId) backendFormData.append('userId', userId);
+
+      // CRITICAL: Do NOT set Content-Type header - let fetch set it with the boundary
       const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/upload/video`, {
         method: 'POST',
         headers: {
           'Authorization': authHeader,
           'user-id': userId || '',
+          // DO NOT set Content-Type - browser will set it with proper boundary
         },
-        body: formData,
+        body: backendFormData,
         // Increase timeout to 3 minutes
         signal: AbortSignal.timeout(180000),
       });
@@ -104,7 +124,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fallback: Save video locally for development
-    console.log('Saving video locally...');
+    console.log('💾 Saving video locally...');
 
     // Create uploads directory if it doesn't exist
     const uploadsDir = path.join(process.cwd(), 'public', 'local-uploads', 'videos');

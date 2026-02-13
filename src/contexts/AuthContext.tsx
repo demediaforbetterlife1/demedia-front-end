@@ -189,36 +189,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         newPhoto: updatedUser.profilePicture?.substring(0, 50)
       });
 
+      // If profile picture changed, broadcast the update using the service
+      if (newData.profilePicture && typeof window !== "undefined") {
+        // Import dynamically to avoid SSR issues
+        import('@/services/profilePhotoService').then(({ updateProfilePhoto }) => {
+          updateProfilePhoto(prev.id, newData.profilePicture!, {
+            name: updatedUser.name,
+            username: updatedUser.username,
+          });
+        });
+      }
+
       return updatedUser;
     });
-    
-    // Force immediate re-render by dispatching events
-    if (newData.profilePicture && typeof window !== "undefined") {
-      // Get current user to ensure we have the latest data
-      setUser((prev) => {
-        if (!prev) return null;
-        
-        const eventDetail = {
-          userId: prev.id,
-          profilePicture: newData.profilePicture,
-          name: prev.name,
-          username: prev.username,
-          timestamp: Date.now()
-        };
-        
-        console.log('[Auth] 📡 Dispatching profile:updated and user:updated events:', eventDetail);
-        
-        // Dispatch immediately and repeatedly to ensure all components receive it
-        for (let i = 0; i < 10; i++) {
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('profile:updated', { detail: eventDetail }));
-            window.dispatchEvent(new CustomEvent('user:updated', { detail: eventDetail }));
-          }, i * 100);
-        }
-        
-        return prev;
-      });
-    }
   }, []);
 
   // Enhanced fetch with dual token support

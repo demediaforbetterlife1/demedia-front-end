@@ -8,6 +8,7 @@ import "../styles/stories-enhanced.css";
 import NavbarClient from "@/app/layoutElements/NavBarClient";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ThemeEffects from "@/components/ThemeEffects";
 import { AuthGuard } from "@/components/AuthGuard";
 import { AnimatedStars } from "@/components/AnimatedStars";
 import { I18nProvider } from "@/contexts/I18nContext";
