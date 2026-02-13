@@ -243,7 +243,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             let videoUrl, thumbnailUrl;
             
             try {
-                // POST directly to backend to avoid the API route altering request
+                // POST directly to backend with FormData - let browser/Node auto-set multipart boundary
                 let uploadResponse = await fetch('https://demedia-backend.fly.dev/api/upload/video', {
                     method: 'POST',
                     headers: {
@@ -265,56 +265,27 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                     responseText: uploadResponseText.substring ? uploadResponseText.substring(0, 200) : String(uploadResponseText)
                 });
 
-                // If direct backend upload failed, attempt fallback via Next.js API route
+                // If direct backend upload failed, fail fast with clear error
                 if (!uploadResponse.ok) {
-                    console.warn('Direct backend upload failed, status:', uploadResponse.status, uploadResponseText.substring(0,200));
+                    console.error('Backend upload failed, status:', uploadResponse.status, uploadResponseText.substring(0, 200));
+                    let errorMessage = 'Failed to upload video to backend';
                     try {
-                        const fallbackForm = new FormData();
-                        fallbackForm.append('video', videoFile);
-                        fallbackForm.append('thumbnail', thumbnail);
-                        fallbackForm.append('duration', duration.toString());
-                        fallbackForm.append('visibility', settings.visibility);
-                        fallbackForm.append('userId', user?.id?.toString() || '');
-                        // Append token so Next.js route can read it from formData
-                        fallbackForm.append('token', token);
-
-                        const fallbackResp = await fetch('/api/upload/video', {
-                            method: 'POST',
-                            body: fallbackForm,
-                            credentials: 'include',
-                        });
-
-                        uploadResponse = fallbackResp;
-                        uploadResponseText = await fallbackResp.text();
-                        debugInfo.attempts.push({
-                            url: '/api/upload/video',
-                            method: 'POST',
-                            requestHeaders: { via: 'next-api-fallback' },
-                            ok: fallbackResp.ok,
-                            status: fallbackResp.status,
-                            responseText: uploadResponseText.substring ? uploadResponseText.substring(0, 200) : String(uploadResponseText)
-                        });
-                        if (!fallbackResp.ok) {
-                            let errorMessage = 'Failed to upload video (both direct and fallback uploads failed)';
-                            try {
-                                if (uploadResponseText.trim() && uploadResponseText.trim().startsWith('{')) {
-                                    const errorData = JSON.parse(uploadResponseText);
-                                    errorMessage = errorData.details || errorData.error || errorData.message || errorMessage;
-                                }
-                            } catch (e) {
-                                if (fallbackResp.status === 413) {
-                                    errorMessage = "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
-                                } else if (fallbackResp.status === 401) {
-                                    errorMessage = "Authentication failed. Please log in again.";
-                                }
-                            }
-                            throw new Error(errorMessage);
+                        if (uploadResponseText.trim() && uploadResponseText.trim().startsWith('{')) {
+                            const errorData = JSON.parse(uploadResponseText);
+                            errorMessage = errorData.details || errorData.error || errorData.message || errorMessage;
                         }
-                    } catch (fallbackError) {
-                        console.error('Fallback upload attempt failed:', fallbackError);
-                        debugInfo.fallbackError = String((fallbackError as any)?.message || fallbackError);
-                        throw fallbackError;
+                    } catch (e) {
+                        if (uploadResponse.status === 413) {
+                            errorMessage = "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
+                        } else if (uploadResponse.status === 401) {
+                            errorMessage = "Authentication failed. Please log in again.";
+                        } else if (uploadResponse.status === 408) {
+                            errorMessage = "Upload timed out. The backend is not responding. Please try again or use a smaller video.";
+                        } else if (uploadResponse.status === 500) {
+                            errorMessage = "Backend server error. Please try again in a moment.";
+                        }
                     }
+                    throw new Error(errorMessage);
                 }
 
                 const uploadData = JSON.parse(uploadResponseText);
