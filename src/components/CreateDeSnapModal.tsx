@@ -233,17 +233,22 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 throw new Error("You must be logged in to create a DeSnap. Please log in and try again.");
             }
 
-            // Add token and userId to FormData directly
-            formData.append('token', token);
+            // Add only userId to FormData; send token in Authorization header
             formData.append('userId', user?.id?.toString() || '');
 
             let videoUrl, thumbnailUrl;
             
             try {
-                // Send FormData without custom headers - browser handles multipart/form-data
-                const uploadResponse = await fetch('/api/upload/video', {
+                // POST directly to backend to avoid the API route altering request
+                const uploadResponse = await fetch('https://demedia-backend.fly.dev/api/upload/video', {
                     method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'user-id': user?.id?.toString() || '',
+                    },
                     body: formData,
+                    mode: 'cors',
+                    credentials: 'include',
                 });
                 
                 const uploadResponseText = await uploadResponse.text();
