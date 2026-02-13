@@ -9,7 +9,6 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiFetch } from "@/lib/api";
 
 /* -------- Shooting Stars -------- */
 function ShootingStar() {
@@ -156,11 +155,26 @@ export default function InterestsPage() {
 
             console.log("Saving interests to database for user:", userId, "interests:", selected);
 
-            // Save to backend - MUST succeed
-            const res = await apiFetch(`/api/users/${userId}/interests`, {
+            // Get token to ensure we're authenticated
+            const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+            if (!token) {
+                console.error("No authentication token found");
+                setError("Session expired. Please sign in again.");
+                setIsLoading(false);
+                return;
+            }
+
+            // Make direct fetch call with explicit headers
+            const res = await fetch(`/api/users/${userId}/interests`, {
                 method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
                 body: JSON.stringify({ interests: selected }),
-            }, userId);
+                credentials: "include",
+            });
 
             console.log("Interests API response status:", res.status);
 
@@ -169,8 +183,12 @@ export default function InterestsPage() {
                 try {
                     errorData = await res.json();
                 } catch {
-                    const errorText = await res.text();
-                    errorData = { error: errorText || 'Unknown error' };
+                    try {
+                        const errorText = await res.text();
+                        errorData = { error: errorText || 'Unknown error' };
+                    } catch {
+                        errorData = { error: 'Failed to parse error response' };
+                    }
                 }
                 
                 console.error("Interests API error:", errorData);
