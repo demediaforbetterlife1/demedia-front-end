@@ -240,11 +240,10 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             let videoUrl, thumbnailUrl;
             
             try {
-                // DO NOT set custom headers with FormData - let browser handle multipart/form-data
+                // Send FormData without custom headers - browser handles multipart/form-data
                 const uploadResponse = await fetch('/api/upload/video', {
                     method: 'POST',
                     body: formData,
-                    credentials: 'include',
                 });
                 
                 const uploadResponseText = await uploadResponse.text();
@@ -404,37 +403,48 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4"
+                className="fixed inset-0 bg-gradient-to-b from-black via-purple-950 to-black/95 backdrop-blur-xl flex items-center justify-center z-50 p-4"
                 onClick={onClose}
             >
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-none sm:rounded-3xl p-0 w-full sm:max-w-4xl max-h-[100dvh] sm:max-h-[90vh] overflow-hidden border-0 sm:border border-gray-700 shadow-2xl"
+                    className="relative bg-gradient-to-br from-slate-950 via-purple-950 to-black rounded-none sm:rounded-3xl p-0 w-full sm:max-w-4xl max-h-[100dvh] sm:max-h-[90vh] overflow-hidden border sm:border-2 border-cyan-500/30 shadow-2xl"
+                    style={{
+                      boxShadow: '0 0 60px rgba(34,211,238,0.15), 0 0 120px rgba(168,85,247,0.1), inset 0 0 60px rgba(59,130,246,0.05)'
+                    }}
                     onClick={(e) => e.stopPropagation()}
                 >
+                    <div className="absolute inset-0 bg-gradient-to-t from-purple-900/10 via-transparent to-cyan-900/10 pointer-events-none" />
+                    
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-700 safe-area-inset">
+                    <div className="relative z-10 flex items-center justify-between p-4 sm:p-6 border-b border-cyan-500/20 bg-gradient-to-r from-slate-950 via-purple-950/50 to-slate-950 safe-area-inset">
                         <div className="flex items-center space-x-2 sm:space-x-3">
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full flex items-center justify-center">
+                            <div className="relative w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-cyan-400 to-blue-600 rounded-full flex items-center justify-center animate-pulse"
+                              style={{
+                                boxShadow: '0 0 20px rgba(34,211,238,0.6), 0 0 40px rgba(59,130,246,0.3)'
+                              }}>
                                 <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                             </div>
                             <div>
-                                <h2 className="text-lg sm:text-xl font-bold text-white">Create DeSnap</h2>
-                                <p className="text-xs sm:text-sm text-gray-400 hidden xs:block">Share your moment with the world</p>
+                                <h2 className="text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-300">Create DeSnap</h2>
+                                <p className="text-xs sm:text-sm text-cyan-400/60 hidden xs:block">Share your cosmic moment</p>
                             </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors touch-target"
+                            className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-purple-500/30 to-cyan-500/30 hover:from-purple-500/50 hover:to-cyan-500/50 flex items-center justify-center transition-all duration-300 touch-target border border-cyan-500/30"
+                            style={{
+                              boxShadow: 'inset 0 0 15px rgba(34,211,238,0.2)'
+                            }}
                         >
                             <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                         </button>
                     </div>
 
                     {/* Tab Navigation */}
-                    <div className="flex border-b border-gray-700 overflow-x-auto scrollbar-hide">
+                    <div className="flex border-b border-cyan-500/20 overflow-x-auto scrollbar-hide bg-gradient-to-r from-slate-950/50 via-purple-950/30 to-slate-950/50">
                         {[
                             { id: "upload", label: "Upload", icon: Upload },
                             { id: "ai", label: "AI", icon: Zap },
@@ -448,11 +458,14 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id as any)}
-                                    className={`flex-shrink-0 flex items-center justify-center space-x-1 sm:space-x-2 py-3 sm:py-4 px-2 sm:px-4 transition-colors touch-target ${
+                                    className={`flex-shrink-0 flex items-center justify-center space-x-1 sm:space-x-2 py-3 sm:py-4 px-2 sm:px-4 transition-all duration-300 touch-target relative ${
                                         activeTab === tab.id
-                                            ? "text-yellow-400 border-b-2 border-yellow-400 bg-yellow-400/5"
-                                            : "text-gray-400 hover:text-white hover:bg-gray-800/50"
+                                            ? "text-cyan-300 border-b-2 border-cyan-400 bg-cyan-500/10"
+                                            : "text-purple-400/70 hover:text-cyan-300 hover:bg-purple-500/10"
                                     }`}
+                                    style={activeTab === tab.id ? {
+                                      boxShadow: 'inset 0 -2px 0 rgba(34,211,238,0.5), 0 0 10px rgba(34,211,238,0.2)'
+                                    } : {}}
                                 >
                                     <Icon className="w-4 h-4" />
                                     <span className="text-xs sm:text-sm font-medium">{tab.label}</span>
@@ -461,7 +474,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                         })}
                     </div>
 
-                    <div className="p-3 sm:p-6 max-h-[calc(100dvh-200px)] sm:max-h-[60vh] overflow-y-auto scrollbar-hide">
+                    <div className="relative p-3 sm:p-6 max-h-[calc(100dvh-200px)] sm:max-h-[60vh] overflow-y-auto scrollbar-hide bg-gradient-to-b from-slate-950/50 via-transparent to-slate-950/50">
                         <AnimatePresence mode="wait">
                             {/* Upload Tab */}
                             {activeTab === "upload" && (
@@ -473,7 +486,10 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                     className="space-y-6"
                                 >
                                     {!videoFile ? (
-                                        <div className="border-2 border-dashed border-gray-600 rounded-2xl p-8 text-center hover:border-yellow-400 transition-colors">
+                                        <div className="border-2 border-dashed border-cyan-500/40 rounded-2xl p-8 text-center hover:border-cyan-400 hover:bg-cyan-500/5 transition-all duration-300 bg-gradient-to-br from-purple-900/10 to-cyan-900/10"
+                                          style={{
+                                            boxShadow: 'inset 0 0 30px rgba(34,211,238,0.05), 0 0 20px rgba(34,211,238,0.1)'
+                                          }}>
                                             <input
                                                 ref={fileInputRef}
                                                 type="file"
@@ -681,15 +697,15 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                             ].map((setting) => {
                                                 const Icon = setting.icon;
                                                 return (
-                                                    <label key={setting.key} className="flex items-center space-x-3 p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 cursor-pointer transition-colors">
+                                                    <label key={setting.key} className="flex items-center space-x-3 p-3 rounded-xl bg-gradient-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/30 hover:to-cyan-500/30 cursor-pointer transition-all duration-300 border border-purple-500/20">
                                                         <input
                                                             type="checkbox"
                                                             checked={settings[setting.key as keyof DeSnapSettings] as boolean}
                                                             onChange={(e) => setSettings(prev => ({ ...prev, [setting.key]: e.target.checked }))}
-                                                            className="w-4 h-4 text-yellow-400 bg-gray-700 border-gray-600 rounded focus:ring-yellow-400 focus:ring-2"
+                                                            className="w-4 h-4 text-cyan-400 bg-purple-900/50 border-cyan-500/50 rounded focus:ring-cyan-400 focus:ring-2"
                                                         />
-                                                        <Icon className="w-4 h-4 text-gray-400" />
-                                                        <span className="text-sm text-white">{setting.label}</span>
+                                                        <Icon className="w-4 h-4 text-cyan-400" />
+                                                        <span className="text-sm text-cyan-100">{setting.label}</span>
                                                     </label>
                                                 );
                                             })}
@@ -702,24 +718,30 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
                     {/* Error Message */}
                     {error && (
-                        <div className="px-6 py-3 bg-red-500/10 border-t border-red-500/20">
-                            <div className="text-red-400 text-sm text-center">{error}</div>
+                        <div className="relative px-6 py-3 bg-gradient-to-r from-red-500/20 to-pink-500/20 border-t border-red-500/30 backdrop-blur-sm"
+                          style={{
+                            boxShadow: 'inset 0 0 20px rgba(239,68,68,0.1)'
+                          }}>
+                            <div className="text-red-300 text-sm text-center">{error}</div>
                         </div>
                     )}
 
                     {/* Footer Actions */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 sm:p-6 border-t border-gray-700 bg-gray-900/50 gap-3 sm:gap-0 safe-area-inset">
-                        <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-400">
+                    <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 sm:p-6 border-t border-cyan-500/20 bg-gradient-to-r from-slate-950 via-purple-950/50 to-slate-950 gap-3 sm:gap-0 safe-area-inset"
+                      style={{
+                        boxShadow: 'inset 0 1px 20px rgba(34,211,238,0.1)'
+                      }}>
+                        <div className="hidden sm:flex items-center space-x-2 text-sm text-cyan-400/70">
                             <Zap className="w-4 h-4" />
                             <span>DeSnap</span>
                             <span>•</span>
-                            <span>{visibilityOptions.find(v => v.id === settings.visibility)?.name}</span>
+                            <span className="text-cyan-300">{visibilityOptions.find(v => v.id === settings.visibility)?.name}</span>
                         </div>
                         <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="px-6 py-3 sm:py-2 text-gray-400 hover:text-white transition-colors text-center touch-target"
+                                className="px-6 py-3 sm:py-2 text-cyan-400/70 hover:text-cyan-300 transition-all duration-300 text-center touch-target border border-cyan-500/20 rounded-lg hover:bg-cyan-500/10"
                             >
                                 Cancel
                             </button>

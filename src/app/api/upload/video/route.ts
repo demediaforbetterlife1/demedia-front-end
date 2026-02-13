@@ -7,15 +7,17 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const token = formData.get('token') as string || request.cookies.get('token')?.value;
-    const userId = formData.get('userId') as string || request.headers.get('user-id');
+    const token = formData.get('token') as string;
+    const userId = formData.get('userId') as string;
+    const videoFile = formData.get('video') as File;
+    const duration = formData.get('duration') as string;
+    const visibility = formData.get('visibility') as string;
+    const thumbnail = formData.get('thumbnail') as string;
 
     if (!token) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const videoFile = formData.get('video') as File;
-    
     if (!videoFile) {
       return NextResponse.json({ error: 'No video file uploaded' }, { status: 400 });
     }
@@ -28,15 +30,21 @@ export async function POST(request: NextRequest) {
       }, { status: 413 });
     }
 
-    // Forward the entire FormData as-is to backend
-    // Do NOT manually set Content-Type - let Node.js fetch API handle it
+    // Create fresh FormData for backend with only the fields we need
+    const toBackendFormData = new FormData();
+    toBackendFormData.append('video', videoFile);
+    if (duration) toBackendFormData.append('duration', duration);
+    if (visibility) toBackendFormData.append('visibility', visibility);
+    if (thumbnail) toBackendFormData.append('thumbnail', thumbnail);
+    if (userId) toBackendFormData.append('userId', userId);
+
+    // Forward to backend with proper multipart handling
     const backendResponse = await fetch('https://demedia-backend.fly.dev/api/upload/video', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'user-id': userId || '',
       },
-      body: formData,
+      body: toBackendFormData,
       signal: AbortSignal.timeout(180000),
     });
 
