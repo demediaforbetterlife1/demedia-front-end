@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
+const BACKEND_URL =
+  process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
 
+<<<<<<< HEAD
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -49,32 +51,38 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+=======
+export async function POST(request: NextRequest) {
+>>>>>>> a064d07f3d2124e8ad18d897f7676c358233ac55
   try {
-    const params = await context.params;
-    const userId = params.id;
-    
-    // Parse the request body
-    const body = await request.json();
-    
-    console.log('[API] Save interests request received:', {
-      userId,
-      interests: body.interests,
-      interestCount: body.interests?.length
-    });
+    // /api/users/:id/interests
+    const parts = request.nextUrl.pathname.split("/");
+    const userId = parts[3];
 
-    // Validate interests
-    if (!body.interests || !Array.isArray(body.interests)) {
+    if (!userId) {
+      return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+    }
+
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    if (!body?.interests || !Array.isArray(body.interests)) {
       return NextResponse.json(
-        { error: 'Interests array is required' },
+        { error: "Interests array is required" },
         { status: 400 }
       );
     }
 
-    // Get token from cookies or headers
-    const token = request.cookies.get('token')?.value || 
-                  request.headers.get('authorization')?.replace('Bearer ', '');
+    const token =
+      request.cookies.get("token")?.value ||
+      request.headers.get("authorization")?.replace("Bearer ", "");
 
     if (!token) {
+<<<<<<< HEAD
       console.error('[API] No authentication token found');
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -148,10 +156,44 @@ export async function POST(
     console.error('[API] Save interests error:', error);
     console.error('[API] Error stack:', error.stack);
     
+=======
+      return NextResponse.json(
+        { error: "Unauthorized - No token provided" },
+        { status: 401 }
+      );
+    }
+
+    // ✅ THE REAL BACKEND ENDPOINT:
+    const forwardUrl = `${BACKEND_URL}/api/interests/${userId}/interests`;
+
+    const backendResponse = await fetch(forwardUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const raw = await backendResponse.text();
+
+    let data: any = null;
+    if (raw) {
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = { message: raw };
+      }
+    }
+
+    return NextResponse.json(data, { status: backendResponse.status });
+  } catch (err: any) {
+>>>>>>> a064d07f3d2124e8ad18d897f7676c358233ac55
     return NextResponse.json(
-      { 
-        error: 'Failed to save interests. Please try again.',
-        details: error.message 
+      {
+        error: "Failed to save interests. Please try again.",
+        details: err?.message || "Unknown error",
       },
       { status: 500 }
     );
