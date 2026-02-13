@@ -196,6 +196,8 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
         }
     };
 
+    const [debugPayload, setDebugPayload] = useState<string | null>(null);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -215,6 +217,8 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
         setIsSubmitting(true);
         setError("");
+
+        const debugInfo: any = { attempts: [] };
 
         try {
             const formData = new FormData();
@@ -252,6 +256,14 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 });
 
                 let uploadResponseText = await uploadResponse.text();
+                debugInfo.attempts.push({
+                    url: 'https://demedia-backend.fly.dev/api/upload/video',
+                    method: 'POST',
+                    requestHeaders: { Authorization: `Bearer ${token}`, 'user-id': user?.id?.toString() || '' },
+                    ok: uploadResponse.ok,
+                    status: uploadResponse.status,
+                    responseText: uploadResponseText.substring ? uploadResponseText.substring(0, 200) : String(uploadResponseText)
+                });
 
                 // If direct backend upload failed, attempt fallback via Next.js API route
                 if (!uploadResponse.ok) {
@@ -274,6 +286,14 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
                         uploadResponse = fallbackResp;
                         uploadResponseText = await fallbackResp.text();
+                        debugInfo.attempts.push({
+                            url: '/api/upload/video',
+                            method: 'POST',
+                            requestHeaders: { via: 'next-api-fallback' },
+                            ok: fallbackResp.ok,
+                            status: fallbackResp.status,
+                            responseText: uploadResponseText.substring ? uploadResponseText.substring(0, 200) : String(uploadResponseText)
+                        });
                         if (!fallbackResp.ok) {
                             let errorMessage = 'Failed to upload video (both direct and fallback uploads failed)';
                             try {
@@ -292,6 +312,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                         }
                     } catch (fallbackError) {
                         console.error('Fallback upload attempt failed:', fallbackError);
+                        debugInfo.fallbackError = String((fallbackError as any)?.message || fallbackError);
                         throw fallbackError;
                     }
                 }
@@ -309,8 +330,12 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 
             } catch (uploadError: any) {
                 if (uploadError.name === 'AbortError') {
+                    debugInfo.uploadError = 'AbortError';
+                    setDebugPayload(JSON.stringify(debugInfo, null, 2));
                     throw new Error("Upload timed out. Your video might be too large or your connection is slow.");
                 }
+                debugInfo.uploadError = String((uploadError as any)?.message || uploadError);
+                setDebugPayload(JSON.stringify(debugInfo, null, 2));
                 throw uploadError;
             }
 
@@ -417,6 +442,11 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             }
             
             setError(errorMessage);
+            if (!debugPayload) {
+                try {
+                    setDebugPayload(prev => prev || JSON.stringify(debugInfo, null, 2));
+                } catch {}
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -750,6 +780,21 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                             boxShadow: 'inset 0 0 20px rgba(239,68,68,0.1)'
                           }}>
                             <div className="text-red-300 text-sm text-center">{error}</div>
+                        </div>
+                    )}
+
+                    {debugPayload && (
+                        <div className="px-6 py-3 bg-black/60 border-t border-cyan-800/20">
+                            <div className="flex items-center justify-between">
+                                <div className="text-xs text-cyan-200">Debug info (copy and paste to me)</div>
+                                <button
+                                    onClick={() => navigator.clipboard.writeText(debugPayload)}
+                                    className="text-xs px-3 py-1 bg-cyan-600/20 text-cyan-100 rounded-md"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <textarea readOnly value={debugPayload} className="w-full mt-2 p-2 bg-black/40 text-xs text-white rounded h-40" />
                         </div>
                     )}
 
