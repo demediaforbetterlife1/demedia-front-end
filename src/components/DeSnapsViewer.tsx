@@ -27,7 +27,7 @@ import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
 import { normalizeDeSnap } from "@/utils/desnapUtils";
 import { DeSnap } from "@/types/desnap";
 import { videoDebugger } from "@/utils/videoDebugger";
-import ProfilePhoto from "@/components/ProfilePhoto";
+import Avatar from "@/components/Avatar";
 
 interface DeSnapsViewerProps {
   isOpen: boolean;
@@ -736,16 +736,13 @@ export default function DeSnapsViewer({
           {/* User Header */}
           <div className="absolute top-4 left-4 z-10 flex items-center gap-3 bg-black/50 backdrop-blur-md rounded-full px-4 py-2 border border-white/10">
             {/* User Avatar */}
-            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-cyan-400/50">
-              <ProfilePhoto
-                src={deSnap.author?.profilePicture}
-                alt={deSnap.author?.name || 'User'}
-                width={40}
-                height={40}
-                userId={deSnap.author?.id}
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <Avatar
+              src={deSnap.author?.profilePicture}
+              alt={deSnap.author?.name || 'User'}
+              size="md"
+              userId={deSnap.author?.id}
+              className="ring-2 ring-cyan-400/50"
+            />
             
             {/* User Info */}
             <div className="flex flex-col">
@@ -1095,19 +1092,13 @@ export default function DeSnapsViewer({
                         <div className="flex items-start gap-3 p-4 rounded-2xl hover:bg-white/5 transition-all duration-200 border border-transparent hover:border-white/10">
                           {/* Avatar */}
                           <div className="relative flex-shrink-0">
-                            {comment.user?.profilePicture ? (
-                              <img
-                                src={ensureAbsoluteMediaUrl(comment.user.profilePicture) || comment.user.profilePicture}
-                                alt={comment.user.name}
-                                className="w-11 h-11 rounded-full ring-2 ring-cyan-400/30 object-cover"
-                              />
-                            ) : (
-                              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center ring-2 ring-cyan-400/30">
-                                <span className="text-white font-bold text-sm">
-                                  {comment.user?.name?.charAt(0)?.toUpperCase() || "U"}
-                                </span>
-                              </div>
-                            )}
+                            <Avatar
+                              src={comment.user?.profilePicture}
+                              alt={comment.user?.name || 'User'}
+                              size="lg"
+                              userId={comment.user?.id}
+                              className="ring-2 ring-cyan-400/30"
+                            />
                             <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-black" />
                           </div>
 
@@ -1153,19 +1144,13 @@ export default function DeSnapsViewer({
                   <form onSubmit={handleSubmitComment} className="flex gap-3 items-end">
                     {/* User Avatar */}
                     <div className="flex-shrink-0 hidden sm:block">
-                      {user?.profilePicture ? (
-                        <img
-                          src={ensureAbsoluteMediaUrl(user.profilePicture) || user.profilePicture}
-                          alt={user.name || "You"}
-                          className="w-11 h-11 rounded-full ring-2 ring-cyan-400/30 object-cover"
-                        />
-                      ) : (
-                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center ring-2 ring-cyan-400/30">
-                          <span className="text-white font-bold text-sm">
-                            {user?.name?.charAt(0)?.toUpperCase() || "Y"}
-                          </span>
-                        </div>
-                      )}
+                      <Avatar
+                        src={user?.profilePicture}
+                        alt={user?.name || "You"}
+                        size="lg"
+                        userId={user?.id}
+                        className="ring-2 ring-cyan-400/30"
+                      />
                     </div>
 
                     {/* Input Field */}

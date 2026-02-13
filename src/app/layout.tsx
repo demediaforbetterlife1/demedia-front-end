@@ -10,13 +10,9 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ThemeEffects from "@/components/ThemeEffects";
 import { AuthGuard } from "@/components/AuthGuard";
-import { AnimatedStars } from "@/components/AnimatedStars";
 import { I18nProvider } from "@/contexts/I18nContext";
 import NotificationProvider from "@/components/NotificationProvider";
-import GlowingPlanets from "@/components/GlowingPlanets";
-import GoldParticles from "@/components/GoldParticles";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import WebGLErrorHandler from "@/components/WebGLErrorHandler";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import PWAUpdateNotification from "@/components/PWAUpdateNotification";
 import "@/utils/errorHandler";
@@ -158,11 +154,6 @@ export default function RootLayout({
               <AuthProvider>
                 <NotificationProvider>
                   <AuthGuard>
-                    <WebGLErrorHandler />
-                    {/* Reduced WebGL effects to prevent context loss */}
-                    <AnimatedStars />
-                    {/* <GlowingPlanets /> */}
-                    {/* <GoldParticles /> */}
                     <NavbarClient />
                     {children}
                     <PWAInstallPrompt />

@@ -9,12 +9,14 @@ export default function ThemeEffects() {
     // Get initial theme
     const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
     setTheme(currentTheme);
+    console.log('🎨 ThemeEffects initialized with theme:', currentTheme);
 
     // Watch for theme changes
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === 'data-theme') {
           const newTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+          console.log('🎨 Theme changed to:', newTheme);
           setTheme(newTheme);
         }
       });
@@ -30,11 +32,14 @@ export default function ThemeEffects() {
 
   useEffect(() => {
     if (theme === 'super-dark') {
+      console.log('✨ Creating space elements for super-dark theme');
       createSpaceElements();
     } else if (theme === 'gold') {
+      console.log('✨ Creating gold elements for gold theme');
       createGoldElements();
     } else {
       // Clean up elements for other themes
+      console.log('🧹 Cleaning up theme elements for theme:', theme);
       cleanupThemeElements();
     }
 
@@ -49,6 +54,7 @@ function createSpaceElements() {
   cleanupThemeElements();
 
   const container = document.body;
+  console.log('🌌 Creating space elements...');
 
   // Create planets
   const planetClasses = [
@@ -64,12 +70,14 @@ function createSpaceElements() {
     planet.setAttribute('data-theme-effect', 'true');
     container.appendChild(planet);
   });
+  console.log('🪐 Created', planetClasses.length, 'planets');
 
   // Create Saturn
   const saturn = document.createElement('div');
   saturn.className = 'space-planet-saturn';
   saturn.setAttribute('data-theme-effect', 'true');
   container.appendChild(saturn);
+  console.log('🪐 Created Saturn with rings');
 
   // Create stars (100 stars)
   for (let i = 0; i < 100; i++) {
@@ -94,6 +102,7 @@ function createSpaceElements() {
     star.setAttribute('data-theme-effect', 'true');
     container.appendChild(star);
   }
+  console.log('⭐ Created 100 twinkling stars');
 
   // Create shooting stars (5)
   for (let i = 0; i < 5; i++) {
@@ -106,6 +115,7 @@ function createSpaceElements() {
     shootingStar.setAttribute('data-theme-effect', 'true');
     container.appendChild(shootingStar);
   }
+  console.log('💫 Created 5 shooting stars');
 
   // Create comets (3)
   for (let i = 0; i < 3; i++) {
@@ -118,6 +128,7 @@ function createSpaceElements() {
     comet.setAttribute('data-theme-effect', 'true');
     container.appendChild(comet);
   }
+  console.log('☄️ Created 3 comets with tails');
 
   // Create galaxies (3)
   for (let i = 0; i < 3; i++) {
@@ -129,6 +140,7 @@ function createSpaceElements() {
     galaxy.setAttribute('data-theme-effect', 'true');
     container.appendChild(galaxy);
   }
+  console.log('🌌 Created 3 distant galaxies');
 
   // Create asteroids (10)
   for (let i = 0; i < 10; i++) {
@@ -141,6 +153,7 @@ function createSpaceElements() {
     asteroid.setAttribute('data-theme-effect', 'true');
     container.appendChild(asteroid);
   }
+  console.log('🌑 Created 10 asteroids');
 
   // Create space dust (50)
   for (let i = 0; i < 50; i++) {
@@ -152,6 +165,9 @@ function createSpaceElements() {
     dust.setAttribute('data-theme-effect', 'true');
     container.appendChild(dust);
   }
+  console.log('✨ Created 50 space dust particles');
+  
+  console.log('✅ Space theme fully initialized!');
 }
 
 function createGoldElements() {
@@ -159,6 +175,7 @@ function createGoldElements() {
   cleanupThemeElements();
 
   const container = document.body;
+  console.log('✨ Creating gold elements...');
 
   // Create glowing orbs
   for (let i = 1; i <= 3; i++) {
@@ -167,6 +184,7 @@ function createGoldElements() {
     orb.setAttribute('data-theme-effect', 'true');
     container.appendChild(orb);
   }
+  console.log('🔮 Created 3 glowing orbs');
 
   // Create floating gold particles (30)
   for (let i = 0; i < 30; i++) {
@@ -187,6 +205,7 @@ function createGoldElements() {
     particle.setAttribute('data-theme-effect', 'true');
     container.appendChild(particle);
   }
+  console.log('✨ Created 30 floating gold particles');
 
   // Create sparkling stars (20)
   for (let i = 0; i < 20; i++) {
@@ -199,10 +218,16 @@ function createGoldElements() {
     sparkle.setAttribute('data-theme-effect', 'true');
     container.appendChild(sparkle);
   }
+  console.log('⭐ Created 20 sparkling stars');
+  
+  console.log('✅ Gold theme fully initialized!');
 }
 
 function cleanupThemeElements() {
   // Remove all theme effect elements
   const elements = document.querySelectorAll('[data-theme-effect="true"]');
+  if (elements.length > 0) {
+    console.log('🧹 Cleaning up', elements.length, 'theme effect elements');
+  }
   elements.forEach((el) => el.remove());
 }
