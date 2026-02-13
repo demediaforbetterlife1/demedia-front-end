@@ -59,7 +59,9 @@ export async function POST(
     console.log('[API] Save interests request received:', {
       userId,
       interests: body.interests,
-      interestCount: body.interests?.length
+      interestCount: body.interests?.length,
+      bodyKeys: Object.keys(body),
+      fullBody: body
     });
 
     // Validate interests
@@ -84,6 +86,7 @@ export async function POST(
 
     const backendUrl = `${BACKEND_URL}/api/users/${userId}/interests`;
     console.log('[API] Forwarding to backend:', backendUrl);
+    console.log('[API] Request body being sent:', JSON.stringify(body));
 
     // Forward to backend with proper headers and timeout
     const controller = new AbortController();
@@ -104,6 +107,7 @@ export async function POST(
       clearTimeout(timeoutId);
 
       console.log('[API] Backend response status:', backendResponse.status);
+      console.log('[API] Backend response headers:', Object.fromEntries(backendResponse.headers.entries()));
 
       // Get response data
       let data;
