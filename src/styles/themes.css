@@ -32,26 +32,50 @@
 
 [data-theme="super-dark"] {
   --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-tertiary: #1a1a1a;
+  --bg-secondary: #050510;
+  --bg-tertiary: #0f0f1e;
+  --bg-quaternary: #1a1a2e;
   --text-primary: #ffffff;
-  --text-secondary: #e0e0e0;
-  --text-muted: #888888;
+  --text-secondary: #e0e0ff;
+  --text-muted: #6b6b8a;
   --accent-primary: #00ffff;
   --accent-secondary: #ff00ff;
   --accent-tertiary: #ffff00;
-  --border-color: #333333;
+  --accent-cyan: #00ffff;
+  --accent-magenta: #ff00ff;
+  --accent-purple: #a855f7;
+  --border-color: #1a1a3a;
+  --border-glow: rgba(0, 255, 255, 0.2);
   --shadow-color: rgba(0, 255, 255, 0.3);
-  --gradient-primary: linear-gradient(135deg, #000000, #0a0a0a);
-  --gradient-accent: linear-gradient(135deg, #00ffff, #ff00ff);
-  --planet-color: #4a90e2;
-  --planet-glow: rgba(74, 144, 226, 0.4);
-  --nebula-purple: rgba(138, 43, 226, 0.15);
-  --nebula-blue: rgba(0, 191, 255, 0.15);
-  --nebula-pink: rgba(255, 20, 147, 0.15);
+  --shadow-dark: rgba(0, 0, 0, 0.8);
+  --gradient-primary: linear-gradient(135deg, #000000 0%, #050510 25%, #0f0f1e 50%, #050510 75%, #000000 100%);
+  --gradient-accent: linear-gradient(135deg, #00ffff 0%, #ff00ff 50%, #ffff00 100%);
+  --gradient-space: radial-gradient(ellipse at center, rgba(15, 15, 30, 0.9) 0%, rgba(0, 0, 0, 1) 100%);
+  /* Nebula & Space Colors */
+  --nebula-purple: rgba(168, 85, 247, 0.2);
+  --nebula-blue: rgba(0, 200, 255, 0.15);
+  --nebula-pink: rgba(236, 72, 153, 0.15);
+  --nebula-cyan: rgba(34, 211, 238, 0.15);
+  --nebula-indigo: rgba(99, 102, 241, 0.15);
+  /* Stars */
   --star-white: rgba(255, 255, 255, 0.9);
   --star-blue: rgba(135, 206, 250, 0.8);
   --star-yellow: rgba(255, 255, 0, 0.7);
+  --star-cyan: rgba(0, 255, 255, 0.7);
+  /* Planets & Glows */
+  --planet-color: #4a90e2;
+  --planet-glow: rgba(74, 144, 226, 0.5);
+  --planet-secondary: #ff1493;
+  --planet-secondary-glow: rgba(255, 20, 147, 0.3);
+  /* Cosmic Glows */
+  --glow-cyan: 0 0 20px rgba(0, 255, 255, 0.5), 0 0 40px rgba(0, 255, 255, 0.2);
+  --glow-magenta: 0 0 20px rgba(255, 0, 255, 0.5), 0 0 40px rgba(255, 0, 255, 0.2);
+  --glow-purple: 0 0 20px rgba(168, 85, 247, 0.5), 0 0 40px rgba(168, 85, 247, 0.2);
+  --glow-intense: 0 0 30px rgba(0, 255, 255, 0.8), 0 0 60px rgba(168, 85, 247, 0.4);
+  /* Card Styling */
+  --card-bg: rgba(15, 15, 30, 0.6);
+  --card-border: rgba(34, 211, 238, 0.2);
+  --card-shadow: 0 4px 20px rgba(0, 255, 255, 0.1), 0 0 40px rgba(0, 0, 0, 0.5);
 }
 
 [data-theme="super-light"] {
@@ -113,7 +137,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Stunning nebula background with multiple layers */
+/* Stunning nebula background with multiple layers - Deep Space Effect */
 [data-theme="super-dark"] body::before {
   content: '';
   position: fixed;
@@ -122,29 +146,35 @@ body {
   width: 100%;
   height: 100%;
   background: 
-    radial-gradient(ellipse at 15% 15%, var(--nebula-purple) 0%, transparent 40%),
-    radial-gradient(ellipse at 85% 20%, var(--nebula-blue) 0%, transparent 45%),
-    radial-gradient(ellipse at 50% 80%, var(--nebula-pink) 0%, transparent 50%),
-    radial-gradient(ellipse at 30% 60%, rgba(0, 255, 255, 0.08) 0%, transparent 35%),
-    radial-gradient(ellipse at 70% 40%, rgba(255, 0, 255, 0.08) 0%, transparent 35%),
-    radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.5) 100%);
+    /* Primary nebula clusters */
+    radial-gradient(ellipse 1200px 400px at 10% 20%, var(--nebula-purple) 0%, transparent 40%),
+    radial-gradient(ellipse 1400px 500px at 90% 10%, var(--nebula-blue) 0%, transparent 35%),
+    radial-gradient(ellipse 1000px 600px at 50% 85%, var(--nebula-pink) 0%, transparent 45%),
+    /* Secondary nebula accents */
+    radial-gradient(ellipse 800px 300px at 15% 60%, var(--nebula-cyan) 0%, transparent 35%),
+    radial-gradient(ellipse 900px 400px at 75% 50%, var(--nebula-indigo) 0%, transparent 40%),
+    /* Tertiary depth layers */
+    radial-gradient(ellipse 600px 800px at 40% 30%, rgba(34, 211, 238, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse 700px 700px at 60% 70%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
+    /* Dark vignette */
+    radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.6) 100%);
   pointer-events: none;
   z-index: 0;
-  animation: nebula-drift 60s ease-in-out infinite alternate;
+  animation: nebula-drift 80s ease-in-out infinite alternate;
 }
 
-/* Animated glowing planets */
+/* Animated glowing planets - Multiple cosmic bodies */
 [data-theme="super-dark"] body::after {
   content: '';
   position: fixed;
-  top: 10%;
-  right: 15%;
-  width: 250px;
-  height: 250px;
-  background: radial-gradient(circle, var(--planet-color) 0%, rgba(74, 144, 226, 0.4) 30%, transparent 70%);
+  top: 8%;
+  right: 12%;
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle at 35% 35%, rgba(74, 144, 226, 0.8) 0%, var(--planet-color) 15%, rgba(74, 144, 226, 0.4) 35%, transparent 70%);
   border-radius: 50%;
-  opacity: 0.5;
-  animation: planet-orbit 20s ease-in-out infinite alternate;
+  opacity: 0.6;
+  animation: planet-orbit 25s ease-in-out infinite alternate;
   pointer-events: none;
   z-index: 0;
   box-shadow: 
@@ -1110,4 +1140,289 @@ body {
 
 .theme-gradient-accent {
   background: var(--gradient-accent);
+}
+/* ============================================ */
+/* ENHANCED SUPER DARK THEME - SPACE EFFECTS */
+/* ============================================ */
+
+/* Enhanced Card Styling for Super Dark Theme */
+[data-theme="super-dark"] .card {
+  background: linear-gradient(135deg, 
+    rgba(26, 26, 58, 0.3) 0%, 
+    rgba(15, 15, 35, 0.3) 100%);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+  box-shadow: 
+    0 0 30px rgba(34, 211, 238, 0.08),
+    inset 0 0 20px rgba(34, 211, 238, 0.03);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="super-dark"] .card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, 
+    rgba(29, 209, 161, 0.05) 0%, 
+    transparent 50%, 
+    rgba(168, 85, 247, 0.05) 100%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+[data-theme="super-dark"] .card:hover::before {
+  opacity: 1;
+}
+
+/* Button Styling for Super Dark Theme */
+[data-theme="super-dark"] button {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="super-dark"] button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.1), 
+    transparent);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+[data-theme="super-dark"] button:hover::before {
+  transform: translateX(100%);
+}
+
+/* Input Styling for Super Dark Theme */
+[data-theme="super-dark"] input:focus,
+[data-theme="super-dark"] textarea:focus,
+[data-theme="super-dark"] select:focus {
+  border-color: rgba(34, 211, 238, 0.5);
+  box-shadow: 
+    0 0 20px rgba(34, 211, 238, 0.2),
+    inset 0 0 10px rgba(34, 211, 238, 0.05);
+}
+
+/* Scrollbar Styling for Super Dark Theme */
+[data-theme="super-dark"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-theme="super-dark"] ::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="super-dark"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, 
+    rgba(34, 211, 238, 0.5), 
+    rgba(168, 85, 247, 0.5));
+  border-radius: 4px;
+}
+
+[data-theme="super-dark"] ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, 
+    rgba(34, 211, 238, 0.7), 
+    rgba(168, 85, 247, 0.7));
+}
+
+/* Enhanced Text Effects for Super Dark Theme */
+[data-theme="super-dark"] h1,
+[data-theme="super-dark"] h2,
+[data-theme="super-dark"] h3,
+[data-theme="super-dark"] h4,
+[data-theme="super-dark"] h5,
+[data-theme="super-dark"] h6 {
+  background: linear-gradient(90deg, 
+    rgba(29, 209, 161, 0.8), 
+    rgba(34, 211, 238, 0.8), 
+    rgba(168, 85, 247, 0.8), 
+    rgba(29, 209, 161, 0.8));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: text-gradient-shift 6s linear infinite;
+  letter-spacing: 0.02em;
+}
+
+@keyframes text-gradient-shift {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Link Styling for Super Dark Theme */
+[data-theme="super-dark"] a {
+  position: relative;
+  color: rgba(34, 211, 238, 0.8);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+[data-theme="super-dark"] a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    rgba(34, 211, 238, 0.5), 
+    rgba(29, 209, 161, 0.5));
+  transition: width 0.3s ease;
+}
+
+[data-theme="super-dark"] a:hover {
+  color: rgba(29, 209, 161, 1);
+}
+
+[data-theme="super-dark"] a:hover::after {
+  width: 100%;
+}
+
+/* Badge and Tag Styling */
+[data-theme="super-dark"] .badge,
+[data-theme="super-dark"] .tag {
+  background: linear-gradient(135deg, 
+    rgba(34, 211, 238, 0.2) 0%, 
+    rgba(29, 209, 161, 0.2) 100%);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  color: rgba(34, 211, 238, 0.9);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.15);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Success State */
+[data-theme="super-dark"] .success {
+  color: #1dd1a1;
+  border-color: rgba(29, 209, 161, 0.3);
+  background: linear-gradient(135deg, 
+    rgba(29, 209, 161, 0.15) 0%, 
+    rgba(29, 209, 161, 0.1) 100%);
+}
+
+/* Error State */
+[data-theme="super-dark"] .error {
+  color: #ff6b6b;
+  border-color: rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, 
+    rgba(239, 68, 68, 0.15) 0%, 
+    rgba(239, 68, 68, 0.1) 100%);
+}
+
+/* Warning State */
+[data-theme="super-dark"] .warning {
+  color: #ffc107;
+  border-color: rgba(255, 193, 7, 0.3);
+  background: linear-gradient(135deg, 
+    rgba(255, 193, 7, 0.15) 0%, 
+    rgba(255, 193, 7, 0.1) 100%);
+}
+
+/* Info State */
+[data-theme="super-dark"] .info {
+  color: #74b9ff;
+  border-color: rgba(116, 185, 255, 0.3);
+  background: linear-gradient(135deg, 
+    rgba(116, 185, 255, 0.15) 0%, 
+    rgba(116, 185, 255, 0.1) 100%);
+}
+
+/* Floating action button for super dark */
+[data-theme="super-dark"] .fab {
+  background: linear-gradient(135deg, 
+    #1dd1a1, 
+    #00ffff);
+  box-shadow: 
+    0 0 20px rgba(29, 209, 161, 0.5),
+    0 0 40px rgba(34, 211, 238, 0.25);
+  transition: all 0.3s ease;
+}
+
+[data-theme="super-dark"] .fab:hover {
+  transform: scale(1.1);
+  box-shadow: 
+    0 0 30px rgba(29, 209, 161, 0.7),
+    0 0 60px rgba(34, 211, 238, 0.35);
+}
+
+/* Modal overlay enhancement */
+[data-theme="super-dark"] .modal-overlay {
+  background: linear-gradient(135deg, 
+    rgba(0, 0, 0, 0.7) 0%, 
+    rgba(26, 26, 58, 0.3) 50%, 
+    rgba(0, 0, 0, 0.7) 100%);
+  backdrop-filter: blur(12px);
+}
+
+/* Horizontal Rule */
+[data-theme="super-dark"] hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(34, 211, 238, 0.3), 
+    transparent);
+}
+
+/* Code Block Styling */
+[data-theme="super-dark"] code {
+  background: rgba(26, 26, 58, 0.5);
+  color: #1dd1a1;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+  text-shadow: 0 0 5px rgba(29, 209, 161, 0.3);
+}
+
+[data-theme="super-dark"] pre {
+  background: linear-gradient(135deg, 
+    rgba(15, 15, 35, 0.8) 0%, 
+    rgba(26, 26, 58, 0.6) 100%);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.05);
+}
+
+/* Table Styling for Super Dark Theme */
+[data-theme="super-dark"] table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+[data-theme="super-dark"] th {
+  background: linear-gradient(90deg, 
+    rgba(34, 211, 238, 0.15) 0%, 
+    rgba(29, 209, 161, 0.15) 100%);
+  border-bottom: 2px solid rgba(34, 211, 238, 0.2);
+  color: rgba(29, 209, 161, 0.9);
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+}
+
+[data-theme="super-dark"] td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.1);
+}
+
+[data-theme="super-dark"] tr:hover {
+  background: rgba(34, 211, 238, 0.05);
 }

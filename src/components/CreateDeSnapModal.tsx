@@ -21,6 +21,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch, getAuthHeaders, getToken } from "@/lib/api";
 import { contentModerationService } from "@/services/contentModeration";
+import "@/styles/desnap-modal-space.css";
 import AIFeatures from "./AIFeatures";
 import CollaborativeFeatures from "./CollaborativeFeatures";
 import GamificationSystem from "./GamificationSystem";
@@ -237,41 +238,35 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 throw new Error("You must be logged in to create a DeSnap. Please log in and try again.");
             }
 
-            // Add only userId to FormData; send token in Authorization header
+            // Add token and userId to FormData for the Next.js API route to read
+            formData.append('token', token);
             formData.append('userId', user?.id?.toString() || '');
 
             let videoUrl, thumbnailUrl;
             
             try {
-                // POST directly to backend with FormData - allow up to 5 minutes for large videos
-                // Use longer timeout for large files (100MB can take 2-3 minutes on slow connections)
-                let uploadResponse = await fetch('https://demedia-backend.fly.dev/api/upload/video', {
+                // Upload via Next.js API route (same Vercel infrastructure - reliable)
+                // Much faster and more reliable than going to Fly backend
+                const uploadResponse = await fetch('/api/upload/video', {
                     method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'user-id': user?.id?.toString() || '',
-                    },
                     body: formData,
-                    mode: 'cors',
                     credentials: 'include',
-                    signal: AbortSignal.timeout(300000), // 5 minutes for large video files
+                    signal: AbortSignal.timeout(300000), // 5 minutes timeout
                 });
 
                 let uploadResponseText = await uploadResponse.text();
                 debugInfo.attempts.push({
-                    url: 'https://demedia-backend.fly.dev/api/upload/video',
+                    url: '/api/upload/video',
                     method: 'POST',
-                    requestHeaders: { Authorization: `Bearer ${token}`, 'user-id': user?.id?.toString() || '' },
+                    requestHeaders: { via: 'next-js-api-route' },
                     ok: uploadResponse.ok,
                     status: uploadResponse.status,
                     responseText: uploadResponseText.substring ? uploadResponseText.substring(0, 200) : String(uploadResponseText)
                 });
 
-                // If direct backend upload failed, fail fast with clear error
                 if (!uploadResponse.ok) {
-                    console.error('Backend upload failed, status:', uploadResponse.status, uploadResponseText.substring(0, 200));
-                    let errorMessage = 'Failed to upload video to backend';
-                    let shouldRetry = false;
+                    console.error('Upload failed, status:', uploadResponse.status, uploadResponseText.substring(0, 200));
+                    let errorMessage = 'Failed to upload video';
                     
                     try {
                         if (uploadResponseText.trim() && uploadResponseText.trim().startsWith('{')) {
@@ -283,47 +278,11 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                             errorMessage = "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
                         } else if (uploadResponse.status === 401) {
                             errorMessage = "Authentication failed. Please log in again.";
-                        } else if (uploadResponse.status === 408) {
-                            // 408 timeout - backend is slow or not responding
-                            if (videoFile.size < 10 * 1024 * 1024) {
-                                // Small file - retry once
-                                shouldRetry = true;
-                                errorMessage = "Upload timed out. Retrying...";
-                            } else {
-                                // Large file - suggest compression
-                                errorMessage = "Upload timed out due to slow network or backend. Try a smaller video (under 50MB) for faster upload.";
-                            }
                         } else if (uploadResponse.status === 500) {
-                            errorMessage = "Backend server error. Please try again in a moment.";
+                            errorMessage = "Server error. Please try again in a moment.";
                         }
                     }
-                    
-                    if (shouldRetry && !debugInfo.retryAttempt) {
-                        console.log('🔄 Retrying upload for small file...');
-                        debugInfo.retryAttempt = true;
-                        // Retry once more for small files with 408
-                        // Reset response and retry
-                        uploadResponse = await fetch('https://demedia-backend.fly.dev/api/upload/video', {
-                            method: 'POST',
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                                'user-id': user?.id?.toString() || '',
-                            },
-                            body: formData,
-                            mode: 'cors',
-                            credentials: 'include',
-                            signal: AbortSignal.timeout(300000),
-                        });
-                        uploadResponseText = await uploadResponse.text();
-                        if (uploadResponse.ok) {
-                            // Retry succeeded
-                            console.log('✅ Retry succeeded');
-                        } else {
-                            throw new Error("Upload retry failed: " + errorMessage);
-                        }
-                    } else {
-                        throw new Error(errorMessage);
-                    }
+                    throw new Error(errorMessage);
                 }
 
                 const uploadData = JSON.parse(uploadResponseText);
@@ -469,48 +428,37 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-gradient-to-b from-black via-purple-950 to-black/95 backdrop-blur-xl flex items-center justify-center z-50 p-4"
+                className="desnap-modal-overlay fixed inset-0 flex items-center justify-center z-50 p-4"
                 onClick={onClose}
             >
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="relative bg-gradient-to-br from-slate-950 via-purple-950 to-black rounded-none sm:rounded-3xl p-0 w-full sm:max-w-4xl max-h-[100dvh] sm:max-h-[90vh] overflow-hidden border sm:border-2 border-cyan-500/30 shadow-2xl"
-                    style={{
-                      boxShadow: '0 0 60px rgba(34,211,238,0.15), 0 0 120px rgba(168,85,247,0.1), inset 0 0 60px rgba(59,130,246,0.05)'
-                    }}
+                    className="desnap-modal-container relative rounded-none sm:rounded-3xl p-0 w-full sm:max-w-4xl max-h-[100dvh] sm:max-h-[90vh] overflow-hidden"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <div className="absolute inset-0 bg-gradient-to-t from-purple-900/10 via-transparent to-cyan-900/10 pointer-events-none" />
-                    
                     {/* Header */}
-                    <div className="relative z-10 flex items-center justify-between p-4 sm:p-6 border-b border-cyan-500/20 bg-gradient-to-r from-slate-950 via-purple-950/50 to-slate-950 safe-area-inset">
+                    <div className="desnap-modal-header relative z-10 flex items-center justify-between p-4 sm:p-6 safe-area-inset">
                         <div className="flex items-center space-x-2 sm:space-x-3">
-                            <div className="relative w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-cyan-400 to-blue-600 rounded-full flex items-center justify-center animate-pulse"
-                              style={{
-                                boxShadow: '0 0 20px rgba(34,211,238,0.6), 0 0 40px rgba(59,130,246,0.3)'
-                              }}>
+                            <div className="desnap-modal-icon">
                                 <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                             </div>
                             <div>
-                                <h2 className="text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-300">Create DeSnap</h2>
+                                <h2 className="desnap-modal-title text-lg sm:text-xl">Create DeSnap</h2>
                                 <p className="text-xs sm:text-sm text-cyan-400/60 hidden xs:block">Share your cosmic moment</p>
                             </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-purple-500/30 to-cyan-500/30 hover:from-purple-500/50 hover:to-cyan-500/50 flex items-center justify-center transition-all duration-300 touch-target border border-cyan-500/30"
-                            style={{
-                              boxShadow: 'inset 0 0 15px rgba(34,211,238,0.2)'
-                            }}
+                            className="desnap-btn-close touch-target"
                         >
-                            <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                            <X className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                     </div>
 
                     {/* Tab Navigation */}
-                    <div className="flex border-b border-cyan-500/20 overflow-x-auto scrollbar-hide bg-gradient-to-r from-slate-950/50 via-purple-950/30 to-slate-950/50">
+                    <div className="desnap-tabs flex overflow-x-auto">
                         {[
                             { id: "upload", label: "Upload", icon: Upload },
                             { id: "ai", label: "AI", icon: Zap },
@@ -524,23 +472,18 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id as any)}
-                                    className={`flex-shrink-0 flex items-center justify-center space-x-1 sm:space-x-2 py-3 sm:py-4 px-2 sm:px-4 transition-all duration-300 touch-target relative ${
-                                        activeTab === tab.id
-                                            ? "text-cyan-300 border-b-2 border-cyan-400 bg-cyan-500/10"
-                                            : "text-purple-400/70 hover:text-cyan-300 hover:bg-purple-500/10"
+                                    className={`desnap-tab touch-target ${
+                                        activeTab === tab.id ? 'active' : ''
                                     }`}
-                                    style={activeTab === tab.id ? {
-                                      boxShadow: 'inset 0 -2px 0 rgba(34,211,238,0.5), 0 0 10px rgba(34,211,238,0.2)'
-                                    } : {}}
                                 >
                                     <Icon className="w-4 h-4" />
-                                    <span className="text-xs sm:text-sm font-medium">{tab.label}</span>
+                                    <span className="hidden sm:inline">{tab.label}</span>
                                 </button>
                             );
                         })}
                     </div>
 
-                    <div className="relative p-3 sm:p-6 max-h-[calc(100dvh-200px)] sm:max-h-[60vh] overflow-y-auto scrollbar-hide bg-gradient-to-b from-slate-950/50 via-transparent to-slate-950/50">
+                    <div className="desnap-content relative p-3 sm:p-6 max-h-[calc(100dvh-200px)] sm:max-h-[60vh] overflow-y-auto">
                         <AnimatePresence mode="wait">
                             {/* Upload Tab */}
                             {activeTab === "upload" && (
