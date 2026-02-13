@@ -87,8 +87,13 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<number>(0);
     const [error, setError] = useState("");
     const [activeTab, setActiveTab] = useState<"upload" | "settings" | "ai" | "collaborate" | "gamify" | "visibility">("upload");
+    
+    // Cloudinary direct upload configuration
+    const CLOUDINARY_CLOUD_NAME = 'dgdpnbkru';
+    const CLOUDINARY_UPLOAD_PRESET = 'desnaps_reels';
     
     const [settings, setSettings] = useState<DeSnapSettings>({
         visibility: "public",
@@ -199,6 +204,57 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
     const [debugPayload, setDebugPayload] = useState<string | null>(null);
 
+    // Upload video to Cloudinary with progress tracking
+    const uploadToCloudinary = async (file: File): Promise<{ videoUrl: string; publicId: string; duration: number; format: string }> => {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            const formData = new FormData();
+            
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+            formData.append('folder', 'desnaps/reels');
+
+            // Track upload progress
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const progress = Math.round((e.loaded / e.total) * 100);
+                    setUploadProgress(progress);
+                    console.log(`📤 Upload progress: ${progress}%`);
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        console.log('✅ Cloudinary upload succeeded:', response.public_id);
+                        resolve({
+                            videoUrl: response.secure_url,
+                            publicId: response.public_id,
+                            duration: response.duration || file.duration || duration,
+                            format: response.format || 'mp4'
+                        });
+                    } catch (e) {
+                        reject(new Error('Failed to parse upload response'));
+                    }
+                } else {
+                    reject(new Error(`Upload failed with status ${xhr.status}`));
+                }
+            });
+
+            xhr.addEventListener('error', () => {
+                reject(new Error('Network error during upload'));
+            });
+
+            xhr.addEventListener('abort', () => {
+                reject(new Error('Upload cancelled'));
+            });
+
+            xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`);
+            xhr.send(formData);
+        });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -216,18 +272,20 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             return;
         }
 
+        if (videoFile.size > 150 * 1024 * 1024) {
+            setError("Video file is too large. Maximum size is 150MB.");
+            return;
+        }
+
         setIsSubmitting(true);
+        setUploadProgress(0);
         setError("");
 
-        const debugInfo: any = { attempts: [] };
-
         try {
-            const formData = new FormData();
-            formData.append('video', videoFile);
-            formData.append('thumbnail', thumbnail);
-            formData.append('duration', duration.toString());
-            formData.append('visibility', settings.visibility);
-
+            // Upload to Cloudinary directly
+            console.log('📤 Uploading to Cloudinary...');
+            const cloudinaryData = await uploadToCloudinary(videoFile);
+            
             let token = getToken();
             if (!token) {
                 token = localStorage.getItem('token') || 
@@ -238,94 +296,28 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 throw new Error("You must be logged in to create a DeSnap. Please log in and try again.");
             }
 
-            // Add token and userId to FormData for the Next.js API route to read
-            formData.append('token', token);
-            formData.append('userId', user?.id?.toString() || '');
+            const videoUrl = cloudinaryData.videoUrl;
+            const thumbnailUrl = thumbnail || videoUrl;
+            const finalDuration = cloudinaryData.duration || duration;
 
-            let videoUrl, thumbnailUrl;
-            
-            try {
-                // Upload via Next.js API route (same Vercel infrastructure - reliable)
-                // Much faster and more reliable than going to Fly backend
-                const uploadResponse = await fetch('/api/upload/video', {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include',
-                    signal: AbortSignal.timeout(300000), // 5 minutes timeout
-                });
-
-                let uploadResponseText = await uploadResponse.text();
-                debugInfo.attempts.push({
-                    url: '/api/upload/video',
-                    method: 'POST',
-                    requestHeaders: { via: 'next-js-api-route' },
-                    ok: uploadResponse.ok,
-                    status: uploadResponse.status,
-                    responseText: uploadResponseText.substring ? uploadResponseText.substring(0, 200) : String(uploadResponseText)
-                });
-
-                if (!uploadResponse.ok) {
-                    console.error('Upload failed, status:', uploadResponse.status, uploadResponseText.substring(0, 200));
-                    let errorMessage = 'Failed to upload video';
-                    
-                    try {
-                        if (uploadResponseText.trim() && uploadResponseText.trim().startsWith('{')) {
-                            const errorData = JSON.parse(uploadResponseText);
-                            errorMessage = errorData.details || errorData.error || errorData.message || errorMessage;
-                        }
-                    } catch (e) {
-                        if (uploadResponse.status === 413) {
-                            errorMessage = "Video file is too large. Please compress your video or choose a shorter clip (max 100MB).";
-                        } else if (uploadResponse.status === 401) {
-                            errorMessage = "Authentication failed. Please log in again.";
-                        } else if (uploadResponse.status === 500) {
-                            errorMessage = "Server error. Please try again in a moment.";
-                        }
-                    }
-                    throw new Error(errorMessage);
-                }
-
-                const uploadData = JSON.parse(uploadResponseText);
-                videoUrl = uploadData.videoUrl || uploadData.url || uploadData.fileUrl;
-                
-                if (!videoUrl) {
-                    throw new Error('Video upload succeeded but no URL was returned.');
-                }
-                
-                videoUrl = ensureAbsoluteMediaUrl(videoUrl) || videoUrl;
-                thumbnailUrl = uploadData.thumbnailUrl || uploadData.thumbnail || uploadData.previewUrl || videoUrl;
-                thumbnailUrl = ensureAbsoluteMediaUrl(thumbnailUrl) || thumbnailUrl || videoUrl;
-                
-            } catch (uploadError: any) {
-                if (uploadError.name === 'AbortError') {
-                    debugInfo.uploadError = 'AbortError';
-                    setDebugPayload(JSON.stringify(debugInfo, null, 2));
-                    throw new Error("Upload timed out. Your video might be too large or your connection is slow.");
-                }
-                debugInfo.uploadError = String((uploadError as any)?.message || uploadError);
-                setDebugPayload(JSON.stringify(debugInfo, null, 2));
-                throw uploadError;
-            }
-
-            // Now create the DeSnap with the uploaded video URL
+            // Now create the DeSnap with the Cloudinary video URL
             const deSnapData = {
                 content: videoUrl,
                 thumbnail: thumbnailUrl || videoUrl,
-                duration: duration,
+                duration: finalDuration,
                 visibility: settings.visibility,
-                userId: user?.id
+                userId: user?.id,
+                cloudinaryPublicId: cloudinaryData.publicId
             };
 
-            console.log('📝 Creating DeSnap with data:', {
+            console.log('📝 Creating DeSnap with Cloudinary URL:', {
                 hasContent: !!deSnapData.content,
                 hasThumbnail: !!deSnapData.thumbnail,
                 duration: deSnapData.duration,
-                visibility: deSnapData.visibility,
-                userId: deSnapData.userId
+                cloudinaryPublicId: deSnapData.cloudinaryPublicId
             });
             
-            // Use apiFetch which automatically includes proper authentication headers
-            // Don't manually add headers - apiFetch handles them
+            // Save metadata to database
             const response = await apiFetch("/api/desnaps", {
                 method: "POST",
                 body: JSON.stringify(deSnapData)
@@ -333,7 +325,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
             console.log('DeSnap creation response status:', response.status);
 
-            // Read response text ONCE
+            // Read response text
             const responseText = await response.text();
             console.log('DeSnap creation response text:', responseText.substring(0, 200));
 
@@ -346,7 +338,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                         const errorData = JSON.parse(responseText);
                         errorMessage = errorData.error || errorData.message || errorData.details || errorMessage;
                     } else {
-                        errorMessage = `Server error: ${response.status} - ${responseText}`;
+                        errorMessage = `Server error: ${response.status}`;
                     }
                 } catch (e) {
                     errorMessage = `Server error: ${response.status}`;
@@ -395,6 +387,12 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 detail: { deSnap: normalizedDeSnap }
             }));
 
+            // Reset form and close
+            setVideoFile(null);
+            setVideoUrl("");
+            setThumbnail("");
+            setDuration(0);
+            setUploadProgress(0);
             onClose();
         } catch (err: unknown) {
             console.error('❌ DeSnap creation error:', err);
@@ -402,21 +400,13 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             // Handle specific error types
             let errorMessage = "Failed to create DeSnap";
             if (err instanceof Error) {
-                if (err.name === 'AbortError') {
-                    errorMessage = "Upload timed out. Your video might be too large or your connection is slow. Try a smaller video or check your internet connection.";
-                } else {
-                    errorMessage = err.message;
-                }
+                errorMessage = err.message;
             }
             
             setError(errorMessage);
-            if (!debugPayload) {
-                try {
-                    setDebugPayload(prev => prev || JSON.stringify(debugInfo, null, 2));
-                } catch {}
-            }
         } finally {
             setIsSubmitting(false);
+            setUploadProgress(0);
         }
     };
 
@@ -435,7 +425,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="desnap-modal-container relative rounded-none sm:rounded-3xl p-0 w-full sm:max-w-4xl max-h-[100dvh] sm:max-h-[90vh] overflow-hidden"
+                    className="desnap-modal-container relative rounded-none sm:rounded-3xl p-0 w-full sm:max-w-4xl max-h-dvh sm:max-h-[90vh] overflow-hidden"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
@@ -495,7 +485,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                     className="space-y-6"
                                 >
                                     {!videoFile ? (
-                                        <div className="border-2 border-dashed border-cyan-500/40 rounded-2xl p-8 text-center hover:border-cyan-400 hover:bg-cyan-500/5 transition-all duration-300 bg-gradient-to-br from-purple-900/10 to-cyan-900/10"
+                                        <div className="border-2 border-dashed border-cyan-500/40 rounded-2xl p-8 text-center hover:border-cyan-400 hover:bg-cyan-500/5 transition-all duration-300 bg-linear-to-br from-purple-900/10 to-cyan-900/10"
                                           style={{
                                             boxShadow: 'inset 0 0 30px rgba(34,211,238,0.05), 0 0 20px rgba(34,211,238,0.1)'
                                           }}>
@@ -524,7 +514,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                     ) : (
                                         <div className="space-y-4">
                                             {/* Video Preview */}
-                                            <div className="relative aspect-[9/16] max-w-sm mx-auto bg-black rounded-2xl overflow-hidden">
+                                            <div className="relative aspect-9/16 max-w-sm mx-auto bg-black rounded-2xl overflow-hidden">
                                                 <video
                                                     ref={videoRef}
                                                     src={videoUrl}
@@ -706,7 +696,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                             ].map((setting) => {
                                                 const Icon = setting.icon;
                                                 return (
-                                                    <label key={setting.key} className="flex items-center space-x-3 p-3 rounded-xl bg-gradient-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/30 hover:to-cyan-500/30 cursor-pointer transition-all duration-300 border border-purple-500/20">
+                                                    <label key={setting.key} className="flex items-center space-x-3 p-3 rounded-xl bg-linear-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/30 hover:to-cyan-500/30 cursor-pointer transition-all duration-300 border border-purple-500/20">
                                                         <input
                                                             type="checkbox"
                                                             checked={settings[setting.key as keyof DeSnapSettings] as boolean}
@@ -725,9 +715,30 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                         </AnimatePresence>
                     </div>
 
+                    {/* Upload Progress Bar */}
+                    {uploadProgress > 0 && uploadProgress < 100 && (
+                        <div className="relative px-6 py-4 bg-linear-to-r from-blue-500/20 to-cyan-500/20 border-t border-blue-500/30 backdrop-blur-sm"
+                          style={{
+                            boxShadow: 'inset 0 0 20px rgba(59,130,246,0.1)'
+                          }}>
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="text-cyan-300 text-sm font-medium">Uploading video...</div>
+                                <div className="text-cyan-200/60 text-xs">{uploadProgress}%</div>
+                            </div>
+                            <div className="w-full h-2 bg-black/40 rounded-full overflow-hidden border border-cyan-500/20">
+                                <motion.div
+                                    className="h-full bg-linear-to-r from-blue-500 to-cyan-400"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${uploadProgress}%` }}
+                                    transition={{ duration: 0.3 }}
+                                />
+                            </div>
+                        </div>
+                    )}
+
                     {/* Error Message */}
                     {error && (
-                        <div className="relative px-6 py-3 bg-gradient-to-r from-red-500/20 to-pink-500/20 border-t border-red-500/30 backdrop-blur-sm"
+                        <div className="relative px-6 py-3 bg-linear-to-r from-red-500/20 to-pink-500/20 border-t border-red-500/30 backdrop-blur-sm"
                           style={{
                             boxShadow: 'inset 0 0 20px rgba(239,68,68,0.1)'
                           }}>
@@ -751,7 +762,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                     )}
 
                     {/* Footer Actions */}
-                    <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 sm:p-6 border-t border-cyan-500/20 bg-gradient-to-r from-slate-950 via-purple-950/50 to-slate-950 gap-3 sm:gap-0 safe-area-inset"
+                    <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 sm:p-6 border-t border-cyan-500/20 bg-linear-to-r from-slate-950 via-purple-950/50 to-slate-950 gap-3 sm:gap-0 safe-area-inset"
                       style={{
                         boxShadow: 'inset 0 1px 20px rgba(34,211,238,0.1)'
                       }}>
