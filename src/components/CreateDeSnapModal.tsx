@@ -1,796 +1,1064 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-    X, 
-    Video, 
-    Upload, 
-    Play, 
-    Pause, 
-    Volume2, 
-    VolumeX, 
-    Globe, 
-    Users, 
-    UserCheck, 
-    Sparkles,
-    Clock,
-    Eye,
-    Settings,
-    Zap
+import {
+  X,
+  Video,
+  Upload,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Globe,
+  Users,
+  UserCheck,
+  Sparkles,
+  Eye,
+  Settings,
+  Zap,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiFetch, getAuthHeaders, getToken } from "@/lib/api";
+import { apiFetch, getToken } from "@/lib/api";
 import { contentModerationService } from "@/services/contentModeration";
 import "@/styles/desnap-modal-space.css";
 import AIFeatures from "./AIFeatures";
 import CollaborativeFeatures from "./CollaborativeFeatures";
 import GamificationSystem from "./GamificationSystem";
 import AdvancedVisibilityControls from "./AdvancedVisibilityControls";
-import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
 import { normalizeDeSnap } from "@/utils/desnapUtils";
 
 interface CreateDeSnapModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onDeSnapCreated?: (deSnap: any) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onDeSnapCreated?: (deSnap: any) => void;
 }
 
 interface DeSnapSettings {
-    visibility: 'public' | 'followers' | 'close_friends' | 'premium';
-    allowComments: boolean;
-    allowLikes: boolean;
-    showViewCount: boolean;
-    autoPlay: boolean;
+  visibility: "public" | "followers" | "close_friends" | "premium";
+  allowComments: boolean;
+  allowLikes: boolean;
+  showViewCount: boolean;
+  autoPlay: boolean;
 }
 
 const visibilityOptions = [
-    {
-        id: "public",
-        name: "Public",
-        description: "Anyone can see your DeSnap",
-        icon: Globe,
-        color: "text-green-500",
-        bgColor: "bg-green-500/10"
-    },
-    {
-        id: "followers",
-        name: "Followers",
-        description: "Only your followers can see",
-        icon: Users,
-        color: "text-blue-500",
-        bgColor: "bg-blue-500/10"
-    },
-    {
-        id: "close_friends",
-        name: "Close Friends",
-        description: "Only close friends can see",
-        icon: UserCheck,
-        color: "text-purple-500",
-        bgColor: "bg-purple-500/10"
-    },
-    {
-        id: "premium",
-        name: "Premium",
-        description: "Premium followers only",
-        icon: Sparkles,
-        color: "text-yellow-500",
-        bgColor: "bg-yellow-500/10"
-    }
-];
+  {
+    id: "public",
+    name: "Public",
+    description: "Anyone can see your DeSnap",
+    icon: Globe,
+    color: "text-green-500",
+    bgColor: "bg-green-500/10",
+  },
+  {
+    id: "followers",
+    name: "Followers",
+    description: "Only your followers can see",
+    icon: Users,
+    color: "text-blue-500",
+    bgColor: "bg-blue-500/10",
+  },
+  {
+    id: "close_friends",
+    name: "Close Friends",
+    description: "Only close friends can see",
+    icon: UserCheck,
+    color: "text-purple-500",
+    bgColor: "bg-purple-500/10",
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    description: "Premium followers only",
+    icon: Sparkles,
+    color: "text-yellow-500",
+    bgColor: "bg-yellow-500/10",
+  },
+] as const;
 
-export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: CreateDeSnapModalProps) {
-    const { user } = useAuth();
-    const [videoFile, setVideoFile] = useState<File | null>(null);
-    const [videoUrl, setVideoUrl] = useState<string>("");
-    const [thumbnail, setThumbnail] = useState<string>("");
-    const [duration, setDuration] = useState<number>(0);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [isMuted, setIsMuted] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState<number>(0);
-    const [error, setError] = useState("");
-    const [activeTab, setActiveTab] = useState<"upload" | "settings" | "ai" | "collaborate" | "gamify" | "visibility">("upload");
-    
-    // Cloudinary direct upload configuration
-    const CLOUDINARY_CLOUD_NAME = 'dgdpnbkru';
-    const CLOUDINARY_UPLOAD_PRESET = 'desnaps_reels';
-    
-    const [settings, setSettings] = useState<DeSnapSettings>({
+// ---------- Upload constraints / tuning ----------
+const MAX_VIDEO_SIZE_MB = 100;
+const WARN_VIDEO_SIZE_MB = 50;
+
+// مهم: على الموبايل أحياناً الشبكة بتفصل، خلّيها كبيرة
+const CLOUDINARY_UPLOAD_TIMEOUT_MS = 4 * 60 * 1000; // 4 minutes
+
+function safeJsonParse<T = any>(text: string): T | null {
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
+function getCloudinaryErrorMessage(responseText: string, status: number) {
+  const json = safeJsonParse<any>(responseText);
+  const msg =
+    json?.error?.message ||
+    json?.message ||
+    json?.error ||
+    json?.details ||
+    null;
+
+  if (msg) return msg;
+
+  // fallback
+  if (responseText?.trim()) {
+    // لو نص مش JSON
+    return `Cloudinary error (${status}): ${responseText.slice(0, 180)}`;
+  }
+
+  return `Cloudinary upload failed (status ${status})`;
+}
+
+export default function CreateDeSnapModal({
+  isOpen,
+  onClose,
+  onDeSnapCreated,
+}: CreateDeSnapModalProps) {
+  const { user } = useAuth();
+
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string>("");
+  const [thumbnail, setThumbnail] = useState<string>("");
+  const [duration, setDuration] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [error, setError] = useState("");
+
+  const [activeTab, setActiveTab] = useState<
+    "upload" | "settings" | "ai" | "collaborate" | "gamify" | "visibility"
+  >("upload");
+
+  // Cloudinary direct upload configuration
+  // ✅ يفضل تحطهم في .env:
+  // NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=...
+  // NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=...
+  const CLOUDINARY_CLOUD_NAME =
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dgdpnbkru";
+  const CLOUDINARY_UPLOAD_PRESET =
+    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "desnaps_reels";
+
+  const [settings, setSettings] = useState<DeSnapSettings>({
+    visibility: "public",
+    allowComments: true,
+    allowLikes: true,
+    showViewCount: true,
+    autoPlay: true,
+  });
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [debugPayload, setDebugPayload] = useState<string | null>(null);
+
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setVideoFile(null);
+      setVideoUrl("");
+      setThumbnail("");
+      setDuration(0);
+      setIsPlaying(false);
+      setError("");
+      setUploadProgress(0);
+      setDebugPayload(null);
+      setActiveTab("upload");
+      setSettings({
         visibility: "public",
         allowComments: true,
         allowLikes: true,
         showViewCount: true,
-        autoPlay: true
+        autoPlay: true,
+      });
+    }
+  }, [isOpen]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setDebugPayload(null);
+
+    if (!file.type.startsWith("video/")) {
+      setError("Please select a video file");
+      return;
+    }
+
+    // Check file size
+    const maxSize = MAX_VIDEO_SIZE_MB * 1024 * 1024;
+    if (file.size > maxSize) {
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      setError(
+        `Video file too large (${fileSizeMB}MB). Maximum size is ${MAX_VIDEO_SIZE_MB}MB. Please compress your video or choose a shorter clip.`
+      );
+      return;
+    }
+
+    // Warn if large
+    if (file.size > WARN_VIDEO_SIZE_MB * 1024 * 1024) {
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      console.warn(
+        `Large video file detected: ${fileSizeMB}MB. Upload may take longer.`
+      );
+    }
+
+    // Content moderation check
+    try {
+      console.log("CreateDeSnapModal: Checking video content moderation...");
+      const moderationResult = await contentModerationService.moderateVideo(
+        file
+      );
+
+      if (!moderationResult.isApproved) {
+        console.log(
+          "CreateDeSnapModal: Video moderation failed:",
+          moderationResult.reason
+        );
+        setError(
+          `Video not approved: ${moderationResult.reason}. ${moderationResult.suggestions?.join(
+            ". "
+          )}`
+        );
+        return;
+      }
+
+      console.log("CreateDeSnapModal: Video moderation passed");
+    } catch (modErr) {
+      console.error("Moderation check failed:", modErr);
+      setError("Moderation service failed. Please try again.");
+      return;
+    }
+
+    setVideoFile(file);
+    const url = URL.createObjectURL(file);
+    setVideoUrl(url);
+    setError("");
+
+    // Generate thumbnail + duration
+    const vid = document.createElement("video");
+    vid.src = url;
+    vid.muted = true;
+
+    // مهم: بعض المتصفحات لازم metadata تشتغل قبل currentTime
+    vid.onloadedmetadata = () => {
+      setDuration(vid.duration || 0);
+
+      // حاول نجيب فريم بعد ثانية واحدة (لو الفيديو أقصر خليه 0)
+      const captureTime = Math.min(1, Math.max(0, (vid.duration || 0) - 0.1));
+      try {
+        vid.currentTime = captureTime;
+      } catch {
+        // ignore
+      }
+    };
+
+    vid.onseeked = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = vid.videoWidth || 720;
+        canvas.height = vid.videoHeight || 1280;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(vid, 0, 0);
+          const thumbnailUrl = canvas.toDataURL("image/jpeg", 0.85);
+          setThumbnail(thumbnailUrl);
+        }
+      } catch (thumbErr) {
+        console.warn("Thumbnail generation failed:", thumbErr);
+      }
+    };
+  };
+
+  const togglePlayPause = () => {
+    if (!videoRef.current) return;
+
+    if (isPlaying) {
+      videoRef.current.pause();
+    } else {
+      videoRef.current.play().catch(() => {
+        // autoplay restrictions etc.
+      });
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    videoRef.current.muted = !isMuted;
+    setIsMuted(!isMuted);
+  };
+
+  // Upload video to Cloudinary with progress tracking + better errors/timeouts
+  const uploadToCloudinary = async (
+    file: File
+  ): Promise<{ videoUrl: string; publicId: string; duration: number; format: string }> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+
+      formData.append("file", file);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+      formData.append("folder", "desnaps/reels");
+
+      // Timeout handling
+      xhr.timeout = CLOUDINARY_UPLOAD_TIMEOUT_MS;
+
+      // Track upload progress
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const progress = Math.round((e.loaded / e.total) * 100);
+          setUploadProgress(progress);
+          // console.log(`📤 Upload progress: ${progress}%`);
+        }
+      };
+
+      xhr.onload = () => {
+        const status = xhr.status;
+        const text = xhr.responseText || "";
+
+        if (status >= 200 && status < 300) {
+          const response = safeJsonParse<any>(text);
+          if (!response?.secure_url || !response?.public_id) {
+            const msg = getCloudinaryErrorMessage(text, status);
+            setDebugPayload(
+              JSON.stringify(
+                {
+                  where: "cloudinary_success_but_invalid_payload",
+                  status,
+                  responseTextPreview: text.slice(0, 400),
+                },
+                null,
+                2
+              )
+            );
+            return reject(new Error(msg));
+          }
+
+          console.log("✅ Cloudinary upload succeeded:", response.public_id);
+
+          return resolve({
+            videoUrl: response.secure_url,
+            publicId: response.public_id,
+            duration: response.duration ?? duration,
+            format: response.format || "mp4",
+          });
+        }
+
+        // Non-2xx -> extract cloudinary message
+        const msg = getCloudinaryErrorMessage(text, status);
+
+        setDebugPayload(
+          JSON.stringify(
+            {
+              where: "cloudinary_upload_failed",
+              status,
+              readyState: xhr.readyState,
+              responseTextPreview: text.slice(0, 600),
+              cloudName: CLOUDINARY_CLOUD_NAME,
+              preset: CLOUDINARY_UPLOAD_PRESET,
+              file: {
+                name: file.name,
+                type: file.type,
+                size: file.size,
+                sizeMB: Number((file.size / (1024 * 1024)).toFixed(2)),
+              },
+            },
+            null,
+            2
+          )
+        );
+
+        return reject(new Error(msg));
+      };
+
+      xhr.onerror = () => {
+        setDebugPayload(
+          JSON.stringify(
+            {
+              where: "cloudinary_network_error",
+              status: xhr.status,
+              readyState: xhr.readyState,
+              cloudName: CLOUDINARY_CLOUD_NAME,
+              preset: CLOUDINARY_UPLOAD_PRESET,
+            },
+            null,
+            2
+          )
+        );
+        reject(new Error("Network error during upload (connection interrupted)"));
+      };
+
+      xhr.onabort = () => {
+        setDebugPayload(
+          JSON.stringify(
+            { where: "cloudinary_upload_aborted", status: xhr.status },
+            null,
+            2
+          )
+        );
+        reject(new Error("Upload cancelled"));
+      };
+
+      xhr.ontimeout = () => {
+        setDebugPayload(
+          JSON.stringify(
+            {
+              where: "cloudinary_upload_timeout",
+              timeoutMs: CLOUDINARY_UPLOAD_TIMEOUT_MS,
+              status: xhr.status,
+              readyState: xhr.readyState,
+              hint:
+                "This is usually a mobile/network timeout. Try different network or smaller/compressed video.",
+            },
+            null,
+            2
+          )
+        );
+        reject(
+          new Error(
+            `Upload timed out after ${Math.round(
+              CLOUDINARY_UPLOAD_TIMEOUT_MS / 1000
+            )}s. Try compressing the video or switching network.`
+          )
+        );
+      };
+
+      xhr.open(
+        "POST",
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`
+      );
+      xhr.send(formData);
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    console.log("🎬 ========== DESNAP UPLOAD STARTED ==========");
+    console.log("📋 Video file check:", {
+      hasFile: !!videoFile,
+      fileName: videoFile?.name,
+      fileSize: videoFile?.size,
+      fileSizeMB: videoFile ? (videoFile.size / (1024 * 1024)).toFixed(2) : 0,
+      fileType: videoFile?.type,
     });
 
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    if (!videoFile) {
+      setError("Please select a video file");
+      return;
+    }
 
-    // Reset form when modal opens
-    useEffect(() => {
-        if (isOpen) {
-            setVideoFile(null);
-            setVideoUrl("");
-            setThumbnail("");
-            setDuration(0);
-            setIsPlaying(false);
-            setError("");
-            setActiveTab("upload");
-            setSettings({
-                visibility: "public",
-                allowComments: true,
-                allowLikes: true,
-                showViewCount: true,
-                autoPlay: true
-            });
-        }
-    }, [isOpen]);
+    // Same limit as file picker
+    if (videoFile.size > MAX_VIDEO_SIZE_MB * 1024 * 1024) {
+      setError(`Video file is too large. Maximum size is ${MAX_VIDEO_SIZE_MB}MB.`);
+      return;
+    }
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    setIsSubmitting(true);
+    setUploadProgress(0);
+    setError("");
+    setDebugPayload(null);
 
-        if (!file.type.startsWith('video/')) {
-            setError("Please select a video file");
-            return;
-        }
+    try {
+      console.log("📤 Uploading to Cloudinary...");
+      const cloudinaryData = await uploadToCloudinary(videoFile);
 
-        // Check file size (100MB limit)
-        const maxSize = 100 * 1024 * 1024; // 100MB
-        if (file.size > maxSize) {
-            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-            setError(`Video file too large (${fileSizeMB}MB). Maximum size is 100MB. Please compress your video or choose a shorter clip.`);
-            return;
-        }
+      let token = getToken();
+      if (!token) {
+        token =
+          localStorage.getItem("token") ||
+          document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("token="))
+            ?.split("=")[1] ||
+          null;
+      }
 
-        // Warn if file is large (over 50MB)
-        if (file.size > 50 * 1024 * 1024) {
-            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-            console.warn(`Large video file detected: ${fileSizeMB}MB. Upload may take longer.`);
-        }
+      if (!token) {
+        throw new Error(
+          "You must be logged in to create a DeSnap. Please log in and try again."
+        );
+      }
 
-        // Content moderation check
-        console.log('CreateDeSnapModal: Checking video content moderation...');
-        const moderationResult = await contentModerationService.moderateVideo(file);
-        
-        if (!moderationResult.isApproved) {
-            console.log('CreateDeSnapModal: Video moderation failed:', moderationResult.reason);
-            setError(`Video not approved: ${moderationResult.reason}. ${moderationResult.suggestions?.join('. ')}`);
-            return;
-        }
-        
-        console.log('CreateDeSnapModal: Video moderation passed');
+      const uploadedVideoUrl = cloudinaryData.videoUrl;
+      const thumbnailUrl = thumbnail || uploadedVideoUrl;
+      const finalDuration = cloudinaryData.duration || duration;
 
-        setVideoFile(file);
-        const url = URL.createObjectURL(file);
-        setVideoUrl(url);
-        setError("");
+      const deSnapData = {
+        content: uploadedVideoUrl,
+        thumbnail: thumbnailUrl || uploadedVideoUrl,
+        duration: finalDuration,
+        visibility: settings.visibility,
+        userId: user?.id,
+        cloudinaryPublicId: cloudinaryData.publicId,
+      };
 
-        // Generate thumbnail
-        const video = document.createElement('video');
-        video.src = url;
-        video.currentTime = 1; // Capture frame at 1 second
-        video.onloadedmetadata = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.drawImage(video, 0, 0);
-                const thumbnailUrl = canvas.toDataURL('image/jpeg');
-                setThumbnail(thumbnailUrl);
-            }
-            setDuration(video.duration);
-        };
-    };
+      console.log("📝 Creating DeSnap with Cloudinary URL:", {
+        hasContent: !!deSnapData.content,
+        hasThumbnail: !!deSnapData.thumbnail,
+        duration: deSnapData.duration,
+        cloudinaryPublicId: deSnapData.cloudinaryPublicId,
+      });
 
-    const togglePlayPause = () => {
-        if (videoRef.current) {
-            if (isPlaying) {
-                videoRef.current.pause();
-            } else {
-                videoRef.current.play();
-            }
-            setIsPlaying(!isPlaying);
-        }
-    };
+      const response = await apiFetch(
+        "/api/desnaps",
+        {
+          method: "POST",
+          body: JSON.stringify(deSnapData),
+        },
+        user?.id
+      );
 
-    const toggleMute = () => {
-        if (videoRef.current) {
-            videoRef.current.muted = !isMuted;
-            setIsMuted(!isMuted);
-        }
-    };
+      console.log("DeSnap creation response status:", response.status);
 
-    const [debugPayload, setDebugPayload] = useState<string | null>(null);
+      const responseText = await response.text();
+      console.log(
+        "DeSnap creation response text:",
+        responseText.substring(0, 200)
+      );
 
-    // Upload video to Cloudinary with progress tracking
-    const uploadToCloudinary = async (file: File): Promise<{ videoUrl: string; publicId: string; duration: number; format: string }> => {
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            const formData = new FormData();
-            
-            formData.append('file', file);
-            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-            formData.append('folder', 'desnaps/reels');
-
-            // Track upload progress
-            xhr.upload.addEventListener('progress', (e) => {
-                if (e.lengthComputable) {
-                    const progress = Math.round((e.loaded / e.total) * 100);
-                    setUploadProgress(progress);
-                    console.log(`📤 Upload progress: ${progress}%`);
-                }
-            });
-
-            xhr.addEventListener('load', () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        console.log('✅ Cloudinary upload succeeded:', response.public_id);
-                        resolve({
-                            videoUrl: response.secure_url,
-                            publicId: response.public_id,
-                            duration: response.duration ?? duration,
-                            format: response.format || 'mp4'
-                        });
-                    } catch (e) {
-                        reject(new Error('Failed to parse upload response'));
-                    }
-                } else {
-                    reject(new Error(`Upload failed with status ${xhr.status}`));
-                }
-            });
-
-            xhr.addEventListener('error', () => {
-                reject(new Error('Network error during upload'));
-            });
-
-            xhr.addEventListener('abort', () => {
-                reject(new Error('Upload cancelled'));
-            });
-
-            xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`);
-            xhr.send(formData);
-        });
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        console.log('🎬 ========== DESNAP UPLOAD STARTED ==========');
-        console.log('📋 Video file check:', {
-            hasFile: !!videoFile,
-            fileName: videoFile?.name,
-            fileSize: videoFile?.size,
-            fileSizeMB: videoFile ? (videoFile.size / (1024 * 1024)).toFixed(2) : 0,
-            fileType: videoFile?.type
-        });
-        
-        if (!videoFile) {
-            setError("Please select a video file");
-            return;
-        }
-
-        if (videoFile.size > 150 * 1024 * 1024) {
-            setError("Video file is too large. Maximum size is 150MB.");
-            return;
-        }
-
-        setIsSubmitting(true);
-        setUploadProgress(0);
-        setError("");
+      if (!response.ok) {
+        let errorMessage = "Failed to create DeSnap";
+        console.error("DeSnap creation error response:", responseText);
 
         try {
-            // Upload to Cloudinary directly
-            console.log('📤 Uploading to Cloudinary...');
-            const cloudinaryData = await uploadToCloudinary(videoFile);
-            
-            let token = getToken();
-            if (!token) {
-                token = localStorage.getItem('token') || 
-                        document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || null;
-            }
-            
-            if (!token) {
-                throw new Error("You must be logged in to create a DeSnap. Please log in and try again.");
-            }
-
-            const videoUrl = cloudinaryData.videoUrl;
-            const thumbnailUrl = thumbnail || videoUrl;
-            const finalDuration = cloudinaryData.duration || duration;
-
-            // Now create the DeSnap with the Cloudinary video URL
-            const deSnapData = {
-                content: videoUrl,
-                thumbnail: thumbnailUrl || videoUrl,
-                duration: finalDuration,
-                visibility: settings.visibility,
-                userId: user?.id,
-                cloudinaryPublicId: cloudinaryData.publicId
-            };
-
-            console.log('📝 Creating DeSnap with Cloudinary URL:', {
-                hasContent: !!deSnapData.content,
-                hasThumbnail: !!deSnapData.thumbnail,
-                duration: deSnapData.duration,
-                cloudinaryPublicId: deSnapData.cloudinaryPublicId
-            });
-            
-            // Save metadata to database
-            const response = await apiFetch("/api/desnaps", {
-                method: "POST",
-                body: JSON.stringify(deSnapData)
-            }, user?.id);
-
-            console.log('DeSnap creation response status:', response.status);
-
-            // Read response text
-            const responseText = await response.text();
-            console.log('DeSnap creation response text:', responseText.substring(0, 200));
-
-            if (!response.ok) {
-                let errorMessage = "Failed to create DeSnap";
-                console.error('DeSnap creation error response:', responseText);
-                
-                try {
-                    if (responseText.trim().startsWith('{')) {
-                        const errorData = JSON.parse(responseText);
-                        errorMessage = errorData.error || errorData.message || errorData.details || errorMessage;
-                    } else {
-                        errorMessage = `Server error: ${response.status}`;
-                    }
-                } catch (e) {
-                    errorMessage = `Server error: ${response.status}`;
-                }
-                throw new Error(errorMessage);
-            }
-
-            // Parse DeSnap response
-            let newDeSnap;
-            
-            if (!responseText.trim()) {
-                throw new Error('Empty response from server');
-            }
-            
-            if (responseText.trim().startsWith('<')) {
-                throw new Error('Server returned HTML error page. Please check your connection.');
-            }
-            
-            if (!responseText.trim().startsWith('{') && !responseText.trim().startsWith('[')) {
-                throw new Error('Server returned non-JSON response. Please try again.');
-            }
-            
-            try {
-                newDeSnap = JSON.parse(responseText);
-            } catch (jsonError) {
-                console.error('JSON parsing error:', jsonError);
-                throw new Error('Server returned invalid JSON. Please try again.');
-            }
-            
-            const normalizedDeSnap = normalizeDeSnap({
-                ...newDeSnap,
-                content: videoUrl,
-                thumbnail: thumbnailUrl || videoUrl,
-            }) || {
-                ...newDeSnap,
-                content: videoUrl,
-                thumbnail: thumbnailUrl || videoUrl,
-            };
-
-            console.log('✅ DeSnap created successfully!');
-
-            if (onDeSnapCreated) {
-                onDeSnapCreated(normalizedDeSnap);
-            }
-            window.dispatchEvent(new CustomEvent('desnap:created', {
-                detail: { deSnap: normalizedDeSnap }
-            }));
-
-            // Reset form and close
-            setVideoFile(null);
-            setVideoUrl("");
-            setThumbnail("");
-            setDuration(0);
-            setUploadProgress(0);
-            onClose();
-        } catch (err: unknown) {
-            console.error('❌ DeSnap creation error:', err);
-            
-            // Handle specific error types
-            let errorMessage = "Failed to create DeSnap";
-            if (err instanceof Error) {
-                errorMessage = err.message;
-            }
-            
-            setError(errorMessage);
-        } finally {
-            setIsSubmitting(false);
-            setUploadProgress(0);
+          if (responseText.trim().startsWith("{")) {
+            const errorData = JSON.parse(responseText);
+            errorMessage =
+              errorData.error ||
+              errorData.message ||
+              errorData.details ||
+              errorMessage;
+          } else {
+            errorMessage = `Server error: ${response.status}`;
+          }
+        } catch {
+          errorMessage = `Server error: ${response.status}`;
         }
-    };
 
-    if (!isOpen) return null;
+        throw new Error(errorMessage);
+      }
 
-    return (
-        <AnimatePresence>
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="desnap-modal-overlay fixed inset-0 flex items-center justify-center z-50 p-4"
-                onClick={onClose}
-            >
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="desnap-modal-container relative rounded-none sm:rounded-3xl p-0 w-full sm:max-w-4xl max-h-dvh sm:max-h-[90vh] overflow-hidden"
-                    onClick={(e) => e.stopPropagation()}
+      if (!responseText.trim()) {
+        throw new Error("Empty response from server");
+      }
+
+      if (responseText.trim().startsWith("<")) {
+        throw new Error(
+          "Server returned HTML error page. Please check your connection."
+        );
+      }
+
+      if (
+        !responseText.trim().startsWith("{") &&
+        !responseText.trim().startsWith("[")
+      ) {
+        throw new Error("Server returned non-JSON response. Please try again.");
+      }
+
+      let newDeSnap;
+      try {
+        newDeSnap = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error("JSON parsing error:", jsonError);
+        throw new Error("Server returned invalid JSON. Please try again.");
+      }
+
+      const normalizedDeSnap =
+        normalizeDeSnap({
+          ...newDeSnap,
+          content: uploadedVideoUrl,
+          thumbnail: thumbnailUrl || uploadedVideoUrl,
+        }) || {
+          ...newDeSnap,
+          content: uploadedVideoUrl,
+          thumbnail: thumbnailUrl || uploadedVideoUrl,
+        };
+
+      console.log("✅ DeSnap created successfully!");
+
+      if (onDeSnapCreated) {
+        onDeSnapCreated(normalizedDeSnap);
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("desnap:created", {
+          detail: { deSnap: normalizedDeSnap },
+        })
+      );
+
+      // Reset + close
+      setVideoFile(null);
+      setVideoUrl("");
+      setThumbnail("");
+      setDuration(0);
+      setUploadProgress(0);
+      onClose();
+    } catch (err: unknown) {
+      console.error("❌ DeSnap creation error:", err);
+
+      let errorMessage = "Failed to create DeSnap";
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+      setUploadProgress(0);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="desnap-modal-overlay fixed inset-0 flex items-center justify-center z-50 p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          className="desnap-modal-container relative rounded-none sm:rounded-3xl p-0 w-full sm:max-w-4xl max-h-dvh sm:max-h-[90vh] overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="desnap-modal-header relative z-10 flex items-center justify-between p-4 sm:p-6 safe-area-inset">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="desnap-modal-icon">
+                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="desnap-modal-title text-lg sm:text-xl">
+                  Create DeSnap
+                </h2>
+                <p className="text-xs sm:text-sm text-cyan-400/60 hidden xs:block">
+                  Share your cosmic moment
+                </p>
+              </div>
+            </div>
+            <button onClick={onClose} className="desnap-btn-close touch-target">
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="desnap-tabs flex overflow-x-auto">
+            {[
+              { id: "upload", label: "Upload", icon: Upload },
+              { id: "ai", label: "AI", icon: Zap },
+              { id: "collaborate", label: "Collab", icon: Users },
+              { id: "gamify", label: "Gamify", icon: Sparkles },
+              { id: "visibility", label: "Visibility", icon: Eye },
+              { id: "settings", label: "Settings", icon: Settings },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`desnap-tab touch-target ${
+                    activeTab === tab.id ? "active" : ""
+                  }`}
                 >
-                    {/* Header */}
-                    <div className="desnap-modal-header relative z-10 flex items-center justify-between p-4 sm:p-6 safe-area-inset">
-                        <div className="flex items-center space-x-2 sm:space-x-3">
-                            <div className="desnap-modal-icon">
-                                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                            </div>
-                            <div>
-                                <h2 className="desnap-modal-title text-lg sm:text-xl">Create DeSnap</h2>
-                                <p className="text-xs sm:text-sm text-cyan-400/60 hidden xs:block">Share your cosmic moment</p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={onClose}
-                            className="desnap-btn-close touch-target"
-                        >
-                            <X className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </button>
-                    </div>
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
-                    {/* Tab Navigation */}
-                    <div className="desnap-tabs flex overflow-x-auto">
-                        {[
-                            { id: "upload", label: "Upload", icon: Upload },
-                            { id: "ai", label: "AI", icon: Zap },
-                            { id: "collaborate", label: "Collab", icon: Users },
-                            { id: "gamify", label: "Gamify", icon: Sparkles },
-                            { id: "visibility", label: "Visibility", icon: Eye },
-                            { id: "settings", label: "Settings", icon: Settings }
-                        ].map((tab) => {
-                            const Icon = tab.icon;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id as any)}
-                                    className={`desnap-tab touch-target ${
-                                        activeTab === tab.id ? 'active' : ''
-                                    }`}
-                                >
-                                    <Icon className="w-4 h-4" />
-                                    <span className="hidden sm:inline">{tab.label}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    <div className="desnap-content relative p-3 sm:p-6 max-h-[calc(100dvh-200px)] sm:max-h-[60vh] overflow-y-auto">
-                        <AnimatePresence mode="wait">
-                            {/* Upload Tab */}
-                            {activeTab === "upload" && (
-                                <motion.div
-                                    key="upload"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-6"
-                                >
-                                    {!videoFile ? (
-                                        <div className="border-2 border-dashed border-cyan-500/40 rounded-2xl p-8 text-center hover:border-cyan-400 hover:bg-cyan-500/5 transition-all duration-300 bg-linear-to-br from-purple-900/10 to-cyan-900/10"
-                                          style={{
-                                            boxShadow: 'inset 0 0 30px rgba(34,211,238,0.05), 0 0 20px rgba(34,211,238,0.1)'
-                                          }}>
-                                            <input
-                                                ref={fileInputRef}
-                                                type="file"
-                                                accept="video/*"
-                                                className="hidden"
-                                                onChange={handleFileUpload}
-                                            />
-                                            <button
-                                                onClick={() => fileInputRef.current?.click()}
-                                                className="flex flex-col items-center space-y-4 w-full"
-                                            >
-                                                <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center">
-                                                    <Video className="w-8 h-8 text-yellow-400" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-lg font-semibold text-white mb-2">Upload Video</h3>
-                                                    <p className="text-gray-400">Click to select a video file or drag and drop</p>
-                                                    <p className="text-sm text-gray-500 mt-2">Max size: 100MB • Recommended: Under 50MB for faster upload</p>
-                                                    <p className="text-xs text-gray-600 mt-1">Tip: Compress large videos before uploading</p>
-                                                </div>
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            {/* Video Preview */}
-                                            <div className="relative aspect-9/16 max-w-sm mx-auto bg-black rounded-2xl overflow-hidden">
-                                                <video
-                                                    ref={videoRef}
-                                                    src={videoUrl}
-                                                    className="w-full h-full object-cover"
-                                                    muted={isMuted}
-                                                    loop
-                                                    onClick={togglePlayPause}
-                                                />
-                                                
-                                                {/* Play/Pause overlay */}
-                                                <div 
-                                                    className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-                                                    onClick={togglePlayPause}
-                                                >
-                                                    {isPlaying ? (
-                                                        <Pause size={48} className="text-white" />
-                                                    ) : (
-                                                        <Play size={48} className="text-white" />
-                                                    )}
-                                                </div>
-
-                                                {/* Video controls */}
-                                                <div className="absolute bottom-4 left-4 right-4">
-                                                    <div className="flex items-center justify-between text-white text-sm">
-                                                        <div className="flex items-center gap-2">
-                                                            <span>{Math.floor(duration / 60)}:{(duration % 60).toFixed(0).padStart(2, '0')}</span>
-                                                        </div>
-                                                        <button
-                                                            onClick={toggleMute}
-                                                            className="hover:bg-white/20 rounded-full p-1 transition-colors"
-                                                        >
-                                                            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Video Info */}
-                                            <div className="text-center">
-                                                <p className="text-white font-medium">{videoFile.name}</p>
-                                                <p className="text-gray-400 text-sm">
-                                                    {(videoFile.size / (1024 * 1024)).toFixed(1)} MB • {Math.floor(duration)}s
-                                                </p>
-                                            </div>
-
-                                            {/* Thumbnail Preview */}
-                                            {thumbnail && (
-                                                <div className="text-center">
-                                                    <p className="text-gray-400 text-sm mb-2">Thumbnail Preview:</p>
-                                                    <img 
-                                                        src={thumbnail} 
-                                                        alt="Thumbnail" 
-                                                        className="w-24 h-32 object-cover rounded-lg mx-auto"
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </motion.div>
-                            )}
-
-                            {/* AI Features Tab */}
-                            {activeTab === "ai" && (
-                                <motion.div
-                                    key="ai"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-6"
-                                >
-                                    <AIFeatures
-                                        videoUrl={videoUrl}
-                                        onAnalysisComplete={(analysis) => {
-                                            console.log("AI Analysis:", analysis);
-                                        }}
-                                        isAnalyzing={false}
-                                        onAnalyzingChange={() => {}}
-                                    />
-                                </motion.div>
-                            )}
-
-                            {/* Collaborative Features Tab */}
-                            {activeTab === "collaborate" && (
-                                <motion.div
-                                    key="collaborate"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-6"
-                                >
-                                    <CollaborativeFeatures
-                                        deSnapId="new"
-                                        onCollaborationUpdate={(collaborators) => {
-                                            console.log("Collaborators:", collaborators);
-                                        }}
-                                    />
-                                </motion.div>
-                            )}
-
-                            {/* Gamification Tab */}
-                            {activeTab === "gamify" && (
-                                <motion.div
-                                    key="gamify"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-6"
-                                >
-                                    <GamificationSystem />
-                                </motion.div>
-                            )}
-
-                            {/* Advanced Visibility Tab */}
-                            {activeTab === "visibility" && (
-                                <motion.div
-                                    key="visibility"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-6"
-                                >
-                                    <AdvancedVisibilityControls
-                                        onVisibilityChange={(rules) => {
-                                            console.log("Visibility Rules:", rules);
-                                        }}
-                                    />
-                                </motion.div>
-                            )}
-
-                            {/* Settings Tab */}
-                            {activeTab === "settings" && (
-                                <motion.div
-                                    key="settings"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-6"
-                                >
-                                    {/* Visibility Settings */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-white mb-3">
-                                            Who can see this DeSnap?
-                                        </label>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {visibilityOptions.map((option) => {
-                                                const Icon = option.icon;
-                                                return (
-                                                    <button
-                                                        key={option.id}
-                                                        onClick={() => setSettings(prev => ({ ...prev, visibility: option.id as any }))}
-                                                        className={`flex items-center space-x-3 p-4 rounded-xl border transition-all ${
-                                                            settings.visibility === option.id
-                                                                ? "border-yellow-400 bg-yellow-400/10"
-                                                                : "border-gray-600 hover:border-gray-500 bg-gray-800/50"
-                                                        }`}
-                                                    >
-                                                        <Icon className={`w-5 h-5 ${option.color}`} />
-                                                        <div className="text-left">
-                                                            <p className="font-medium text-white text-sm">{option.name}</p>
-                                                            <p className="text-xs text-gray-400">{option.description}</p>
-                                                        </div>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    {/* Advanced Settings */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-white mb-3">
-                                            Advanced Settings
-                                        </label>
-                                        <div className="space-y-3">
-                                            {[
-                                                { key: "allowComments", label: "Allow comments", icon: Eye },
-                                                { key: "allowLikes", label: "Allow likes", icon: Eye },
-                                                { key: "showViewCount", label: "Show view count", icon: Eye },
-                                                { key: "autoPlay", label: "Auto-play in feed", icon: Play }
-                                            ].map((setting) => {
-                                                const Icon = setting.icon;
-                                                return (
-                                                    <label key={setting.key} className="flex items-center space-x-3 p-3 rounded-xl bg-linear-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/30 hover:to-cyan-500/30 cursor-pointer transition-all duration-300 border border-purple-500/20">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={settings[setting.key as keyof DeSnapSettings] as boolean}
-                                                            onChange={(e) => setSettings(prev => ({ ...prev, [setting.key]: e.target.checked }))}
-                                                            className="w-4 h-4 text-cyan-400 bg-purple-900/50 border-cyan-500/50 rounded focus:ring-cyan-400 focus:ring-2"
-                                                        />
-                                                        <Icon className="w-4 h-4 text-cyan-400" />
-                                                        <span className="text-sm text-cyan-100">{setting.label}</span>
-                                                    </label>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-
-                    {/* Upload Progress Bar */}
-                    {uploadProgress > 0 && uploadProgress < 100 && (
-                        <div className="relative px-6 py-4 bg-linear-to-r from-blue-500/20 to-cyan-500/20 border-t border-blue-500/30 backdrop-blur-sm"
-                          style={{
-                            boxShadow: 'inset 0 0 20px rgba(59,130,246,0.1)'
-                          }}>
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="text-cyan-300 text-sm font-medium">Uploading video...</div>
-                                <div className="text-cyan-200/60 text-xs">{uploadProgress}%</div>
-                            </div>
-                            <div className="w-full h-2 bg-black/40 rounded-full overflow-hidden border border-cyan-500/20">
-                                <motion.div
-                                    className="h-full bg-linear-to-r from-blue-500 to-cyan-400"
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${uploadProgress}%` }}
-                                    transition={{ duration: 0.3 }}
-                                />
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Error Message */}
-                    {error && (
-                        <div className="relative px-6 py-3 bg-linear-to-r from-red-500/20 to-pink-500/20 border-t border-red-500/30 backdrop-blur-sm"
-                          style={{
-                            boxShadow: 'inset 0 0 20px rgba(239,68,68,0.1)'
-                          }}>
-                            <div className="text-red-300 text-sm text-center">{error}</div>
-                        </div>
-                    )}
-
-                    {debugPayload && (
-                        <div className="px-6 py-3 bg-black/60 border-t border-cyan-800/20">
-                            <div className="flex items-center justify-between">
-                                <div className="text-xs text-cyan-200">Debug info (copy and paste to me)</div>
-                                <button
-                                    onClick={() => navigator.clipboard.writeText(debugPayload)}
-                                    className="text-xs px-3 py-1 bg-cyan-600/20 text-cyan-100 rounded-md"
-                                >
-                                    Copy
-                                </button>
-                            </div>
-                            <textarea readOnly value={debugPayload} className="w-full mt-2 p-2 bg-black/40 text-xs text-white rounded h-40" />
-                        </div>
-                    )}
-
-                    {/* Footer Actions */}
-                    <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 sm:p-6 border-t border-cyan-500/20 bg-linear-to-r from-slate-950 via-purple-950/50 to-slate-950 gap-3 sm:gap-0 safe-area-inset"
+          <div className="desnap-content relative p-3 sm:p-6 max-h-[calc(100dvh-200px)] sm:max-h-[60vh] overflow-y-auto">
+            <AnimatePresence mode="wait">
+              {/* Upload Tab */}
+              {activeTab === "upload" && (
+                <motion.div
+                  key="upload"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  {!videoFile ? (
+                    <div
+                      className="border-2 border-dashed border-cyan-500/40 rounded-2xl p-8 text-center hover:border-cyan-400 hover:bg-cyan-500/5 transition-all duration-300 bg-linear-to-br from-purple-900/10 to-cyan-900/10"
                       style={{
-                        boxShadow: 'inset 0 1px 20px rgba(34,211,238,0.1)'
-                      }}>
-                        <div className="hidden sm:flex items-center space-x-2 text-sm text-cyan-400/70">
-                            <Zap className="w-4 h-4" />
-                            <span>DeSnap</span>
-                            <span>•</span>
-                            <span className="text-cyan-300">{visibilityOptions.find(v => v.id === settings.visibility)?.name}</span>
+                        boxShadow:
+                          "inset 0 0 30px rgba(34,211,238,0.05), 0 0 20px rgba(34,211,238,0.1)",
+                      }}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="video/*"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex flex-col items-center space-y-4 w-full"
+                      >
+                        <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                          <Video className="w-8 h-8 text-yellow-400" />
                         </div>
-                        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="px-6 py-3 sm:py-2 text-cyan-400/70 hover:text-cyan-300 transition-all duration-300 text-center touch-target border border-cyan-500/20 rounded-lg hover:bg-cyan-500/10"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleSubmit}
-                                disabled={isSubmitting || !videoFile}
-                                className="px-8 py-3 sm:py-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl hover:from-yellow-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium touch-target"
-                            >
-                                {isSubmitting ? "Creating..." : "Create DeSnap"}
-                            </button>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white mb-2">
+                            Upload Video
+                          </h3>
+                          <p className="text-gray-400">
+                            Click to select a video file or drag and drop
+                          </p>
+                          <p className="text-sm text-gray-500 mt-2">
+                            Max size: {MAX_VIDEO_SIZE_MB}MB • Recommended: Under{" "}
+                            {WARN_VIDEO_SIZE_MB}MB for faster upload
+                          </p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            Tip: Compress large videos before uploading
+                          </p>
                         </div>
+                      </button>
                     </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Video Preview */}
+                      <div className="relative aspect-9/16 max-w-sm mx-auto bg-black rounded-2xl overflow-hidden">
+                        <video
+                          ref={videoRef}
+                          src={videoUrl}
+                          className="w-full h-full object-cover"
+                          muted={isMuted}
+                          loop
+                          onClick={togglePlayPause}
+                        />
+
+                        {/* Play/Pause overlay */}
+                        <div
+                          className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                          onClick={togglePlayPause}
+                        >
+                          {isPlaying ? (
+                            <Pause size={48} className="text-white" />
+                          ) : (
+                            <Play size={48} className="text-white" />
+                          )}
+                        </div>
+
+                        {/* Video controls */}
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <div className="flex items-center justify-between text-white text-sm">
+                            <div className="flex items-center gap-2">
+                              <span>
+                                {Math.floor(duration / 60)}:
+                                {(duration % 60)
+                                  .toFixed(0)
+                                  .padStart(2, "0")}
+                              </span>
+                            </div>
+                            <button
+                              onClick={toggleMute}
+                              className="hover:bg-white/20 rounded-full p-1 transition-colors"
+                            >
+                              {isMuted ? (
+                                <VolumeX size={20} />
+                              ) : (
+                                <Volume2 size={20} />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Video Info */}
+                      <div className="text-center">
+                        <p className="text-white font-medium">{videoFile.name}</p>
+                        <p className="text-gray-400 text-sm">
+                          {(videoFile.size / (1024 * 1024)).toFixed(1)} MB •{" "}
+                          {Math.floor(duration)}s
+                        </p>
+                      </div>
+
+                      {/* Thumbnail Preview */}
+                      {thumbnail && (
+                        <div className="text-center">
+                          <p className="text-gray-400 text-sm mb-2">
+                            Thumbnail Preview:
+                          </p>
+                          <img
+                            src={thumbnail}
+                            alt="Thumbnail"
+                            className="w-24 h-32 object-cover rounded-lg mx-auto"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </motion.div>
-            </motion.div>
-        </AnimatePresence>
-    );
-}
+              )}
+
+              {/* AI Features Tab */}
+              {activeTab === "ai" && (
+                <motion.div
+                  key="ai"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  <AIFeatures
+                    videoUrl={videoUrl}
+                    onAnalysisComplete={(analysis) => {
+                      console.log("AI Analysis:", analysis);
+                    }}
+                    isAnalyzing={false}
+                    onAnalyzingChange={() => {}}
+                  />
+                </motion.div>
+              )}
+
+              {/* Collaborative Features Tab */}
+              {activeTab === "collaborate" && (
+                <motion.div
+                  key="collaborate"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  <CollaborativeFeatures
+                    deSnapId="new"
+                    onCollaborationUpdate={(collaborators) => {
+                      console.log("Collaborators:", collaborators);
+                    }}
+                  />
+                </motion.div>
+              )}
+
+              {/* Gamification Tab */}
+              {activeTab === "gamify" && (
+                <motion.div
+                  key="gamify"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  <GamificationSystem />
+                </motion.div>
+              )}
+
+              {/* Advanced Visibility Tab */}
+              {activeTab === "visibility" && (
+                <motion.div
+                  key="visibility"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  <AdvancedVisibilityControls
+                    onVisibilityChange={(rules) => {
+                      console.log("Visibility Rules:", rules);
+                    }}
+                  />
+                </motion.div>
+              )}
+
+              {/* Settings Tab */}
+              {activeTab === "settings" && (
+                <motion.div
+                  key="settings"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  {/* Visibility Settings */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-3">
+                      Who can see this DeSnap?
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {visibilityOptions.map((option) => {
+                        const Icon = option.icon;
+                        return (
+                          <button
+                            key={option.id}
+                            onClick={() =>
+                              setSettings((prev) => ({
+                                ...prev,
+                                visibility: option.id as any,
+                              }))
+                            }
+                            className={`flex items-center space-x-3 p-4 rounded-xl border transition-all ${
+                              settings.visibility === option.id
+                                ? "border-yellow-400 bg-yellow-400/10"
+                                : "border-gray-600 hover:border-gray-500 bg-gray-800/50"
+                            }`}
+                          >
+                            <Icon className={`w-5 h-5 ${option.color}`} />
+                            <div className="text-left">
+                              <p className="font-medium text-white text-sm">
+                                {option.name}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {option.description}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Advanced Settings */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-3">
+                      Advanced Settings
+                    </label>
+                    <div className="space-y-3">
+                      {[
+                        { key: "allowComments", label: "Allow comments", icon: Eye },
+                        { key: "allowLikes", label: "Allow likes", icon: Eye },
+                        { key: "showViewCount", label: "Show view count", icon: Eye },
+                        { key: "autoPlay", label: "Auto-play in feed", icon: Play },
+                      ].map((settingItem) => {
+                        const Icon = settingItem.icon;
+                        return (
+                          <label
+                            key={settingItem.key}
+                            className="flex items-center space-x-3 p-3 rounded-xl bg-linear-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/30 hover:to-cyan-500/30 cursor-pointer transition-all duration-300 border border-purple-500/20"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={
+                                settings[
+                                  settingItem.key as keyof DeSnapSettings
+                                ] as boolean
+                              }
+                              onChange={(e) =>
+                                setSettings((prev) => ({
+                                  ...prev,
+                                  [settingItem.key]: e.target.checked,
+                                }))
+                              }
+                              className="w-4 h-4 text-cyan-400 bg-purple-900/50 border-cyan-500/50 rounded focus:ring-cyan-400 focus:ring-2"
+                            />
+                            <Icon className="w-4 h-4 text-cyan-400" />
+                            <span className="text-sm text-cyan-100">
+                              {settingItem.label}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Upload Progress Bar */}
+          {uploadProgress > 0 && uploadProgress < 100 && (
+            <div
+              className="relative px-6 py-4 bg-linear-to-r from-blue-500/20 to-cyan-500/20 border-t border-blue-500/30 backdrop-blur-sm"
+              style={{
+                boxShadow: "inset 0 0 20px rgba(59,130,246,0.1)",
+              }}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-cyan-300 text-sm font-medium">
+                  Uploading video...
+                </div>
+                <div className="text-cyan-200/60 text-xs">{uploadProgress}%</div>
+              </div>
+              <div className="w-full h-2 bg-black/40 rounded-full overflow-hidden border border-cyan-500/20">
+                <motion.div
+                  className="h-full bg-linear-to-r from-blue-500 to-cyan-400"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${uploadProgress}%` }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <div
+              className="relative px-6 py-3 bg-linear-to-r from-red-500/20 to-pink-500/20 border-t border-red-500/30 backdrop-blur-sm"
+              style={{
+                boxShadow: "inset 0 0 20px rgba(239,68,68,0.1)",
+              }}
+            >
+              <div className="text-red-300 text-sm text-center">{error}</div>
+            </div>
+          )}
+
+          {debugPayload && (
+            <div className="px-6 py-3 bg-black/60 border-t border-cyan-800/20">
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-cyan-200">
+                  Debug info (copy and paste to me)
+                </div>
+                <button
+                  onClick={() => navigator.clipboard.writeText(debugPayload)}
+                  className="text-xs px-3 py-1 bg-cyan-600/20 text-cyan-100 rounded-md"
+                >
+                  Copy
+                </button>
+              </div>
+              <textarea
+                readOnly
+                value={debugPayload}
+                className="w-full mt-2 p-2 bg-black/40 text-xs text-white rounded h-40"
+              />
+            </div>
+          )}
+
+          {/* Footer Actions */}
+          <div
+            className="relative flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 sm:p-6 border-t border-cyan-500/20 bg-linear-to-r from-slate-950 via-purple-950/50 to-slate-950 gap-3 sm:gap-0 safe-area-inset"
+            style={{
+              boxShadow: "inset 0 1px 20px rgba(34,211,238,0.1)",
+            }}
+          >
+            <div className="hidden sm:flex items-center space-x-2 text-sm text-cyan-400/70">
+              <Zap className="w-4 h-4" />
+              <span>DeSnap</span>
+              <span>•</span>
+              <span className="text-cyan-300">
+                {visibilityOptions.find((v) => v.id === settings.visibility)?.name}
+              </span>
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-3 sm:py-2 text-cyan-400/70 hover:text-cyan-300 transition-all duration-300 text-center touch-target border border-cyan-500/20 rounded-lg hover:bg-cyan-500/10"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleSubmit}
+                disabled={isSubmitting || !videoFile}
+                className="px-8 py-3 sm:py-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl hover:from-yellow-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium touch-target"
+              >
+                {isSubmitting ? "Creating..." : "Create DeSnap"}
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+                            }
