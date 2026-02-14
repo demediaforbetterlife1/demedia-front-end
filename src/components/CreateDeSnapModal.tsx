@@ -292,147 +292,31 @@ export default function CreateDeSnapModal({
   };
 
   // Upload video to Cloudinary with progress tracking + better errors/timeouts
-  const uploadToCloudinary = async (
-    file: File
-  ): Promise<{ videoUrl: string; publicId: string; duration: number; format: string }> => {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      const formData = new FormData();
+  const uploadToCloudinaryFetch = async (file: File) => {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+  form.append("folder", "desnaps/reels");
 
-      formData.append("file", file);
-      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-      formData.append("folder", "desnaps/reels");
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`,
+    { method: "POST", body: form }
+  );
 
-      // Timeout handling
-      xhr.timeout = CLOUDINARY_UPLOAD_TIMEOUT_MS;
-
-      // Track upload progress
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const progress = Math.round((e.loaded / e.total) * 100);
-          setUploadProgress(progress);
-          // console.log(`📤 Upload progress: ${progress}%`);
-        }
-      };
-
-      xhr.onload = () => {
-        const status = xhr.status;
-        const text = xhr.responseText || "";
-
-        if (status >= 200 && status < 300) {
-          const response = safeJsonParse<any>(text);
-          if (!response?.secure_url || !response?.public_id) {
-            const msg = getCloudinaryErrorMessage(text, status);
-            setDebugPayload(
-              JSON.stringify(
-                {
-                  where: "cloudinary_success_but_invalid_payload",
-                  status,
-                  responseTextPreview: text.slice(0, 400),
-                },
-                null,
-                2
-              )
-            );
-            return reject(new Error(msg));
-          }
-
-          console.log("✅ Cloudinary upload succeeded:", response.public_id);
-
-          return resolve({
-            videoUrl: response.secure_url,
-            publicId: response.public_id,
-            duration: response.duration ?? duration,
-            format: response.format || "mp4",
-          });
-        }
-
-        // Non-2xx -> extract cloudinary message
-        const msg = getCloudinaryErrorMessage(text, status);
-
-        setDebugPayload(
-          JSON.stringify(
-            {
-              where: "cloudinary_upload_failed",
-              status,
-              readyState: xhr.readyState,
-              responseTextPreview: text.slice(0, 600),
-              cloudName: CLOUDINARY_CLOUD_NAME,
-              preset: CLOUDINARY_UPLOAD_PRESET,
-              file: {
-                name: file.name,
-                type: file.type,
-                size: file.size,
-                sizeMB: Number((file.size / (1024 * 1024)).toFixed(2)),
-              },
-            },
-            null,
-            2
-          )
-        );
-
-        return reject(new Error(msg));
-      };
-
-      xhr.onerror = () => {
-        setDebugPayload(
-          JSON.stringify(
-            {
-              where: "cloudinary_network_error",
-              status: xhr.status,
-              readyState: xhr.readyState,
-              cloudName: CLOUDINARY_CLOUD_NAME,
-              preset: CLOUDINARY_UPLOAD_PRESET,
-            },
-            null,
-            2
-          )
-        );
-        reject(new Error("Network error during upload (connection interrupted)"));
-      };
-
-      xhr.onabort = () => {
-        setDebugPayload(
-          JSON.stringify(
-            { where: "cloudinary_upload_aborted", status: xhr.status },
-            null,
-            2
-          )
-        );
-        reject(new Error("Upload cancelled"));
-      };
-
-      xhr.ontimeout = () => {
-        setDebugPayload(
-          JSON.stringify(
-            {
-              where: "cloudinary_upload_timeout",
-              timeoutMs: CLOUDINARY_UPLOAD_TIMEOUT_MS,
-              status: xhr.status,
-              readyState: xhr.readyState,
-              hint:
-                "This is usually a mobile/network timeout. Try different network or smaller/compressed video.",
-            },
-            null,
-            2
-          )
-        );
-        reject(
-          new Error(
-            `Upload timed out after ${Math.round(
-              CLOUDINARY_UPLOAD_TIMEOUT_MS / 1000
-            )}s. Try compressing the video or switching network.`
-          )
-        );
-      };
-
-      xhr.open(
-        "POST",
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`
-      );
-      xhr.send(formData);
-    });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const msg = data?.error?.message || `Upload failed: ${res.status}`;
+    throw new Error(msg);
+  }
+  return {
+    videoUrl: data.secure_url,
+    publicId: data.public_id,
+    duration: data.duration,
+    format: data.format || "mp4",
   };
+};
+      
+        
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
