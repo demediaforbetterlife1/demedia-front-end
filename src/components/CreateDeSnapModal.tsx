@@ -143,8 +143,8 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             return;
         }
 
-        // Warn if file is large (over 50MB)
-        if (file.size > 50 * 1024 * 1024) {
+        // Warn if file is large (over 80MB)
+        if (file.size > 80 * 1024 * 1024) {
             const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
             console.warn(`Large video file detected: ${fileSizeMB}MB. Upload may take longer.`);
         }
@@ -235,19 +235,27 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                             format: response.format || 'mp4'
                         });
                     } catch (e) {
-                        reject(new Error('Failed to parse upload response'));
+                        reject(new Error('Failed to parse upload response. Please try again.'));
                     }
                 } else {
-                    reject(new Error(`Upload failed with status ${xhr.status}`));
+                    // Try to parse error response for better error message
+                    let errorMessage = `Upload failed with status ${xhr.status}`;
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        errorMessage = errorResponse.error?.message || errorResponse.error || errorMessage;
+                    } catch (e) {
+                        // Use default error message
+                    }
+                    reject(new Error(errorMessage));
                 }
             });
 
             xhr.addEventListener('error', () => {
-                reject(new Error('Network error during upload'));
+                reject(new Error('Network error during upload. Please check your connection and try again.'));
             });
 
             xhr.addEventListener('abort', () => {
-                reject(new Error('Upload cancelled'));
+                reject(new Error('Upload cancelled. Please try again.'));
             });
 
             xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`);
@@ -276,8 +284,6 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             setError("Video file is too large. Maximum size is 150MB.");
             return;
         }
-
-        setIsSubmitting(true);
         setUploadProgress(0);
         setError("");
 
@@ -331,18 +337,32 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
             if (!response.ok) {
                 let errorMessage = "Failed to create DeSnap";
+                let errorCode = 'UNKNOWN_ERROR';
                 console.error('DeSnap creation error response:', responseText);
                 
                 try {
                     if (responseText.trim().startsWith('{')) {
                         const errorData = JSON.parse(responseText);
                         errorMessage = errorData.error || errorData.message || errorData.details || errorMessage;
+                        errorCode = errorData.code || errorCode;
                     } else {
                         errorMessage = `Server error: ${response.status}`;
                     }
                 } catch (e) {
                     errorMessage = `Server error: ${response.status}`;
                 }
+
+                // Handle specific error codes with user-friendly messages
+                if (errorCode === 'NO_TOKEN' || errorCode === 'SESSION_EXPIRED') {
+                    errorMessage = 'Your session has expired. Please log in again and try uploading your DeSnap.';
+                } else if (errorCode === 'PERMISSION_DENIED') {
+                    errorMessage = 'You do not have permission to create a DeSnap. Please contact support if this persists.';
+                } else if (errorCode === 'FILE_TOO_LARGE') {
+                    errorMessage = 'The video file is too large. Please use a smaller file (max 100MB).';
+                } else if (errorCode === 'BACKEND_ERROR' || errorCode === 'SERVER_ERROR') {
+                    errorMessage = 'Server is busy. Please try again in a few moments.';
+                }
+
                 throw new Error(errorMessage);
             }
 
@@ -350,22 +370,22 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             let newDeSnap;
             
             if (!responseText.trim()) {
-                throw new Error('Empty response from server');
+                throw new Error('Empty response from server. Please try again.');
             }
             
             if (responseText.trim().startsWith('<')) {
-                throw new Error('Server returned HTML error page. Please check your connection.');
+                throw new Error('Server returned an error page. Please check your connection or try again later.');
             }
             
             if (!responseText.trim().startsWith('{') && !responseText.trim().startsWith('[')) {
-                throw new Error('Server returned non-JSON response. Please try again.');
+                throw new Error('Server returned an invalid response. Please try again.');
             }
             
             try {
                 newDeSnap = JSON.parse(responseText);
             } catch (jsonError) {
                 console.error('JSON parsing error:', jsonError);
-                throw new Error('Server returned invalid JSON. Please try again.');
+                throw new Error('Server returned invalid data. Please try again.');
             }
             
             const normalizedDeSnap = normalizeDeSnap({
@@ -398,9 +418,26 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             console.error('❌ DeSnap creation error:', err);
             
             // Handle specific error types
-            let errorMessage = "Failed to create DeSnap";
+            let errorMessage = "Failed to create DeSnap. Please try again.";
             if (err instanceof Error) {
-                errorMessage = err.message;
+                const errorText = err.message.toLowerCase();
+                
+                // Provide more specific error messages based on the error
+                if (errorText.includes('network') || errorText.includes('fetch') || errorText.includes('connection')) {
+                    errorMessage = 'Network error. Please check your internet connection and try again.';
+                } else if (errorText.includes('cancelled') || errorText.includes('abort')) {
+                    errorMessage = 'Upload was cancelled. Please try again.';
+                } else if (errorText.includes('timeout')) {
+                    errorMessage = 'Request timed out. Please try again.';
+                } else if (errorText.includes('session') || errorText.includes('token') || errorText.includes('login') || errorText.includes('auth')) {
+                    errorMessage = 'Your session has expired. Please log in again.';
+                } else if (errorText.includes('too large') || errorText.includes('file size')) {
+                    errorMessage = 'Video file is too large. Please use a smaller file (max 100MB).';
+                } else if (errorText.includes('invalid') || errorText.includes('format')) {
+                    errorMessage = 'Invalid video format. Please use MP4, MOV, AVI, or WebM.';
+                } else {
+                    errorMessage = err.message;
+                }
             }
             
             setError(errorMessage);

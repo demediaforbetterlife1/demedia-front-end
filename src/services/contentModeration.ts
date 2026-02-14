@@ -215,40 +215,25 @@ class ContentModerationService {
                     return;
                 }
 
-                // Check file size (max 50MB)
-                if (size > 50 * 1024 * 1024) {
+                // Check file size (max 100MB - increased from 50MB)
+                if (size > 100 * 1024 * 1024) {
                     categories.push('too large');
                     resolve({
                         isApproved: false,
                         reason: 'File too large',
                         categories,
-                        suggestions: ['Please use a smaller video file (max 50MB)']
+                        suggestions: ['Please use a smaller video file (max 100MB)']
                     });
                     return;
                 }
 
-                // Check filename for inappropriate content
-                const filename = videoFile.name.toLowerCase();
-                const hasInappropriateName = this.sexualContentWords.some(word => 
-                    filename.includes(word.toLowerCase())
-                ) || this.inappropriateClothingWords.some(word => 
-                    filename.includes(word.toLowerCase())
-                );
-
-                if (hasInappropriateName) {
-                    categories.push('inappropriate filename');
-                    resolve({
-                        isApproved: false,
-                        reason: 'Video filename contains inappropriate content',
-                        categories,
-                        suggestions: ['Please rename your video file appropriately']
-                    });
-                    return;
-                }
+                // Skip filename check - it's too strict and can reject legitimate videos
+                // The backend will handle any necessary content moderation
+                console.log('✅ Video moderation passed - duration:', duration, 'size:', (size / 1024 / 1024).toFixed(2), 'MB');
 
                 resolve({
                     isApproved: true,
-                    confidence: 0.7,
+                    confidence: 0.9,
                     categories: ['clean']
                 });
             };
@@ -258,7 +243,7 @@ class ContentModerationService {
                     isApproved: false,
                     reason: 'Invalid video file',
                     categories: ['invalid file'],
-                    suggestions: ['Please use a valid video format (MP4, MOV, AVI)']
+                    suggestions: ['Please use a valid video format (MP4, MOV, AVI, WebM)']
                 });
             };
 

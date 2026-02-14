@@ -38,8 +38,9 @@ export async function POST(request: NextRequest) {
     if (!token) {
       console.error('❌ No authorization token found');
       return NextResponse.json({ 
-        error: 'Authorization required. Please log in again.',
-        details: 'No token found in Authorization header or cookie'
+        error: 'Please log in to create a DeSnap',
+        details: 'No token found. Please log in and try again.',
+        code: 'NO_TOKEN'
       }, { status: 401 });
     }
 
@@ -75,17 +76,36 @@ export async function POST(request: NextRequest) {
         const errorText = await response.text();
         console.error('❌ Backend error:', response.status, errorText);
         
-        let errorMessage = 'Failed to create DeSnap';
+        let errorMessage = 'Failed to create DeSnap. Please try again.';
+        let errorCode = 'BACKEND_ERROR';
+        
         try {
           const errorData = JSON.parse(errorText);
           errorMessage = errorData.error || errorData.message || errorData.details || errorMessage;
+          errorCode = errorData.code || errorCode;
         } catch (e) {
-          errorMessage = errorText || `Backend error: ${response.status}`;
+          // If not JSON, use status-based message
+          if (response.status === 401) {
+            errorMessage = 'Your session has expired. Please log in again.';
+            errorCode = 'SESSION_EXPIRED';
+          } else if (response.status === 403) {
+            errorMessage = 'You do not have permission to create a DeSnap.';
+            errorCode = 'PERMISSION_DENIED';
+          } else if (response.status === 413) {
+            errorMessage = 'Video file is too large. Please use a smaller file.';
+            errorCode = 'FILE_TOO_LARGE';
+          } else if (response.status >= 500) {
+            errorMessage = 'Server is busy. Please try again in a few moments.';
+            errorCode = 'SERVER_ERROR';
+          } else {
+            errorMessage = errorText || `Server error: ${response.status}`;
+          }
         }
         
         return NextResponse.json({ 
           error: errorMessage,
-          details: errorText
+          details: errorText,
+          code: errorCode
         }, { status: response.status });
       }
 
