@@ -25,8 +25,8 @@ import AIFeatures from "./AIFeatures";
 import CollaborativeFeatures from "./CollaborativeFeatures";
 import GamificationSystem from "./GamificationSystem";
 import AdvancedVisibilityControls from "./AdvancedVisibilityControls";
-import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
-import { normalizeDeSnap } from "@/utils/desnapUtils";
+import { uploadService, UploadProgress } from "@/services/uploadService";
+import { createVideoThumbnail } from "@/utils/mediaUtils";
 
 interface CreateDeSnapModalProps {
     isOpen: boolean;
@@ -151,22 +151,21 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
         setVideoUrl(url);
         setError("");
 
-        // Generate thumbnail
-        const video = document.createElement('video');
-        video.src = url;
-        video.currentTime = 1; // Capture frame at 1 second
-        video.onloadedmetadata = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.drawImage(video, 0, 0);
-                const thumbnailUrl = canvas.toDataURL('image/jpeg');
-                setThumbnail(thumbnailUrl);
-            }
-            setDuration(video.duration);
-        };
+        // Generate thumbnail using utility function
+        try {
+            const thumbnailUrl = await createVideoThumbnail(file);
+            setThumbnail(thumbnailUrl);
+            
+            // Get video duration
+            const video = document.createElement('video');
+            video.src = url;
+            video.onloadedmetadata = () => {
+                setDuration(video.duration);
+            };
+        } catch (error) {
+            console.error('Error generating thumbnail:', error);
+            // Continue without thumbnail
+        }
     };
 
     const togglePlayPause = () => {
@@ -187,6 +186,8 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
         }
     };
 
+    const [uploadProgress, setUploadProgress] = useState<number>(0);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -197,77 +198,33 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
 
         setIsSubmitting(true);
         setError("");
+        setUploadProgress(0);
 
         try {
-            // Upload video file first
-            const formData = new FormData();
-            formData.append('video', videoFile);
-            formData.append('thumbnail', thumbnail);
-            formData.append('duration', duration.toString());
-            formData.append('visibility', settings.visibility);
-            formData.append('userId', user?.id || '');
-
-            // Upload the video file
-            const uploadResponse = await apiFetch("/api/upload/video", {
-                method: "POST",
-                body: formData
-            }, user?.id);
-
-            if (!uploadResponse.ok) {
-                let errorMessage = "Failed to upload video";
-                try {
-                    const errorData = await uploadResponse.json();
-                    errorMessage = errorData.error || errorData.message || errorMessage;
-                } catch (e) {
-                    const responseText = await uploadResponse.text();
-                    console.error('Upload error response:', responseText);
-                    errorMessage = `Upload error: ${uploadResponse.status} - ${responseText}`;
+            // Upload video using the upload service
+            const uploadResult = await uploadService.uploadVideo(videoFile, {
+                duration: duration,
+                visibility: settings.visibility,
+                onProgress: (progress: UploadProgress) => {
+                    setUploadProgress(progress.percentage);
                 }
-                throw new Error(errorMessage);
+            });
+
+            if (!uploadResult.success) {
+                throw new Error(uploadResult.error || 'Failed to upload video');
             }
 
-            // Use safe JSON parsing for upload response
-            let uploadData;
-            try {
-                const responseText = await uploadResponse.text();
-                console.log('Upload response text:', responseText);
-                
-                if (!responseText.trim()) {
-                    throw new Error('Empty response from server');
-                }
-                
-                // Check if response is HTML (error page)
-                if (responseText.trim().startsWith('<')) {
-                    throw new Error('Server returned HTML error page. Please check your connection.');
-                }
-                
-                uploadData = JSON.parse(responseText);
-            } catch (jsonError) {
-                console.error('Upload JSON parsing error:', jsonError);
-                const responseText = await uploadResponse.text();
-                console.error('Upload response text:', responseText);
-                throw new Error('Invalid upload response from server. Please try again.');
-            }
-            
-            let videoUrl = uploadData.videoUrl || uploadData.url || uploadData.fileUrl;
-            if (!videoUrl) {
-                throw new Error('Video upload succeeded but no URL was returned by the server.');
-            }
-            videoUrl = ensureAbsoluteMediaUrl(videoUrl) || videoUrl;
-            
-            let thumbnailUrl = uploadData.thumbnailUrl || uploadData.thumbnail || uploadData.previewUrl;
-            thumbnailUrl = ensureAbsoluteMediaUrl(thumbnailUrl) || thumbnailUrl || videoUrl;
-            
+            console.log('Video uploaded successfully:', uploadResult);
+
             // Now create the DeSnap with the uploaded video URL
             const deSnapData = {
-                content: videoUrl,
-                thumbnail: thumbnailUrl || videoUrl,
-                duration: duration,
+                content: uploadResult.videoUrl || uploadResult.url || '',
+                thumbnail: uploadResult.thumbnailUrl || uploadResult.videoUrl || uploadResult.url || '',
+                duration: uploadResult.duration || duration,
                 visibility: settings.visibility,
                 userId: user?.id
             };
 
-            // Use apiFetch which automatically handles token from cookies
             // Ensure we have a valid token before making the request
             const token = getToken();
             if (!token) {
@@ -290,14 +247,26 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                 throw new Error(errorMessage);
             }
 
-            // Use safe JSON parsing to avoid "unexpected token" errors
-            let newDeSnap;
-            try {
-                const responseText = await response.text();
-                console.log('DeSnap creation response text:', responseText);
-                
-                if (!responseText.trim()) {
-                    throw new Error('Empty response from server');
+            // Parse response
+            const newDeSnap = await response.json();
+            console.log('DeSnap created successfully:', newDeSnap);
+
+            // Notify parent component
+            if (onDeSnapCreated) {
+                onDeSnapCreated(newDeSnap);
+            }
+
+            // Close modal and reset form
+            onClose();
+            
+        } catch (error) {
+            console.error('Error creating DeSnap:', error);
+            setError(error instanceof Error ? error.message : 'Failed to create DeSnap');
+        } finally {
+            setIsSubmitting(false);
+            setUploadProgress(0);
+        }
+    };
                 }
                 
                 // Check if response is HTML (error page)
@@ -670,12 +639,29 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                             >
                                 Cancel
                             </button>
+                            
+                            {/* Upload Progress */}
+                            {isSubmitting && uploadProgress > 0 && (
+                                <div className="mb-4">
+                                    <div className="flex justify-between text-sm text-gray-400 mb-2">
+                                        <span>Uploading video...</span>
+                                        <span>{uploadProgress}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-700 rounded-full h-2">
+                                        <div 
+                                            className="bg-gradient-to-r from-yellow-500 to-orange-600 h-2 rounded-full transition-all duration-300"
+                                            style={{ width: `${uploadProgress}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            
                             <button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting || !videoFile}
                                 className="px-8 py-3 sm:py-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl hover:from-yellow-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium touch-target"
                             >
-                                {isSubmitting ? "Creating..." : "Create DeSnap"}
+                                {isSubmitting ? (uploadProgress > 0 ? `Uploading ${uploadProgress}%` : "Creating...") : "Create DeSnap"}
                             </button>
                         </div>
                     </div>

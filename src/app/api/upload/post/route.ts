@@ -15,22 +15,22 @@ export async function POST(request: NextRequest) {
     // Get backend URL from environment
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://demedia-backend.fly.dev';
     
-    console.log('🔄 Uploading video to backend:', backendUrl);
+    console.log('🔄 Uploading post image to backend:', backendUrl);
 
     // Forward request to backend with proper authentication
-    const backendResponse = await fetch(`${backendUrl}/api/upload/video`, {
+    const backendResponse = await fetch(`${backendUrl}/api/upload/post`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
       body: formData,
-      // Add timeout to prevent hanging (longer for videos)
-      signal: AbortSignal.timeout(120000) // 120 second timeout for video uploads
+      // Add timeout to prevent hanging
+      signal: AbortSignal.timeout(60000) // 60 second timeout for file uploads
     });
 
     if (!backendResponse.ok) {
       const errorText = await backendResponse.text();
-      console.error('❌ Backend video upload failed:', backendResponse.status, errorText);
+      console.error('❌ Backend post upload failed:', backendResponse.status, errorText);
       
       // Return specific error messages
       if (backendResponse.status === 401) {
@@ -42,35 +42,35 @@ export async function POST(request: NextRequest) {
       
       if (backendResponse.status === 413) {
         return NextResponse.json({ 
-          error: 'Video file too large. Please choose a smaller video.',
-          details: 'Maximum file size is 100MB'
+          error: 'Image file too large. Please choose a smaller image.',
+          details: 'Maximum file size is 10MB'
         }, { status: 413 });
       }
 
       if (backendResponse.status === 400) {
         return NextResponse.json({ 
-          error: 'Invalid video file or request.',
+          error: 'Invalid image file or request.',
           details: errorText
         }, { status: 400 });
       }
       
       return NextResponse.json({ 
-        error: 'Video upload failed. Please try again.',
+        error: 'Image upload failed. Please try again.',
         details: errorText
       }, { status: backendResponse.status });
     }
 
     const data = await backendResponse.json();
-    console.log('✅ Video uploaded successfully:', data);
+    console.log('✅ Post image uploaded successfully:', data);
     
     return NextResponse.json(data);
     
   } catch (error) {
-    console.error('❌ Video upload error:', error);
+    console.error('❌ Post upload error:', error);
     
     if (error.name === 'AbortError') {
       return NextResponse.json({ 
-        error: 'Video upload timeout. Please try again with a smaller file.',
+        error: 'Upload timeout. Please try again with a smaller file.',
         details: 'The upload took too long to complete'
       }, { status: 408 });
     }

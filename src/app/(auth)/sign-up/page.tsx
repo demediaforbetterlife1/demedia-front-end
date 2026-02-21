@@ -11,6 +11,7 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { useI18n } from "@/contexts/I18nContext";
 import { Eye, EyeOff, Mail, Lock, User, UserCheck, Phone } from "lucide-react";
+import { normalizePhoneNumber, validatePhoneByCountry } from "@/utils/phoneNormalization";
 
 /* ---------------- BACKGROUND 3D ---------------- */
 function RotatingPlanet({
@@ -381,8 +382,12 @@ const validateForm = () => {
 
     if (!form.phoneNumber.trim()) {  
         newErrors.phoneNumber = t('auth.phoneRequired', 'Phone number is required');  
-    } else if (!/^\+?[1-9]\d{1,14}$/.test(form.phoneNumber)) {  
-        newErrors.phoneNumber = t('auth.phoneInvalid', 'Please enter a valid phone number');  
+    } else {
+        // Validate phone number based on country rules
+        const validation = validatePhoneByCountry(form.phoneNumber, selectedCountryCode);
+        if (!validation.valid) {
+            newErrors.phoneNumber = validation.error || t('auth.phoneInvalid', 'Please enter a valid phone number');
+        }
     }  
 
     if (!form.password) {  
@@ -410,9 +415,9 @@ const handleSubmit = async (e: React.FormEvent) => {
     setIsSubmitting(true);  
 
     try {  
-        // Combine country code with phone number  
-        const normalizedNumber = form.phoneNumber.replace(/^0+/, "");  
-        const fullPhoneNumber = selectedCountryCode + normalizedNumber;  
+        // Normalize and combine country code with phone number
+        // This removes leading zeros and formats correctly
+        const fullPhoneNumber = normalizePhoneNumber(form.phoneNumber, selectedCountryCode);  
         const formData = { ...form, phoneNumber: fullPhoneNumber };  
           
         console.log('Sign-up: Attempting registration with:', {   

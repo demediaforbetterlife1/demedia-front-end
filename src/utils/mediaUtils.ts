@@ -50,7 +50,7 @@ export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
   const cleanUrl = url!.trim();
 
   // IMPORTANT: Don't touch Base64 data URLs - they're already complete
-  if (cleanUrl.startsWith("data:image/")) {
+  if (cleanUrl.startsWith("data:image/") || cleanUrl.startsWith("data:video/")) {
     return cleanUrl;
   }
 
@@ -64,12 +64,17 @@ export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
     return cleanUrl;
   }
 
-  // Already absolute (http/https or data URL)
+  // Already absolute (http/https)
   if (!needsPrefix(cleanUrl)) {
     return cleanUrl;
   }
 
-  // If it's a local upload, return as is (just ensure it starts with /)
+  // If it's a backend upload path, make it absolute
+  if (cleanUrl.startsWith("/uploads/")) {
+    return `${BACKEND_URL}${cleanUrl}`;
+  }
+
+  // If it's a local upload (development fallback), keep it local
   if (
     cleanUrl.startsWith("/local-uploads") ||
     cleanUrl.startsWith("local-uploads")
@@ -78,6 +83,143 @@ export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
   }
 
   // If it's a local asset (images, icons, etc from public folder), keep it local
+  if (
+    cleanUrl.startsWith("/assets/") ||
+    cleanUrl.startsWith("/images/") ||
+    cleanUrl.startsWith("/icons/") ||
+    cleanUrl.startsWith("assets/") ||
+    cleanUrl.startsWith("images/") ||
+    cleanUrl.startsWith("icons/")
+  ) {
+    return cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
+  }
+
+  // If it looks like a backend path (starts with /), make it absolute
+  if (cleanUrl.startsWith("/")) {
+    return `${BACKEND_URL}${cleanUrl}`;
+  }
+
+  // If it's just a filename, assume it's a backend upload
+  return `${BACKEND_URL}/uploads/${cleanUrl}`;
+}
+
+/**
+ * Get the appropriate upload endpoint for different media types
+ */
+export function getUploadEndpoint(type: 'profile' | 'post' | 'video' | 'story'): string {
+  switch (type) {
+    case 'profile':
+      return '/api/upload/profile';
+    case 'post':
+      return '/api/upload/post';
+    case 'video':
+      return '/api/upload/video';
+    case 'story':
+      return '/api/upload/post'; // Stories use the same endpoint as posts
+    default:
+      return '/api/upload/post';
+  }
+}
+
+/**
+ * Validate file type and size before upload
+ */
+export function validateMediaFile(
+  file: File, 
+  type: 'image' | 'video',
+  maxSizeMB: number = 10
+): { valid: boolean; error?: string } {
+  // Check file type
+  if (type === 'image' && !file.type.startsWith('image/')) {
+    return { valid: false, error: 'Please select an image file' };
+  }
+  
+  if (type === 'video' && !file.type.startsWith('video/')) {
+    return { valid: false, error: 'Please select a video file' };
+  }
+
+  // Check file size
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+  if (file.size > maxSizeBytes) {
+    return { 
+      valid: false, 
+      error: `File too large. Maximum size is ${maxSizeMB}MB` 
+    };
+  }
+
+  // Check for supported formats
+  const supportedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  const supportedVideoTypes = ['video/mp4', 'video/webm', 'video/mov', 'video/avi'];
+
+  if (type === 'image' && !supportedImageTypes.includes(file.type)) {
+    return { 
+      valid: false, 
+      error: 'Unsupported image format. Please use JPG, PNG, GIF, or WebP' 
+    };
+  }
+
+  if (type === 'video' && !supportedVideoTypes.includes(file.type)) {
+    return { 
+      valid: false, 
+      error: 'Unsupported video format. Please use MP4, WebM, or MOV' 
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Create a thumbnail from a video file
+ */
+export function createVideoThumbnail(videoFile: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    video.onloadedmetadata = () => {
+      // Set canvas dimensions to video dimensions
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // Seek to 1 second or 10% of video duration, whichever is smaller
+      const seekTime = Math.min(1, video.duration * 0.1);
+      video.currentTime = seekTime;
+    };
+
+    video.onseeked = () => {
+      if (ctx) {
+        // Draw video frame to canvas
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert canvas to data URL
+        const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(thumbnail);
+      } else {
+        reject(new Error('Could not get canvas context'));
+      }
+    };
+
+    video.onerror = () => {
+      reject(new Error('Could not load video'));
+    };
+
+    // Create object URL and set as video source
+    const videoUrl = URL.createObjectURL(videoFile);
+    video.src = videoUrl;
+    video.load();
+  });
+}
+
+export default {
+  BACKEND_URL,
+  isUrlReachable,
+  isValidUrl,
+  ensureAbsoluteMediaUrl,
+  getUploadEndpoint,
+  validateMediaFile,
+  createVideoThumbnail,
+};
   if (
     cleanUrl.startsWith("/images/") ||
     cleanUrl.startsWith("/icons/") ||

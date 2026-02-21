@@ -1,11 +1,17 @@
-// Service Worker for Push Notifications
-const CACHE_NAME = 'demedia-cache-v1';
+// Service Worker for PWA and Push Notifications
+const CACHE_NAME = 'demedia-cache-v2';
+const RUNTIME_CACHE = 'demedia-runtime-v2';
+const IMAGE_CACHE = 'demedia-images-v2';
+
 const urlsToCache = [
   '/',
   '/home',
   '/sign-in',
   '/sign-up',
-  '/favicon.ico',
+  '/offline.html',
+  '/manifest.json',
+  '/assets/images/logo.png',
+  '/assets/images/logo1.png',
 ];
 
 // Install event
@@ -42,14 +48,100 @@ self.addEventListener('install', (event) => {
   })());
 });
 
-// Fetch event
+// Activate event - Clean up old caches
+self.addEventListener('activate', (event) => {
+  const cacheWhitelist = [CACHE_NAME, RUNTIME_CACHE, IMAGE_CACHE];
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (!cacheWhitelist.includes(cacheName)) {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
+
+// Fetch event with network-first strategy for API, cache-first for assets
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request);
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip cross-origin requests
+  if (url.origin !== location.origin) {
+    return;
+  }
+
+  // API requests - Network first
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          return response;
+        })
+        .catch(() => {
+          return new Response(JSON.stringify({ error: 'Offline' }), {
+            headers: { 'Content-Type': 'application/json' },
+            status: 503,
+          });
+        })
+    );
+    return;
+  }
+
+  // Navigation requests - Network first, fallback to offline page
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .catch(() => {
+          return caches.match('/offline.html') || caches.match('/');
+        })
+    );
+    return;
+  }
+
+  // Images - Cache first
+  if (request.destination === 'image') {
+    event.respondWith(
+      caches.open(IMAGE_CACHE).then((cache) => {
+        return cache.match(request).then((response) => {
+          return (
+            response ||
+            fetch(request).then((fetchResponse) => {
+              cache.put(request, fetchResponse.clone());
+              return fetchResponse;
+            })
+          );
+        });
       })
+    );
+    return;
+  }
+
+  // Other requests - Cache first, fallback to network
+  event.respondWith(
+    caches.match(request).then((response) => {
+      if (response) {
+        return response;
+      }
+
+      return fetch(request).then((fetchResponse) => {
+        // Don't cache if not a success response
+        if (!fetchResponse || fetchResponse.status !== 200 || fetchResponse.type === 'error') {
+          return fetchResponse;
+        }
+
+        const responseToCache = fetchResponse.clone();
+        caches.open(RUNTIME_CACHE).then((cache) => {
+          cache.put(request, responseToCache);
+        });
+
+        return fetchResponse;
+      });
+    })
   );
 });
 

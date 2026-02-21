@@ -11,6 +11,7 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { useI18n } from "@/contexts/I18nContext";
 import { Eye, EyeOff, Phone, Lock } from "lucide-react";
+import ForgotPasswordModal from "@/components/ForgotPasswordModal";
 
 /* ---------------- BACKGROUND 3D ---------------- */
 function RotatingPlanet({
@@ -156,6 +157,7 @@ export default function SignIn() {
     const [remember, setRemember] = useState<boolean>(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
     const { t } = useI18n();
     const [error, setError] = useState("");
     const [loginSuccess, setLoginSuccess] = useState(false);
@@ -303,14 +305,23 @@ export default function SignIn() {
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
-                            <label className="flex items-center space-x-2 text-cyan-100 text-sm">
-                                <input
-                                    type="checkbox"
-                                    checked={remember}
-                                    onChange={(e) => setRemember(e.target.checked)}
-                                />
-                                <span>{t('auth.rememberMe', 'Remember me')}</span>
-                            </label>
+                            <div className="flex items-center justify-between">
+                                <label className="flex items-center space-x-2 text-cyan-100 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        checked={remember}
+                                        onChange={(e) => setRemember(e.target.checked)}
+                                    />
+                                    <span>{t('auth.rememberMe', 'Remember me')}</span>
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowForgotPassword(true)}
+                                    className="text-cyan-300 hover:text-cyan-200 text-sm transition-colors"
+                                >
+                                    {t('auth.forgotPassword', 'Forgot password?')}
+                                </button>
+                            </div>
 
                             {error && (
                                 <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
@@ -366,6 +377,12 @@ export default function SignIn() {
                     animation: spin-slow 8s linear infinite;
                 }
             `}</style>
+
+            {/* Forgot Password Modal */}
+            <ForgotPasswordModal
+                isOpen={showForgotPassword}
+                onClose={() => setShowForgotPassword(false)}
+            />
         </div>
     );
 }
