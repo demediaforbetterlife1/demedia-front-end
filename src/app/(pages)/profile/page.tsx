@@ -1744,7 +1744,7 @@ const UserDeSnaps = ({
                             </div>
                         )}
 
-                        {/* DeSnap Video/Thumbnail fallback */}
+                        {/* DeSnap Video/ Thumbnail fallback */}
                         {!deSnap.content && deSnap.thumbnail && (
                             <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
                                 <img
