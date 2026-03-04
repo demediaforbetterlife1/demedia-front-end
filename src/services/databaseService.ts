@@ -5,7 +5,7 @@ class DatabaseService {
     private token: string | null;
 
     constructor() {
-        this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://demedia-backend.fly.dev';
+        this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://demedia-backend-production.up.railway.app';
         this.token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         // userId should come from AuthContext, not localStorage
     }

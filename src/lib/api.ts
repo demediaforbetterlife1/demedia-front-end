@@ -1,7 +1,7 @@
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
-const API_BASE = ""; // same-origin; Next.js rewrites /api to backend in production
-const DIRECT_API_BASE = process.env.BACKEND_URL || "https://demedia-backend.fly.dev"; // direct backend fallback
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://demedia-backend-production.up.railway.app"; // Use backend URL directly
+const DIRECT_API_BASE = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "https://demedia-backend-production.up.railway.app"; // direct backend fallback
 
 /* --------------------------- Utility helpers ----------------------------- */
 

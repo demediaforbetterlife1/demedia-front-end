@@ -176,16 +176,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Get token from either storage method
       const token = getCookie("token") || getLocalStorageToken();
       
+      // Get backend URL from environment variable
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://demedia-backend-production.up.railway.app';
+      
+      // Build full URL
+      const fullUrl = url.startsWith('http') ? url : `${backendUrl}${url}`;
+      
+      console.log('[Auth] API call to:', fullUrl);
+      
       const headers: Record<string, string> = {
-  "Content-Type": "application/json",
-};
+        "Content-Type": "application/json",
+      };
 
-      // Add token to headers for backup (in case cookies don't work
+      // Add token to headers for backup (in case cookies don't work)
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(url, {
+      const response = await fetch(fullUrl, {
         ...options,
         headers,
         credentials: 'include', // Still try cookies first

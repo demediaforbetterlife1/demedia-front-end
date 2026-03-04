@@ -1,3 +1,5 @@
+import withPWA from 'next-pwa';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -17,11 +19,16 @@ const nextConfig = {
         hostname: "demedia-backend.fly.dev",
         pathname: "/uploads/**",
       },
+      {
+        protocol: "https",
+        hostname: "*.railway.app",
+        pathname: "/uploads/**",
+      },
     ],
   },
 
   async rewrites() {
-    const target = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
+    const target = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
     return [
       {
         source: "/socket.io/:path*",
@@ -33,6 +40,34 @@ const nextConfig = {
       },
     ];
   },
+
+  // PWA Configuration
+  experimental: {
+    webVitalsAttribution: ['CLS', 'LCP']
+  },
 };
 
-export default nextConfig;
+const pwaConfig = withPWA({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development',
+  runtimeCaching: [
+    {
+      urlPattern: /^https?.*/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'offlineCache',
+        expiration: {
+          maxEntries: 200,
+          maxAgeSeconds: 24 * 60 * 60, // 24 hours
+        },
+      },
+    },
+  ],
+  buildExcludes: [/middleware-manifest\.json$/],
+  scope: '/',
+  sw: 'sw.js',
+});
+
+export default pwaConfig(nextConfig);

@@ -1,0 +1,21 @@
+{
+  "name": "DeMedia",
+  "short_name": "DeMedia",
+  "description": "Social Media Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#00bcd4",
+  "icons": [
+    {
+      "src": "/assets/images/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/images/logo1.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
