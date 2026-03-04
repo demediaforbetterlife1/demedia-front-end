@@ -1,19 +1,12 @@
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "https://demedia-backend.fly.dev"; // Use backend URL directly
-const DIRECT_API_BASE =
-  process.env.BACKEND_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://demedia-backend.fly.dev"; // direct backend fallback
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://demedia-backend-production.up.railway.app"; // Use backend URL directly
+const DIRECT_API_BASE = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "https://demedia-backend-production.up.railway.app"; // direct backend fallback
 
 /* --------------------------- Utility helpers ----------------------------- */
 
 /** Try connecting directly to the backend domain (fallback) */
-async function tryDirectConnection(
-  path: string,
-  options: RequestInit = {}
-): Promise<Response> {
+async function tryDirectConnection(path: string, options: RequestInit = {}): Promise<Response> {
   const directUrl = `${DIRECT_API_BASE}${path}`;
   try {
     const controller = new AbortController();
@@ -31,25 +24,17 @@ async function tryDirectConnection(
 
     // Graceful fallback for 500
     if (response.status === 500) {
-      return new Response(JSON.stringify([]), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } });
     }
     return response;
   } catch (error) {
     console.error("[api] tryDirectConnection failed:", error);
-    return new Response(JSON.stringify([]), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } });
   }
 }
 
 /** Safe JSON reader that falls back to text/status message */
-export async function readJsonSafe<T = unknown>(
-  res: Response
-): Promise<T | { error?: string }> {
+export async function readJsonSafe<T = unknown>(res: Response): Promise<T | { error?: string }> {
   try {
     return (await res.json()) as T;
   } catch {
@@ -89,7 +74,7 @@ export function getToken(): string | null {
   // First try cookies (primary storage)
   const cookieToken = getCookie("token");
   if (cookieToken) {
-    console.log("🔑 Token retrieved from cookies");
+    console.log('🔑 Token retrieved from cookies');
     return cookieToken;
   }
 
@@ -97,19 +82,17 @@ export function getToken(): string | null {
   if (typeof window !== "undefined") {
     const localToken = localStorage.getItem("token");
     if (localToken) {
-      console.log("🔑 Token retrieved from localStorage (fallback)");
+      console.log('🔑 Token retrieved from localStorage (fallback)');
       return localToken;
     }
   }
 
-  console.warn("⚠️ No token found in cookies or localStorage");
+  console.warn('⚠️ No token found in cookies or localStorage');
   return null;
 }
 
 /** Return headers including Authorization if token exists */
-export function getAuthHeaders(
-  userId?: string | number
-): Record<string, string> {
+export function getAuthHeaders(userId?: string | number): Record<string, string> {
   const token = getToken();
   const base: Record<string, string> = {
     "Content-Type": "application/json",
@@ -133,11 +116,7 @@ export function getAuthHeaders(
 /* ---------------------- Robust fetch / retry logic ----------------------- */
 /* ------------------------------------------------------------------------- */
 
-export async function apiFetch(
-  path: string,
-  options: RequestInit = {},
-  userId?: string | number
-): Promise<Response> {
+export async function apiFetch(path: string, options: RequestInit = {}, userId?: string | number): Promise<Response> {
   // Get token and build headers
   const headers = getAuthHeaders(userId);
 
@@ -157,18 +136,12 @@ export async function apiFetch(
   const method = ((options.method || "GET") as string).toUpperCase();
   if (method === "GET") {
     const cb = Date.now();
-    url = `${API_BASE}${path}${
-      path.includes("?") ? "&" : "?"
-    }cb=${cb}&v=client-1`;
+    url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}cb=${cb}&v=client-1`;
   }
 
   const isPostsEndpoint = path.includes("/posts");
   const isAuthEndpoint = path.includes("/auth");
-  const timeouts = isPostsEndpoint
-    ? [5000, 8000, 10000]
-    : isAuthEndpoint
-    ? [20000]
-    : [15000, 25000, 35000];
+  const timeouts = isPostsEndpoint ? [5000, 8000, 10000] : isAuthEndpoint ? [20000] : [15000, 25000, 35000];
   const maxRetries = timeouts.length - 1;
 
   let lastError: any = null;
@@ -207,21 +180,14 @@ export async function apiFetch(
       // For auth endpoints: soft timeout using Promise.race to return 504 synthetic response
       const res: Response = isAuthEndpoint
         ? await Promise.race<Promise<Response>>([
-            fetch(url, fetchOptions),
-            new Promise<Response>((resolve) =>
-              setTimeout(() => {
-                const body = JSON.stringify({
-                  error: "Auth request timed out",
-                });
-                resolve(
-                  new Response(body, {
-                    status: 504,
-                    headers: { "Content-Type": "application/json" },
-                  })
-                );
-              }, timeout || 20000)
-            ),
-          ])
+          fetch(url, fetchOptions),
+          new Promise<Response>((resolve) =>
+            setTimeout(() => {
+              const body = JSON.stringify({ error: "Auth request timed out" });
+              resolve(new Response(body, { status: 504, headers: { "Content-Type": "application/json" } }));
+            }, timeout || 20000)
+          ),
+        ])
         : await fetch(url, fetchOptions);
 
       // Handle 401 - don't logout immediately
@@ -233,10 +199,7 @@ export async function apiFetch(
       // if auth synthetic timeout (504), try direct backend
       if (isAuthEndpoint && res.status === 504) {
         try {
-          const directRes = await tryDirectConnection(path, {
-            ...options,
-            headers,
-          });
+          const directRes = await tryDirectConnection(path, { ...options, headers });
           return directRes;
         } catch (e) {
           throw new Error("Auth request timed out");
@@ -248,10 +211,7 @@ export async function apiFetch(
       lastError = err;
       const errName = err?.name || "";
       const msg = (err?.message || "").toString();
-      const isNetworkError =
-        msg.includes("Failed to fetch") ||
-        msg.includes("NetworkError") ||
-        msg.includes("timeout");
+      const isNetworkError = msg.includes("Failed to fetch") || msg.includes("NetworkError") || msg.includes("timeout");
 
       // Retry policy
       if (errName === "AbortError") {
@@ -261,7 +221,7 @@ export async function apiFetch(
         } else if (isAuthEndpoint) {
           try {
             return await tryDirectConnection(path, options);
-          } catch {}
+          } catch { }
         }
       }
 
@@ -271,10 +231,7 @@ export async function apiFetch(
       }
 
       // final fallback: try direct backend
-      if (
-        attempt === maxRetries &&
-        (isNetworkError || errName === "AbortError")
-      ) {
+      if (attempt === maxRetries && (isNetworkError || errName === "AbortError")) {
         try {
           return await tryDirectConnection(path, options);
         } catch (directErr) {
@@ -322,17 +279,13 @@ export interface AuthResponse {
 }
 
 /* ----------------------------- Generic request -------------------------- */
-async function requestJson<T = any>(
-  path: string,
-  opts: RequestInit = {}
-): Promise<T> {
+async function requestJson<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   const res = await apiFetch(path, opts);
   const parsed = await readJsonSafe<T | { error?: string }>(res);
 
   // Don't throw for 401 - let the caller handle it
   if (!res.ok && res.status !== 401) {
-    const errMsg =
-      (parsed as any)?.error || (parsed as any)?.message || res.statusText;
+    const errMsg = (parsed as any)?.error || (parsed as any)?.message || res.statusText;
     throw new Error(`Request failed ${res.status} - ${errMsg}`);
   }
 
@@ -356,10 +309,7 @@ export async function signUp(payload: {
 }
 
 /** Sign in (login) */
-export async function signIn(payload: {
-  phoneNumber: string;
-  password: string;
-}): Promise<AuthResponse> {
+export async function signIn(payload: { phoneNumber: string; password: string }): Promise<AuthResponse> {
   const res = await requestJson<AuthResponse>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -396,12 +346,12 @@ export async function fetchCurrentUser(): Promise<User | null> {
 
     const body = await readJsonSafe<{ user: User | null }>(res);
 
-    if (body && "user" in body && body.user) {
+    if (body && 'user' in body && body.user) {
       return body.user;
     }
 
     // Check if it's an error response
-    if (body && "error" in body) {
+    if (body && 'error' in body) {
       console.warn("[api] fetchCurrentUser: Error in response:", body.error);
     }
 
@@ -415,42 +365,28 @@ export async function fetchCurrentUser(): Promise<User | null> {
 
 /** Verify phone token (if you need it later) */
 export async function verifyPhone(token: string): Promise<boolean> {
-  const res = await requestJson<{ success: boolean; message?: string }>(
-    "/api/auth/verify-phone",
-    {
-      method: "POST",
-      body: JSON.stringify({ token }),
-    }
-  );
+  const res = await requestJson<{ success: boolean; message?: string }>("/api/auth/verify-phone", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
   return !!res.success;
 }
 
 /** Resend phone verification code */
-export async function resendPhoneVerification(
-  phoneNumber: string
-): Promise<boolean> {
-  const res = await requestJson<{ success: boolean; message?: string }>(
-    "/api/auth/resend-verification",
-    {
-      method: "POST",
-      body: JSON.stringify({ phoneNumber }),
-    }
-  );
+export async function resendPhoneVerification(phoneNumber: string): Promise<boolean> {
+  const res = await requestJson<{ success: boolean; message?: string }>("/api/auth/resend-verification", {
+    method: "POST",
+    body: JSON.stringify({ phoneNumber }),
+  });
   return !!res.success;
 }
 
 /** Send verification code (sms/whatsapp) */
-export async function sendVerificationCode(
-  phoneNumber: string,
-  method: "whatsapp" | "sms"
-): Promise<boolean> {
-  const res = await requestJson<{ success: boolean }>(
-    "/api/auth/send-verification",
-    {
-      method: "POST",
-      body: JSON.stringify({ phoneNumber, method }),
-    }
-  );
+export async function sendVerificationCode(phoneNumber: string, method: "whatsapp" | "sms"): Promise<boolean> {
+  const res = await requestJson<{ success: boolean }>("/api/auth/send-verification", {
+    method: "POST",
+    body: JSON.stringify({ phoneNumber, method }),
+  });
   return !!res.success;
 }
 
@@ -470,26 +406,17 @@ export function logoutClient(): void {
 export async function getUserProfile(userId: string | number) {
   try {
     // Ensure userId is valid
-    if (!userId || userId === "undefined" || userId === "null") {
+    if (!userId || userId === 'undefined' || userId === 'null') {
       console.error("[api] getUserProfile: Invalid userId provided:", userId);
       return null;
     }
 
-    console.log(
-      "[api] getUserProfile: Fetching profile for userId:",
-      userId,
-      "type:",
-      typeof userId
-    );
+    console.log("[api] getUserProfile: Fetching profile for userId:", userId, "type:", typeof userId);
 
-    const res = await apiFetch(
-      `/api/users/${userId}/profile`,
-      {
-        method: "GET",
-        cache: "no-store",
-      },
-      userId
-    );
+    const res = await apiFetch(`/api/users/${userId}/profile`, {
+      method: "GET",
+      cache: "no-store",
+    }, userId);
 
     console.log("[api] getUserProfile: Response status:", res.status);
 
@@ -548,17 +475,10 @@ export async function updateUserProfile(updates: Partial<User>) {
 /* ----------------------------- Follow endpoints ------------------------- */
 
 /** Follow a user */
-export async function followUser(
-  targetUserId: string | number,
-  currentUserId?: string | number
-) {
-  const res = await apiFetch(
-    `/api/user/${targetUserId}/follow`,
-    {
-      method: "POST",
-    },
-    currentUserId
-  );
+export async function followUser(targetUserId: string | number, currentUserId?: string | number) {
+  const res = await apiFetch(`/api/user/${targetUserId}/follow`, {
+    method: "POST",
+  }, currentUserId);
 
   if (!res.ok) {
     const errorText = await res.text();
@@ -570,17 +490,10 @@ export async function followUser(
 }
 
 /** Unfollow a user */
-export async function unfollowUser(
-  targetUserId: string | number,
-  currentUserId?: string | number
-) {
-  const res = await apiFetch(
-    `/api/user/${targetUserId}/unfollow`,
-    {
-      method: "POST",
-    },
-    currentUserId
-  );
+export async function unfollowUser(targetUserId: string | number, currentUserId?: string | number) {
+  const res = await apiFetch(`/api/user/${targetUserId}/unfollow`, {
+    method: "POST",
+  }, currentUserId);
 
   if (!res.ok) {
     const errorText = await res.text();
@@ -593,15 +506,8 @@ export async function unfollowUser(
 
 /* ----------------------------- Posts endpoints -------------------------- */
 
-export async function getPosts({
-  page = 1,
-  limit = 20,
-  q = "",
-}: { page?: number; limit?: number; q?: string } = {}) {
-  const params = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-  });
+export async function getPosts({ page = 1, limit = 20, q = "" }: { page?: number; limit?: number; q?: string } = {}) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (q) params.set("q", q);
   const res = await apiFetch(`/api/posts?${params.toString()}`, {
     method: "GET",
@@ -682,14 +588,8 @@ export async function postComment(postId: string | number, content: string) {
 
 /* ------------------------ Notifications endpoints ---------------------- */
 
-export async function getNotifications({
-  page = 1,
-  limit = 20,
-}: { page?: number; limit?: number } = {}) {
-  const params = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-  });
+export async function getNotifications({ page = 1, limit = 20 }: { page?: number; limit?: number } = {}) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   const res = await apiFetch(`/api/notifications?${params.toString()}`, {
     method: "GET",
     cache: "no-store",
@@ -726,10 +626,7 @@ export async function markNotificationRead(notificationId: string | number) {
 
 /* ---------------------- Misc / Utility endpoints ----------------------- */
 
-export async function enhancedSearch(
-  q: string,
-  opts: { limit?: number; type?: string } = {}
-) {
+export async function enhancedSearch(q: string, opts: { limit?: number; type?: string } = {}) {
   const params = new URLSearchParams({ q, limit: String(opts.limit || 10) });
   if (opts.type) params.set("type", opts.type);
   const res = await apiFetch(`/api/search?${params.toString()}`, {

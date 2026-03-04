@@ -17,7 +17,7 @@ export interface User {
   id: string;
   name?: string;
   username?: string;
-  email?: string;           
+  email?: string;
   phoneNumber?: string;
   profilePicture?: string | null;
   coverPhoto?: string | null;
@@ -62,7 +62,10 @@ export interface AuthContextType {
   logout: () => void;
   refreshUser: () => Promise<void>;
   completeSetup: () => Promise<AuthResult>;
-  updateUserProfile: (userData: { dob?: string; interests?: string[] }) => Promise<AuthResult>;
+  updateUserProfile: (userData: {
+    dob?: string;
+    interests?: string[];
+  }) => Promise<AuthResult>;
   updateUser: (newData: Partial<User>) => void;
 }
 
@@ -94,11 +97,11 @@ const getCookie = (name: string): string | null => {
 
 const setCookie = (name: string, value: string, days: number = 365) => {
   if (typeof window === "undefined") return;
-  
+
   const date = new Date();
-  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+  date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
   const expires = `expires=${date.toUTCString()}`;
-  
+
   document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Lax`;
 };
 
@@ -128,10 +131,10 @@ const removeLocalStorageToken = () => {
 // Migration helper: move old "auth_token" to new "token" key
 const migrateTokenStorage = () => {
   if (typeof window === "undefined") return;
-  
+
   const oldToken = localStorage.getItem("auth_token");
   const newToken = localStorage.getItem("token");
-  
+
   // If we have old token but no new token, migrate it
   if (oldToken && !newToken) {
     console.log("[Auth] Migrating token from old storage key");
@@ -158,11 +161,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Debug authentication state changes
   useEffect(() => {
-    console.log('[Auth] State change:', {
-      user: user ? { id: user.id, isSetupComplete: user.isSetupComplete } : null,
+    console.log("[Auth] State change:", {
+      user: user
+        ? { id: user.id, isSetupComplete: user.isSetupComplete }
+        : null,
       isLoading,
       initComplete,
-      isAuthenticated
+      isAuthenticated,
     });
   }, [user, isLoading, initComplete, isAuthenticated]);
 
@@ -171,38 +176,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Enhanced fetch with dual token support
-  const apiFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
+  const apiFetch = async (
+    url: string,
+    options: RequestInit = {}
+  ): Promise<Response> => {
     try {
       // Get token from either storage method
       const token = getCookie("token") || getLocalStorageToken();
-      
+
       // Get backend URL from environment variable
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://demedia-backend.fly.dev';
-      
+      const backendUrl =
+        process.env.NEXT_PUBLIC_API_URL ||
+        "https://demedia-backend-production.up.railway.app";
+
       // Build full URL
-      const fullUrl = url.startsWith('http') ? url : `${backendUrl}${url}`;
-      
-      console.log('[Auth] API call to:', fullUrl);
-      
+      const fullUrl = url.startsWith("http") ? url : `${backendUrl}${url}`;
+
+      console.log("[Auth] API call to:", fullUrl);
+
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
 
       // Add token to headers for backup (in case cookies don't work)
       if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        headers["Authorization"] = `Bearer ${token}`;
       }
 
       const response = await fetch(fullUrl, {
         ...options,
         headers,
-        credentials: 'include', // Still try cookies first
+        credentials: "include", // Still try cookies first
       });
 
       return response;
     } catch (error: any) {
       console.error(`[Auth] API fetch error for ${url}:`, error);
-      throw new Error('Network error. Please check your connection.');
+      throw new Error("Network error. Please check your connection.");
     }
   };
 
@@ -210,17 +220,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const fetchUser = useCallback(async (): Promise<boolean> => {
     try {
       console.log("[Auth] Fetching user...");
-      
+
       // Check both storage methods
       const cookieToken = getCookie("token");
       const storageToken = getLocalStorageToken();
-      console.log("[Auth] Token - Cookie:", !!cookieToken, "LocalStorage:", !!storageToken);
+      console.log(
+        "[Auth] Token - Cookie:",
+        !!cookieToken,
+        "LocalStorage:",
+        !!storageToken
+      );
 
       const res = await apiFetch("/api/auth/me", {
         method: "GET",
       });
 
-      console.log("[Auth] User fetch status:", res.status);  
+      console.log("[Auth] User fetch status:", res.status);
 
       if (res.status === 401) {
         console.warn("[Auth] Token invalid, clearing all storage");
@@ -270,12 +285,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         // Migrate old token storage if needed
         migrateTokenStorage();
-        
+
         // Check if we have any token stored
         const hasCookieToken = !!getCookie("token");
         const hasStorageToken = !!getLocalStorageToken();
-        
-        console.log("[Auth] Token check - Cookie:", hasCookieToken, "LocalStorage:", hasStorageToken);
+
+        console.log(
+          "[Auth] Token check - Cookie:",
+          hasCookieToken,
+          "LocalStorage:",
+          hasStorageToken
+        );
 
         // If we have localStorage token but no cookie, restore the cookie
         if (hasStorageToken && !hasCookieToken) {
@@ -293,14 +313,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (userFetched) {
             console.log("[Auth] User data fetched successfully");
           } else {
-            console.log("[Auth] Failed to fetch user data - token may be invalid");
+            console.log(
+              "[Auth] Failed to fetch user data - token may be invalid"
+            );
             // Clear invalid tokens
             deleteCookie("token");
             removeLocalStorageToken();
             setUser(null);
           }
         } else {
-          console.log("[Auth] No authentication token found - user is not logged in");
+          console.log(
+            "[Auth] No authentication token found - user is not logged in"
+          );
           setUser(null);
         }
       } catch (err) {
@@ -312,7 +336,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } finally {
         setIsLoading(false);
         setInitComplete(true);
-        console.log("[Auth] Authentication initialization complete. User state:", user ? `authenticated (${user.id})` : "not authenticated");
+        console.log(
+          "[Auth] Authentication initialization complete. User state:",
+          user ? `authenticated (${user.id})` : "not authenticated"
+        );
       }
     };
 
@@ -346,11 +373,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (res.status === 500) {
             msg = "Server error occurred. Please try again later.";
           } else if (res.status === 504) {
-            msg = "Backend service is temporarily unavailable. Please try again in a few minutes.";
+            msg =
+              "Backend service is temporarily unavailable. Please try again in a few minutes.";
           } else if (res.status === 502) {
-            msg = "Unable to connect to backend service. Please check your internet connection and try again.";
+            msg =
+              "Unable to connect to backend service. Please check your internet connection and try again.";
           } else if (res.status === 404) {
-            msg = "Login service is currently unavailable. Please contact support.";
+            msg =
+              "Login service is currently unavailable. Please contact support.";
           }
           return { success: false, message: msg };
         }
@@ -358,19 +388,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       if (!res.ok) {
-        let msg = data?.error || data?.message || `Login failed (${res.status})`;
-        
+        let msg =
+          data?.error || data?.message || `Login failed (${res.status})`;
+
         // Provide better error messages for common backend issues
         if (res.status === 500) {
-          msg = data?.error || data?.message || "Server error occurred. Please try again later.";
+          msg =
+            data?.error ||
+            data?.message ||
+            "Server error occurred. Please try again later.";
         } else if (res.status === 504) {
-          msg = "Backend service is temporarily unavailable. Please try again in a few minutes.";
+          msg =
+            "Backend service is temporarily unavailable. Please try again in a few minutes.";
         } else if (res.status === 502) {
-          msg = "Unable to connect to backend service. Please check your internet connection and try again.";
+          msg =
+            "Unable to connect to backend service. Please check your internet connection and try again.";
         } else if (res.status === 404) {
-          msg = "Login service is currently unavailable. Please contact support.";
+          msg =
+            "Login service is currently unavailable. Please contact support.";
         }
-        
+
         console.error("[Auth] login failed:", msg, "Status:", res.status);
         return { success: false, message: msg };
       }
@@ -388,17 +425,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(data.user);
         return {
           success: true,
-          user: data.user
+          user: data.user,
         };
       }
 
       return {
         success: false,
-        message: "Login succeeded but failed to load user"
+        message: "Login succeeded but failed to load user",
       };
     } catch (err: any) {
       console.error("[Auth] login error:", err);
-      return { success: false, message: err?.message || "Login failed. Please try again." };
+      return {
+        success: false,
+        message: err?.message || "Login failed. Please try again.",
+      };
     } finally {
       setIsLoading(false);
     }
@@ -421,16 +461,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (!res.ok) {
         let msg = data?.error || `Registration failed (${res.status})`;
-        
+
         // Provide better error messages for common backend issues
         if (res.status === 504) {
-          msg = "Backend service is temporarily unavailable. Please try again in a few minutes.";
+          msg =
+            "Backend service is temporarily unavailable. Please try again in a few minutes.";
         } else if (res.status === 502) {
-          msg = "Unable to connect to backend service. Please check your internet connection and try again.";
+          msg =
+            "Unable to connect to backend service. Please check your internet connection and try again.";
         } else if (res.status === 404) {
-          msg = "Registration service is currently unavailable. Please contact support.";
+          msg =
+            "Registration service is currently unavailable. Please contact support.";
         }
-        
+
         console.error("[Auth] register failed:", msg);
         return { success: false, message: msg };
       }
@@ -444,17 +487,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Use user data from response
       if (data.user) {
-        console.log("[Auth] Registration successful, setting user from response");
+        console.log(
+          "[Auth] Registration successful, setting user from response"
+        );
         setUser(data.user);
         return {
           success: true,
-          user: data.user
+          user: data.user,
         };
       }
 
       return {
         success: false,
-        message: "Registration succeeded but failed to load user"
+        message: "Registration succeeded but failed to load user",
       };
     } catch (err: any) {
       console.error("[Auth] register exception:", err);
@@ -464,7 +509,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const updateUserProfile = async (userData: { dob?: string; interests?: string[] }): Promise<AuthResult> => {
+  const updateUserProfile = async (userData: {
+    dob?: string;
+    interests?: string[];
+  }): Promise<AuthResult> => {
     setIsLoading(true);
     try {
       console.log("[Auth] Updating user profile:", userData);
@@ -487,14 +535,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(data.user);
         return {
           success: true,
-          user: data.user
+          user: data.user,
         };
       }
 
       return { success: false, message: "Profile update failed" };
     } catch (err: any) {
       console.error("[Auth] updateUserProfile error:", err);
-      return { success: false, message: err?.message || "Profile update failed" };
+      return {
+        success: false,
+        message: err?.message || "Profile update failed",
+      };
     } finally {
       setIsLoading(false);
     }
@@ -523,7 +574,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(data.user);
         return {
           success: true,
-          user: data.user
+          user: data.user,
         };
       }
 
@@ -532,7 +583,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return { success: true };
     } catch (err: any) {
       console.error("[Auth] completeSetup error:", err);
-      return { success: false, message: err?.message || "Setup completion failed" };
+      return {
+        success: false,
+        message: err?.message || "Setup completion failed",
+      };
     } finally {
       setIsLoading(false);
     }
@@ -543,7 +597,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Clear all storage methods
       deleteCookie("token");
       removeLocalStorageToken();
-      
+
       // Clear client-side state
       setUser(null);
       setInitComplete(true);
@@ -551,7 +605,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Call backend logout endpoint
       apiFetch("/api/auth/logout", {
         method: "POST",
-      }).catch(err => console.error("[Auth] Backend logout error:", err));
+      }).catch((err) => console.error("[Auth] Backend logout error:", err));
 
       // Dispatch logout event
       if (typeof window !== "undefined") {
