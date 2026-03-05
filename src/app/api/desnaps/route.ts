@@ -1,14 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-
-
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '200mb',
-    },
-  },
-};
+// Route segment config for Next.js 13+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 /**
  * DeSnaps API - Proxies requests to backend

@@ -1,6 +1,7 @@
-
 "use client";
-reateContext, useContext, useEffect, useMemo, useState } from "react";
+
+
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 type Translations = Record<string, string>;
 

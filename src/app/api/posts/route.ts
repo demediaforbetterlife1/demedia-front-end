@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: "50mb", // لو الصور أو الفيديوهات كبيرة
-    },
-  },
-};
+// Route segment config for Next.js 13+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 // ✅ جلب كل البوستات
 export async function GET(request: NextRequest) {
