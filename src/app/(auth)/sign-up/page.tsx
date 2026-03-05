@@ -136,6 +136,7 @@ email: "",
 password: "",
 });
 const [selectedCountryCode, setSelectedCountryCode] = useState("+20");
+const [contactMethod, setContactMethod] = useState<'email' | 'phone'>('email'); // Default to email
 
 // Country codes data - Comprehensive list with Philippines and many more countries  
 const countryCodes = [  
@@ -380,19 +381,19 @@ const validateForm = () => {
         newErrors.username = t('auth.usernameInvalid', 'Username can only contain lowercase letters, numbers, and underscores');  
     }  
 
-    // At least one contact method (email or phone) is required
-    if (!form.phoneNumber.trim() && !form.email.trim()) {  
-        newErrors.general = t('auth.contactRequired', 'Please provide either email or phone number');  
-    }
-
-    // Validate phone if provided
-    if (form.phoneNumber.trim() && !/^[0-9+\s\-\(\)]+$/.test(form.phoneNumber)) {  
-        newErrors.phoneNumber = t('auth.phoneInvalid', 'Please enter a valid phone number');  
-    }
-
-    // Validate email if provided
-    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {  
-        newErrors.email = t('auth.emailInvalid', 'Please enter a valid email address');  
+    // Validate based on selected contact method
+    if (contactMethod === 'email') {
+        if (!form.email.trim()) {  
+            newErrors.email = t('auth.emailRequired', 'Email is required');  
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {  
+            newErrors.email = t('auth.emailInvalid', 'Please enter a valid email address');  
+        }
+    } else {
+        if (!form.phoneNumber.trim()) {  
+            newErrors.phoneNumber = t('auth.phoneRequired', 'Phone number is required');  
+        } else if (!/^[0-9+\s\-\(\)]+$/.test(form.phoneNumber)) {  
+            newErrors.phoneNumber = t('auth.phoneInvalid', 'Please enter a valid phone number');  
+        }
     }
 
     if (!form.password) {  
@@ -427,20 +428,25 @@ const handleSubmit = async (e: React.FormEvent) => {
             password: form.password
         };
 
-        // Add phone number if provided
-        if (form.phoneNumber.trim()) {
+        // Add contact method based on selection
+        if (contactMethod === 'email') {
+            formData.email = form.email.trim().toLowerCase();
+            // WORKAROUND: Generate dummy phone for database constraint
+            // Remove this after running: ALTER TABLE "User" ALTER COLUMN "phoneNumber" DROP NOT NULL;
+            formData.phoneNumber = `+999${Date.now().toString().slice(-9)}`; // Dummy unique phone
+        } else {
             const normalizedNumber = form.phoneNumber.replace(/^0+/, "");  
             formData.phoneNumber = selectedCountryCode + normalizedNumber;
-        }
-
-        // Add email if provided
-        if (form.email.trim()) {
-            formData.email = form.email.trim().toLowerCase();
+            // Email is optional
+            if (form.email.trim()) {
+                formData.email = form.email.trim().toLowerCase();
+            }
         }
           
         console.log('Sign-up: Attempting registration with:', {   
             name: formData.name,   
             username: formData.username,   
+            contactMethod,
             phoneNumber: formData.phoneNumber || 'not provided',
             email: formData.email || 'not provided'
         });  
@@ -555,68 +561,98 @@ return (
                             {errors.username && <p className="text-red-400 text-sm mt-1">{errors.username}</p>}  
                         </div>  
 
-                        {/* EMAIL INPUT (Optional) */}  
-                        <div>  
-                            <div className="relative">  
-                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />  
-                                <input   
-                                    type="email"   
-                                    name="email"   
-                                    placeholder={t('auth.email', 'Email (optional)')}  
-                                    value={form.email}   
-                                    onChange={handleChange}   
-                                    className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.email ? 'border border-red-500' : ''}`}   
-                                />  
-                            </div>  
-                            {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}  
-                        </div>
-                          
-                        {/* PHONE NUMBER INPUT (Optional) */}  
-                        <div>  
-                            <div className="flex rounded-xl overflow-hidden bg-[#1b263b]/70 border border-gray-600 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-400/20">  
-                                {/* Country Code Dropdown */}  
-                                <div className="relative">  
-                                    <select  
-                                        value={selectedCountryCode}  
-                                        onChange={(e) => setSelectedCountryCode(e.target.value)}  
-                                        className="px-4 py-3 bg-transparent text-white border-none focus:outline-none cursor-pointer appearance-none"  
-                                    >  
-                                        {countryCodes.map((country) => (  
-                                            <option key={country.code} value={country.code} className="bg-gray-800 text-white">  
-                                                {country.flag} {country.code}  
-                                            </option>  
-                                        ))}  
-                                    </select>  
-                                    {/* Custom dropdown arrow */}  
-                                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">  
-                                        <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">  
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />  
-                                        </svg>  
-                                    </div>  
-                                </div>  
-                                  
-                                {/* Divider */}  
-                                <div className="w-px bg-gray-600"></div>  
-                                  
-                                {/* Phone Number Input */}  
-                                <div className="relative flex-1">  
-                                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />  
+                        {/* CONTACT METHOD SELECTOR */}
+                        <div>
+                            <label className="block text-sm font-medium text-white/90 mb-3">
+                                {t('auth.contactMethod', 'Choose Sign-Up Method')}
+                            </label>
+                            <div className="flex gap-2 mb-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setContactMethod('email')}
+                                    className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
+                                        contactMethod === 'email'
+                                            ? 'bg-gradient-to-r from-purple-500 via-cyan-400 to-blue-600 text-white shadow-lg'
+                                            : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                                    }`}
+                                >
+                                    <Mail size={18} />
+                                    {t('auth.email', 'Email')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setContactMethod('phone')}
+                                    className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
+                                        contactMethod === 'phone'
+                                            ? 'bg-gradient-to-r from-purple-500 via-cyan-400 to-blue-600 text-white shadow-lg'
+                                            : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                                    }`}
+                                >
+                                    <Phone size={18} />
+                                    {t('auth.phone', 'Phone')}
+                                </button>
+                            </div>
+
+                            {/* EMAIL INPUT (shown when email is selected) */}
+                            {contactMethod === 'email' && (
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                                     <input   
-                                        type="tel"   
-                                        name="phoneNumber"   
-                                        placeholder={t('auth.phone', 'Phone Number (optional)')}  
-                                        value={form.phoneNumber}   
+                                        type="email"   
+                                        name="email"   
+                                        placeholder={t('auth.emailPlaceholder', 'your@email.com')}  
+                                        value={form.email}   
                                         onChange={handleChange}   
-                                        className={`w-full pl-12 pr-4 py-3 bg-transparent text-white placeholder-white/60 border-none focus:outline-none ${errors.phoneNumber ? 'text-red-400' : ''}`}   
+                                        className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.email ? 'border border-red-500' : ''}`}   
                                     />  
-                                </div>  
-                            </div>  
-                            {errors.phoneNumber && <p className="text-red-400 text-sm mt-1">{errors.phoneNumber}</p>}  
+                                </div>
+                            )}
+
+                            {/* PHONE INPUT (shown when phone is selected) */}
+                            {contactMethod === 'phone' && (
+                                <div className="flex rounded-xl overflow-hidden bg-[#1b263b]/70 border border-gray-600 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-400/20">  
+                                    {/* Country Code Dropdown */}  
+                                    <div className="relative">  
+                                        <select  
+                                            value={selectedCountryCode}  
+                                            onChange={(e) => setSelectedCountryCode(e.target.value)}  
+                                            className="px-4 py-3 bg-transparent text-white border-none focus:outline-none cursor-pointer appearance-none"  
+                                        >  
+                                            {countryCodes.map((country) => (  
+                                                <option key={country.code} value={country.code} className="bg-gray-800 text-white">  
+                                                    {country.flag} {country.code}  
+                                                </option>  
+                                            ))}  
+                                        </select>  
+                                        {/* Custom dropdown arrow */}  
+                                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">  
+                                            <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">  
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />  
+                                            </svg>  
+                                        </div>  
+                                    </div>  
+                                      
+                                    {/* Divider */}  
+                                    <div className="w-px bg-gray-600"></div>  
+                                      
+                                    {/* Phone Number Input */}  
+                                    <div className="relative flex-1">  
+                                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />  
+                                        <input   
+                                            type="tel"   
+                                            name="phoneNumber"   
+                                            placeholder={t('auth.phonePlaceholder', '1088123981')}  
+                                            value={form.phoneNumber}   
+                                            onChange={handleChange}   
+                                            className={`w-full pl-12 pr-4 py-3 bg-transparent text-white placeholder-white/60 border-none focus:outline-none ${errors.phoneNumber ? 'text-red-400' : ''}`}   
+                                        />  
+                                    </div>  
+                                </div>
+                            )}
+
+                            {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
+                            {errors.phoneNumber && <p className="text-red-400 text-sm mt-1">{errors.phoneNumber}</p>}
                         </div>  
-                          
-                        <p className="text-xs text-gray-400 text-center">
-                            {t('auth.contactNote', 'Provide at least one: email or phone number')}
-                        </p>  
                           
                         {/* Password Input */}  
                         <div>  
