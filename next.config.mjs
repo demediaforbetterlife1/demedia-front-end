@@ -1,4 +1,27 @@
-import withPWA from 'next-pwa';
+import withPWAInit from 'next-pwa';
+
+const withPWA = withPWAInit({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development',
+  runtimeCaching: [
+    {
+      urlPattern: /^https?.*/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'offlineCache',
+        expiration: {
+          maxEntries: 200,
+          maxAgeSeconds: 24 * 60 * 60, // 24 hours
+        },
+      },
+    },
+  ],
+  buildExcludes: [/middleware-manifest\.json$/],
+  scope: '/',
+  sw: 'sw.js',
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -47,27 +70,4 @@ const nextConfig = {
   },
 };
 
-const pwaConfig = withPWA({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-  runtimeCaching: [
-    {
-      urlPattern: /^https?.*/,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'offlineCache',
-        expiration: {
-          maxEntries: 200,
-          maxAgeSeconds: 24 * 60 * 60, // 24 hours
-        },
-      },
-    },
-  ],
-  buildExcludes: [/middleware-manifest\.json$/],
-  scope: '/',
-  sw: 'sw.js',
-});
-
-export default pwaConfig(nextConfig);
+export default withPWA(nextConfig);
