@@ -10,7 +10,8 @@ import { Stars, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
 import { useI18n } from "@/contexts/I18nContext";
-import { Eye, EyeOff, Phone, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail } from "lucide-react";
+import ForgotPasswordModal from "@/components/ForgotPasswordModal";
 
 /* ---------------- BACKGROUND 3D ---------------- */
 function RotatingPlanet({
@@ -150,7 +151,7 @@ function SpaceBackground() {
 
 export default function SignIn() {
     const [form, setForm] = useState({
-        phoneNumber: "",
+        identifier: "", // Can be phone or email
         password: "",
     });
     const [remember, setRemember] = useState<boolean>(false);
@@ -159,6 +160,7 @@ export default function SignIn() {
     const { t } = useI18n();
     const [error, setError] = useState("");
     const [loginSuccess, setLoginSuccess] = useState(false);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
 
     const { login, isAuthenticated, isLoading, user } = useAuth();
     const router = useRouter();
@@ -172,9 +174,9 @@ export default function SignIn() {
     }, [loginSuccess, user, isLoading, isAuthenticated]);
     useEffect(() => {
         try {
-            const saved = localStorage.getItem('rememberPhone');
+            const saved = localStorage.getItem('rememberIdentifier');
             if (saved) {
-                setForm((f) => ({ ...f, phoneNumber: saved }));
+                setForm((f) => ({ ...f, identifier: saved }));
                 setRemember(true);
             }
         } catch {}
@@ -186,15 +188,15 @@ export default function SignIn() {
         setError("");
 
         try {
-            console.log('Attempting login with:', { phoneNumber: form.phoneNumber });
-            const result = await login(form.phoneNumber, form.password);
+            console.log('Attempting login with:', { identifier: form.identifier });
+            const result = await login(form.identifier, form.password);
             console.log('Login result:', result);
             
             if (result.success) {
                 if (remember) {
-                    localStorage.setItem('rememberPhone', form.phoneNumber);
+                    localStorage.setItem('rememberIdentifier', form.identifier);
                 } else {
-                    localStorage.removeItem('rememberPhone');
+                    localStorage.removeItem('rememberIdentifier');
                 }
                 
                 // Set flag to trigger redirect in useEffect
@@ -215,7 +217,7 @@ export default function SignIn() {
             if (err.message && (err.message.includes("verify your phone") || err.message.includes("Verification SMS sent"))) {
                 setError(t('auth.verificationSent', 'Verification SMS sent to your phone! Please check your messages and enter the verification code to complete login.'));
             } else if (err.message && err.message.includes("Invalid credentials")) {
-                setError(t('auth.invalidCredentials', 'Invalid phone number or password. Please check your credentials and try again.'));
+                setError(t('auth.invalidCredentials', 'Invalid email/phone or password. Please check your credentials and try again.'));
             } else if (err.message && err.message.includes("Database connection error")) {
                 setError(t('auth.databaseError', 'Server is temporarily unavailable. Please try again in a few moments.'));
             } else if (err.message && err.message.includes("Authentication service error")) {
@@ -273,19 +275,19 @@ export default function SignIn() {
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                             <input
-                                    type="tel"
-                                    name="phoneNumber"
-                                    placeholder={t('auth.phone', 'Phone Number')}
-                                    value={form.phoneNumber}
+                                    type="text"
+                                    name="identifier"
+                                    placeholder={t('auth.emailOrPhone', 'Email or Phone Number')}
+                                    value={form.identifier}
                                 onChange={handleChange}
                                     className="w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                                 required
                             />
                             </div>
                             <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
+                                <Eye className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />
                             <input
                                     type={showPassword ? "text" : "password"}
                                 name="password"
@@ -311,6 +313,16 @@ export default function SignIn() {
                                 />
                                 <span>{t('auth.rememberMe', 'Remember me')}</span>
                             </label>
+
+                            <div className="flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowForgotPassword(true)}
+                                    className="text-cyan-400 hover:text-cyan-300 text-sm transition-colors"
+                                >
+                                    {t('auth.forgotPassword', 'Forgot Password?')}
+                                </button>
+                            </div>
 
                             {error && (
                                 <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
@@ -352,6 +364,11 @@ export default function SignIn() {
                     </div>
                 </motion.div>
             </motion.div>
+
+            <ForgotPasswordModal 
+                isOpen={showForgotPassword} 
+                onClose={() => setShowForgotPassword(false)} 
+            />
 
             <style jsx>{`
                 @keyframes spin-slow {

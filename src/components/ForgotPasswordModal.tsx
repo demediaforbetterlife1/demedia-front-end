@@ -10,12 +10,23 @@ interface ForgotPasswordModalProps {
   onClose: () => void;
 }
 
-type Step = 'method' | 'contact' | 'verify' | 'reset' | 'success';
+type Step = 'search' | 'confirm' | 'method' | 'verify' | 'reset' | 'success';
 type Method = 'email' | 'phone' | null;
 
+interface FoundUser {
+  name: string;
+  username: string;
+  profilePicture: string | null;
+  email: string | null;
+  phoneNumber: string | null;
+  contact: string;
+}
+
 export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProps) {
-  const [step, setStep] = useState<Step>('method');
+  const [step, setStep] = useState<Step>('search');
   const [method, setMethod] = useState<Method>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [foundUser, setFoundUser] = useState<FoundUser | null>(null);
   const [contact, setContact] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -30,8 +41,10 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
   // Reset state when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      setStep('method');
+      setStep('search');
       setMethod(null);
+      setSearchTerm('');
+      setFoundUser(null);
       setContact('');
       setOtp('');
       setNewPassword('');
@@ -58,31 +71,15 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
 
   const handleBack = () => {
     setError('');
-    if (step === 'contact') setStep('method');
-    else if (step === 'verify') setStep('contact');
+    if (step === 'confirm') setStep('search');
+    else if (step === 'method') setStep('confirm');
+    else if (step === 'verify') setStep('method');
     else if (step === 'reset') setStep('verify');
   };
 
-  const handleMethodSelect = (selectedMethod: Method) => {
-    setMethod(selectedMethod);
-    setStep('contact');
-    setError('');
-  };
-
-  const handleContactSubmit = async () => {
-    if (!contact.trim()) {
-      setError(`Please enter your ${method === 'email' ? 'email address' : 'phone number'}`);
-      return;
-    }
-
-    // Basic validation
-    if (method === 'email' && !contact.includes('@')) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
-    if (method === 'phone' && !contact.startsWith('+')) {
-      setError('Please enter phone number with country code (e.g., +1234567890)');
+  const handleSearchAccount = async () => {
+    if (!searchTerm.trim()) {
+      setError('Please enter your email address or phone number');
       return;
     }
 
@@ -90,10 +87,51 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
     setError('');
 
     try {
-      const response = await fetch('/api/forgot-password/initiate', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://demedia-backend-production.up.railway.app';
+      const response = await fetch(`${API_URL}/api/forgot-password/search-account`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ method, contact }),
+        body: JSON.stringify({ searchTerm: searchTerm.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.found) {
+        setFoundUser(data.user);
+        setMethod(data.method);
+        setContact(data.user.contact);
+        setStep('confirm');
+      } else {
+        setError(data.error || 'No account found with this information');
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleConfirmAccount = () => {
+    setStep('method');
+  };
+
+  const handleMethodSelect = (selectedMethod: Method) => {
+    setMethod(selectedMethod);
+    setError('');
+    // Directly proceed to send OTP since we already have the contact
+    handleSendOTP(selectedMethod);
+  };
+
+  const handleSendOTP = async (selectedMethod: Method = method) => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://demedia-backend-production.up.railway.app';
+      const response = await fetch(`${API_URL}/api/forgot-password/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method: selectedMethod, contact }),
       });
 
       const data = await response.json();
@@ -121,7 +159,8 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
     setError('');
 
     try {
-      const response = await fetch('/api/forgot-password/verify-otp', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://demedia-backend-production.up.railway.app';
+      const response = await fetch(`${API_URL}/api/forgot-password/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ method, contact, otp }),
@@ -162,7 +201,8 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
     setError('');
 
     try {
-      const response = await fetch('/api/forgot-password/reset-password', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://demedia-backend-production.up.railway.app';
+      const response = await fetch(`${API_URL}/api/forgot-password/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resetToken, newPassword, confirmPassword }),
@@ -189,7 +229,8 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
     setError('');
 
     try {
-      const response = await fetch('/api/forgot-password/resend-otp', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://demedia-backend-production.up.railway.app';
+      const response = await fetch(`${API_URL}/api/forgot-password/resend-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ method, contact }),
@@ -212,6 +253,118 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
 
   const renderStepContent = () => {
     switch (step) {
+      case 'search':
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-white mb-2">Find Your Account</h2>
+              <p className="text-gray-300">Enter your email address or phone number</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-white/90 mb-2">
+                  Email or Phone Number
+                </label>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="email@example.com or +1234567890"
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  disabled={isLoading}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearchAccount()}
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleSearchAccount}
+                disabled={isLoading || !searchTerm.trim()}
+                className="w-full py-3 bg-gradient-to-r from-purple-500 via-cyan-400 to-blue-600 text-white font-semibold rounded-xl hover:brightness-110 transition-all duration-300 disabled:opacity-50"
+              >
+                {isLoading ? 'Searching...' : 'Find Account'}
+              </Button>
+
+              <div className="text-center">
+                <button
+                  onClick={handleClose}
+                  className="text-cyan-400 hover:text-cyan-300 text-sm"
+                >
+                  Back to Sign In
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'confirm':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center space-x-4">
+              <button onClick={handleBack} className="text-gray-400 hover:text-white">
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h2 className="text-2xl font-bold text-white">Is This Your Account?</h2>
+                <p className="text-gray-300">Confirm this is your account</p>
+              </div>
+            </div>
+
+            {foundUser && (
+              <div className="bg-white/10 border border-white/20 rounded-xl p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-cyan-400 flex items-center justify-center overflow-hidden">
+                    {foundUser.profilePicture ? (
+                      <img src={foundUser.profilePicture} alt={foundUser.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-white text-2xl font-bold">
+                        {foundUser.name?.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold text-lg">{foundUser.name}</h3>
+                    <p className="text-gray-400 text-sm">@{foundUser.username}</p>
+                    {method === 'email' && foundUser.email && (
+                      <p className="text-gray-400 text-sm mt-1">{foundUser.email}</p>
+                    )}
+                    {method === 'phone' && foundUser.phoneNumber && (
+                      <p className="text-gray-400 text-sm mt-1">{foundUser.phoneNumber}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            )}
+
+            <Button
+              onClick={handleConfirmAccount}
+              disabled={isLoading}
+              className="w-full py-3 bg-gradient-to-r from-purple-500 via-cyan-400 to-blue-600 text-white font-semibold rounded-xl hover:brightness-110 transition-all duration-300 disabled:opacity-50"
+            >
+              {isLoading ? 'Processing...' : 'Yes, This Is My Account'}
+            </Button>
+
+            <button
+              onClick={handleBack}
+              className="w-full py-3 text-gray-400 hover:text-white transition-colors"
+            >
+              Not Your Account?
+            </button>
+          </div>
+        );
+
       case 'method':
         return (
           <div className="space-y-6">
@@ -223,75 +376,42 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
             <div className="space-y-4">
               <button
                 onClick={() => handleMethodSelect('email')}
-                className="w-full p-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-all duration-300 flex items-center space-x-4"
+                disabled={!foundUser?.email}
+                className="w-full p-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-all duration-300 flex items-center space-x-4 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="p-3 bg-blue-500/20 rounded-lg">
                   <Mail className="w-6 h-6 text-blue-400" />
                 </div>
                 <div className="text-left">
                   <h3 className="font-semibold text-white">Recover by Email</h3>
-                  <p className="text-sm text-gray-400">We'll send a code to your email address</p>
+                  <p className="text-sm text-gray-400">
+                    {foundUser?.email ? `Send code to ${foundUser.email}` : 'No email on file'}
+                  </p>
                 </div>
               </button>
 
               <button
                 onClick={() => handleMethodSelect('phone')}
-                className="w-full p-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-all duration-300 flex items-center space-x-4"
+                disabled={!foundUser?.phoneNumber}
+                className="w-full p-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-all duration-300 flex items-center space-x-4 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="p-3 bg-green-500/20 rounded-lg">
                   <Phone className="w-6 h-6 text-green-400" />
                 </div>
                 <div className="text-left">
                   <h3 className="font-semibold text-white">Recover by Phone</h3>
-                  <p className="text-sm text-gray-400">We'll send a code via WhatsApp</p>
+                  <p className="text-sm text-gray-400">
+                    {foundUser?.phoneNumber ? `Send code to ${foundUser.phoneNumber}` : 'No phone on file'}
+                  </p>
                 </div>
               </button>
             </div>
-          </div>
-        );
 
-      case 'contact':
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center space-x-4">
-              <button onClick={handleBack} className="text-gray-400 hover:text-white">
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <div>
-                <h2 className="text-2xl font-bold text-white">Enter Your {method === 'email' ? 'Email' : 'Phone Number'}</h2>
-                <p className="text-gray-300">We'll send a verification code to reset your password</p>
+            {error && (
+              <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
+                <p className="text-red-400 text-sm">{error}</p>
               </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-white/90 mb-2">
-                  {method === 'email' ? 'Email Address' : 'Phone Number'}
-                </label>
-                <input
-                  type={method === 'email' ? 'email' : 'tel'}
-                  value={contact}
-                  onChange={(e) => setContact(e.target.value)}
-                  placeholder={method === 'email' ? 'your@email.com' : '+1234567890'}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                  disabled={isLoading}
-                />
-              </div>
-
-              {error && (
-                <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
-                  <p className="text-red-400 text-sm">{error}</p>
-                </div>
-              )}
-
-              <Button
-                onClick={handleContactSubmit}
-                disabled={isLoading}
-                className="w-full py-3 bg-gradient-to-r from-purple-500 via-cyan-400 to-blue-600 text-white font-semibold rounded-xl hover:brightness-110 transition-all duration-300 disabled:opacity-50"
-              >
-                {isLoading ? 'Sending...' : 'Send Verification Code'}
-              </Button>
-            </div>
+            )}
           </div>
         );
 

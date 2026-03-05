@@ -57,7 +57,7 @@ export interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   initComplete: boolean;
-  login: (phoneNumber: string, password: string) => Promise<AuthResult>;
+  login: (identifier: string, password: string) => Promise<AuthResult>; // Updated to accept identifier
   register: (userData: FormData) => Promise<AuthResult>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -351,7 +351,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = async (
-    phoneNumber: string,
+    identifier: string, // Can be phone or email
     password: string
   ): Promise<AuthResult> => {
     setIsLoading(true);
@@ -359,7 +359,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log("[Auth] login attempt...");
       const res = await apiFetch("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify({ phoneNumber, password }),
+        body: JSON.stringify({ identifier, password }),
       });
 
       let data;
