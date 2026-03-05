@@ -1,28 +1,3 @@
-import withPWAInit from 'next-pwa';
-
-const withPWA = withPWAInit({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-  runtimeCaching: [
-    {
-      urlPattern: /^https?.*/,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'offlineCache',
-        expiration: {
-          maxEntries: 200,
-          maxAgeSeconds: 24 * 60 * 60, // 24 hours
-        },
-      },
-    },
-  ],
-  buildExcludes: [/middleware-manifest\.json$/],
-  scope: '/',
-  sw: 'sw.js',
-});
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -34,6 +9,9 @@ const nextConfig = {
   // output: "standalone",
   compress: true,
   poweredByHeader: false,
+
+  // Add empty turbopack config to silence the warning
+  turbopack: {},
 
   images: {
     remotePatterns: [
@@ -64,10 +42,43 @@ const nextConfig = {
     ];
   },
 
-  // PWA Configuration
   experimental: {
     webVitalsAttribution: ['CLS', 'LCP']
   },
 };
 
-export default withPWA(nextConfig);
+// Only apply PWA in production builds with webpack
+let config = nextConfig;
+
+if (process.env.NODE_ENV === 'production' && !process.env.TURBOPACK) {
+  try {
+    const withPWAInit = require('next-pwa');
+    const withPWA = withPWAInit({
+      dest: 'public',
+      register: true,
+      skipWaiting: true,
+      disable: false,
+      runtimeCaching: [
+        {
+          urlPattern: /^https?.*/,
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'offlineCache',
+            expiration: {
+              maxEntries: 200,
+              maxAgeSeconds: 24 * 60 * 60,
+            },
+          },
+        },
+      ],
+      buildExcludes: [/middleware-manifest\.json$/],
+      scope: '/',
+      sw: 'sw.js',
+    });
+    config = withPWA(nextConfig);
+  } catch (e) {
+    console.log('PWA plugin not available, skipping...');
+  }
+}
+
+export default config;
