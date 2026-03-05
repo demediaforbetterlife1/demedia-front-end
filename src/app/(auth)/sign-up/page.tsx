@@ -132,6 +132,7 @@ const [form, setForm] = useState({
 name: "",
 username: "",
 phoneNumber: "",
+email: "",
 password: "",
 });
 const [selectedCountryCode, setSelectedCountryCode] = useState("+20");
@@ -379,11 +380,20 @@ const validateForm = () => {
         newErrors.username = t('auth.usernameInvalid', 'Username can only contain lowercase letters, numbers, and underscores');  
     }  
 
-    if (!form.phoneNumber.trim()) {  
-        newErrors.phoneNumber = t('auth.phoneRequired', 'Phone number is required');  
-    } else if (!/^\+?[1-9]\d{1,14}$/.test(form.phoneNumber)) {  
+    // At least one contact method (email or phone) is required
+    if (!form.phoneNumber.trim() && !form.email.trim()) {  
+        newErrors.general = t('auth.contactRequired', 'Please provide either email or phone number');  
+    }
+
+    // Validate phone if provided
+    if (form.phoneNumber.trim() && !/^[0-9+\s\-\(\)]+$/.test(form.phoneNumber)) {  
         newErrors.phoneNumber = t('auth.phoneInvalid', 'Please enter a valid phone number');  
-    }  
+    }
+
+    // Validate email if provided
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {  
+        newErrors.email = t('auth.emailInvalid', 'Please enter a valid email address');  
+    }
 
     if (!form.password) {  
         newErrors.password = t('auth.passwordRequired', 'Password is required');  
@@ -410,15 +420,29 @@ const handleSubmit = async (e: React.FormEvent) => {
     setIsSubmitting(true);  
 
     try {  
-        // Combine country code with phone number  
-        const normalizedNumber = form.phoneNumber.replace(/^0+/, "");  
-        const fullPhoneNumber = selectedCountryCode + normalizedNumber;  
-        const formData = { ...form, phoneNumber: fullPhoneNumber };  
+        // Prepare form data
+        const formData: any = { 
+            name: form.name,
+            username: form.username,
+            password: form.password
+        };
+
+        // Add phone number if provided
+        if (form.phoneNumber.trim()) {
+            const normalizedNumber = form.phoneNumber.replace(/^0+/, "");  
+            formData.phoneNumber = selectedCountryCode + normalizedNumber;
+        }
+
+        // Add email if provided
+        if (form.email.trim()) {
+            formData.email = form.email.trim().toLowerCase();
+        }
           
         console.log('Sign-up: Attempting registration with:', {   
             name: formData.name,   
             username: formData.username,   
-            phoneNumber: formData.phoneNumber   
+            phoneNumber: formData.phoneNumber || 'not provided',
+            email: formData.email || 'not provided'
         });  
           
         console.log('Before calling register function');
@@ -427,7 +451,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         
         if (result.success && result.user) {
             // Clear form on success
-            setForm({ name: "", username: "", phoneNumber: "", password: "" });
+            setForm({ name: "", username: "", phoneNumber: "", email: "", password: "" });
             console.log('Sign-up: Registration successful - AuthGuard will handle redirect');
             // Let AuthGuard handle the redirect to SignInSetUp based on authentication state
         } else {
@@ -446,6 +470,8 @@ const handleSubmit = async (e: React.FormEvent) => {
             setErrors({ username: t('auth.usernameTaken', 'This username is already taken') });  
         } else if (errorMessage.includes("Phone number already registered") || errorMessage.includes("phone")) {  
             setErrors({ phoneNumber: t('auth.phoneRegistered', 'This phone number is already registered') });  
+        } else if (errorMessage.includes("Email already registered") || errorMessage.includes("email")) {  
+            setErrors({ email: t('auth.emailRegistered', 'This email is already registered') });  
         } else if (errorMessage.includes("2-50") && errorMessage.includes("chars") && errorMessage.includes("spaces")) {  
             // Handle the specific backend name validation error  
             setErrors({ name: t('auth.nameBackendError', 'Name must be 2-50 characters and can contain letters, spaces, and common punctuation') });  
@@ -528,8 +554,24 @@ return (
                             </div>  
                             {errors.username && <p className="text-red-400 text-sm mt-1">{errors.username}</p>}  
                         </div>  
+
+                        {/* EMAIL INPUT (Optional) */}  
+                        <div>  
+                            <div className="relative">  
+                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-400" size={18} />  
+                                <input   
+                                    type="email"   
+                                    name="email"   
+                                    placeholder={t('auth.email', 'Email (optional)')}  
+                                    value={form.email}   
+                                    onChange={handleChange}   
+                                    className={`w-full pl-12 pr-4 py-3 rounded-xl bg-[#1b263b]/70 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${errors.email ? 'border border-red-500' : ''}`}   
+                                />  
+                            </div>  
+                            {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}  
+                        </div>
                           
-                        {/* PHONE NUMBER INPUT */}  
+                        {/* PHONE NUMBER INPUT (Optional) */}  
                         <div>  
                             <div className="flex rounded-xl overflow-hidden bg-[#1b263b]/70 border border-gray-600 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-400/20">  
                                 {/* Country Code Dropdown */}  
@@ -562,16 +604,19 @@ return (
                                     <input   
                                         type="tel"   
                                         name="phoneNumber"   
-                                        placeholder={t('auth.phone', 'Phone Number')}  
+                                        placeholder={t('auth.phone', 'Phone Number (optional)')}  
                                         value={form.phoneNumber}   
                                         onChange={handleChange}   
                                         className={`w-full pl-12 pr-4 py-3 bg-transparent text-white placeholder-white/60 border-none focus:outline-none ${errors.phoneNumber ? 'text-red-400' : ''}`}   
-                                        required  
                                     />  
                                 </div>  
                             </div>  
                             {errors.phoneNumber && <p className="text-red-400 text-sm mt-1">{errors.phoneNumber}</p>}  
                         </div>  
+                          
+                        <p className="text-xs text-gray-400 text-center">
+                            {t('auth.contactNote', 'Provide at least one: email or phone number')}
+                        </p>  
                           
                         {/* Password Input */}  
                         <div>  
