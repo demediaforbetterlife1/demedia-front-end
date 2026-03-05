@@ -67,6 +67,8 @@ export interface AuthContextType {
     interests?: string[];
   }) => Promise<AuthResult>;
   updateUser: (newData: Partial<User>) => void;
+  deleteAccount: (password: string, confirmation: string) => Promise<AuthResult>;
+  getDeletionInfo: () => Promise<any>;
 }
 
 /* =======================
@@ -619,6 +621,82 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const getDeletionInfo = async (): Promise<any> => {
+    try {
+      console.log("[Auth] Fetching deletion info...");
+      
+      const response = await apiFetch("/api/account/deletion-info", {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to get deletion info");
+      }
+
+      const data = await response.json();
+      console.log("[Auth] Deletion info retrieved");
+      return data;
+    } catch (err: any) {
+      console.error("[Auth] getDeletionInfo error:", err);
+      throw err;
+    }
+  };
+
+  const deleteAccount = async (
+    password: string,
+    confirmation: string
+  ): Promise<AuthResult> => {
+    try {
+      console.log("[Auth] Attempting account deletion...");
+
+      const response = await apiFetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, confirmation }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("[Auth] Account deletion failed:", data.error);
+        return {
+          success: false,
+          message: data.error || "Failed to delete account",
+        };
+      }
+
+      console.log("[Auth] Account deleted successfully");
+
+      // Clear all storage
+      deleteCookie("token");
+      removeLocalStorageToken();
+
+      // Clear state
+      setUser(null);
+      setInitComplete(true);
+
+      // Dispatch deletion event
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("auth:accountDeleted"));
+      }
+
+      // Redirect to sign-up
+      router.replace("/sign-up");
+
+      return {
+        success: true,
+        message: "Account deleted successfully",
+      };
+    } catch (err: any) {
+      console.error("[Auth] deleteAccount error:", err);
+      return {
+        success: false,
+        message: err.message || "Failed to delete account",
+      };
+    }
+  };
+
   const value: AuthContextType = {
     user,
     isLoading,
@@ -631,6 +709,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     completeSetup,
     updateUserProfile,
     updateUser,
+    deleteAccount,
+    getDeletionInfo,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

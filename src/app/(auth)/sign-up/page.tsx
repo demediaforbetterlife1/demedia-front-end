@@ -24,8 +24,12 @@ color: string;
 }) {
 const meshRef = useRef<THREE.Mesh | null>(null);
 useFrame(() => {
-if (meshRef.current) {
+try {
+if (meshRef.current && meshRef.current.rotation) {
 meshRef.current.rotation.y += 0.0015;
+}
+} catch (error) {
+// Silently handle THREE.js context loss
 }
 });
 
@@ -48,21 +52,27 @@ function ShootingStar() {
 const meshRef = useRef<THREE.Mesh | null>(null);
 
 useEffect(() => {  
-    if (!meshRef.current) return;  
+    if (!meshRef.current || !meshRef.current.position) return;  
 
     const loop = () => {  
-        gsap.fromTo(  
-            meshRef.current!.position,  
-            { x: -12, y: 6, z: -10 },  
-            {  
-                x: 10,  
-                y: -4,  
-                z: -6,  
-                duration: 2,  
-                ease: "power2.inOut",  
-                onComplete: loop,  
-            }  
-        );  
+        try {
+            if (meshRef.current && meshRef.current.position) {
+                gsap.fromTo(  
+                    meshRef.current.position,  
+                    { x: -12, y: 6, z: -10 },  
+                    {  
+                        x: 10,  
+                        y: -4,  
+                        z: -6,  
+                        duration: 2,  
+                        ease: "power2.inOut",  
+                        onComplete: loop,  
+                    }  
+                );
+            }
+        } catch (error) {
+            // Silently handle THREE.js context loss
+        }
     };  
     loop();  
 }, []);  
@@ -79,10 +89,14 @@ function Galaxy() {
 const pointsRef = useRef<THREE.Points | null>(null);
 
 useFrame((_, delta) => {  
-    if (pointsRef.current) {  
-        pointsRef.current.rotation.y += delta * 0.05;  
-        pointsRef.current.rotation.x += delta * 0.01;  
-    }  
+    try {
+        if (pointsRef.current && pointsRef.current.rotation) {  
+            pointsRef.current.rotation.y += delta * 0.05;  
+            pointsRef.current.rotation.x += delta * 0.01;  
+        }
+    } catch (error) {
+        // Silently handle THREE.js context loss
+    }
 });  
 
 const geometry = useMemo(() => {  
