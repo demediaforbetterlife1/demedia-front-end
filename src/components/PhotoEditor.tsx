@@ -200,7 +200,7 @@ export default function PhotoEditor({ file, onSave, onCancel }: PhotoEditorProps
         <canvas
           ref={canvasRef}
           className="max-w-full max-h-full"
-          style={{ imageRendering: 'high-quality' }}
+          style={{ imageRendering: 'auto' as React.CSSProperties['imageRendering'] }}
         />
       </div>
 

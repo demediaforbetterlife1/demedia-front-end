@@ -23,10 +23,16 @@ interface Subscription {
   planType: string;
   planName: string;
   status: string;
+  isTrialing: boolean;
+  trialStart: string | null;
+  trialEnd: string | null;
+  trialEnded: boolean;
   currentPeriodStart: string;
   currentPeriodEnd: string;
   cancelAtPeriodEnd: boolean;
   canceledAt: string | null;
+  features: string[];
+  createdAt: string;
 }
 
 export default function SubscriptionPlans() {
@@ -195,7 +201,7 @@ export default function SubscriptionPlans() {
         <div className="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">Current Subscription</h2>
           
-          {currentSubscription.isTrialing && !currentSubscription.trialEnded && (
+          {currentSubscription.isTrialing && !currentSubscription.trialEnded && currentSubscription.trialEnd && (
             <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
               <p className="text-green-800 font-semibold">🎉 Free Trial Active!</p>
               <p className="text-sm text-green-700 mt-1">
@@ -213,7 +219,7 @@ export default function SubscriptionPlans() {
           <p className="text-sm text-gray-600 mb-4">
             {currentSubscription.cancelAtPeriodEnd ? (
               <>Cancels on {new Date(currentSubscription.currentPeriodEnd).toLocaleDateString()}</>
-            ) : currentSubscription.isTrialing ? (
+            ) : currentSubscription.isTrialing && currentSubscription.trialEnd ? (
               <>Trial ends {new Date(currentSubscription.trialEnd).toLocaleDateString()}, then renews {new Date(currentSubscription.currentPeriodEnd).toLocaleDateString()}</>
             ) : (
               <>Renews on {new Date(currentSubscription.currentPeriodEnd).toLocaleDateString()}</>
