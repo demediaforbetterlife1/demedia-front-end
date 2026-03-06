@@ -1,4 +1,4 @@
-﻿// src/components/ProfilePage.tsx
+// src/components/ProfilePage.tsx
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -1806,7 +1806,7 @@ const UserDeSnaps = ({
                                 <Eye size={14} />
                                 <span className="font-medium">{deSnap.views || 0}</span>
                             </span>
-                            <span className="text-gray-600">�</span>
+                            <span className="text-gray-600">?</span>
                             <span className="font-medium">{deSnap.duration || 0}s</span>
                         </div>
                     </div>
@@ -2244,7 +2244,7 @@ const UserPosts = ({
                                     <Eye size={14} />
                                     <span className="font-medium">{post.views || 0}</span>
                                 </span>
-                                <span className="text-gray-600">�</span>
+                                <span className="text-gray-600">?</span>
                                 <span className="font-medium">{post.likes || 0} likes</span>
                             </div>
                         </div>

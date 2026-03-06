@@ -199,7 +199,7 @@ export default function DeSnapsPage() {
 
                 // Try alternative endpoints
                 try {
-                    const altResponse = await fetch('https://demedia-backend.fly.dev/api/snaps', {
+                    const altResponse = await fetch('https://demedia-backend-production.up.railway.app/api/snaps', {
                         headers: {
                             'Authorization': `Bearer ${localStorage.getItem('token')}`,
                             'Content-Type': 'application/json',

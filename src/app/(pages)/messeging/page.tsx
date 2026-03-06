@@ -201,7 +201,7 @@ export default function MessagingPage() {
 
             // Final fallback: Direct fetch to backend with multiple endpoints
             try {
-                const directResponse = await fetch('https://demedia-backend.fly.dev/api/conversations', {
+                const directResponse = await fetch('https://demedia-backend-production.up.railway.app/api/conversations', {
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -219,7 +219,7 @@ export default function MessagingPage() {
 
                 // Try alternative endpoints
                 try {
-                    const altResponse = await fetch('https://demedia-backend.fly.dev/api/chat', {
+                    const altResponse = await fetch('https://demedia-backend-production.up.railway.app/api/chat', {
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -276,7 +276,7 @@ export default function MessagingPage() {
 
             // Fallback: Try direct fetch to backend
             try {
-                const directResponse = await fetch(`https://demedia-backend.fly.dev/api/conversations/${conversationId}/messages`, {
+                const directResponse = await fetch(`https://demedia-backend-production.up.railway.app/api/conversations/${conversationId}/messages`, {
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -349,7 +349,7 @@ export default function MessagingPage() {
 
             // Fallback: Try direct fetch to backend
             console.warn('Main API failed, trying direct fetch to backend...');
-            const directResponse = await fetch(`https://demedia-backend.fly.dev/api/conversations/${selectedConversation.id}/messages`, {
+            const directResponse = await fetch(`https://demedia-backend-production.up.railway.app/api/conversations/${selectedConversation.id}/messages`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
