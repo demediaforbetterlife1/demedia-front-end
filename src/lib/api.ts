@@ -1,8 +1,9 @@
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
-// Force backend URL - never use relative paths
-const API_BASE = "https://demedia-backend-production.up.railway.app";
-const DIRECT_API_BASE = "https://demedia-backend-production.up.railway.app";
+// Use Next.js API routes instead of calling backend directly
+// This allows the API routes to handle authentication, caching, and error handling
+const API_BASE = ""; // Empty string means same-origin (Next.js API routes)
+const DIRECT_API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://demedia-backend-production.up.railway.app";
 
 /* --------------------------- Utility helpers ----------------------------- */
 

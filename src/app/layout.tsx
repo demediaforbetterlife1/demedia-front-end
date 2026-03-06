@@ -14,6 +14,9 @@ import GlowingPlanets from "@/components/GlowingPlanets";
 import GoldParticles from "@/components/GoldParticles";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import WebGLErrorHandler from "@/components/WebGLErrorHandler";
+import PWAInstallButton from "@/components/PWAInstallButton";
+import PWARegister from "@/components/PWARegister";
+import PWAStatus from "@/components/PWAStatus";
 import "@/utils/errorHandler";
 
 
@@ -31,11 +34,17 @@ export const metadata: Metadata = {
   title: "DeMEDIA",
   description: "Powerful social media platform with high-quality UI for better experience, try DeMedia today!",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://example.com"),
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover",
   icons: {
     icon: "/logo1.png",
     shortcut: "/logo1.png",
     apple: "/logo1.png",
+  },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "DeMEDIA",
   },
   openGraph: {
     title: "DeMEDIA",
@@ -54,6 +63,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({
@@ -64,10 +77,16 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#00bcd4" />
+        <link rel="apple-touch-icon" href="/logo1.png" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen min-w-screen antialiased`}
       >
         <ErrorBoundary>
+          <PWARegister />
           <ThemeProvider>
             <I18nProvider>
               <AuthProvider>
@@ -78,7 +97,9 @@ export default function RootLayout({
                     <GlowingPlanets />
                     <GoldParticles />
                     <NavbarClient />
+                    <PWAStatus />
                     {children}
+                    <PWAInstallButton />
                   </AuthGuard>
                 </NotificationProvider>
               </AuthProvider>

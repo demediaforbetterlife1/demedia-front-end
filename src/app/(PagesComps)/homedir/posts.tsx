@@ -159,7 +159,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
       console.log("🚀 Starting to fetch posts...");
       setLoading(true);
 
-      const endpoint = "/api/test";
+      const endpoint = "/api/posts";
       const res = await fetch(endpoint, {
         cache: "no-store",
         headers: {

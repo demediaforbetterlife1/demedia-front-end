@@ -1,61 +1,164 @@
-// Service Worker for Push Notifications
-const CACHE_NAME = 'demedia-cache-v1';
-const urlsToCache = [
+// Enhanced Service Worker for PWA
+const CACHE_NAME = 'demedia-v1';
+const RUNTIME_CACHE = 'demedia-runtime-v1';
+const IMAGE_CACHE = 'demedia-images-v1';
+
+const PRECACHE_URLS = [
   '/',
   '/home',
   '/sign-in',
   '/sign-up',
-  '/favicon.ico',
+  '/profile',
+  '/messeging',
+  '/assets/images/logo.png',
+  '/assets/images/logo1.png',
+  '/images/default-avatar.svg',
+  '/images/default-post.svg',
 ];
 
-// Install event
+// Install event - cache essential resources
 self.addEventListener('install', (event) => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    console.log('Opened cache');
-    
-    // Filter assets before adding and wrap in try/catch
-    const okUrls = [];
-    for (const url of urlsToCache) {
-      try {
-        const response = await fetch(url, { cache: 'no-store' });
-        if (response.ok) {
-          okUrls.push(url);
-        } else {
-          console.warn('sw: asset fetch failed (not ok)', url, response.status);
+  console.log('[SW] Installing service worker...');
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const okUrls = [];
+      
+      for (const url of PRECACHE_URLS) {
+        try {
+          const response = await fetch(url, { cache: 'no-store' });
+          if (response.ok) {
+            okUrls.push(url);
+          }
+        } catch (e) {
+          console.warn('[SW] Failed to fetch:', url);
         }
-      } catch (e) {
-        console.warn('sw: asset fetch failed', url, e);
       }
-    }
-    
-    try {
+      
       if (okUrls.length > 0) {
         await cache.addAll(okUrls);
-        console.log('sw: cached', okUrls.length, 'assets');
-      } else {
-        console.warn('sw: no assets to cache');
+        console.log('[SW] Cached', okUrls.length, 'resources');
       }
-    } catch (e) {
-      console.warn('sw: cache.addAll partial failure', e);
-    }
-  })());
-});
-
-// Fetch event
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request);
-      })
+      
+      self.skipWaiting();
+    })()
   );
 });
 
-// Push event
+// Activate event - clean up old caches
+self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating service worker...');
+  event.waitUntil(
+    (async () => {
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames
+          .filter(name => name !== CACHE_NAME && name !== RUNTIME_CACHE && name !== IMAGE_CACHE)
+          .map(name => caches.delete(name))
+      );
+      self.clients.claim();
+    })()
+  );
+});
+
+// Fetch event - network first, fallback to cache
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip non-GET requests
+  if (request.method !== 'GET') return;
+
+  // Skip chrome extensions and other protocols
+  if (!url.protocol.startsWith('http')) return;
+
+  // Handle images with cache first strategy
+  if (request.destination === 'image') {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(IMAGE_CACHE);
+        const cached = await cache.match(request);
+        
+        if (cached) return cached;
+        
+        try {
+          const response = await fetch(request);
+          if (response.ok) {
+            cache.put(request, response.clone());
+          }
+          return response;
+        } catch (error) {
+          // Return default image on error
+          return caches.match('/images/default-post.svg');
+        }
+      })()
+    );
+    return;
+  }
+
+  // Handle API requests with network first
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/socket.io/')) {
+    event.respondWith(
+      (async () => {
+        try {
+          const response = await fetch(request);
+          return response;
+        } catch (error) {
+          console.log('[SW] Network request failed, checking cache');
+          const cached = await caches.match(request);
+          return cached || new Response('Offline', { status: 503 });
+        }
+      })()
+    );
+    return;
+  }
+
+  // Handle navigation requests
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      (async () => {
+        try {
+          const response = await fetch(request);
+          const cache = await caches.open(RUNTIME_CACHE);
+          cache.put(request, response.clone());
+          return response;
+        } catch (error) {
+          const cached = await caches.match(request);
+          if (cached) return cached;
+          
+          // Return offline page
+          const offlineCache = await caches.match('/');
+          return offlineCache || new Response('Offline', { 
+            status: 503,
+            headers: { 'Content-Type': 'text/html' }
+          });
+        }
+      })()
+    );
+    return;
+  }
+
+  // Default: network first, fallback to cache
+  event.respondWith(
+    (async () => {
+      try {
+        const response = await fetch(request);
+        if (response.ok) {
+          const cache = await caches.open(RUNTIME_CACHE);
+          cache.put(request, response.clone());
+        }
+        return response;
+      } catch (error) {
+        const cached = await caches.match(request);
+        return cached || new Response('Offline', { status: 503 });
+      }
+    })()
+  );
+});
+
+// Push notification event
 self.addEventListener('push', (event) => {
-  console.log('Push event received:', event);
+  console.log('[SW] Push notification received');
 
   let data = {};
   if (event.data) {
@@ -68,13 +171,15 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body || 'You have a new notification',
-    icon: data.icon || '/favicon.ico',
-    badge: data.badge || '/favicon.ico',
+    icon: data.icon || '/assets/images/logo.png',
+    badge: '/assets/images/logo.png',
     tag: data.tag || 'default',
     data: data.data || {},
     actions: data.actions || [],
     requireInteraction: data.requireInteraction || false,
     silent: data.silent || false,
+    vibrate: [200, 100, 200],
+    image: data.image,
   };
 
   event.waitUntil(
@@ -84,42 +189,39 @@ self.addEventListener('push', (event) => {
 
 // Notification click event
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification click received:', event);
-
+  console.log('[SW] Notification clicked');
   event.notification.close();
 
   const data = event.notification.data || {};
-  
-  if (data.action === 'navigate' && data.url) {
-    event.waitUntil(
-      clients.openWindow(data.url)
-    );
-  } else if (data.action === 'open_modal') {
-    // Send message to all clients to open modal
-    event.waitUntil(
-      clients.matchAll().then((clientList) => {
-        clientList.forEach((client) => {
-          client.postMessage({
-            type: 'OPEN_MODAL',
-            data: data
-          });
-        });
+  const urlToOpen = data.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // Check if there's already a window open
+        for (const client of clientList) {
+          if (client.url === urlToOpen && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // Open new window
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
       })
-    );
-  } else {
-    // Default action - open the app
-    event.waitUntil(
-      clients.openWindow('/')
-    );
-  }
+  );
 });
 
 // Background sync
 self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
+  console.log('[SW] Background sync:', event.tag);
+  
+  if (event.tag === 'sync-posts') {
     event.waitUntil(
-      // Handle background sync tasks
-      console.log('Background sync triggered')
+      // Sync posts when back online
+      fetch('/api/posts/sync')
+        .then(response => console.log('[SW] Posts synced'))
+        .catch(error => console.error('[SW] Sync failed:', error))
     );
   }
 });
@@ -129,4 +231,28 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+  
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys().then(names => {
+        return Promise.all(names.map(name => caches.delete(name)));
+      })
+    );
+  }
 });
+
+// Periodic background sync (if supported)
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'update-content') {
+    event.waitUntil(
+      fetch('/api/posts/latest')
+        .then(response => response.json())
+        .then(data => {
+          console.log('[SW] Content updated in background');
+        })
+        .catch(error => console.error('[SW] Background update failed:', error))
+    );
+  }
+});
+
+console.log('[SW] Service worker loaded');
