@@ -9,6 +9,11 @@ const nextConfig = {
   // Add empty turbopack config to silence the warning
   turbopack: {},
 
+  // Environment variables - ensures NEXT_PUBLIC_API_URL is available
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://demedia-backend-production.up.railway.app',
+  },
+
   images: {
     remotePatterns: [
       {
