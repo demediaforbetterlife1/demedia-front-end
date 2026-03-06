@@ -445,9 +445,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         // Add contact method based on selection
         if (contactMethod === 'email') {
             formData.email = form.email.trim().toLowerCase();
-            // WORKAROUND: Generate dummy phone for database constraint
-            // Remove this after running: ALTER TABLE "User" ALTER COLUMN "phoneNumber" DROP NOT NULL;
-            formData.phoneNumber = `+999${Date.now().toString().slice(-9)}`; // Dummy unique phone
+            // phoneNumber is optional - don't send it if not provided
         } else {
             const normalizedNumber = form.phoneNumber.replace(/^0+/, "");  
             formData.phoneNumber = selectedCountryCode + normalizedNumber;
