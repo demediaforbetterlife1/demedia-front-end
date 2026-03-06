@@ -26,7 +26,7 @@ export async function GET(
     // Try to connect to the actual backend first
     try {
       // Backend expects /api/chat/id/:chatId to fetch by chat id
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/chat/id/${chatId}`, {
+      const backendResponse = await fetch(`https://demedia-backend-production.up.railway.app/api/chat/id/${chatId}`, {
         method: 'GET',
         headers: {
           'Authorization': authHeader,
@@ -93,7 +93,7 @@ export async function DELETE(
 
     // Try to connect to the actual backend first
     try {
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/chat/${chatId}`, {
+      const backendResponse = await fetch(`https://demedia-backend-production.up.railway.app/api/chat/${chatId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': authHeader,

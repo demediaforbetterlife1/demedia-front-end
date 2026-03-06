@@ -30,7 +30,7 @@ const nextConfig = {
   },
 
   async rewrites() {
-    const target = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
+    const target = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || "https://demedia-backend-production.up.railway.app";
     return [
       {
         source: "/socket.io/:path*",

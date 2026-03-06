@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     console.log('Fetching personalized posts via backend, userId:', userId, 'interests:', body.interests);
 
     // Forward request to backend
-    const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
+    const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend-production.up.railway.app';
     console.log('🔄 Connecting to backend for personalized posts:', backendUrl);
     
     try {

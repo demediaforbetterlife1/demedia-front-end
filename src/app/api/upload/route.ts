@@ -75,19 +75,19 @@ export async function POST(request: NextRequest) {
 
       if (type === "profile" || type === "cover") {
         backendEndpoint =
-          (process.env.BACKEND_URL || "https://demedia-backend.fly.dev") +
+          (process.env.BACKEND_URL || "https://demedia-backend-production.up.railway.app") +
           "/api/upload/profile";
         fieldName = "file";
         backendFormData.append("type", type);
       } else if (type === "video") {
         backendEndpoint =
-          (process.env.BACKEND_URL || "https://demedia-backend.fly.dev") +
+          (process.env.BACKEND_URL || "https://demedia-backend-production.up.railway.app") +
           "/api/upload/video";
         fieldName = "video";
       } else {
         // Default to post upload (for images)
         backendEndpoint =
-          (process.env.BACKEND_URL || "https://demedia-backend.fly.dev") +
+          (process.env.BACKEND_URL || "https://demedia-backend-production.up.railway.app") +
           "/api/upload/post";
         fieldName = "image";
       }
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
             !data.url.startsWith("data:")
           ) {
             const baseUrl =
-              process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
+              process.env.BACKEND_URL || "https://demedia-backend-production.up.railway.app";
             data.url = data.url.startsWith("/")
               ? `${baseUrl}${data.url}`
               : `${baseUrl}/${data.url}`;

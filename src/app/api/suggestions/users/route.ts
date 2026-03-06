@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Forward request to backend
-    const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
+    const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend-production.up.railway.app';
     console.log('🔄 Connecting to backend for suggestions:', backendUrl);
     
     try {

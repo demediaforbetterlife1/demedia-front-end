@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
     
     if (!token) {
-      console.error('❌ No authorization token found in header or cookie');
+      console.error('? No authorization token found in header or cookie');
       return NextResponse.json({ 
         error: 'Authorization header is required. Please include a valid Bearer token in the Authorization header.' 
       }, { status: 401 });
@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
     console.log('Creating new DeSnap via backend:', body);
 
     // Forward request to backend
-    const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
-    console.log('🔄 Connecting to backend for DeSnap creation:', backendUrl);
+    const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend-production.up.railway.app';
+    console.log('?? Connecting to backend for DeSnap creation:', backendUrl);
     
     try {
       const response = await fetch(`${backendUrl}/api/desnaps`, {
@@ -50,27 +50,27 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify(body),
       });
 
-      console.log('🔄 Backend response status:', response.status);
+      console.log('?? Backend response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Backend error:', response.status, errorText);
+        console.error('? Backend error:', response.status, errorText);
         return NextResponse.json({ 
           error: errorText || `Backend responded with ${response.status}` 
         }, { status: response.status });
       }
 
       const data = await response.json();
-      console.log('✅ DeSnap created via backend:', data.id);
+      console.log('? DeSnap created via backend:', data.id);
       return NextResponse.json(data);
     } catch (backendError) {
-      console.error('❌ Backend connection failed for DeSnap creation:', backendError);
+      console.error('? Backend connection failed for DeSnap creation:', backendError);
       return NextResponse.json({ 
         error: `Backend connection failed: ${backendError instanceof Error ? backendError.message : 'Unknown error'}` 
       }, { status: 500 });
     }
   } catch (error) {
-    console.error('❌ Error creating DeSnap:', error);
+    console.error('? Error creating DeSnap:', error);
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : 'Failed to create DeSnap' 
     }, { status: 500 });
@@ -94,8 +94,8 @@ export async function GET(request: NextRequest) {
     console.log('Fetching DeSnaps via backend');
 
     // Forward request to backend
-    const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
-    console.log('🔄 Connecting to backend:', backendUrl);
+    const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend-production.up.railway.app';
+    console.log('?? Connecting to backend:', backendUrl);
     
     try {
       const response = await fetch(`${backendUrl}/api/desnaps`, {
@@ -107,26 +107,26 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      console.log('🔄 Backend response status:', response.status);
+      console.log('?? Backend response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Backend error:', response.status, errorText);
+        console.error('? Backend error:', response.status, errorText);
         throw new Error(`Backend responded with ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('✅ Fetched DeSnaps via backend:', data.length, 'DeSnaps');
+      console.log('? Fetched DeSnaps via backend:', data.length, 'DeSnaps');
       return NextResponse.json(data);
     } catch (backendError) {
-      console.error('❌ Backend connection failed:', backendError);
+      console.error('? Backend connection failed:', backendError);
       
       // Return empty array if backend is unavailable
-      console.log('🔄 Backend unavailable: returning empty DeSnaps array');
+      console.log('?? Backend unavailable: returning empty DeSnaps array');
       return NextResponse.json([]);
     }
   } catch (error) {
-    console.error('❌ Error fetching DeSnaps:', error);
+    console.error('? Error fetching DeSnaps:', error);
     return NextResponse.json({ error: 'Failed to fetch DeSnaps' }, { status: 500 });
   }
 }

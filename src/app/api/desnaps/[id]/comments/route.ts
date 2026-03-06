@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
+const BACKEND_URL = process.env.BACKEND_URL || "https://demedia-backend-production.up.railway.app";
 
 // GET /api/desnaps/[id]/comments - Get comments for a DeSnap
 export async function GET(

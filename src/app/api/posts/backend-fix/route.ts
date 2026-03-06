@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     // Try to connect to the actual backend
     try {
-      const backendResponse = await fetch('https://demedia-backend.fly.dev/api/posts', {
+      const backendResponse = await fetch('https://demedia-backend-production.up.railway.app/api/posts', {
         headers: {
           'Authorization': authHeader || '',
           'user-id': userId || '',

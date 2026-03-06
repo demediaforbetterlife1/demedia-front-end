@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     // Try to connect to the actual backend first
     try {
-      const backendResponse = await fetch('https://demedia-backend.fly.dev/api/suggestions', {
+      const backendResponse = await fetch('https://demedia-backend-production.up.railway.app/api/suggestions', {
         method: 'GET',
         headers: {
           'Authorization': authHeader,
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         id: 1,
         name: "John Doe",
         username: "johndoe",
-        profilePicture: "https://demedia-backend.fly.dev/uploads/profiles/file-1760292243693-835944557.jpg",
+        profilePicture: "https://demedia-backend-production.up.railway.app/uploads/profiles/file-1760292243693-835944557.jpg",
         mutualConnections: 5,
         reason: "Mutual friends"
       },

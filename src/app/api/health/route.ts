@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now();
   
   try {
-    const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
+    const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend-production.up.railway.app';
     
     // Test basic connectivity to backend
     const healthCheckUrl = `${backendUrl}/api/health`;

@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     // Try to connect to the actual backend first
     try {
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/upload/video`, {
+      const backendResponse = await fetch(`https://demedia-backend-production.up.railway.app/api/upload/video`, {
         method: 'POST',
         headers: {
           'Authorization': authHeader,

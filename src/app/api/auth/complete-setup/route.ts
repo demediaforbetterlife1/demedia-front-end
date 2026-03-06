@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     // Call backend complete-setup endpoint (auth route, not user route)
     try {
       console.log('[complete-setup] Calling backend with token:', token.substring(0, 20) + '...');
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/auth/complete-setup`, {
+      const backendResponse = await fetch(`https://demedia-backend-production.up.railway.app/api/auth/complete-setup`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

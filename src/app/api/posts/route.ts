@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const backendUrl =
-      (process.env.BACKEND_URL || "https://demedia-backend.fly.dev") +
+      (process.env.BACKEND_URL || "https://demedia-backend-production.up.railway.app") +
       "/api/posts";
     const userId = request.headers.get("user-id");
 
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
     }
 
     const backendUrl =
-      (process.env.BACKEND_URL || "https://demedia-backend.fly.dev") +
+      (process.env.BACKEND_URL || "https://demedia-backend-production.up.railway.app") +
       "/api/posts";
 
     const headers: HeadersInit = {

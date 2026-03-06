@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     // Try to connect to the actual backend first
     try {
-      const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend.fly.dev';
+      const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend-production.up.railway.app';
       const backendResponse = await fetch(`${backendUrl}/api/chat/create-or-find`, {
         method: 'POST',
         headers: {

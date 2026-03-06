@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     // Try to connect to the actual backend first
     try {
-      const backendResponse = await fetch('https://demedia-backend.fly.dev/api/suggestions/personalized', {
+      const backendResponse = await fetch('https://demedia-backend-production.up.railway.app/api/suggestions/personalized', {
         method: 'POST',
         headers: {
           'Authorization': authHeader,
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
         id: 4,
         name: "Alice Brown",
         username: "aliceb",
-        profilePicture: "https://demedia-backend.fly.dev/uploads/profiles/file-1760292243693-835944557.jpg",
+        profilePicture: "https://demedia-backend-production.up.railway.app/uploads/profiles/file-1760292243693-835944557.jpg",
         mutualConnections: 8,
         reason: "Based on your activity",
         score: 0.95

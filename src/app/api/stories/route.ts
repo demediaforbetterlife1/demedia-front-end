@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Try to connect to the actual backend first
     try {
-      const backendResponse = await fetch('https://demedia-backend.fly.dev/api/stories', {
+      const backendResponse = await fetch('https://demedia-backend-production.up.railway.app/api/stories', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
 
     // Try to connect to the actual backend first
     try {
-      const backendResponse = await fetch('https://demedia-backend.fly.dev/api/stories', {
+      const backendResponse = await fetch('https://demedia-backend-production.up.railway.app/api/stories', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'user-id': userId || '',
