@@ -1,5 +1,5 @@
-// src/components/ProfilePage.tsx
 "use client";
+// src/components/ProfilePage.tsx
 import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -879,8 +879,29 @@ export default function ProfilePage() {
                             {/* Enhanced Profile Picture Section */}
                             <div className="absolute -top-20 sm:-top-24 md:-top-28 left-6 sm:left-8">
                                 <div className="relative group">
-                                    {/* Animated Ring */}
-                                    <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 opacity-75 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+                                    {/* Story Ring - Only show if user has public stories */}
+                                    {profile?.stories && profile.stories.length > 0 && profile.stories.some((s: Story) => {
+                                        const now = new Date();
+                                        const expiresAt = s.expiresAt ? new Date(s.expiresAt) : null;
+                                        const isNotExpired = !expiresAt || expiresAt > now;
+                                        const isPublic = s.visibility === 'public';
+                                        return isNotExpired && isPublic;
+                                    }) && (
+                                        <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 opacity-75 group-hover:opacity-100 transition-opacity duration-300 animate-pulse cursor-pointer"
+                                            onClick={() => {
+                                                // Open story viewer for public stories
+                                                const publicStories = profile.stories.filter((s: Story) => {
+                                                    const now = new Date();
+                                                    const expiresAt = s.expiresAt ? new Date(s.expiresAt) : null;
+                                                    const isNotExpired = !expiresAt || expiresAt > now;
+                                                    return isNotExpired && s.visibility === 'public';
+                                                });
+                                                if (publicStories.length > 0) {
+                                                    setActiveTab('stories');
+                                                }
+                                            }}
+                                        ></div>
+                                    )}
 
                                     {/* Main Profile Circle */}
                                     <div className={`relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-4 ${themeClasses.border} shadow-2xl ring-4 ring-white/20 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300`}>
@@ -1135,14 +1156,121 @@ export default function ProfilePage() {
                                                 exit={{ opacity: 0, y: -10 }}
                                                 transition={{ duration: 0.3 }}
                                             >
-                                                <div className="text-center py-8">
-                                                    <div className="w-20 h-20 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                                                        <Sparkles className="w-10 h-10 text-white" />
+                                                {profile?.stories && profile.stories.length > 0 ? (
+                                                    <div className="space-y-4">
+                                                        <div className="flex items-center justify-between mb-6">
+                                                            <h3 className={`text-xl font-bold ${themeClasses.text}`}>
+                                                                {isOwnProfile ? 'Your Stories' : `${name}'s Stories`}
+                                                            </h3>
+                                                            {isOwnProfile && (
+                                                                <motion.button
+                                                                    whileHover={{ scale: 1.05 }}
+                                                                    whileTap={{ scale: 0.95 }}
+                                                                    onClick={() => setShowCreateStoryModal(true)}
+                                                                    className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl font-semibold hover:from-yellow-600 hover:to-orange-700 transition-all duration-300 shadow-lg flex items-center space-x-2"
+                                                                >
+                                                                    <Sparkles size={16} />
+                                                                    <span>Create Story</span>
+                                                                </motion.button>
+                                                            )}
+                                                        </div>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            {profile.stories
+                                                                .filter((story: Story) => {
+                                                                    const now = new Date();
+                                                                    const expiresAt = story.expiresAt ? new Date(story.expiresAt) : null;
+                                                                    const isNotExpired = !expiresAt || expiresAt > now;
+                                                                    
+                                                                    // Show all stories if own profile
+                                                                    if (isOwnProfile) return isNotExpired;
+                                                                    
+                                                                    // For other profiles, only show public stories
+                                                                    return isNotExpired && story.visibility === 'public';
+                                                                })
+                                                                .map((story: Story) => (
+                                                                    <motion.div
+                                                                        key={story.id}
+                                                                        initial={{ opacity: 0, scale: 0.9 }}
+                                                                        animate={{ opacity: 1, scale: 1 }}
+                                                                        className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-2xl border border-gray-700 shadow-xl overflow-hidden"
+                                                                    >
+                                                                        {/* Story Header */}
+                                                                        <div className="p-4 border-b border-gray-700 bg-gray-800/50">
+                                                                            <div className="flex items-center justify-between">
+                                                                                <div className="flex items-center space-x-2">
+                                                                                    <Clock size={14} className="text-cyan-400" />
+                                                                                    <span className="text-xs text-gray-400">
+                                                                                        {story.expiresAt && (() => {
+                                                                                            const now = new Date();
+                                                                                            const expires = new Date(story.expiresAt);
+                                                                                            const diff = expires.getTime() - now.getTime();
+                                                                                            const hours = Math.floor(diff / (1000 * 60 * 60));
+                                                                                            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                                                                            return hours > 0 ? `${hours}h ${minutes}m left` : `${minutes}m left`;
+                                                                                        })()}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="flex items-center space-x-2">
+                                                                                    {story.visibility === 'public' && (
+                                                                                        <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded-full">Public</span>
+                                                                                    )}
+                                                                                    {story.visibility === 'followers' && (
+                                                                                        <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full">Followers</span>
+                                                                                    )}
+                                                                                    {story.visibility === 'close_friends' && (
+                                                                                        <span className="text-xs px-2 py-1 bg-purple-500/20 text-purple-400 rounded-full">Close Friends</span>
+                                                                                    )}
+                                                                                    {story.visibility === 'only_me' && (
+                                                                                        <span className="text-xs px-2 py-1 bg-gray-500/20 text-gray-400 rounded-full">Only Me</span>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        
+                                                                        {/* Story Content */}
+                                                                        <div className="p-4">
+                                                                            {story.content.includes('[IMAGE:') ? (
+                                                                                <img 
+                                                                                    src={story.content.match(/\[IMAGE:(.*?)\]/)?.[1]} 
+                                                                                    alt="Story" 
+                                                                                    className="w-full h-48 object-cover rounded-lg"
+                                                                                />
+                                                                            ) : story.content.includes('[VIDEO:') ? (
+                                                                                <video 
+                                                                                    src={story.content.match(/\[VIDEO:(.*?)\]/)?.[1]} 
+                                                                                    controls 
+                                                                                    className="w-full h-48 object-cover rounded-lg"
+                                                                                />
+                                                                            ) : (
+                                                                                <p className="text-gray-300 text-sm">{story.content}</p>
+                                                                            )}
+                                                                        </div>
+                                                                        
+                                                                        {/* Story Footer */}
+                                                                        <div className="p-4 border-t border-gray-700 bg-gray-900/50">
+                                                                            <div className="flex items-center justify-between text-xs text-gray-400">
+                                                                                <div className="flex items-center space-x-1">
+                                                                                    <Eye size={12} />
+                                                                                    <span>{story.views || 0} views</span>
+                                                                                </div>
+                                                                                <span>{story.duration || 24}h duration</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </motion.div>
+                                                                ))}
+                                                        </div>
                                                     </div>
-                                                    <h3 className={`text-xl font-bold ${themeClasses.text} mb-2`}>Stories</h3>
-                                                    <p className={`${themeClasses.textSecondary} mb-4`}>Temporary content that disappears after 24 hours</p>
-                                                    <div className="text-center">
-                                                        <p className={`${themeClasses.textSecondary} mb-4`}>No stories yet</p>
+                                                ) : (
+                                                    <div className="text-center py-8">
+                                                        <div className="w-20 h-20 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                                                            <Sparkles className="w-10 h-10 text-white" />
+                                                        </div>
+                                                        <h3 className={`text-xl font-bold ${themeClasses.text} mb-2`}>Stories</h3>
+                                                        <p className={`${themeClasses.textSecondary} mb-4`}>
+                                                            {isOwnProfile 
+                                                                ? 'Share temporary moments that disappear after the time you set' 
+                                                                : 'No public stories available'}
+                                                        </p>
                                                         {isOwnProfile && (
                                                             <motion.button
                                                                 whileHover={{ scale: 1.05 }}
@@ -1154,7 +1282,7 @@ export default function ProfilePage() {
                                                             </motion.button>
                                                         )}
                                                     </div>
-                                                </div>
+                                                )}
                                             </motion.div>
                                         )}
                                         {activeTab === "achievements" && (

@@ -3,7 +3,7 @@
  */
 
 export const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "https://demedia-backend.fly.dev";
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://demedia-backend-production.up.railway.app";
 
 /**
  * Checks if a URL is reachable

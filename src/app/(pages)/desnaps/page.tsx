@@ -128,12 +128,21 @@ export default function DeSnapsPage() {
             setDeSnaps(prev => prev.map(ds => ds.id === normalized.id ? normalized : ds));
         };
 
+        const handleDeleted = (event: Event) => {
+            const customEvent = event as CustomEvent<{ deSnapId?: number }>;
+            const deSnapId = customEvent.detail?.deSnapId;
+            if (!deSnapId) return;
+            setDeSnaps(prev => prev.filter(ds => ds.id !== deSnapId));
+        };
+
         window.addEventListener('desnap:created', handleCreated as EventListener);
         window.addEventListener('desnap:updated', handleUpdated as EventListener);
+        window.addEventListener('desnap:deleted', handleDeleted as EventListener);
 
         return () => {
             window.removeEventListener('desnap:created', handleCreated as EventListener);
             window.removeEventListener('desnap:updated', handleUpdated as EventListener);
+            window.removeEventListener('desnap:deleted', handleDeleted as EventListener);
         };
     }, []);
 

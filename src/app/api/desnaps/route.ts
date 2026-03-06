@@ -79,9 +79,14 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const view = searchParams.get('view') || 'all'; // 'all', 'following', 'public'
+    const profileUserId = searchParams.get('userId'); // For profile view
+    
     // Try to get token from cookie first, then fall back to Authorization header
     let token = request.cookies.get('token')?.value;
     let authHeader = request.headers.get('authorization');
+    const userId = request.headers.get('user-id');
     
     if (!token && authHeader?.startsWith('Bearer ')) {
       token = authHeader.replace('Bearer ', '');
@@ -91,42 +96,49 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No authorization token' }, { status: 401 });
     }
     
-    console.log('Fetching DeSnaps via backend');
+    console.log('Fetching DeSnaps via backend - view:', view, 'profileUserId:', profileUserId);
 
-    // Forward request to backend
+    // Forward request to backend with query params
     const backendUrl = process.env.BACKEND_URL || 'https://demedia-backend-production.up.railway.app';
-    console.log('?? Connecting to backend:', backendUrl);
+    const backendParams = new URLSearchParams();
+    if (view) backendParams.set('view', view);
+    if (profileUserId) backendParams.set('userId', profileUserId);
+    if (userId) backendParams.set('viewerId', userId);
+    
+    const finalUrl = `${backendUrl}/api/desnaps?${backendParams.toString()}`;
+    console.log('📤 Connecting to backend:', finalUrl);
     
     try {
-      const response = await fetch(`${backendUrl}/api/desnaps`, {
+      const response = await fetch(finalUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Cookie': `token=${token}`, // Forward cookie for backend auth
           'Content-Type': 'application/json',
+          'user-id': userId || '',
         },
       });
 
-      console.log('?? Backend response status:', response.status);
+      console.log('📡 Backend response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('? Backend error:', response.status, errorText);
+        console.error('❌ Backend error:', response.status, errorText);
         throw new Error(`Backend responded with ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('? Fetched DeSnaps via backend:', data.length, 'DeSnaps');
+      console.log('✅ Fetched DeSnaps via backend:', data.length, 'DeSnaps');
       return NextResponse.json(data);
     } catch (backendError) {
-      console.error('? Backend connection failed:', backendError);
+      console.error('🚨 Backend connection failed:', backendError);
       
       // Return empty array if backend is unavailable
-      console.log('?? Backend unavailable: returning empty DeSnaps array');
+      console.log('🔧 Backend unavailable: returning empty DeSnaps array');
       return NextResponse.json([]);
     }
   } catch (error) {
-    console.error('? Error fetching DeSnaps:', error);
+    console.error('❌ Error fetching DeSnaps:', error);
     return NextResponse.json({ error: 'Failed to fetch DeSnaps' }, { status: 500 });
   }
 }

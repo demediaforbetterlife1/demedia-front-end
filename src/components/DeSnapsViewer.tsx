@@ -19,6 +19,7 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  Trash2,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -71,6 +72,7 @@ export default function DeSnapsViewer({
     null,
   );
   const [errorCount, setErrorCount] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
@@ -400,6 +402,43 @@ export default function DeSnapsViewer({
     }
   };
 
+  // Delete DeSnap (only for owner)
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this DeSnap? This action cannot be undone.")) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const response = await apiFetch(
+        `/api/desnaps/${deSnap.id}`,
+        {
+          method: "DELETE",
+        },
+        user?.id,
+      );
+
+      if (response.ok) {
+        // Dispatch event to remove from list
+        window.dispatchEvent(
+          new CustomEvent("desnap:deleted", {
+            detail: { deSnapId: deSnap.id },
+          }),
+        );
+        // Close viewer
+        onClose();
+      } else {
+        const error = await response.json();
+        alert(error.error || "Failed to delete DeSnap");
+      }
+    } catch (error) {
+      console.error("Error deleting DeSnap:", error);
+      alert("Failed to delete DeSnap. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Load comments when comments section is opened
   useEffect(() => {
     if (showComments && comments.length === 0) {
@@ -434,6 +473,22 @@ export default function DeSnapsViewer({
           >
             <X size={24} />
           </button>
+
+          {/* Delete button (only for owner) */}
+          {user?.id === deSnap.author.id && (
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="absolute top-4 right-16 z-10 text-white hover:bg-red-500/20 rounded-full p-2 transition-colors disabled:opacity-50"
+              title="Delete DeSnap"
+            >
+              {isDeleting ? (
+                <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Trash2 size={24} />
+              )}
+            </button>
+          )}
 
           {/* Video container */}
           <div className="flex-1 flex items-center justify-center relative bg-black">

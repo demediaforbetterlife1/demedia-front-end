@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
 
 interface MediaImageProps {
@@ -62,23 +62,7 @@ export default function MediaImage({
 }: MediaImageProps) {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [attemptedSrc, setAttemptedSrc] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<string>("");
-
-  // Reset state when src changes
-  React.useEffect(() => {
-    if (src !== attemptedSrc) {
-      console.log("MediaImage: Source changed", {
-        old: attemptedSrc,
-        new: src,
-        alt,
-      });
-      setImageError(false);
-      setIsLoading(true);
-      setAttemptedSrc(src || null);
-      setDebugInfo("");
-    }
-  }, [src, attemptedSrc, alt]);
+  const [currentSrc, setCurrentSrc] = useState<string | null>(null);
 
   // Determine the appropriate fallback image
   const getFallbackImage = useCallback(() => {
@@ -97,88 +81,88 @@ export default function MediaImage({
     (url: string | null | undefined): string => {
       // If URL is invalid, return fallback immediately
       if (!isValidImageUrl(url)) {
-        const message = `Invalid image URL: ${url}, using fallback`;
-        console.warn(`MediaImage (${alt}):`, message);
-        setDebugInfo(message);
+        console.warn(`MediaImage (${alt}): Invalid URL:`, url);
         return getFallbackImage();
-      }
-
-      // Explicitly handle local uploads
-      if (url!.startsWith("/local-uploads") || url!.includes("local-uploads")) {
-        const localUrl = url!.startsWith("/") ? url! : `/${url}`;
-        console.log(`MediaImage (${alt}): Using local upload URL:`, localUrl);
-        return localUrl;
       }
 
       // Handle base64 data URLs
       if (url!.startsWith("data:")) {
-        console.log(`MediaImage (${alt}): Using data URL (base64)`);
         return url!;
       }
 
-      // Use shared helper that handles relative paths (with/without leading slash)
+      // Handle local paths
+      if (url!.startsWith("/images/") || url!.startsWith("/assets/")) {
+        return url!;
+      }
+
+      // Use shared helper that handles relative paths
       const normalized = ensureAbsoluteMediaUrl(url);
       if (!normalized) {
-        const message = `Failed to normalize URL: ${url}, using fallback`;
-        console.warn(`MediaImage (${alt}):`, message);
-        setDebugInfo(message);
+        console.warn(`MediaImage (${alt}): Failed to normalize:`, url);
         return getFallbackImage();
       }
 
-      console.log(`MediaImage (${alt}): Normalized URL:`, {
-        original: url,
-        normalized,
-      });
       return normalized;
     },
     [getFallbackImage, alt],
   );
 
-  const handleImageError = useCallback(() => {
-    const message = `Image failed to load: ${src}`;
-    console.warn(`MediaImage (${alt}):`, message, "switching to fallback");
-    setDebugInfo(message);
-    setImageError(true);
-    setIsLoading(false);
-    onError?.();
-  }, [src, onError, alt]);
+  // Update current src when src prop changes
+  useEffect(() => {
+    const newSrc = imageError ? getFallbackImage() : getValidImageUrl(src);
+    if (newSrc !== currentSrc) {
+      setCurrentSrc(newSrc);
+      setIsLoading(true);
+      setImageError(false);
+    }
+  }, [src, imageError, getFallbackImage, getValidImageUrl, currentSrc]);
 
-  // Determine the final image URL to use
-  const imageUrl = imageError ? getFallbackImage() : getValidImageUrl(src);
+  const handleImageError = useCallback(() => {
+    console.warn(`MediaImage (${alt}): Failed to load:`, currentSrc);
+    if (!imageError) {
+      setImageError(true);
+      setIsLoading(false);
+      setCurrentSrc(getFallbackImage());
+      onError?.();
+    }
+  }, [currentSrc, imageError, onError, alt, getFallbackImage]);
 
   const handleImageLoad = useCallback(() => {
-    console.log(`MediaImage (${alt}): Successfully loaded:`, imageUrl);
     setIsLoading(false);
     onLoad?.();
-  }, [onLoad, alt, imageUrl]);
+  }, [onLoad]);
 
   // Build style object for img tag
   const imgStyle: React.CSSProperties = fill
     ? { width: "100%", height: "100%", objectFit: "cover" as const }
     : { width: width || "auto", height: height || "auto" };
 
+  if (!currentSrc) {
+    return (
+      <div
+        className={`bg-gray-200 dark:bg-gray-700 animate-pulse ${className}`}
+        style={imgStyle}
+      />
+    );
+  }
+
   return (
     <div className={`relative ${fill ? "w-full h-full" : ""}`}>
-      {isLoading && !imageError && (
+      {isLoading && (
         <div
           className={`absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse rounded ${fill ? "" : "w-full h-full"}`}
           style={imgStyle}
         />
       )}
-      {imageError && debugInfo && process.env.NODE_ENV === "development" && (
-        <div className="absolute top-0 left-0 bg-red-500/80 text-white text-xs p-1 rounded max-w-full truncate z-10">
-          {debugInfo}
-        </div>
-      )}
       <img
-        src={imageUrl}
+        src={currentSrc}
         alt={alt}
-        className={`${className} ${isLoading && !imageError ? "opacity-0" : "opacity-100"} transition-opacity duration-200`}
+        className={`${className} ${isLoading ? "opacity-0" : "opacity-100"} transition-opacity duration-300`}
         style={imgStyle}
         onError={handleImageError}
         onLoad={handleImageLoad}
         loading={priority ? "eager" : "lazy"}
-        title={process.env.NODE_ENV === "development" ? imageUrl : alt}
+        crossOrigin="anonymous"
       />
     </div>
   );

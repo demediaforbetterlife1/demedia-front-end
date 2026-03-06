@@ -1,7 +1,8 @@
-// Enhanced Service Worker for PWA
-const CACHE_NAME = 'demedia-v1';
-const RUNTIME_CACHE = 'demedia-runtime-v1';
-const IMAGE_CACHE = 'demedia-images-v1';
+// Enhanced Service Worker for PWA with Version Control
+const VERSION = '1.0.0';
+const CACHE_NAME = `demedia-v${VERSION}-${Date.now()}`;
+const RUNTIME_CACHE = `demedia-runtime-v${VERSION}`;
+const IMAGE_CACHE = `demedia-images-v${VERSION}`;
 
 const PRECACHE_URLS = [
   '/',
@@ -47,16 +48,38 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker...');
+  console.log('[SW] Activating service worker version:', VERSION);
   event.waitUntil(
     (async () => {
       const cacheNames = await caches.keys();
+      console.log('[SW] Found caches:', cacheNames);
+      
+      // Delete all old caches
       await Promise.all(
         cacheNames
-          .filter(name => name !== CACHE_NAME && name !== RUNTIME_CACHE && name !== IMAGE_CACHE)
-          .map(name => caches.delete(name))
+          .filter(name => {
+            // Keep only current version caches
+            return !name.includes(`v${VERSION}`) && name.startsWith('demedia-');
+          })
+          .map(name => {
+            console.log('[SW] Deleting old cache:', name);
+            return caches.delete(name);
+          })
       );
-      self.clients.claim();
+      
+      console.log('[SW] Cache cleanup complete');
+      
+      // Take control of all clients immediately
+      await self.clients.claim();
+      
+      // Notify all clients about the update
+      const clients = await self.clients.matchAll();
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'SW_UPDATED',
+          version: VERSION
+        });
+      });
     })()
   );
 });

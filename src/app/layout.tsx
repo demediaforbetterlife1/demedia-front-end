@@ -1,23 +1,27 @@
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import dynamic from "next/dynamic";
 import "./globals.css";
 import "../styles/themes.css";
 import NavbarClient from "@/app/layoutElements/NavBarClient";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AuthGuard } from "@/components/AuthGuard";
-import { AnimatedStars } from "@/components/AnimatedStars";
 import { I18nProvider } from "@/contexts/I18nContext";
 import NotificationProvider from "@/components/NotificationProvider";
-import GlowingPlanets from "@/components/GlowingPlanets";
-import GoldParticles from "@/components/GoldParticles";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import WebGLErrorHandler from "@/components/WebGLErrorHandler";
-import PWAInstallButton from "@/components/PWAInstallButton";
-import PWARegister from "@/components/PWARegister";
-import PWAStatus from "@/components/PWAStatus";
 import "@/utils/errorHandler";
+
+// Lazy load non-critical components
+const AnimatedStars = dynamic(() => import("@/components/AnimatedStars"), { ssr: false });
+const GlowingPlanets = dynamic(() => import("@/components/GlowingPlanets"), { ssr: false });
+const GoldParticles = dynamic(() => import("@/components/GoldParticles"), { ssr: false });
+const WebGLErrorHandler = dynamic(() => import("@/components/WebGLErrorHandler"), { ssr: false });
+const PWAInstallButton = dynamic(() => import("@/components/PWAInstallButton"), { ssr: false });
+const PWARegister = dynamic(() => import("@/components/PWARegister"), { ssr: false });
+const PWAStatus = dynamic(() => import("@/components/PWAStatus"), { ssr: false });
+const VersionChecker = dynamic(() => import("@/components/VersionChecker"), { ssr: false });
 
 
 const geistSans = Geist({
@@ -98,6 +102,7 @@ export default function RootLayout({
                     <GoldParticles />
                     <NavbarClient />
                     <PWAStatus />
+                    <VersionChecker />
                     {children}
                     <PWAInstallButton />
                   </AuthGuard>

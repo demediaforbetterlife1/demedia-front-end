@@ -123,10 +123,42 @@ export default function StoryCard({ story, onStoryDeleted }: StoryCardProps) {
 
             {/* Story Content */}
             <div className="p-4">
-                <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                    <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
-                        {story.content}
-                    </p>
+                <div className="bg-gray-800/50 rounded-lg overflow-hidden border border-gray-700">
+                    {/* Check if content contains media markers */}
+                    {story.content.includes('[IMAGE:') ? (
+                        <div className="relative">
+                            <img 
+                                src={story.content.match(/\[IMAGE:(.*?)\]/)?.[1]} 
+                                alt="Story content" 
+                                className="w-full h-auto max-h-96 object-cover"
+                            />
+                        </div>
+                    ) : story.content.includes('[VIDEO:') ? (
+                        <div className="relative">
+                            <video 
+                                src={story.content.match(/\[VIDEO:(.*?)\]/)?.[1]} 
+                                controls 
+                                className="w-full h-auto max-h-96 object-cover"
+                            />
+                        </div>
+                    ) : story.content.includes('[AUDIO:') ? (
+                        <div className="p-4 flex items-center space-x-3">
+                            <div className="w-12 h-12 bg-cyan-500/20 rounded-full flex items-center justify-center">
+                                <Eye className="w-6 h-6 text-cyan-400" />
+                            </div>
+                            <audio 
+                                src={story.content.match(/\[AUDIO:(.*?)\]/)?.[1]} 
+                                controls 
+                                className="flex-1"
+                            />
+                        </div>
+                    ) : (
+                        <div className="p-4">
+                            <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                                {story.content}
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
 

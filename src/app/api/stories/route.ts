@@ -73,11 +73,9 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Try to get token from cookie first, then fall back to Authorization header
     let token = request.cookies.get('token')?.value;
     
     if (!token) {
-      // Fallback to Authorization header
       const authHeader = request.headers.get('authorization');
       if (authHeader?.startsWith('Bearer ')) {
         token = authHeader.replace('Bearer ', '');
@@ -85,74 +83,67 @@ export async function GET(request: NextRequest) {
     }
     
     const userId = request.headers.get('user-id');
+    const { searchParams } = new URL(request.url);
+    const view = searchParams.get('view') || 'following';
+    const profileUserId = searchParams.get('userId');
     
-    console.log('Stories API called with userId:', userId, 'token:', token ? 'Found' : 'Not found');
+    console.log('Stories API - userId:', userId, 'view:', view, 'profileUserId:', profileUserId);
 
     if (!token) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return NextResponse.json([]);
     }
 
-    // Try to connect to the actual backend first
     try {
-      const backendResponse = await fetch('https://demedia-backend-production.up.railway.app/api/stories', {
+      const backendParams = new URLSearchParams();
+      if (view) backendParams.set('view', view);
+      if (profileUserId) backendParams.set('userId', profileUserId);
+      if (userId) backendParams.set('viewerId', userId);
+      
+      const backendUrl = `https://demedia-backend-production.up.railway.app/api/stories?${backendParams.toString()}`;
+      
+      const backendResponse = await fetch(backendUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'user-id': userId || '',
           'Content-Type': 'application/json',
-          'Cookie': `token=${token}`, // Forward cookie for backend auth
+          'Cookie': `token=${token}`,
         },
         signal: AbortSignal.timeout(10000)
       });
 
-      console.log('Backend stories response status:', backendResponse.status);
-
       if (backendResponse.ok) {
         const data = await backendResponse.json();
-        console.log('Backend stories data received:', Array.isArray(data) ? data.length : 0, 'stories');
         
-        // Ensure we return an array
         if (!Array.isArray(data)) {
-          console.warn('Backend returned non-array data, converting to array');
           return NextResponse.json([]);
         }
         
-        // Filter out invalid stories
-        const validStories = data.filter((story: any) => 
-          story && 
-          story.id && 
-          story.author && 
-          story.author.name && 
-          story.author.name !== "Unknown" && 
-          story.author.name.trim() !== ""
-        );
+        const now = new Date();
+        const validStories = data.filter((story: any) => {
+          if (!story || !story.id || !story.author || !story.author.name || 
+              story.author.name === "Unknown" || story.author.name.trim() === "") {
+            return false;
+          }
+          
+          if (story.expiresAt) {
+            const expiresAt = new Date(story.expiresAt);
+            if (expiresAt < now) {
+              return false;
+            }
+          }
+          
+          return true;
+        });
         
         return NextResponse.json(validStories);
       } else {
-        const errorText = await backendResponse.text();
-        console.error('Backend stories fetch failed:', backendResponse.status, errorText);
-        
-        // Return empty array instead of error for better UX
-        if (backendResponse.status === 404 || backendResponse.status === 401) {
-          return NextResponse.json([]);
-        }
-        
-        return NextResponse.json({ error: errorText || 'Failed to fetch stories' }, { status: backendResponse.status });
-      }
-    } catch (backendError: any) {
-      console.error('Backend stories connection error:', backendError);
-      
-      if (backendError.name === 'AbortError') {
-        console.warn('Stories request timed out, returning empty array');
         return NextResponse.json([]);
       }
-      
-      // Return empty array on connection errors for better UX
+    } catch (backendError: any) {
       return NextResponse.json([]);
     }
 
   } catch (error: any) {
-    console.error('Error fetching stories:', error);
-    // Return empty array instead of error for better UX
     return NextResponse.json([]);
   }
 }

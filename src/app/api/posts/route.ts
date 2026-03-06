@@ -9,6 +9,10 @@ export async function GET(request: NextRequest) {
   console.log("📡 Posts API: GET request received");
 
   try {
+    const { searchParams } = new URL(request.url);
+    const view = searchParams.get('view') || 'all'; // 'all', 'following', 'public'
+    const profileUserId = searchParams.get('userId'); // For profile view
+    
     const backendUrl =
       (process.env.BACKEND_URL || "https://demedia-backend-production.up.railway.app") +
       "/api/posts";
@@ -16,6 +20,7 @@ export async function GET(request: NextRequest) {
 
     console.log("🌐 Backend URL:", backendUrl);
     console.log("👤 User ID:", userId);
+    console.log("👁️ View:", view, "Profile User:", profileUserId);
 
     // Try to get token from cookie first, then fall back to Authorization header
     let token = request.cookies.get("token")?.value;
@@ -36,10 +41,17 @@ export async function GET(request: NextRequest) {
       headers["Cookie"] = `token=${token}`; // Forward cookie for backend auth
     }
 
-    console.log("📤 Making request to backend...");
+    // Add query params for backend
+    const backendParams = new URLSearchParams();
+    if (view) backendParams.set('view', view);
+    if (profileUserId) backendParams.set('userId', profileUserId);
+    if (userId) backendParams.set('viewerId', userId);
+    
+    const finalUrl = `${backendUrl}?${backendParams.toString()}`;
+    console.log("📤 Making request to backend:", finalUrl);
 
     try {
-      const res = await fetch(backendUrl, {
+      const res = await fetch(finalUrl, {
         cache: "no-store", // مهم جدًا علشان يمنع التخزين المؤقت
         headers,
       });
@@ -64,6 +76,7 @@ export async function GET(request: NextRequest) {
             imageUrl: null,
             imageUrls: [],
             videoUrl: null,
+            visibility: "public",
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             author: {
@@ -80,6 +93,7 @@ export async function GET(request: NextRequest) {
             imageUrl: null,
             imageUrls: [],
             videoUrl: null,
+            visibility: "followers",
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             author: {
@@ -116,6 +130,7 @@ export async function GET(request: NextRequest) {
           imageUrl: null,
           imageUrls: [],
           videoUrl: null,
+          visibility: "public",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           author: {
