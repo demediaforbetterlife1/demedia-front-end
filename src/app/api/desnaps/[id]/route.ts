@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 // GET - Fetch a single DeSnap
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const deSnapId = params.id;
+    const { id: deSnapId } = await params;
 
     // Get token from cookie or Authorization header
     let token = request.cookies.get('token')?.value;
@@ -56,10 +56,10 @@ export async function GET(
 // DELETE - Delete a DeSnap (only by owner)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const deSnapId = params.id;
+    const { id: deSnapId } = await params;
 
     // Get token from cookie or Authorization header
     let token = request.cookies.get('token')?.value;

@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const deSnapId = params.id;
+    const { id: deSnapId } = await params;
 
     // Get token from cookie or Authorization header
     let token = request.cookies.get('token')?.value;

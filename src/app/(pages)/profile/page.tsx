@@ -117,7 +117,7 @@ interface Story {
     likes?: number;
     comments?: number;
     views?: number;
-    visibility?: 'public' | 'followers' | 'close_friends' | 'premium';
+    visibility?: 'public' | 'followers' | 'close_friends' | 'only_me' | 'premium';
     type?: 'image' | 'video' | 'text';
     duration?: number; // in hours
 }

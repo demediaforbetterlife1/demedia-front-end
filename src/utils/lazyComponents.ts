@@ -1,4 +1,5 @@
 import dynamic from "next/dynamic";
+import React from "react";
 
 // Lazy load all major components with loading states
 
@@ -52,7 +53,12 @@ export const LazyMediaEditor = dynamic(
 // Lists and Feeds
 export const LazyStoriesList = dynamic(
   () => import("@/components/StoriesList"),
-  { ssr: false, loading: () => <div className="animate-pulse h-32 bg-gray-200 dark:bg-gray-800 rounded-lg" /> }
+  { 
+    ssr: false, 
+    loading: () => React.createElement('div', { 
+      className: "animate-pulse h-32 bg-gray-200 dark:bg-gray-800 rounded-lg" 
+    })
+  }
 );
 
 export const LazyFollowersList = dynamic(
@@ -68,7 +74,12 @@ export const LazyFollowersModal = dynamic(
 // Analytics and Features
 export const LazyProfileAnalytics = dynamic(
   () => import("@/components/ProfileAnalytics"),
-  { ssr: false, loading: () => <div className="animate-pulse h-64 bg-gray-200 dark:bg-gray-800 rounded-lg" /> }
+  { 
+    ssr: false, 
+    loading: () => React.createElement('div', { 
+      className: "animate-pulse h-64 bg-gray-200 dark:bg-gray-800 rounded-lg" 
+    })
+  }
 );
 
 export const LazyProfileCustomization = dynamic(
@@ -117,13 +128,14 @@ export const LazyPosts = dynamic(
   () => import("@/app/(PagesComps)/homedir/posts"),
   { 
     ssr: false, 
-    loading: () => (
-      <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="animate-pulse bg-gray-200 dark:bg-gray-800 rounded-2xl h-96" />
-        ))}
-      </div>
-    )
+    loading: () => React.createElement('div', { 
+      className: "space-y-4" 
+    }, [1, 2, 3].map((i) => 
+      React.createElement('div', { 
+        key: i, 
+        className: "animate-pulse bg-gray-200 dark:bg-gray-800 rounded-2xl h-96" 
+      })
+    ))
   }
 );
 

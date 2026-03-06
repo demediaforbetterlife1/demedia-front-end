@@ -475,7 +475,7 @@ export default function DeSnapsViewer({
           </button>
 
           {/* Delete button (only for owner) */}
-          {user?.id === deSnap.author.id && (
+          {user?.id && String(user.id) === String(deSnap.author.id) && (
             <button
               onClick={handleDelete}
               disabled={isDeleting}
