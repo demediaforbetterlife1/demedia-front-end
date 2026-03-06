@@ -1,7 +1,8 @@
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://demedia-backend-production.up.railway.app"; // Use backend URL directly
-const DIRECT_API_BASE = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "https://demedia-backend-production.up.railway.app"; // direct backend fallback
+// Force backend URL - never use relative paths
+const API_BASE = "https://demedia-backend-production.up.railway.app";
+const DIRECT_API_BASE = "https://demedia-backend-production.up.railway.app";
 
 /* --------------------------- Utility helpers ----------------------------- */
 
