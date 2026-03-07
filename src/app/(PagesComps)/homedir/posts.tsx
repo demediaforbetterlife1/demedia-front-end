@@ -10,7 +10,7 @@ import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import CommentModal from "@/components/CommentModal";
-import MediaImage from "@/components/MediaImage";
+import DebugImage from "@/components/DebugImage";
 
 type AuthorType = {
   id: number;
@@ -510,13 +510,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                   } as React.CSSProperties
                 }
               >
-                <MediaImage
+                <DebugImage
                   src={profilePic}
                   alt="User avatar"
-                  className="object-cover"
-                  fill
-                  fallbackSrc={defaultAvatar}
-                  priority
+                  className="object-cover w-full h-full"
+                  fallback={defaultAvatar}
                 />
               </div>
               <div className="flex flex-col">
@@ -579,13 +577,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                 {images.length > 0 &&
                   (images.length === 1 ? (
                     <div className="relative w-full overflow-hidden rounded-2xl h-full min-h-[320px]">
-                      <MediaImage
+                      <DebugImage
                         src={images[0] || defaultPostImage}
                         alt={post.title || "Post image"}
-                        className="object-cover transition-transform duration-700 group-hover:scale-[1.01]"
-                        fill
-                        fallbackSrc={defaultPostImage}
-                        priority
+                        className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-[1.01]"
+                        fallback={defaultPostImage}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
                     </div>
@@ -601,13 +597,11 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
                               isHero ? "col-span-2 row-span-2" : ""
                             }`}
                           >
-                            <MediaImage
+                            <DebugImage
                               src={img || defaultPostImage}
                               alt={`Post image ${idx + 1}`}
-                              className="object-cover transition-transform duration-700 hover:scale-105"
-                              fill
-                              fallbackSrc={defaultPostImage}
-                              priority={idx === 0}
+                              className="object-cover w-full h-full transition-transform duration-700 hover:scale-105"
+                              fallback={defaultPostImage}
                             />
                             {remaining > 0 && idx === 3 && (
                               <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white text-lg font-semibold">

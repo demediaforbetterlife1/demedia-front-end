@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import MediaImage from "./MediaImage";
+import DebugImage from "./DebugImage";
 
 interface ImageTestResult {
   url: string;
@@ -228,17 +228,11 @@ export default function ImageDebugTest() {
 
                   <div className="relative h-32 bg-gray-100 rounded border overflow-hidden">
                     {result.status === "success" ? (
-                      <MediaImage
+                      <DebugImage
                         src={result.url.replace(" (UPLOADED)", "")}
                         alt="Test image"
-                        className="object-cover"
-                        fill
-                        onError={() =>
-                          console.log("MediaImage error for:", result.url)
-                        }
-                        onLoad={() =>
-                          console.log("MediaImage loaded:", result.url)
-                        }
+                        className="object-cover w-full h-full"
+                        fallback="/images/default-post.svg"
                       />
                     ) : result.status === "error" ? (
                       <div className="flex items-center justify-center h-full text-red-500">

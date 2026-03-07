@@ -17,7 +17,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { useNotifications } from "@/components/NotificationProvider";
 import CommentModal from "@/components/CommentModal";
-import MediaImage from "@/components/MediaImage";
+import DebugImage from "@/components/DebugImage";
 import { apiFetch, getAuthHeaders } from "@/lib/api";
 import { normalizePost } from "@/utils/postUtils";
 import { resolveChatId } from "@/utils/chatUtils";
@@ -326,13 +326,12 @@ export default function PostDetailPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3 cursor-pointer" onClick={(e) => goToUser(e, currentPost.user?.id)}>
-              {/* Use resilient MediaImage with fallback to avoid broken avatars */}
-              <MediaImage
+              {/* Use resilient DebugImage with fallback to avoid broken avatars */}
+              <DebugImage
                 src={currentPost.user?.profilePicture || "/assets/images/default-avatar.svg"}
                 alt="profile avatar"
                 className="w-12 h-12 rounded-full object-cover border-2 border-gray-300"
-                width={48}
-                height={48}
+                fallback="/assets/images/default-avatar.svg"
               />
               <div>
                 <h3 className={`font-semibold ${themeClasses.text}`}>{currentPost.user?.name || "Unknown User"}</h3>
@@ -360,12 +359,11 @@ export default function PostDetailPage() {
 
           {/* Media */}
           {currentPost.imageUrl && (
-            <MediaImage
+            <DebugImage
               src={currentPost.imageUrl}
               alt="post media"
               className="w-full rounded-xl max-h-96 object-cover mb-4"
-              width={800}
-              height={600}
+              fallback="/images/default-post.svg"
             />
           )}
           {currentPost.videoUrl && <video src={currentPost.videoUrl} controls className="w-full rounded-xl max-h-96 mb-4" />}
