@@ -2,10 +2,10 @@
  * Utility functions for handling media URLs and validation
  */
 
-export const BACKEND_URL =
-  process.env.NEXT_PUBLIC_API_URL || 
-  process.env.NEXT_PUBLIC_BACKEND_URL || 
-  "https://demedia-backend-production.up.railway.app";
+import { BACKEND_URL as BACKEND, ensureCorrectBackendUrl } from "@/config/backend";
+
+// Re-export for backward compatibility
+export const BACKEND_URL = BACKEND;
 
 /**
  * Checks if a URL is reachable

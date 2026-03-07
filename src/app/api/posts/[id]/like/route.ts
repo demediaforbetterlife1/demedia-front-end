@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { BACKEND_URL } from "@/config/backend";
 
 export async function POST(request: NextRequest, context: any) {
   const postId = context.params.id;
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest, context: any) {
 
     try {
       const backendResponse = await fetch(
-        `https://demedia-backend.fly.dev/api/posts/${postId}/like`,
+        `${BACKEND_URL}/api/posts/${postId}/like`,
         {
           method: "POST",
           headers: {
@@ -64,18 +65,20 @@ export async function POST(request: NextRequest, context: any) {
           backendResponse.status,
           errorText
         );
+        // Return error instead of fallback
+        return NextResponse.json(
+          { error: "Backend unavailable", status: backendResponse.status },
+          { status: 503 }
+        );
       }
     } catch (backendError) {
-      console.error("❌ Backend connection failed (fallback):", backendError);
+      console.error("❌ Backend connection failed:", backendError);
+      // Return error instead of fallback
+      return NextResponse.json(
+        { error: "Backend unavailable" },
+        { status: 503 }
+      );
     }
-
-    console.log("Using fallback like response");
-    return NextResponse.json({
-      success: true,
-      liked: true,
-      likes: Math.floor(Math.random() * 100) + 1,
-      message: "Like updated successfully (development mode)",
-    });
   } catch (error) {
     console.error("Error handling like:", error);
     return NextResponse.json(

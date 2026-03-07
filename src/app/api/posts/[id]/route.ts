@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { BACKEND_URL } from "@/config/backend";
 
 export async function GET(
   request: NextRequest,
@@ -32,8 +33,7 @@ export async function GET(
       }
     }
 
-    const backendUrl = "https://demedia-backend.fly.dev";
-    const res = await fetch(`${backendUrl}/api/posts/${id}`, {
+    const res = await fetch(`${BACKEND_URL}/api/posts/${id}`, {
       cache: "no-store",
       headers: {
         'Authorization': authHeader,
@@ -136,7 +136,7 @@ export async function PUT(
     try {
       console.log('🔄 Updating post via backend:', postId, 'userId:', userId);
 
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/posts/${postId}`, {
+      const backendResponse = await fetch(`${BACKEND_URL}/api/posts/${postId}`, {
         method: 'PUT',
         headers: {
           'Authorization': authHeader,
@@ -204,7 +204,7 @@ export async function DELETE(
 
     // Try to connect to the actual backend first
     try {
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/posts/${postId}`, {
+      const backendResponse = await fetch(`${BACKEND_URL}/api/posts/${postId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': authHeader,

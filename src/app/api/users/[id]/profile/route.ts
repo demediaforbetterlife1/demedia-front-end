@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { BACKEND_URL } from "@/config/backend";
 
 export async function GET(
   request: NextRequest,
@@ -33,7 +34,7 @@ export async function GET(
     } catch (_) {}
 
     try {
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/user/${userId}/profile`, {
+      const backendResponse = await fetch(`${BACKEND_URL}/api/user/${userId}/profile`, {
         headers: {
           'Authorization': authHeader,
           'user-id': currentUserId || request.headers.get('user-id') || '',
@@ -45,10 +46,10 @@ export async function GET(
       if (backendResponse.ok) {
         const data = await backendResponse.json();
         if (data.profilePicture && typeof data.profilePicture === 'string' && !data.profilePicture.startsWith('http')) {
-          data.profilePicture = `https://demedia-backend.fly.dev${data.profilePicture}`;
+          data.profilePicture = `${BACKEND_URL}${data.profilePicture}`;
         }
         if (data.coverPhoto && typeof data.coverPhoto === 'string' && !data.coverPhoto.startsWith('http')) {
-          data.coverPhoto = `https://demedia-backend.fly.dev${data.coverPhoto}`;
+          data.coverPhoto = `${BACKEND_URL}${data.coverPhoto}`;
         }
         return NextResponse.json(data);
       }
@@ -95,7 +96,7 @@ export async function PUT(
     const currentUserId = request.headers.get('user-id') || '';
 
     try {
-      const backendResponse = await fetch(`https://demedia-backend.fly.dev/api/user/${userId}/profile`, {
+      const backendResponse = await fetch(`${BACKEND_URL}/api/user/${userId}/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

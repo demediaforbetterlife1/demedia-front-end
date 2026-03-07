@@ -1,7 +1,6 @@
 // src/app/api/users/[id]/profile/route.ts
 import { NextRequest, NextResponse } from "next/server";
-
-const BACKEND_URL = process.env.BACKEND_URL || "https://demedia-backend.fly.dev";
+import { BACKEND_URL } from "@/config/backend";
 
 // GET: جلب بيانات البروفايل
 export const GET = async (

@@ -94,6 +94,7 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   );
   const [expandedPosts, setExpandedPosts] = useState<Set<number>>(new Set());
   const [shareStatus, setShareStatus] = useState<Record<number, string>>({});
+  const [likingPosts, setLikingPosts] = useState<Set<number>>(new Set());
 
   const allThemes: Record<string, ThemeClasses> = {
     light: {
@@ -286,6 +287,23 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
   const handleLike = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
 
+    // Prevent multiple simultaneous requests for the same post
+    if (likingPosts.has(id)) {
+      console.log('Already processing like for post:', id);
+      return;
+    }
+
+    // Find the current post state
+    const currentPost = posts.find(p => p.id === id);
+    if (!currentPost) return;
+
+    const wasLiked = currentPost.liked;
+    const previousLikes = currentPost.likes;
+
+    // Mark as processing
+    setLikingPosts(prev => new Set(prev).add(id));
+
+    // Optimistic update
     setPosts((prev) =>
       prev.map((p) =>
         p.id === id
@@ -307,22 +325,59 @@ export default function Posts({ isVisible = true, postId }: PostsProps) {
         },
         user?.id,
       );
-      if (!res.ok) throw new Error("Like request failed");
+      
+      if (!res.ok) {
+        // Revert on error
+        console.error("Like request failed:", res.status);
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  liked: wasLiked,
+                  likes: previousLikes,
+                }
+              : p,
+          ),
+        );
+        return;
+      }
+      
       const data = await res.json();
 
+      // Update with server response
       setPosts((prev) =>
         prev.map((p) =>
           p.id === id
             ? {
                 ...p,
                 liked: data.liked ?? p.liked,
-                likes: data.likes ?? p.likes,
+                likes: typeof data.likes === 'number' ? data.likes : p.likes,
               }
             : p,
         ),
       );
     } catch (err) {
       console.error("Like error:", err);
+      // Revert on error
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                liked: wasLiked,
+                likes: previousLikes,
+              }
+            : p,
+        ),
+      );
+    } finally {
+      // Remove from processing set
+      setLikingPosts(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   };
 
