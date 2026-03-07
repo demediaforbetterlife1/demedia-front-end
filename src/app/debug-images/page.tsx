@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import DebugImage from "@/components/DebugImage";
-import { fixImageUrl } from "@/utils/imageUrlFixer";
+import MediaImage from "@/components/MediaImage";
+import { ensureAbsoluteMediaUrl } from "@/utils/mediaUtils";
 
 export default function DebugImagesPage() {
   const [posts, setPosts] = useState<any[]>([]);
@@ -45,8 +45,8 @@ export default function DebugImagesPage() {
           {testUrls.map((url, index) => (
             <div key={index} className="border p-4 rounded">
               <p className="text-sm mb-2 break-all">Original: {url}</p>
-              <p className="text-sm mb-2 break-all">Fixed: {fixImageUrl(url)}</p>
-              <DebugImage
+              <p className="text-sm mb-2 break-all">Fixed: {ensureAbsoluteMediaUrl(url) || "null"}</p>
+              <MediaImage
                 src={url}
                 alt={`Test image ${index + 1}`}
                 className="w-full h-32 object-cover border"
@@ -75,13 +75,13 @@ export default function DebugImagesPage() {
                       Original: {post.author?.profilePicture || "null"}
                     </p>
                     <p className="text-xs break-all mb-2">
-                      Fixed: {fixImageUrl(post.author?.profilePicture)}
+                      Fixed: {ensureAbsoluteMediaUrl(post.author?.profilePicture) || "null"}
                     </p>
-                    <DebugImage
+                    <MediaImage
                       src={post.author?.profilePicture}
                       alt="Profile"
                       className="w-16 h-16 rounded-full object-cover"
-                      fallback="/images/default-avatar.svg"
+                      fallbackSrc="/images/default-avatar.svg"
                     />
                   </div>
 
@@ -92,13 +92,13 @@ export default function DebugImagesPage() {
                       Original: {post.imageUrl || post.imageUrls?.[0] || "null"}
                     </p>
                     <p className="text-xs break-all mb-2">
-                      Fixed: {fixImageUrl(post.imageUrl || post.imageUrls?.[0])}
+                      Fixed: {ensureAbsoluteMediaUrl(post.imageUrl || post.imageUrls?.[0]) || "null"}
                     </p>
-                    <DebugImage
+                    <MediaImage
                       src={post.imageUrl || post.imageUrls?.[0]}
                       alt="Post image"
                       className="w-32 h-24 object-cover"
-                      fallback="/images/default-post.svg"
+                      fallbackSrc="/images/default-post.svg"
                     />
                   </div>
                 </div>

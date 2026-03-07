@@ -326,12 +326,12 @@ export default function PostDetailPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3 cursor-pointer" onClick={(e) => goToUser(e, currentPost.user?.id)}>
-              {/* Use resilient DebugImage with fallback to avoid broken avatars */}
-              <DebugImage
+              {/* Use resilient MediaImage with fallback to avoid broken avatars */}
+              <MediaImage
                 src={currentPost.user?.profilePicture || "/assets/images/default-avatar.svg"}
                 alt="profile avatar"
                 className="w-12 h-12 rounded-full object-cover border-2 border-gray-300"
-                fallback="/assets/images/default-avatar.svg"
+                fallbackSrc="/assets/images/default-avatar.svg"
               />
               <div>
                 <h3 className={`font-semibold ${themeClasses.text}`}>{currentPost.user?.name || "Unknown User"}</h3>
@@ -359,11 +359,11 @@ export default function PostDetailPage() {
 
           {/* Media */}
           {currentPost.imageUrl && (
-            <DebugImage
+            <MediaImage
               src={currentPost.imageUrl}
               alt="post media"
               className="w-full rounded-xl max-h-96 object-cover mb-4"
-              fallback="/images/default-post.svg"
+              fallbackSrc="/images/default-post.svg"
             />
           )}
           {currentPost.videoUrl && <video src={currentPost.videoUrl} controls className="w-full rounded-xl max-h-96 mb-4" />}
