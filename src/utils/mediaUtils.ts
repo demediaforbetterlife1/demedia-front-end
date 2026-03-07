@@ -3,7 +3,9 @@
  */
 
 export const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "https://demedia-backend-production.up.railway.app";
+  process.env.NEXT_PUBLIC_API_URL || 
+  process.env.NEXT_PUBLIC_BACKEND_URL || 
+  "https://demedia-backend-production.up.railway.app";
 
 /**
  * Checks if a URL is reachable
@@ -60,6 +62,18 @@ export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
     cleanUrl.startsWith("local-uploads")
   ) {
     return cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
+  }
+
+  // Handle uploads path - ensure it goes to backend
+  if (cleanUrl.startsWith("/uploads/") || cleanUrl.startsWith("uploads/")) {
+    const uploadPath = cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
+    return `${BACKEND_URL}${uploadPath}`;
+  }
+
+  // Handle media files that might be stored on backend
+  if (cleanUrl.match(/\.(jpg|jpeg|png|gif|webp|svg|mp4|mov|avi)$/i)) {
+    const mediaPath = cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
+    return `${BACKEND_URL}${mediaPath}`;
   }
 
   const normalized = cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
