@@ -51,16 +51,31 @@ export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
 
   const cleanUrl = url!.trim();
 
+  // CRITICAL FIX: Replace old Fly.dev URLs with Railway URLs
+  if (cleanUrl.includes("demedia-backend.fly.dev")) {
+    return cleanUrl.replace(
+      "https://demedia-backend.fly.dev",
+      BACKEND_URL
+    );
+  }
+
   // Already absolute
   if (!needsPrefix(cleanUrl)) {
     return cleanUrl;
   }
 
-  // If it's a local upload, return as is (just ensure it starts with /)
-  if (
-    cleanUrl.startsWith("/local-uploads") ||
-    cleanUrl.startsWith("local-uploads")
-  ) {
+  // Data URLs (base64) - return null to use fallback
+  if (cleanUrl.startsWith("data:")) {
+    return null;
+  }
+
+  // Local assets
+  if (cleanUrl.startsWith("/images/") || cleanUrl.startsWith("/assets/")) {
+    return cleanUrl;
+  }
+
+  // If it's a local upload, return as is
+  if (cleanUrl.startsWith("/local-uploads") || cleanUrl.startsWith("local-uploads")) {
     return cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
   }
 
@@ -68,12 +83,6 @@ export function ensureAbsoluteMediaUrl(url?: string | null): string | null {
   if (cleanUrl.startsWith("/uploads/") || cleanUrl.startsWith("uploads/")) {
     const uploadPath = cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
     return `${BACKEND_URL}${uploadPath}`;
-  }
-
-  // Handle media files that might be stored on backend
-  if (cleanUrl.match(/\.(jpg|jpeg|png|gif|webp|svg|mp4|mov|avi)$/i)) {
-    const mediaPath = cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
-    return `${BACKEND_URL}${mediaPath}`;
   }
 
   const normalized = cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;

@@ -528,10 +528,9 @@ return (
                 initial={{ opacity: 0, scale: 0.9 }}  
                 animate={{ opacity: 1, scale: 1 }}  
                 transition={{ duration: 0.7, delay: 0.3 }}  
-                className="relative w-full max-w-md mx-4 sm:mx-6 md:mx-0 rounded-2xl p-[4px] bg-transparent"  
+                className="relative w-full max-w-md mx-4 sm:mx-6 md:mx-0 rounded-2xl"  
             >  
-                <motion.div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-purple-500 via-cyan-400 to-blue-600 blur-md animate-spin-slow" style={{ zIndex: 0 }} />  
-                <div className="relative bg-gradient-to-br from-[#0d1b2a]/80 via-[#1b263b]/70 to-[#0d1b2a]/80 backdrop-blur-2xl rounded-2xl p-8 shadow-2xl z-10">  
+                <div className="relative bg-gradient-to-br from-[#0d1b2a]/80 via-[#1b263b]/70 to-[#0d1b2a]/80 backdrop-blur-2xl rounded-2xl p-8 shadow-2xl border-2 border-transparent animate-shine-border">  
                     <h2 className="text-3xl font-bold text-center text-cyan-200 mb-6">{t('auth.welcomeTitle', 'Create Your Account And Join DeMedia')} 🚀</h2>  
 
                     <form onSubmit={handleSubmit} className="space-y-4">  
@@ -715,11 +714,25 @@ return (
         </motion.div>  
 
         <style jsx>{`  
-    @keyframes spin-slow {  
-      0% { transform: rotate(0deg); }  
-      100% { transform: rotate(360deg); }  
-    }  
-    .animate-spin-slow { animation: spin-slow 8s linear infinite; }  
+    @keyframes shine-border {
+        0%, 100% {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.6), 0 0 40px rgba(139, 92, 246, 0.4), inset 0 0 20px rgba(139, 92, 246, 0.2);
+            border-color: rgba(139, 92, 246, 0.8);
+        }
+        25% {
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.6), 0 0 40px rgba(34, 211, 238, 0.4), inset 0 0 20px rgba(34, 211, 238, 0.2);
+            border-color: rgba(34, 211, 238, 0.8);
+        }
+        50% {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 0 20px rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.8);
+        }
+        75% {
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.6), 0 0 40px rgba(168, 85, 247, 0.4), inset 0 0 20px rgba(168, 85, 247, 0.2);
+            border-color: rgba(168, 85, 247, 0.8);
+        }
+    }
+    .animate-shine-border { animation: shine-border 4s ease-in-out infinite; }  
   `}</style>  
 
     </div>  

@@ -100,7 +100,7 @@ import ProfileAnalytics from "@/components/ProfileAnalytics";
 import ProfileCustomization from "@/components/ProfileCustomization";
 import PremiumUserIndicator from "@/components/PremiumUserIndicator";
 import PhotoUploadModal from "@/components/PhotoUploadModal";
-import DebugImage from "@/components/DebugImage";
+import MediaImage from "@/components/MediaImage";
 import { getThemeClasses, getButtonClasses, getCardClasses } from "@/utils/themeUtils";
 import { followUser, unfollowUser } from '@/lib/api';
 import { ensureAbsoluteMediaUrl, appendCacheBuster } from "@/utils/mediaUtils";
@@ -2259,11 +2259,13 @@ const UserPosts = ({
                                         galleryImages.length === 1 ? (
                                             <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-700/50 group/media">
                                                 <div className="relative w-full h-64 sm:h-96 md:h-[500px]">
-                                                    <DebugImage
+                                                    <MediaImage
                                                         src={galleryImages[0]}
                                                         alt="Post content"
-                                                        className="object-cover w-full h-full"
-                                                        fallback="/assets/images/default-post.svg"
+                                                        className="object-cover"
+                                                        fallbackSrc="/assets/images/default-post.svg"
+                                                        fill
+                                                        priority
                                                     />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                                                 </div>
@@ -2273,11 +2275,12 @@ const UserPosts = ({
                                                 {galleryImages.map((imageUrl: string, index: number) => (
                                                     <div key={index} className="relative rounded-2xl overflow-hidden shadow-xl ring-2 ring-gray-700/50 group/media">
                                                         <div className="relative w-full h-72">
-                                                            <DebugImage
+                                                            <MediaImage
                                                                 src={imageUrl}
                                                                 alt={`Post content ${index + 1}`}
-                                                                className="object-cover w-full h-full transition-transform duration-500 group-hover/media:scale-105"
-                                                                fallback="/assets/images/default-post.svg"
+                                                                className="object-cover transition-transform duration-500 group-hover/media:scale-105"
+                                                                fallbackSrc="/assets/images/default-post.svg"
+                                                                fill
                                                             />
                                                             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                                                         </div>
