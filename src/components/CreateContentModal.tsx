@@ -178,7 +178,7 @@ export default function CreateContentModal({
                   </div>
                   <div className="flex-1 text-left">
                     <h3 className={`font-semibold ${themeClasses.text}`}>
-                      Create DeSnap
+                      Create Snap
                     </h3>
                     <p className={`text-sm opacity-70 ${themeClasses.text}`}>
                       Share temporary videos and moments

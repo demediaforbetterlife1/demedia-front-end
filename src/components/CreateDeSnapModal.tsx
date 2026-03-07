@@ -83,6 +83,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
     const [videoUrl, setVideoUrl] = useState<string>("");
     const [thumbnail, setThumbnail] = useState<string>("");
     const [duration, setDuration] = useState<number>(0);
+    const [text, setText] = useState<string>(""); // Add text field
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -107,6 +108,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             setVideoUrl("");
             setThumbnail("");
             setDuration(0);
+            setText(""); // Reset text field
             setIsPlaying(false);
             setError("");
             setActiveTab("upload");
@@ -261,6 +263,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
             // Now create the DeSnap with the uploaded video URL
             const deSnapData = {
                 content: videoUrl,
+                text: text.trim() || undefined, // Add text field
                 thumbnail: thumbnailUrl || videoUrl,
                 duration: duration,
                 visibility: settings.visibility,
@@ -369,7 +372,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                 <Zap className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-white">Create DeSnap</h2>
+                                <h2 className="text-xl font-bold text-white">Create Snap</h2>
                                 <p className="text-sm text-gray-400">Share your moment with the world</p>
                             </div>
                         </div>
@@ -420,6 +423,23 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                     exit={{ opacity: 0, x: -20 }}
                                     className="space-y-6"
                                 >
+                                    {/* Text Input Field */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-white mb-2">
+                                            Caption (Optional)
+                                        </label>
+                                        <textarea
+                                            value={text}
+                                            onChange={(e) => setText(e.target.value)}
+                                            placeholder="Add a caption to your Snap..."
+                                            className="w-full bg-gray-800 border border-gray-600 text-white placeholder-gray-400 rounded-xl p-3 min-h-[100px] resize-none focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                            maxLength={280}
+                                        />
+                                        <div className="text-right text-sm mt-1 text-gray-400">
+                                            {text.length}/280
+                                        </div>
+                                    </div>
+
                                     {!videoFile ? (
                                         <div className="border-2 border-dashed border-gray-600 rounded-2xl p-8 text-center hover:border-yellow-400 transition-colors">
                                             <input
@@ -588,7 +608,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                     {/* Visibility Settings */}
                                     <div>
                                         <label className="block text-sm font-medium text-white mb-3">
-                                            Who can see this DeSnap?
+                                            Who can see this Snap?
                                         </label>
                                         <div className="grid grid-cols-2 gap-3">
                                             {visibilityOptions.map((option) => {
@@ -658,7 +678,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                     <div className="flex items-center justify-between p-6 border-t border-gray-700 bg-gray-900/50">
                         <div className="flex items-center space-x-2 text-sm text-gray-400">
                             <Zap className="w-4 h-4" />
-                            <span>DeSnap</span>
+                            <span>Snap</span>
                             <span>•</span>
                             <span>{visibilityOptions.find(v => v.id === settings.visibility)?.name}</span>
                         </div>
@@ -675,7 +695,7 @@ export default function CreateDeSnapModal({ isOpen, onClose, onDeSnapCreated }: 
                                 disabled={isSubmitting || !videoFile}
                                 className="px-8 py-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl hover:from-yellow-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                             >
-                                {isSubmitting ? "Creating..." : "Create DeSnap"}
+                                {isSubmitting ? "Creating..." : "Create Snap"}
                             </button>
                         </div>
                     </div>

@@ -294,13 +294,13 @@ export default function Navbar() {
                         <span className="text-lg font-bold">+</span>
                     </button>
 
-                    {/* DeSnaps Button */}
+                    {/* Snaps Button */}
                     <button
                         onClick={() => router.push('/desnaps')}
                         className="w-10 h-10 rounded-full theme-bg-tertiary/60 flex items-center justify-center
                        theme-text-muted hover:text-orange-400 hover:shadow-[0_0_12px_rgba(251,146,60,0.5)]
                        transition"
-                        title="DeSnaps"
+                        title="Snaps"
                     >
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>

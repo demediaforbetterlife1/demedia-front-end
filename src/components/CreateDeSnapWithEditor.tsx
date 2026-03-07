@@ -23,7 +23,7 @@ export default function CreateDeSnapWithEditor({ onSubmit, onCancel }: CreateDeS
   const handleSubmit = async () => {
     // Allow text-only desnaps or media-only desnaps
     if (!text.trim() && !mediaFile) {
-      alert('Please add text or media to your DeSnap');
+      alert('Please add text or media to your Snap');
       return;
     }
 
@@ -65,7 +65,7 @@ export default function CreateDeSnapWithEditor({ onSubmit, onCancel }: CreateDeS
           : 'bg-white border-gray-200'
       } border rounded-2xl shadow-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto`}>
         <h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-          Create DeSnap
+          Create Snap
         </h2>
 
         {/* Text Input */}
@@ -76,7 +76,7 @@ export default function CreateDeSnapWithEditor({ onSubmit, onCancel }: CreateDeS
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Add a caption to your DeSnap..."
+            placeholder="Add a caption to your Snap..."
             className={`w-full ${
               isDark 
                 ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' 
@@ -93,7 +93,7 @@ export default function CreateDeSnapWithEditor({ onSubmit, onCancel }: CreateDeS
         {!mediaFile ? (
           <div className="mb-4">
             <label className={`block text-sm font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-              Media (Required for video DeSnaps)
+              Media (Required for video Snaps)
             </label>
             <MediaUploadWithEditor
               onUpload={handleMediaUpload}
@@ -175,7 +175,7 @@ export default function CreateDeSnapWithEditor({ onSubmit, onCancel }: CreateDeS
             disabled={isSubmitting || (!text.trim() && !mediaFile)}
             className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition"
           >
-            {isSubmitting ? 'Posting...' : 'Post DeSnap'}
+            {isSubmitting ? 'Posting...' : 'Post Snap'}
           </button>
         </div>
       </div>
